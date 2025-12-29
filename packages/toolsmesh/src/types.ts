@@ -61,23 +61,12 @@ export type SandboxExecutionResult = {
  */
 export type SandboxConfig = {
 	/**
-	 * Use @vercel/sandbox for true isolation.
-	 * Requires @vercel/sandbox to be installed.
-	 * @default true when @vercel/sandbox is available
-	 */
-	useVercelSandbox?: boolean;
-	/**
 	 * Allow local execution without sandboxing.
 	 * WARNING: This is unsafe for untrusted code as it has access to globalThis.
 	 * Only use for local development with trusted models.
 	 * @default false
 	 */
 	dangerouslyAllowLocalExecution?: boolean;
-	/**
-	 * Timeout for sandbox execution in milliseconds.
-	 * @default 30000 (30 seconds)
-	 */
-	timeout?: number;
 };
 
 /**

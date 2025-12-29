@@ -436,56 +436,29 @@ import type {
 } from "toolsmesh";
 ```
 
-## Sandbox Configuration
+## Code Execution
 
-Toolsmesh uses [@vercel/sandbox](https://vercel.com/docs/vercel-sandbox) for secure code execution in isolated Linux VMs. When `@vercel/sandbox` is installed, all AI-generated code runs in true isolation.
+Toolsmesh uses [just-bash](https://github.com/AriPerkkio/just-bash) for simulating bash commands against the virtual filesystem.
 
-### Production Setup (Recommended)
-
-```bash
-npm install @vercel/sandbox
-```
-
-```typescript
-const middleware = createToolsmeshMiddleware({
-  tools: myTools,
-  // Vercel sandbox is used automatically when available
-});
-```
-
-### Local Development
-
-For local development without Vercel sandbox, you can enable unsafe local execution:
+For TypeScript execution via `mesh_exec`, you must enable local execution:
 
 ```typescript
 const middleware = createToolsmeshMiddleware({
   tools: myTools,
   sandbox: {
-    // WARNING: Only use for local development with trusted models
+    // Required for mesh_exec to work
     dangerouslyAllowLocalExecution: true,
   },
 });
 ```
 
-### Sandbox Options
+### Security Considerations
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `useVercelSandbox` | `boolean` | `true` | Use @vercel/sandbox when available |
-| `dangerouslyAllowLocalExecution` | `boolean` | `false` | Allow local execution without sandbox |
-| `timeout` | `number` | `30000` | Execution timeout in milliseconds |
-
-### Security Model
-
-When using Vercel sandbox:
-- Code runs in isolated Firecracker MicroVMs
-- No access to host filesystem or network (unless configured)
-- Automatic cleanup after execution
-
-When using local execution (`dangerouslyAllowLocalExecution: true`):
-- **Not secure** - code has access to `globalThis`
-- Only use with trusted AI models in development
-- Tool parameters are still validated against Zod schemas
+When `dangerouslyAllowLocalExecution: true`:
+- TypeScript code runs via `new Function()` with access to `globalThis`
+- Only use with trusted AI models
+- Tool parameters are validated against Zod schemas before execution
+- Bash commands run in an isolated in-memory filesystem (no host access)
 
 ## When to Use
 

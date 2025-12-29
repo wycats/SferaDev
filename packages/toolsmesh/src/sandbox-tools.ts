@@ -119,14 +119,13 @@ async function executeInSandbox(
 	}
 
 	// Return helpful error message
-	return `[error] Code execution requires sandbox configuration.
+	return `[error] Code execution is disabled.
 
-To enable execution, use one of:
-  1. Install @vercel/sandbox for production use
-  2. Enable unsafe local execution for development:
-     sandbox: { dangerouslyAllowLocalExecution: true }
+To enable execution, set dangerouslyAllowLocalExecution: true in sandbox config:
+  sandbox: { dangerouslyAllowLocalExecution: true }
 
-WARNING: Local execution has access to globalThis and is not secure for untrusted code.`;
+WARNING: Local execution uses new Function() with access to globalThis.
+Only use with trusted AI models.`;
 }
 
 /**
