@@ -1,7 +1,6 @@
-import { operationsByTag } from "./api/components";
-import type { operationsByPath } from "./api/extra";
-import { fetch as apiFetch, type FetcherExtraProps } from "./api/fetcher";
+import { type operationsByPath, operationsByTag, type tagDictionary } from "./generated/components";
 import type { FetchImpl } from "./utils/fetch";
+import fetchFn, { type FetcherConfig } from "./utils/fetcher";
 import type { RequiredKeys } from "./utils/types";
 
 export interface LiteLLMApiOptions {
@@ -10,11 +9,11 @@ export interface LiteLLMApiOptions {
 	fetch?: FetchImpl;
 }
 
-type ApiProxy = {
+export type ApiClient = {
 	[Tag in keyof typeof operationsByTag]: {
 		[Method in keyof (typeof operationsByTag)[Tag]]: (typeof operationsByTag)[Tag][Method] extends infer Operation extends
 			(...args: any) => any
-			? Omit<Parameters<Operation>[0], keyof FetcherExtraProps> extends infer Params
+			? Omit<Parameters<Operation>[0], keyof FetcherConfig> extends infer Params
 				? RequiredKeys<Params> extends never
 					? (params?: Params) => ReturnType<Operation>
 					: (params: Params) => ReturnType<Operation>
@@ -23,9 +22,49 @@ type ApiProxy = {
 	};
 };
 
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
+export type ApiOperation = {
+	[Tag in keyof typeof operationsByTag]: keyof (typeof operationsByTag)[Tag] extends string
+		? `${Tag}.${keyof (typeof operationsByTag)[Tag]}`
+		: never;
+}[keyof typeof operationsByTag];
+
+export type ApiOperationByMethod<Method extends HttpMethod> = {
+	[Tag in keyof typeof tagDictionary]: {
+		[TagMethod in keyof (typeof tagDictionary)[Tag]]: TagMethod extends Method
+			? (typeof tagDictionary)[Tag][TagMethod] extends readonly any[]
+				? `${Tag}.${(typeof tagDictionary)[Tag][TagMethod][number]}`
+				: never
+			: never;
+	}[keyof (typeof tagDictionary)[Tag]];
+}[keyof typeof tagDictionary];
+
+export type ApiOperationParams<T extends ApiOperation> = T extends `${infer Tag}.${infer Operation}`
+	? Tag extends keyof typeof operationsByTag
+		? Operation extends keyof (typeof operationsByTag)[Tag]
+			? (typeof operationsByTag)[Tag][Operation] extends infer Operation extends (
+					...args: any
+				) => any
+				? Omit<Parameters<Operation>[0], keyof FetcherConfig>
+				: never
+			: never
+		: never
+	: never;
+
+export type ApiOperationResult<T extends ApiOperation> = T extends `${infer Tag}.${infer Operation}`
+	? Tag extends keyof typeof operationsByTag
+		? Operation extends keyof (typeof operationsByTag)[Tag]
+			? (typeof operationsByTag)[Tag][Operation] extends (...args: any) => any
+				? Awaited<ReturnType<(typeof operationsByTag)[Tag][Operation]>>
+				: never
+			: never
+		: never
+	: never;
+
 type RequestEndpointParams<T extends keyof typeof operationsByPath> = Omit<
 	Parameters<(typeof operationsByPath)[T]>[0],
-	keyof FetcherExtraProps
+	keyof FetcherConfig
 >;
 
 type RequestEndpointResult<T extends keyof typeof operationsByPath> = ReturnType<
@@ -46,9 +85,11 @@ export class LiteLLMApi {
 	}
 
 	get api() {
-		const baseUrl = this.#baseUrl;
-		const token = this.#token;
-		const fetchImpl = this.#fetch;
+		const getConfig = async (): Promise<FetcherConfig> => ({
+			baseUrl: this.#baseUrl,
+			token: this.#token,
+			fetchImpl: this.#fetch,
+		});
 
 		return new Proxy(
 			{},
@@ -72,14 +113,14 @@ export class LiteLLMApi {
 								const method = operationsByTag[namespace][operation] as any;
 
 								return async (params: Record<string, unknown>) => {
-									return await method({ ...params, baseUrl, token, fetchImpl });
+									return await method({ ...params, config: await getConfig() });
 								};
 							},
 						},
 					);
 				},
 			},
-		) as ApiProxy;
+		) as ApiClient;
 	}
 
 	public async request<Endpoint extends keyof typeof operationsByPath>(
@@ -89,7 +130,7 @@ export class LiteLLMApi {
 		const [method = "", url = ""] = endpoint.split(" ");
 		const extraParams = (params || {}) as Record<string, unknown>;
 
-		const result = await apiFetch({
+		const result = await fetchFn({
 			...extraParams,
 			method,
 			url,

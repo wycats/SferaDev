@@ -1,7 +1,7 @@
-import type { operationsByPath as accountOperations } from "./account/extra";
-import type { operationsByPath as adminOperations } from "./admin/extra";
-import { type FetcherExtraProps, fetch as fetchRequest } from "./common/fetcher";
+import type { operationsByPath as accountOperationsByPath } from "./account/generated/components";
+import type { operationsByPath as adminOperationsByPath } from "./admin/generated/components";
 import type { FetchImpl } from "./utils/fetch";
+import fetchFn, { type FetcherConfig } from "./utils/fetcher";
 
 export interface KeycloakAdminApiOptions {
 	baseUrl: string;
@@ -16,22 +16,22 @@ export interface KeycloakAccountApiOptions {
 	fetch?: FetchImpl;
 }
 
-type AdminRequestEndpointParams<T extends keyof typeof adminOperations> = Omit<
-	Parameters<(typeof adminOperations)[T]>[0],
-	keyof FetcherExtraProps
+type AdminRequestEndpointParams<T extends keyof typeof adminOperationsByPath> = Omit<
+	Parameters<(typeof adminOperationsByPath)[T]>[0],
+	keyof FetcherConfig
 >;
 
-type AdminRequestEndpointResult<T extends keyof typeof adminOperations> = ReturnType<
-	(typeof adminOperations)[T]
+type AdminRequestEndpointResult<T extends keyof typeof adminOperationsByPath> = ReturnType<
+	(typeof adminOperationsByPath)[T]
 >;
 
-type AccountRequestEndpointParams<T extends keyof typeof accountOperations> = Omit<
-	Parameters<(typeof accountOperations)[T]>[0],
-	keyof FetcherExtraProps
+type AccountRequestEndpointParams<T extends keyof typeof accountOperationsByPath> = Omit<
+	Parameters<(typeof accountOperationsByPath)[T]>[0],
+	keyof FetcherConfig
 >;
 
-type AccountRequestEndpointResult<T extends keyof typeof accountOperations> = ReturnType<
-	(typeof accountOperations)[T]
+type AccountRequestEndpointResult<T extends keyof typeof accountOperationsByPath> = ReturnType<
+	(typeof accountOperationsByPath)[T]
 >;
 
 export class KeycloakAdminApi {
@@ -47,14 +47,14 @@ export class KeycloakAdminApi {
 		if (!this.#fetch) throw new Error("Fetch is required");
 	}
 
-	public async request<Endpoint extends keyof typeof adminOperations>(
+	public async request<Endpoint extends keyof typeof adminOperationsByPath>(
 		endpoint: Endpoint,
 		params: AdminRequestEndpointParams<Endpoint>,
 	) {
 		const [method = "", url = ""] = endpoint.split(" ");
 		const extraParams = (params || {}) as Record<string, unknown>;
 
-		const result = await fetchRequest({
+		const result = await fetchFn({
 			...extraParams,
 			method,
 			url,
@@ -81,7 +81,7 @@ export class KeycloakAccountApi {
 		if (!this.#fetch) throw new Error("Fetch is required");
 	}
 
-	public async request<Endpoint extends keyof typeof accountOperations>(
+	public async request<Endpoint extends keyof typeof accountOperationsByPath>(
 		endpoint: Endpoint,
 		params: AccountRequestEndpointParams<Endpoint>,
 	) {
@@ -89,7 +89,7 @@ export class KeycloakAccountApi {
 		const [method = "", url = ""] = endpoint.split(" ");
 		const extraParams = (params || {}) as Record<string, unknown>;
 
-		const result = await fetchRequest({
+		const result = await fetchFn({
 			...extraParams,
 			method,
 			url,

@@ -1,8 +1,9 @@
-export * from "./client";
+import * as Components from "./generated/components";
+import * as Schemas from "./generated/schemas";
+import * as Types from "./generated/types";
 
-import type * as Components from "./api/components";
-import type * as Parameters from "./api/parameters";
-import type * as RequestBodies from "./api/requestBodies";
-import type * as Responses from "./api/responses";
-import type * as Schemas from "./api/schemas";
-export type { Schemas, Components, Parameters, Responses, RequestBodies };
+const { operationsByPath, operationsByTag, tagDictionary, ...Fetchers } = Components;
+const Helpers = { operationsByPath, operationsByTag, tagDictionary };
+
+export * from "./client";
+export { Fetchers, Helpers, Schemas, Types };

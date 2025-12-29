@@ -16,18 +16,27 @@
 	"scripts": {
 		"tsc": "tsc --noEmit",
 		"build": "bunchee",
-		"generate": "openapi-codegen admin && openapi-codegen account"
+		"generate": "rimraf ./src/admin/generated ./src/account/generated && kubb generate"
+	},
+	"dependencies": {
+		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@openapi-codegen/cli": "catalog:",
-		"@openapi-codegen/typescript": "catalog:",
+		"@kubb/cli": "catalog:",
+		"@kubb/core": "catalog:",
+		"@kubb/plugin-client": "catalog:",
+		"@kubb/plugin-oas": "catalog:",
+		"@kubb/plugin-ts": "catalog:",
+		"@kubb/plugin-zod": "catalog:",
+		"@sferadev/openapi-utils": "workspace:*",
 		"@sferadev/tsconfig": "workspace:*",
 		"@types/node": "catalog:",
 		"bunchee": "catalog:",
 		"case": "catalog:",
 		"openapi3-ts": "catalog:",
-		"ts-morph": "catalog:",
-		"typescript": "catalog:"
+		"rimraf": "catalog:",
+		"typescript": "catalog:",
+		"yaml": "catalog:"
 	},
 	"files": [
 		"dist"

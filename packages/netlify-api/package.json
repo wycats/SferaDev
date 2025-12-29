@@ -16,16 +16,29 @@
 	"scripts": {
 		"tsc": "tsc --noEmit",
 		"build": "bunchee",
-		"generate": "openapi-codegen netlify"
+		"generate": "rimraf ./src/generated && kubb generate"
+	},
+	"dependencies": {
+		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@openapi-codegen/cli": "catalog:",
-		"@openapi-codegen/typescript": "catalog:",
+		"@kubb/cli": "catalog:",
+		"@kubb/core": "catalog:",
+		"@modelcontextprotocol/sdk": "catalog:",
+		"@sferadev/openapi-utils": "workspace:*",
 		"@sferadev/tsconfig": "workspace:*",
 		"@types/node": "catalog:",
 		"bunchee": "catalog:",
-		"ts-morph": "catalog:",
+		"rimraf": "catalog:",
 		"typescript": "catalog:"
+	},
+	"peerDependencies": {
+		"@modelcontextprotocol/sdk": "^1.15.1"
+	},
+	"peerDependenciesMeta": {
+		"@modelcontextprotocol/sdk": {
+			"optional": true
+		}
 	},
 	"files": [
 		"dist"
@@ -44,6 +57,16 @@
 			"require": {
 				"types": "./dist/index.d.cts",
 				"default": "./dist/index.cjs"
+			}
+		},
+		"./mcp": {
+			"import": {
+				"types": "./dist/mcp.d.mts",
+				"default": "./dist/mcp.mjs"
+			},
+			"require": {
+				"types": "./dist/mcp.d.cts",
+				"default": "./dist/mcp.cjs"
 			}
 		}
 	},

@@ -19,4 +19,10 @@ export type Response = {
 };
 
 // Typed only the subset of the spec we actually use (to be able to build a simple mock)
-export type FetchImpl = (url: string, init?: RequestInit | undefined) => Promise<Response>;
+export type FetchImpl = (url: string, init?: RequestInit) => Promise<Response>;
+
+export function formEncoded<T extends Record<string, string>>(data: T): string {
+	return Object.entries(data)
+		.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+		.join("&");
+}

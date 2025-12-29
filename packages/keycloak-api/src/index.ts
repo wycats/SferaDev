@@ -1,17 +1,45 @@
 export * from "./client";
 
-import type * as AccountComponents from "./account/components";
-import * as AccountExtra from "./account/extra";
-import type * as AccountSchemas from "./account/schemas";
-import type * as AdminComponents from "./admin/components";
-import * as AdminExtra from "./admin/extra";
-import type * as AdminSchemas from "./admin/schemas";
+import * as AccountComponents from "./account/generated/components";
+import * as AccountSchemas from "./account/generated/schemas";
+import * as AccountTypes from "./account/generated/types";
+import * as AdminComponents from "./admin/generated/components";
+import * as AdminSchemas from "./admin/generated/schemas";
+import * as AdminTypes from "./admin/generated/types";
+
+const {
+	operationsByPath: adminOperationsByPath,
+	operationsByTag: adminOperationsByTag,
+	tagDictionary: adminTagDictionary,
+	...AdminFetchers
+} = AdminComponents;
+
+const {
+	operationsByPath: accountOperationsByPath,
+	operationsByTag: accountOperationsByTag,
+	tagDictionary: accountTagDictionary,
+	...AccountFetchers
+} = AccountComponents;
+
+const AdminHelpers = {
+	operationsByPath: adminOperationsByPath,
+	operationsByTag: adminOperationsByTag,
+	tagDictionary: adminTagDictionary,
+};
+
+const AccountHelpers = {
+	operationsByPath: accountOperationsByPath,
+	operationsByTag: accountOperationsByTag,
+	tagDictionary: accountTagDictionary,
+};
 
 export {
-	type AdminSchemas,
-	type AdminComponents,
-	type AccountSchemas,
-	type AccountComponents,
-	AdminExtra,
-	AccountExtra,
+	AdminFetchers,
+	AdminHelpers,
+	AdminSchemas,
+	AdminTypes,
+	AccountFetchers,
+	AccountHelpers,
+	AccountSchemas,
+	AccountTypes,
 };
