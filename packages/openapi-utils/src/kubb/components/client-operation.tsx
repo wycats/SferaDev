@@ -2,16 +2,20 @@ import { URLPath } from "@kubb/core/utils";
 import { isOptional, type Operation } from "@kubb/oas";
 import type { PluginClient } from "@kubb/plugin-client";
 import type { OperationSchemas } from "@kubb/plugin-oas";
-import { getComments, getPathParams } from "@kubb/plugin-oas/utils";
+import { getComments } from "@kubb/plugin-oas/utils";
 import { File, Function as FunctionDeclaration, FunctionParams } from "@kubb/react-fabric";
 
-export function getParams({
-	paramsCasing,
-	typeSchemas,
-}: {
-	paramsCasing: PluginClient["resolvedOptions"]["paramsCasing"];
-	typeSchemas: OperationSchemas;
-}) {
+/**
+ * Fixes URL templates by replacing all path param variables with bracket notation.
+ * E.g., `/sites/${siteId}/plugins/${package}` becomes `/sites/${pathParams['siteId']}/plugins/${pathParams['package']}`
+ */
+function fixUrlTemplate(template: string): string {
+	return template.replace(/\$\{(\w+)\}/g, (_match, varName) => {
+		return `\${pathParams['${varName}']}`;
+	});
+}
+
+export function getParams({ typeSchemas }: { typeSchemas: OperationSchemas }) {
 	return FunctionParams.factory({
 		data: {
 			mode: "object",
@@ -19,11 +23,6 @@ export function getParams({
 				pathParams: typeSchemas.pathParams?.name
 					? {
 							type: typeSchemas.pathParams?.name,
-							mode: "object",
-							children: getPathParams(typeSchemas.pathParams, {
-								typed: true,
-								casing: paramsCasing,
-							}),
 							optional: isOptional(typeSchemas.pathParams?.schema),
 						}
 					: undefined,
@@ -106,7 +105,7 @@ export function ClientOperation({
 		typeSchemas.queryParams?.name || "Record<string, string>",
 		typeSchemas.pathParams?.name || "Record<string, string>",
 	];
-	const params = getParams({ paramsCasing, typeSchemas });
+	const params = getParams({ typeSchemas });
 
 	const clientParams = FunctionParams.factory({
 		config: {
@@ -116,7 +115,7 @@ export function ClientOperation({
 					value: JSON.stringify(operation.method.toUpperCase()),
 				},
 				url: {
-					value: path.template,
+					value: fixUrlTemplate(path.template),
 				},
 				baseUrl:
 					baseURL && !urlName
@@ -188,7 +187,8 @@ export function ClientOperation({
 				{typeSchemas.pathParams?.schema &&
 					`${Object.keys(typeSchemas.pathParams.schema.properties || {})
 						.map((key) => {
-							return `if (!${key}) {
+							// Always use bracket notation to avoid casing mismatches and reserved keyword issues
+							return `if (!pathParams['${key}']) {
               throw new Error(\`Missing required path parameter: ${key}\`);
             }`;
 						})

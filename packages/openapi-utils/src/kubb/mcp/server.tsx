@@ -9,7 +9,101 @@ import { getBanner, getFooter, getPathParams, isOptional } from "@kubb/plugin-oa
 import { pluginTsName } from "@kubb/plugin-ts";
 import { pluginZodName } from "@kubb/plugin-zod";
 import { File, FunctionParams } from "@kubb/react-fabric";
-import { getParams as getClientParams } from "../components/client-operation";
+
+// JavaScript reserved keywords that cannot be used as identifiers in strict mode
+const RESERVED_KEYWORDS = new Set([
+	"break",
+	"case",
+	"catch",
+	"continue",
+	"debugger",
+	"default",
+	"delete",
+	"do",
+	"else",
+	"finally",
+	"for",
+	"function",
+	"if",
+	"in",
+	"instanceof",
+	"new",
+	"return",
+	"switch",
+	"this",
+	"throw",
+	"try",
+	"typeof",
+	"var",
+	"void",
+	"while",
+	"with",
+	"class",
+	"const",
+	"enum",
+	"export",
+	"extends",
+	"import",
+	"super",
+	"implements",
+	"interface",
+	"let",
+	"package",
+	"private",
+	"protected",
+	"public",
+	"static",
+	"yield",
+	"await",
+	"null",
+	"true",
+	"false",
+]);
+
+function escapeReservedKeyword(name: string): string {
+	return RESERVED_KEYWORDS.has(name) ? `${name}Param` : name;
+}
+
+/**
+ * Builds the API call object with proper keyword mapping.
+ * When a path param name is a reserved keyword (e.g., "package"),
+ * we use the escaped variable name (packageParam) but map it back
+ * to the original key name: { package: packageParam }
+ */
+function buildApiCall({ schemas }: { schemas: OperationSchemas }): string {
+	const parts: string[] = [];
+
+	// Build pathParams with proper keyword mapping
+	const pathParams = getPathParams(schemas.pathParams, { typed: false });
+	if (Object.keys(pathParams).length > 0) {
+		const pathParamEntries = Object.entries(pathParams).map(([key]) => {
+			const camelKey = camelCase(key);
+			const escapedKey = escapeReservedKeyword(camelKey);
+			// If the key was escaped, we need to map it: { originalKey: escapedVariable }
+			if (camelKey !== escapedKey) {
+				return `${camelKey}: ${escapedKey}`;
+			}
+			return camelKey;
+		});
+		parts.push(`pathParams: { ${pathParamEntries.join(", ")} }`);
+	}
+
+	if (schemas.request?.name) {
+		parts.push("body");
+	}
+
+	if (schemas.queryParams?.name) {
+		parts.push("queryParams");
+	}
+
+	if (schemas.headerParams?.name) {
+		parts.push("headers");
+	}
+
+	parts.push("config");
+
+	return `{ ${parts.join(", ")} }`;
+}
 
 export const serverGenerator: ReturnType<typeof createReactGenerator<PluginMcp>> =
 	createReactGenerator<PluginMcp>({
@@ -95,10 +189,7 @@ export const serverGenerator: ReturnType<typeof createReactGenerator<PluginMcp>>
               ${operationsMapped
 								.map(({ tool, mcp, zod }) => {
 									const params = getParams({ schemas: zod.schemas });
-									const clientParams = getClientParams({
-										paramsCasing: "camelcase",
-										typeSchemas: zod.schemas,
-									});
+									const apiCall = buildApiCall({ schemas: zod.schemas });
 
 									if (
 										zod.schemas.request?.name ||
@@ -107,10 +198,9 @@ export const serverGenerator: ReturnType<typeof createReactGenerator<PluginMcp>>
 										zod.schemas.pathParams?.name
 									) {
 										return `
-                      // @ts-ignore: Type instantiation is excessively deep and possibly infinite
-                      server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, ${params.toObjectValue()}, async (${params.toObject()}) => {
+                      server.registerTool(${JSON.stringify(tool.name)}, { description: ${JSON.stringify(tool.description)}, inputSchema: ${params.toObjectValue()} }, async (${params.toObject()}) => {
                         try {
-                          return await ${mcp.name}(${clientParams.toObject()})
+                          return await ${mcp.name}(${apiCall})
                         } catch (error) {
                           return { isError: true, content: [{ type: 'text', text: JSON.stringify(error) }] };
                         }
@@ -118,10 +208,9 @@ export const serverGenerator: ReturnType<typeof createReactGenerator<PluginMcp>>
 									}
 
 									return `
-                    // @ts-ignore: Type instantiation is excessively deep and possibly infinite
-                    server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, async () => {
+                    server.registerTool(${JSON.stringify(tool.name)}, { description: ${JSON.stringify(tool.description)} }, async () => {
                       try {
-                        return await ${mcp.name}(${clientParams.toObject()})
+                        return await ${mcp.name}({ config })
                       } catch (error) {
                         return { isError: true, content: [{ type: 'text', text: JSON.stringify(error) }] };
                       }
@@ -166,7 +255,7 @@ function getParams({ schemas }: { schemas: OperationSchemas }) {
 							(param as any).value = `${schemas.pathParams?.name}${suffix}['${key}']`;
 						}
 
-						acc[camelCase(key)] = param;
+						acc[escapeReservedKeyword(camelCase(key))] = param;
 						return acc;
 					},
 					{} as Record<string, any>,

@@ -21,7 +21,6 @@ jobs:
           - netlify-api
           - zoom-api-js
           - keycloak-api
-          - cloudflare-api-js
           - nuki-api-js
 
     steps:

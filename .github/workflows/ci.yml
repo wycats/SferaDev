@@ -35,5 +35,14 @@ jobs:
       - name: Check linting
         run: pnpm check
 
+      - name: Typecheck
+        run: pnpm tsc
+
+      - name: Check tree-shakability
+        run: pnpm is-tree-shakable
+
+      - name: Check for unused code
+        run: pnpm knip
+
       - name: Run tests
         run: pnpm test

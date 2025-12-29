@@ -179,7 +179,7 @@ type ResponseUpdate = {
 function fixAPIReturns(openAPIObject: OpenAPIObject, apiUpdates: ResponseUpdate[]) {
 	for (const update of apiUpdates) {
 		for (const path of update.paths) {
-			const pathItem = (openAPIObject.paths ?? {})[path];
+			const pathItem = openAPIObject.paths?.[path];
 			if (!pathItem) continue;
 
 			for (const method of update.methods) {

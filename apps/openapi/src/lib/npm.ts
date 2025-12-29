@@ -1,6 +1,5 @@
 const packages = [
 	"vercel-api-js",
-	"cloudflare-api-js",
 	"netlify-api",
 	"keycloak-api",
 	"zoom-api-js",

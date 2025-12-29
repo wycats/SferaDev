@@ -5,199 +5,1676 @@
 
 import { z } from "zod";
 
-export const chatDetailSchema = z.object({
-	id: z.string(),
-	object: z.literal("chat"),
-	url: z.string(),
-	shareable: z.boolean(),
-	privacy: z.enum(["private", "public", "team", "team-edit", "unlisted"]).optional(),
-	title: z.string().optional(),
-	updatedAt: z.string().optional(),
-	favorite: z.boolean(),
-	authorId: z.string(),
-	messages: z.array(
-		z.object({
-			id: z.string(),
-			object: z.literal("message"),
-			content: z.string(),
-			createdAt: z.string(),
-			type: z.enum([
+/**
+ * @description Detailed representation of a chat, including its messages, files, versions, and model configuration.
+ */
+export const chatDetailSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the chat."),
+		object: z.literal("chat").describe("Fixed value identifying this object as a chat."),
+		shareable: z.boolean().describe("Indicates whether the chat can be shared via public link."),
+		privacy: z
+			.enum(["private", "public", "team", "team-edit", "unlisted"])
+			.describe("Defines the visibility of the chat—private, team-only, or public."),
+		name: z.optional(z.string().describe("An optional name assigned to the chat by the user.")),
+		title: z.optional(
+			z.string().describe("Deprecated title field preserved for backward compatibility."),
+		),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The ISO timestamp representing when the chat was created."),
+		updatedAt: z.optional(z.string().describe("The ISO timestamp of the last update to the chat.")),
+		favorite: z.boolean().describe("Indicates whether the chat is marked as a favorite."),
+		authorId: z.string().describe("The ID of the user who created the chat."),
+		projectId: z.optional(
+			z.string().describe("Optional ID of the v0 project associated with this chat."),
+		),
+		webUrl: z.string().describe("Web URL to view this chat in the browser."),
+		apiUrl: z.string().describe("API URL to access this chat via the API."),
+		latestVersion: z.optional(
+			z
+				.object({
+					id: z.string().describe("A unique identifier for the version."),
+					object: z
+						.literal("version")
+						.describe("Fixed value identifying this object as a version."),
+					status: z
+						.enum(["completed", "failed", "pending"])
+						.describe("The current status of the version generation process."),
+					demoUrl: z.optional(
+						z.string().describe("Optional URL for previewing the generated output."),
+					),
+					screenshotUrl: z.optional(
+						z.string().describe("URL to retrieve a screenshot of this version."),
+					),
+					createdAt: z
+						.string()
+						.datetime()
+						.describe("The date and time when the version was created, in ISO 8601 format."),
+					updatedAt: z.optional(
+						z
+							.string()
+							.datetime()
+							.describe("The date and time when the version was last updated, in ISO 8601 format."),
+					),
+					files: z
+						.array(
+							z
+								.object({
+									object: z
+										.literal("file")
+										.describe("Fixed value identifying this object as a file."),
+									name: z.string().describe("The name of the file, including its extension."),
+									content: z.string().describe("The full contents of the file as a raw string."),
+									locked: z
+										.boolean()
+										.describe(
+											"Whether the file is locked to prevent AI from overwriting it during new version generation.",
+										),
+								})
+								.describe(
+									"Detailed representation of a file, including its content and lock status.",
+								),
+						)
+						.describe("A list of files that were generated or included in this version."),
+				})
+				.describe("Full details of the most recent generated version, if available."),
+		),
+		url: z.string().describe("The canonical URL to access this chat."),
+		messages: z
+			.array(
+				z
+					.object({
+						id: z.string().describe("A unique identifier for the message."),
+						object: z
+							.literal("message")
+							.describe("Fixed value identifying this object as a message."),
+						content: z.string().describe("The main text content of the message."),
+						experimentalContent: z.optional(
+							z
+								.array(
+									z.union([
+										z.tuple([z.literal(0), z.array(z.string())]),
+										z.tuple([
+											z.literal(1),
+											z.object({
+												standard: z.optional(z.string()),
+												def: z.string(),
+												type: z.string(),
+												check: z.string(),
+												clone: z.string(),
+												brand: z.string(),
+												register: z.string(),
+												parse: z.string(),
+												safeParse: z.string(),
+												parseAsync: z.string(),
+												safeParseAsync: z.string(),
+												spa: z.string(),
+												encode: z.string(),
+												decode: z.string(),
+												encodeAsync: z.string(),
+												decodeAsync: z.string(),
+												safeEncode: z.string(),
+												safeDecode: z.string(),
+												safeEncodeAsync: z.string(),
+												safeDecodeAsync: z.string(),
+												refine: z.string(),
+												superRefine: z.string(),
+												overwrite: z.string(),
+												optional: z.string(),
+												nullable: z.string(),
+												nullish: z.string(),
+												nonoptional: z.string(),
+												array: z.string(),
+												or: z.string(),
+												and: z.string(),
+												transform: z.string(),
+												default: z.string(),
+												prefault: z.string(),
+												catch: z.string(),
+												pipe: z.string(),
+												readonly: z.string(),
+												describe: z.string(),
+												meta: z.string(),
+												isOptional: z.string(),
+												isNullable: z.string(),
+												keyof: z.string(),
+												catchall: z.string(),
+												passthrough: z.string(),
+												loose: z.string(),
+												strict: z.string(),
+												strip: z.string(),
+												extend: z.string(),
+												safeExtend: z.string(),
+												merge: z.string(),
+												pick: z.string(),
+												omit: z.string(),
+												partial: z.string(),
+												required: z.string(),
+											}),
+										]),
+									]),
+								)
+								.describe(
+									"The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.",
+								),
+						),
+						createdAt: z
+							.string()
+							.describe("The ISO timestamp representing when the message was created."),
+						updatedAt: z.optional(
+							z
+								.string()
+								.datetime()
+								.describe("The ISO timestamp representing when the message was last updated."),
+						),
+						type: z
+							.enum([
+								"added-environment-variables",
+								"added-integration",
+								"answered-questions",
+								"auto-fix-with-v0",
+								"deleted-file",
+								"edited-file",
+								"fix-cve",
+								"fix-with-v0",
+								"forked-block",
+								"forked-chat",
+								"message",
+								"moved-file",
+								"open-in-v0",
+								"pull-changes",
+								"refinement",
+								"renamed-file",
+								"replace-src",
+								"reverted-block",
+								"sync-git",
+							])
+							.describe(
+								"Indicates the format or category of the message, such as plain text or code.",
+							),
+						role: z
+							.enum(["assistant", "user"])
+							.describe("Specifies whether the message was sent by the user or the assistant."),
+						finishReason: z.optional(
+							z
+								.enum([
+									"content-filter",
+									"error",
+									"length",
+									"other",
+									"stop",
+									"tool-calls",
+									"unknown",
+								])
+								.describe("The reason why the message generation finished."),
+						),
+						apiUrl: z.string().describe("API URL to access this message via the API."),
+						authorId: z.nullable(z.string().describe("The ID of the user who sent the message.")),
+						parentId: z.optional(z.string().describe("The ID of the parent message.")),
+						attachments: z.optional(
+							z.array(
+								z.object({
+									url: z.string().describe("The URL where the attachment file can be accessed."),
+									name: z.optional(z.string().describe("The original filename of the attachment.")),
+									contentType: z.optional(
+										z
+											.string()
+											.describe(
+												"The MIME type of the attachment file (e.g., image/png, application/pdf).",
+											),
+									),
+									size: z.number().describe("The size of the attachment file in bytes."),
+									content: z.optional(
+										z
+											.string()
+											.describe("The base64-encoded content of the attachment file, if available."),
+									),
+									type: z.optional(
+										z
+											.enum(["figma", "screenshot", "zip"])
+											.describe("Optional v0-specific attachment type for enhanced processing."),
+									),
+								}),
+							),
+						),
+					})
+					.describe(
+						"Summary of a single message within a chat, including role, content, type, timestamp, and API URL.",
+					),
+			)
+			.describe("All messages exchanged in the chat, including user and assistant entries."),
+		files: z.optional(
+			z
+				.array(
+					z.object({
+						lang: z
+							.string()
+							.describe("Programming language used in the file (e.g., JavaScript, Python)."),
+						meta: z
+							.object({})
+							.catchall(z.string())
+							.describe("A key-value map of metadata associated with the file (e.g., path, type)."),
+						source: z
+							.string()
+							.describe(
+								"The origin or identifier of the file source (e.g., path or upload label).",
+							),
+					}),
+				)
+				.describe("Optional array of files associated with the chat context."),
+		),
+		demo: z.optional(
+			z.string().describe("Deprecated demo URL used for previewing the chat result."),
+		),
+		text: z.string().describe("The main user prompt or instruction that started the chat."),
+		modelConfiguration: z.optional(
+			z
+				.object({
+					modelId: z.optional(
+						z
+							.enum(["v0-max", "v0-mini", "v0-pro"])
+							.default("v0-pro")
+							.describe("Deprecated Model ID field preserved for backward compatibility."),
+					),
+					imageGenerations: z.optional(
+						z
+							.boolean()
+							.default(false)
+							.describe("Enables image generations to generate up to 5 images per version."),
+					),
+					thinking: z.optional(
+						z
+							.boolean()
+							.default(false)
+							.describe("Enables thinking to generate a response in multiple steps."),
+					),
+				})
+				.describe("The configuration used to generate responses in this chat."),
+		),
+		permissions: z.object({
+			write: z.boolean().describe("If true, the user has write access to the chat."),
+		}),
+	})
+	.describe(
+		"Detailed representation of a chat, including its messages, files, versions, and model configuration.",
+	);
+
+/**
+ * @description Summary of a chat, including metadata like privacy, author, latest version, and URLs.
+ */
+export const chatSummarySchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the chat."),
+		object: z.literal("chat").describe("Fixed value identifying this object as a chat."),
+		shareable: z.boolean().describe("Indicates whether the chat can be shared via public link."),
+		privacy: z
+			.enum(["private", "public", "team", "team-edit", "unlisted"])
+			.describe("Defines the visibility of the chat—private, team-only, or public."),
+		name: z.optional(z.string().describe("An optional name assigned to the chat by the user.")),
+		title: z.optional(
+			z.string().describe("Deprecated title field preserved for backward compatibility."),
+		),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The ISO timestamp representing when the chat was created."),
+		updatedAt: z.optional(z.string().describe("The ISO timestamp of the last update to the chat.")),
+		favorite: z.boolean().describe("Indicates whether the chat is marked as a favorite."),
+		authorId: z.string().describe("The ID of the user who created the chat."),
+		projectId: z.optional(
+			z.string().describe("Optional ID of the v0 project associated with this chat."),
+		),
+		webUrl: z.string().describe("Web URL to view this chat in the browser."),
+		apiUrl: z.string().describe("API URL to access this chat via the API."),
+		latestVersion: z.optional(
+			z
+				.object({
+					id: z.string().describe("A unique identifier for the version."),
+					object: z
+						.literal("version")
+						.describe("Fixed value identifying this object as a version."),
+					status: z
+						.enum(["completed", "failed", "pending"])
+						.describe("The current status of the version generation process."),
+					demoUrl: z.optional(
+						z.string().describe("Optional URL for previewing the generated output."),
+					),
+					screenshotUrl: z.optional(
+						z.string().describe("URL to retrieve a screenshot of this version."),
+					),
+					createdAt: z
+						.string()
+						.datetime()
+						.describe("The date and time when the version was created, in ISO 8601 format."),
+					updatedAt: z.optional(
+						z
+							.string()
+							.datetime()
+							.describe("The date and time when the version was last updated, in ISO 8601 format."),
+					),
+				})
+				.describe("The most recent generated version of the chat, if available."),
+		),
+	})
+	.describe(
+		"Summary of a chat, including metadata like privacy, author, latest version, and URLs.",
+	);
+
+export const deploymentDetailSchema = z.object({
+	id: z.string().describe("A unique identifier for the deployment."),
+	object: z.literal("deployment").describe("Fixed value identifying this object as a deployment."),
+	inspectorUrl: z.string().describe("URL to the deployment inspector."),
+	chatId: z.string().describe("The ID of the chat that this deployment is scoped to."),
+	projectId: z.string().describe("The ID of the project that this deployment is scoped to."),
+	versionId: z.string().describe("The ID of the version that this deployment is scoped to."),
+	apiUrl: z.url().describe("The API endpoint URL for accessing this deployment programmatically."),
+	webUrl: z.url().describe("The web URL where the deployment can be viewed or managed."),
+});
+
+export const deploymentSummarySchema = z.object({
+	id: z.string().describe("A unique identifier for the deployment."),
+	object: z.literal("deployment").describe("Fixed value identifying this object as a deployment."),
+	inspectorUrl: z.string().describe("URL to the deployment inspector."),
+	chatId: z.string().describe("The ID of the chat that this deployment is scoped to."),
+	projectId: z.string().describe("The ID of the project that this deployment is scoped to."),
+	versionId: z.string().describe("The ID of the version that this deployment is scoped to."),
+	apiUrl: z.url().describe("The API endpoint URL for accessing this deployment programmatically."),
+	webUrl: z.url().describe("The web URL where the deployment can be viewed or managed."),
+});
+
+/**
+ * @description Detailed information for an environment variable including its value.
+ */
+export const environmentVariableDetailSchemaSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the environment variable."),
+		object: z.literal("environment_variable").describe("The object type."),
+		key: z.string().describe("The name of the environment variable."),
+		value: z.string().describe("The value of the environment variable."),
+		decrypted: z.boolean().describe("Whether the value is decrypted or encrypted."),
+		createdAt: z.number().describe("The timestamp when the environment variable was created."),
+		updatedAt: z.optional(
+			z.number().describe("The timestamp when the environment variable was last updated."),
+		),
+	})
+	.describe("Detailed information for an environment variable including its value.");
+
+/**
+ * @description Summary information for an environment variable.
+ */
+export const environmentVariableSummarySchemaSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the environment variable."),
+		object: z.literal("environment_variable").describe("The object type."),
+		key: z.string().describe("The name of the environment variable."),
+		value: z.string().describe("The value of the environment variable."),
+		decrypted: z.boolean().describe("Whether the value is decrypted or encrypted."),
+		createdAt: z.number().describe("The timestamp when the environment variable was created."),
+		updatedAt: z.optional(
+			z.number().describe("The timestamp when the environment variable was last updated."),
+		),
+	})
+	.describe("Summary information for an environment variable.");
+
+/**
+ * @description List response containing environment variables.
+ */
+export const environmentVariablesListSchemaSchema = z
+	.object({
+		object: z.literal("list").describe("Fixed value identifying this as a list response."),
+		data: z
+			.array(
+				z
+					.object({
+						id: z.string().describe("A unique identifier for the environment variable."),
+						object: z.literal("environment_variable").describe("The object type."),
+						key: z.string().describe("The name of the environment variable."),
+						value: z.string().describe("The value of the environment variable."),
+						decrypted: z.boolean().describe("Whether the value is decrypted or encrypted."),
+						createdAt: z
+							.number()
+							.describe("The timestamp when the environment variable was created."),
+						updatedAt: z.optional(
+							z.number().describe("The timestamp when the environment variable was last updated."),
+						),
+					})
+					.describe("Detailed information for an environment variable including its value."),
+			)
+			.describe("Array of environment variable details."),
+	})
+	.describe("List response containing environment variables.");
+
+/**
+ * @description Detailed representation of a file, including its content and lock status.
+ */
+export const fileDetailSchema = z
+	.object({
+		object: z.literal("file").describe("Fixed value identifying this object as a file."),
+		name: z.string().describe("The name of the file, including its extension."),
+		content: z.string().describe("The full contents of the file as a raw string."),
+		locked: z
+			.boolean()
+			.describe(
+				"Whether the file is locked to prevent AI from overwriting it during new version generation.",
+			),
+	})
+	.describe("Detailed representation of a file, including its content and lock status.");
+
+/**
+ * @description Basic metadata about a file, such as its type and name.
+ */
+export const fileSummarySchema = z
+	.object({
+		object: z.literal("file").describe("Fixed value identifying this object as a file."),
+		name: z.string().describe("The name of the file, including its extension."),
+	})
+	.describe("Basic metadata about a file, such as its type and name.");
+
+/**
+ * @description Full configuration details for a webhook, including its scope and subscription.
+ */
+export const hookDetailSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the webhook."),
+		object: z.literal("hook").describe("Fixed value identifying this object as a webhook."),
+		name: z.string().describe("A user-defined name to label the webhook."),
+		events: z
+			.array(
+				z.enum([
+					"chat.created",
+					"chat.deleted",
+					"chat.updated",
+					"message.created",
+					"message.deleted",
+					"message.finished",
+					"message.updated",
+				]),
+			)
+			.describe("List of event types this webhook is subscribed to."),
+		chatId: z.optional(
+			z.string().describe("Optional ID of the chat that this webhook is scoped to."),
+		),
+		url: z.string().describe("Target URL that receives event payloads for this webhook."),
+	})
+	.describe("Full configuration details for a webhook, including its scope and subscription.");
+
+/**
+ * @description Detailed record of a webhook event, including its type, status, and timestamp.
+ */
+export const hookEventDetailSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the webhook event log entry."),
+		object: z
+			.literal("hook_event")
+			.describe("Fixed value identifying this object as a webhook event."),
+		event: z
+			.enum([
+				"chat.created",
+				"chat.deleted",
+				"chat.updated",
+				"message.created",
+				"message.deleted",
+				"message.finished",
+				"message.updated",
+			])
+			.describe("The type of event that triggered the webhook."),
+		status: z.optional(
+			z
+				.enum(["error", "pending", "success"])
+				.default("pending")
+				.describe("The delivery status of the webhook (e.g., delivered, failed)."),
+		),
+		createdAt: z.string().datetime().describe("Timestamp of when the webhook event was triggered."),
+	})
+	.describe("Detailed record of a webhook event, including its type, status, and timestamp.");
+
+/**
+ * @description Summary of a webhook, including its ID and display name.
+ */
+export const hookSummarySchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the webhook."),
+		object: z.literal("hook").describe("Fixed value identifying this object as a webhook."),
+		name: z.string().describe("A user-defined name to label the webhook."),
+	})
+	.describe("Summary of a webhook, including its ID and display name.");
+
+/**
+ * @description Detailed information about an integration connection to a project.
+ */
+export const integrationConnectionDetailSchemaSchema = z
+	.object({
+		object: z.literal("integration_connection").describe("The object type."),
+		id: z
+			.string()
+			.describe(
+				"The unique ID of the integration connection (format: {projectId}_{integrationId}).",
+			),
+		connected: z.boolean().describe("Whether the integration is connected to the project."),
+		integration: z
+			.object({
+				id: z.string().describe("The ID of the integration."),
+				object: z.literal("integration").describe("The object type."),
+				slug: z.string().describe("The slug of the integration."),
+				name: z.string().describe("The name of the integration."),
+			})
+			.describe("Information about the connected integration."),
+		metadata: z.optional(
+			z
+				.object({})
+				.catchall(z.unknown())
+				.describe("Additional metadata about the integration connection."),
+		),
+	})
+	.describe("Detailed information about an integration connection to a project.");
+
+/**
+ * @description List response containing integration connections.
+ */
+export const integrationConnectionListSchemaSchema = z
+	.object({
+		object: z.literal("list").describe("Fixed value identifying this as a list response."),
+		data: z
+			.array(
+				z
+					.object({
+						object: z.literal("integration_connection").describe("The object type."),
+						id: z
+							.string()
+							.describe(
+								"The unique ID of the integration connection (format: {projectId}_{integrationId}).",
+							),
+						connected: z.boolean().describe("Whether the integration is connected to the project."),
+						integration: z
+							.object({
+								id: z.string().describe("The ID of the integration."),
+								object: z.literal("integration").describe("The object type."),
+								slug: z.string().describe("The slug of the integration."),
+								name: z.string().describe("The name of the integration."),
+							})
+							.describe("Information about the connected integration."),
+					})
+					.describe("Summary information about an integration connection to a project."),
+			)
+			.describe("Array of integration connection summaries."),
+	})
+	.describe("List response containing integration connections.");
+
+/**
+ * @description Summary information about an integration connection to a project.
+ */
+export const integrationConnectionSummarySchemaSchema = z
+	.object({
+		object: z.literal("integration_connection").describe("The object type."),
+		id: z
+			.string()
+			.describe(
+				"The unique ID of the integration connection (format: {projectId}_{integrationId}).",
+			),
+		connected: z.boolean().describe("Whether the integration is connected to the project."),
+		integration: z
+			.object({
+				id: z.string().describe("The ID of the integration."),
+				object: z.literal("integration").describe("The object type."),
+				slug: z.string().describe("The slug of the integration."),
+				name: z.string().describe("The name of the integration."),
+			})
+			.describe("Information about the connected integration."),
+	})
+	.describe("Summary information about an integration connection to a project.");
+
+/**
+ * @description Detailed information about an integration.
+ */
+export const integrationDetailSchemaSchema = z
+	.object({
+		id: z.string().describe("The ID of the integration."),
+		object: z.literal("integration").describe("The object type."),
+		slug: z.string().describe("The slug of the integration."),
+		name: z.string().describe("The name of the integration."),
+		description: z.string().describe("A short description of the integration."),
+		iconUrl: z.string().describe("URL to the integration icon."),
+	})
+	.describe("Detailed information about an integration.");
+
+/**
+ * @description List of available integrations.
+ */
+export const integrationListSchemaSchema = z
+	.object({
+		object: z.literal("list").describe("Fixed value identifying this as a list response."),
+		data: z
+			.array(
+				z
+					.object({
+						id: z.string().describe("The ID of the integration."),
+						object: z.literal("integration").describe("The object type."),
+						slug: z.string().describe("The slug of the integration."),
+						name: z.string().describe("The name of the integration."),
+						description: z.string().describe("A short description of the integration."),
+						iconUrl: z.string().describe("URL to the integration icon."),
+					})
+					.describe("Detailed information about an integration."),
+			)
+			.describe("Array of integration details."),
+	})
+	.describe("List of available integrations.");
+
+/**
+ * @description Basic information about an integration.
+ */
+export const integrationSummarySchemaSchema = z
+	.object({
+		id: z.string().describe("The ID of the integration."),
+		object: z.literal("integration").describe("The object type."),
+		slug: z.string().describe("The slug of the integration."),
+		name: z.string().describe("The name of the integration."),
+	})
+	.describe("Basic information about an integration.");
+
+/**
+ * @description Detailed message object extending MessageSummary with chat metadata.
+ */
+export const messageDetailSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the message."),
+		object: z.literal("message").describe("Fixed value identifying this object as a message."),
+		content: z.string().describe("The main text content of the message."),
+		experimentalContent: z.optional(
+			z
+				.array(
+					z.union([
+						z.tuple([z.literal(0), z.array(z.string())]),
+						z.tuple([
+							z.literal(1),
+							z.object({
+								standard: z.optional(z.string()),
+								def: z.string(),
+								type: z.string(),
+								check: z.string(),
+								clone: z.string(),
+								brand: z.string(),
+								register: z.string(),
+								parse: z.string(),
+								safeParse: z.string(),
+								parseAsync: z.string(),
+								safeParseAsync: z.string(),
+								spa: z.string(),
+								encode: z.string(),
+								decode: z.string(),
+								encodeAsync: z.string(),
+								decodeAsync: z.string(),
+								safeEncode: z.string(),
+								safeDecode: z.string(),
+								safeEncodeAsync: z.string(),
+								safeDecodeAsync: z.string(),
+								refine: z.string(),
+								superRefine: z.string(),
+								overwrite: z.string(),
+								optional: z.string(),
+								nullable: z.string(),
+								nullish: z.string(),
+								nonoptional: z.string(),
+								array: z.string(),
+								or: z.string(),
+								and: z.string(),
+								transform: z.string(),
+								default: z.string(),
+								prefault: z.string(),
+								catch: z.string(),
+								pipe: z.string(),
+								readonly: z.string(),
+								describe: z.string(),
+								meta: z.string(),
+								isOptional: z.string(),
+								isNullable: z.string(),
+								keyof: z.string(),
+								catchall: z.string(),
+								passthrough: z.string(),
+								loose: z.string(),
+								strict: z.string(),
+								strip: z.string(),
+								extend: z.string(),
+								safeExtend: z.string(),
+								merge: z.string(),
+								pick: z.string(),
+								omit: z.string(),
+								partial: z.string(),
+								required: z.string(),
+							}),
+						]),
+					]),
+				)
+				.describe(
+					"The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.",
+				),
+		),
+		createdAt: z.string().describe("The ISO timestamp representing when the message was created."),
+		updatedAt: z.optional(
+			z
+				.string()
+				.datetime()
+				.describe("The ISO timestamp representing when the message was last updated."),
+		),
+		type: z
+			.enum([
 				"added-environment-variables",
 				"added-integration",
+				"answered-questions",
+				"auto-fix-with-v0",
 				"deleted-file",
 				"edited-file",
+				"fix-cve",
 				"fix-with-v0",
 				"forked-block",
 				"forked-chat",
 				"message",
 				"moved-file",
 				"open-in-v0",
+				"pull-changes",
 				"refinement",
 				"renamed-file",
 				"replace-src",
 				"reverted-block",
 				"sync-git",
-			]),
-			role: z.enum(["assistant", "user"]),
-		}),
-	),
-	latestVersion: z
-		.object({
-			id: z.string(),
-			object: z.literal("version"),
-			status: z.enum(["completed", "failed", "pending"]),
-			files: z.array(
+			])
+			.describe("Indicates the format or category of the message, such as plain text or code."),
+		role: z
+			.enum(["assistant", "user"])
+			.describe("Specifies whether the message was sent by the user or the assistant."),
+		finishReason: z.optional(
+			z
+				.enum(["content-filter", "error", "length", "other", "stop", "tool-calls", "unknown"])
+				.describe("The reason why the message generation finished."),
+		),
+		apiUrl: z.string().describe("API URL to access this message via the API."),
+		authorId: z.nullable(z.string().describe("The ID of the user who sent the message.")),
+		parentId: z.optional(z.string().describe("The ID of the parent message.")),
+		attachments: z.optional(
+			z.array(
 				z.object({
-					object: z.literal("file"),
-					name: z.string(),
-					content: z.string(),
+					url: z.string().describe("The URL where the attachment file can be accessed."),
+					name: z.optional(z.string().describe("The original filename of the attachment.")),
+					contentType: z.optional(
+						z
+							.string()
+							.describe("The MIME type of the attachment file (e.g., image/png, application/pdf)."),
+					),
+					size: z.number().describe("The size of the attachment file in bytes."),
+					content: z.optional(
+						z.string().describe("The base64-encoded content of the attachment file, if available."),
+					),
+					type: z.optional(
+						z
+							.enum(["figma", "screenshot", "zip"])
+							.describe("Optional v0-specific attachment type for enhanced processing."),
+					),
 				}),
 			),
-		})
-		.optional(),
-	files: z
-		.array(
-			z.object({
-				lang: z.string(),
-				meta: z.object({}).catchall(z.string()),
-				source: z.string(),
-			}),
-		)
-		.optional(),
-	demo: z.string().optional(),
-	text: z.string(),
-	modelConfiguration: z.object({
-		modelId: z.enum(["v0-1.5-lg", "v0-1.5-md", "v0-1.5-sm"]),
-		imageGenerations: z.boolean().default(false),
-		thinking: z.boolean().default(false),
-	}),
-});
+		),
+		chatId: z.string().describe("The ID of the chat to which this message belongs."),
+	})
+	.describe("Detailed message object extending MessageSummary with chat metadata.");
 
-export const chatSummarySchema = z.object({
-	id: z.string(),
-	object: z.literal("chat"),
-	shareable: z.boolean(),
-	privacy: z.enum(["private", "public", "team", "team-edit", "unlisted"]),
-	title: z.string().optional(),
-	updatedAt: z.string(),
-	favorite: z.boolean(),
-	authorId: z.string(),
-	latestVersion: z
-		.object({
-			id: z.string(),
-			object: z.literal("version"),
-			status: z.enum(["completed", "failed", "pending"]),
-		})
-		.optional(),
-});
+/**
+ * @description Summary of a single message within a chat, including role, content, type, timestamp, and API URL.
+ */
+export const messageSummarySchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the message."),
+		object: z.literal("message").describe("Fixed value identifying this object as a message."),
+		content: z.string().describe("The main text content of the message."),
+		experimentalContent: z.optional(
+			z
+				.array(
+					z.union([
+						z.tuple([z.literal(0), z.array(z.string())]),
+						z.tuple([
+							z.literal(1),
+							z.object({
+								standard: z.optional(z.string()),
+								def: z.string(),
+								type: z.string(),
+								check: z.string(),
+								clone: z.string(),
+								brand: z.string(),
+								register: z.string(),
+								parse: z.string(),
+								safeParse: z.string(),
+								parseAsync: z.string(),
+								safeParseAsync: z.string(),
+								spa: z.string(),
+								encode: z.string(),
+								decode: z.string(),
+								encodeAsync: z.string(),
+								decodeAsync: z.string(),
+								safeEncode: z.string(),
+								safeDecode: z.string(),
+								safeEncodeAsync: z.string(),
+								safeDecodeAsync: z.string(),
+								refine: z.string(),
+								superRefine: z.string(),
+								overwrite: z.string(),
+								optional: z.string(),
+								nullable: z.string(),
+								nullish: z.string(),
+								nonoptional: z.string(),
+								array: z.string(),
+								or: z.string(),
+								and: z.string(),
+								transform: z.string(),
+								default: z.string(),
+								prefault: z.string(),
+								catch: z.string(),
+								pipe: z.string(),
+								readonly: z.string(),
+								describe: z.string(),
+								meta: z.string(),
+								isOptional: z.string(),
+								isNullable: z.string(),
+								keyof: z.string(),
+								catchall: z.string(),
+								passthrough: z.string(),
+								loose: z.string(),
+								strict: z.string(),
+								strip: z.string(),
+								extend: z.string(),
+								safeExtend: z.string(),
+								merge: z.string(),
+								pick: z.string(),
+								omit: z.string(),
+								partial: z.string(),
+								required: z.string(),
+							}),
+						]),
+					]),
+				)
+				.describe(
+					"The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.",
+				),
+		),
+		createdAt: z.string().describe("The ISO timestamp representing when the message was created."),
+		updatedAt: z.optional(
+			z
+				.string()
+				.datetime()
+				.describe("The ISO timestamp representing when the message was last updated."),
+		),
+		type: z
+			.enum([
+				"added-environment-variables",
+				"added-integration",
+				"answered-questions",
+				"auto-fix-with-v0",
+				"deleted-file",
+				"edited-file",
+				"fix-cve",
+				"fix-with-v0",
+				"forked-block",
+				"forked-chat",
+				"message",
+				"moved-file",
+				"open-in-v0",
+				"pull-changes",
+				"refinement",
+				"renamed-file",
+				"replace-src",
+				"reverted-block",
+				"sync-git",
+			])
+			.describe("Indicates the format or category of the message, such as plain text or code."),
+		role: z
+			.enum(["assistant", "user"])
+			.describe("Specifies whether the message was sent by the user or the assistant."),
+		finishReason: z.optional(
+			z
+				.enum(["content-filter", "error", "length", "other", "stop", "tool-calls", "unknown"])
+				.describe("The reason why the message generation finished."),
+		),
+		apiUrl: z.string().describe("API URL to access this message via the API."),
+		authorId: z.nullable(z.string().describe("The ID of the user who sent the message.")),
+		parentId: z.optional(z.string().describe("The ID of the parent message.")),
+		attachments: z.optional(
+			z.array(
+				z.object({
+					url: z.string().describe("The URL where the attachment file can be accessed."),
+					name: z.optional(z.string().describe("The original filename of the attachment.")),
+					contentType: z.optional(
+						z
+							.string()
+							.describe("The MIME type of the attachment file (e.g., image/png, application/pdf)."),
+					),
+					size: z.number().describe("The size of the attachment file in bytes."),
+					content: z.optional(
+						z.string().describe("The base64-encoded content of the attachment file, if available."),
+					),
+					type: z.optional(
+						z
+							.enum(["figma", "screenshot", "zip"])
+							.describe("Optional v0-specific attachment type for enhanced processing."),
+					),
+				}),
+			),
+		),
+	})
+	.describe(
+		"Summary of a single message within a chat, including role, content, type, timestamp, and API URL.",
+	);
 
-export const fileDetailSchema = z.object({
-	object: z.literal("file"),
-	name: z.string(),
-	content: z.string(),
-});
+/**
+ * @description List response containing multiple message summaries with cursor-based pagination.
+ */
+export const messageSummaryListSchema = z
+	.object({
+		object: z.literal("list").describe("Fixed value identifying this as a list response."),
+		data: z
+			.array(
+				z
+					.object({
+						id: z.string().describe("A unique identifier for the message."),
+						object: z
+							.literal("message")
+							.describe("Fixed value identifying this object as a message."),
+						content: z.string().describe("The main text content of the message."),
+						experimentalContent: z.optional(
+							z
+								.array(
+									z.union([
+										z.tuple([z.literal(0), z.array(z.string())]),
+										z.tuple([
+											z.literal(1),
+											z.object({
+												standard: z.optional(z.string()),
+												def: z.string(),
+												type: z.string(),
+												check: z.string(),
+												clone: z.string(),
+												brand: z.string(),
+												register: z.string(),
+												parse: z.string(),
+												safeParse: z.string(),
+												parseAsync: z.string(),
+												safeParseAsync: z.string(),
+												spa: z.string(),
+												encode: z.string(),
+												decode: z.string(),
+												encodeAsync: z.string(),
+												decodeAsync: z.string(),
+												safeEncode: z.string(),
+												safeDecode: z.string(),
+												safeEncodeAsync: z.string(),
+												safeDecodeAsync: z.string(),
+												refine: z.string(),
+												superRefine: z.string(),
+												overwrite: z.string(),
+												optional: z.string(),
+												nullable: z.string(),
+												nullish: z.string(),
+												nonoptional: z.string(),
+												array: z.string(),
+												or: z.string(),
+												and: z.string(),
+												transform: z.string(),
+												default: z.string(),
+												prefault: z.string(),
+												catch: z.string(),
+												pipe: z.string(),
+												readonly: z.string(),
+												describe: z.string(),
+												meta: z.string(),
+												isOptional: z.string(),
+												isNullable: z.string(),
+												keyof: z.string(),
+												catchall: z.string(),
+												passthrough: z.string(),
+												loose: z.string(),
+												strict: z.string(),
+												strip: z.string(),
+												extend: z.string(),
+												safeExtend: z.string(),
+												merge: z.string(),
+												pick: z.string(),
+												omit: z.string(),
+												partial: z.string(),
+												required: z.string(),
+											}),
+										]),
+									]),
+								)
+								.describe(
+									"The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.",
+								),
+						),
+						createdAt: z
+							.string()
+							.describe("The ISO timestamp representing when the message was created."),
+						updatedAt: z.optional(
+							z
+								.string()
+								.datetime()
+								.describe("The ISO timestamp representing when the message was last updated."),
+						),
+						type: z
+							.enum([
+								"added-environment-variables",
+								"added-integration",
+								"answered-questions",
+								"auto-fix-with-v0",
+								"deleted-file",
+								"edited-file",
+								"fix-cve",
+								"fix-with-v0",
+								"forked-block",
+								"forked-chat",
+								"message",
+								"moved-file",
+								"open-in-v0",
+								"pull-changes",
+								"refinement",
+								"renamed-file",
+								"replace-src",
+								"reverted-block",
+								"sync-git",
+							])
+							.describe(
+								"Indicates the format or category of the message, such as plain text or code.",
+							),
+						role: z
+							.enum(["assistant", "user"])
+							.describe("Specifies whether the message was sent by the user or the assistant."),
+						finishReason: z.optional(
+							z
+								.enum([
+									"content-filter",
+									"error",
+									"length",
+									"other",
+									"stop",
+									"tool-calls",
+									"unknown",
+								])
+								.describe("The reason why the message generation finished."),
+						),
+						apiUrl: z.string().describe("API URL to access this message via the API."),
+						authorId: z.nullable(z.string().describe("The ID of the user who sent the message.")),
+						parentId: z.optional(z.string().describe("The ID of the parent message.")),
+						attachments: z.optional(
+							z.array(
+								z.object({
+									url: z.string().describe("The URL where the attachment file can be accessed."),
+									name: z.optional(z.string().describe("The original filename of the attachment.")),
+									contentType: z.optional(
+										z
+											.string()
+											.describe(
+												"The MIME type of the attachment file (e.g., image/png, application/pdf).",
+											),
+									),
+									size: z.number().describe("The size of the attachment file in bytes."),
+									content: z.optional(
+										z
+											.string()
+											.describe("The base64-encoded content of the attachment file, if available."),
+									),
+									type: z.optional(
+										z
+											.enum(["figma", "screenshot", "zip"])
+											.describe("Optional v0-specific attachment type for enhanced processing."),
+									),
+								}),
+							),
+						),
+					})
+					.describe(
+						"Summary of a single message within a chat, including role, content, type, timestamp, and API URL.",
+					),
+			)
+			.describe("Array of message summaries in this page of results."),
+		pagination: z
+			.object({
+				hasMore: z
+					.boolean()
+					.describe("Indicates if there are more results available beyond this page."),
+				nextCursor: z.optional(
+					z.string().describe("Cursor for fetching the next page of results."),
+				),
+				nextUrl: z.optional(
+					z.string().describe("API URL for retrieving the next page of results."),
+				),
+			})
+			.describe("Pagination metadata for navigating through multiple pages of results."),
+	})
+	.describe("List response containing multiple message summaries with cursor-based pagination.");
 
-export const fileSummarySchema = z.object({
-	object: z.literal("file"),
-	name: z.string(),
-});
+/**
+ * @description User preference for notification delivery methods.
+ */
+export const notificationPreferenceSchemaSchema = z
+	.object({
+		liveActivity: z.boolean().describe("Whether the user wants to receive live activities."),
+		pushNotifications: z
+			.boolean()
+			.describe("Whether the user wants to receive push notifications."),
+	})
+	.describe("User preference for notification delivery methods.");
 
-export const messageDetailSchema = z.object({
-	id: z.string(),
-	object: z.literal("message"),
-	chatId: z.string(),
-	url: z.string(),
-	files: z.array(
-		z.object({
-			object: z.literal("file"),
-			name: z.string(),
-		}),
+/**
+ * @description Detailed information about a marketplace or store product.
+ */
+export const productDetailSchemaSchema = z
+	.object({
+		object: z.literal("product").describe("The object type."),
+		id: z.string().describe("The unique ID of the product."),
+		slug: z.string().describe("The URL-friendly slug of the product."),
+		name: z.string().describe("The name of the product."),
+		description: z.string().describe("A short description of the product."),
+		iconUrl: z.string().describe("URL to the product icon."),
+		iconBackgroundColor: z.optional(z.string().describe("Background color for the product icon.")),
+	})
+	.describe("Detailed information about a marketplace or store product.");
+
+/**
+ * @description List of available marketplace and store products.
+ */
+export const productListSchemaSchema = z
+	.object({
+		object: z.literal("list").describe("Fixed value identifying this as a list response."),
+		data: z
+			.array(
+				z
+					.object({
+						object: z.literal("product").describe("The object type."),
+						id: z.string().describe("The unique ID of the product."),
+						slug: z.string().describe("The URL-friendly slug of the product."),
+						name: z.string().describe("The name of the product."),
+						description: z.string().describe("A short description of the product."),
+						iconUrl: z.string().describe("URL to the product icon."),
+					})
+					.describe("Summary information about a marketplace or store product."),
+			)
+			.describe("Array of product summaries."),
+	})
+	.describe("List of available marketplace and store products.");
+
+/**
+ * @description Summary information about a marketplace or store product.
+ */
+export const productSummarySchemaSchema = z
+	.object({
+		object: z.literal("product").describe("The object type."),
+		id: z.string().describe("The unique ID of the product."),
+		slug: z.string().describe("The URL-friendly slug of the product."),
+		name: z.string().describe("The name of the product."),
+		description: z.string().describe("A short description of the product."),
+		iconUrl: z.string().describe("URL to the product icon."),
+	})
+	.describe("Summary information about a marketplace or store product.");
+
+/**
+ * @description Full representation of a project, including its associated chats.
+ */
+export const projectDetailSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the project."),
+		object: z.literal("project").describe("Fixed value identifying this object as a project."),
+		name: z.string().describe("The name of the project as defined by the user."),
+		privacy: z
+			.enum(["private", "team"])
+			.describe("The privacy setting for the project - either private or team."),
+		vercelProjectId: z.optional(
+			z.string().describe("Optional ID of the linked Vercel project, if connected."),
+		),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The ISO timestamp representing when the project was created."),
+		updatedAt: z.optional(
+			z.string().datetime().describe("The ISO timestamp of the most recent update, if available."),
+		),
+		apiUrl: z.url().describe("The API endpoint URL for accessing this project programmatically."),
+		webUrl: z.url().describe("The web URL where the project can be viewed or managed."),
+		description: z.optional(z.string().describe("The description of the project.")),
+		instructions: z.optional(z.string().describe("The instructions for the project.")),
+		chats: z
+			.array(
+				z
+					.object({
+						id: z.string().describe("A unique identifier for the chat."),
+						object: z.literal("chat").describe("Fixed value identifying this object as a chat."),
+						shareable: z
+							.boolean()
+							.describe("Indicates whether the chat can be shared via public link."),
+						privacy: z
+							.enum(["private", "public", "team", "team-edit", "unlisted"])
+							.describe("Defines the visibility of the chat—private, team-only, or public."),
+						name: z.optional(
+							z.string().describe("An optional name assigned to the chat by the user."),
+						),
+						title: z.optional(
+							z.string().describe("Deprecated title field preserved for backward compatibility."),
+						),
+						createdAt: z
+							.string()
+							.datetime()
+							.describe("The ISO timestamp representing when the chat was created."),
+						updatedAt: z.optional(
+							z.string().describe("The ISO timestamp of the last update to the chat."),
+						),
+						favorite: z.boolean().describe("Indicates whether the chat is marked as a favorite."),
+						authorId: z.string().describe("The ID of the user who created the chat."),
+						projectId: z.optional(
+							z.string().describe("Optional ID of the v0 project associated with this chat."),
+						),
+						webUrl: z.string().describe("Web URL to view this chat in the browser."),
+						apiUrl: z.string().describe("API URL to access this chat via the API."),
+						latestVersion: z.optional(
+							z
+								.object({
+									id: z.string().describe("A unique identifier for the version."),
+									object: z
+										.literal("version")
+										.describe("Fixed value identifying this object as a version."),
+									status: z
+										.enum(["completed", "failed", "pending"])
+										.describe("The current status of the version generation process."),
+									demoUrl: z.optional(
+										z.string().describe("Optional URL for previewing the generated output."),
+									),
+									screenshotUrl: z.optional(
+										z.string().describe("URL to retrieve a screenshot of this version."),
+									),
+									createdAt: z
+										.string()
+										.datetime()
+										.describe(
+											"The date and time when the version was created, in ISO 8601 format.",
+										),
+									updatedAt: z.optional(
+										z
+											.string()
+											.datetime()
+											.describe(
+												"The date and time when the version was last updated, in ISO 8601 format.",
+											),
+									),
+								})
+								.describe("The most recent generated version of the chat, if available."),
+						),
+					})
+					.describe(
+						"Summary of a chat, including metadata like privacy, author, latest version, and URLs.",
+					),
+			)
+			.describe("List of all chats that are associated with this project."),
+	})
+	.describe("Full representation of a project, including its associated chats.");
+
+/**
+ * @description Summary of a project, including metadata, timestamps, and optional Vercel linkage.
+ */
+export const projectSummarySchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the project."),
+		object: z.literal("project").describe("Fixed value identifying this object as a project."),
+		name: z.string().describe("The name of the project as defined by the user."),
+		privacy: z
+			.enum(["private", "team"])
+			.describe("The privacy setting for the project - either private or team."),
+		vercelProjectId: z.optional(
+			z.string().describe("Optional ID of the linked Vercel project, if connected."),
+		),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The ISO timestamp representing when the project was created."),
+		updatedAt: z.optional(
+			z.string().datetime().describe("The ISO timestamp of the most recent update, if available."),
+		),
+		apiUrl: z.url().describe("The API endpoint URL for accessing this project programmatically."),
+		webUrl: z.url().describe("The web URL where the project can be viewed or managed."),
+	})
+	.describe("Summary of a project, including metadata, timestamps, and optional Vercel linkage.");
+
+/**
+ * @description Basic information about a workspace or identity context for projects and chats.
+ */
+export const scopeSummarySchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the scope (e.g., user or team workspace)."),
+		object: z.literal("scope").describe("Fixed value identifying this object as a scope."),
+		name: z.optional(z.string().describe("An optional human-readable name for the scope.")),
+	})
+	.describe("Basic information about a workspace or identity context for projects and chats.");
+
+/**
+ * @description Generic result returned from a search query, representing either a chat or a project.
+ */
+export const searchResultItemSchema = z
+	.object({
+		id: z.string().describe("The unique ID of the item returned in the search result."),
+		object: z
+			.enum(["chat", "project"])
+			.describe("Type of item returned, either 'chat' or 'project'."),
+		name: z.string().describe("The display name of the item."),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The ISO timestamp representing when the item was created."),
+		updatedAt: z.optional(
+			z.string().datetime().describe("The ISO timestamp of the last update to the item."),
+		),
+		apiUrl: z.string().describe("API endpoint for accessing the item programmatically."),
+		webUrl: z.string().describe("Web URL for viewing the item in the interface."),
+	})
+	.describe(
+		"Generic result returned from a search query, representing either a chat or a project.",
+	);
+
+export const userDetailSchemaSchema = z.object({
+	id: z.string().describe("A unique identifier for the user."),
+	object: z.literal("user").describe("Fixed value identifying this object as a user."),
+	name: z.optional(z.string().describe("Optional full name of the user.")),
+	email: z.string().describe("The user's email address."),
+	avatar: z.string().describe("URL to the user's avatar image."),
+	createdAt: z
+		.string()
+		.datetime()
+		.describe("The ISO timestamp representing when the user was created."),
+	updatedAt: z.optional(
+		z.string().datetime().describe("The ISO timestamp of the last update to the user."),
 	),
-	demo: z.string().optional(),
-	text: z.string(),
-	modelConfiguration: z.object({
-		modelId: z.enum(["v0-1.5-lg", "v0-1.5-md", "v0-1.5-sm"]),
-		imageGenerations: z.boolean().default(false),
-		thinking: z.boolean().default(false),
-	}),
 });
 
-export const messageSummarySchema = z.object({
-	id: z.string(),
-	object: z.literal("message"),
-	content: z.string(),
-	createdAt: z.string(),
-	type: z.enum([
-		"added-environment-variables",
-		"added-integration",
-		"deleted-file",
-		"edited-file",
-		"fix-with-v0",
-		"forked-block",
-		"forked-chat",
-		"message",
-		"moved-file",
-		"open-in-v0",
-		"refinement",
-		"renamed-file",
-		"replace-src",
-		"reverted-block",
-		"sync-git",
-	]),
-	role: z.enum(["assistant", "user"]),
-});
+/**
+ * @description Response schema for updating user preferences.
+ */
+export const userPreferencesPostResponseSchemaSchema = z
+	.object({
+		object: z.literal("user_preferences").describe("Object type identifier."),
+		preferences: z
+			.union([
+				z.object({
+					notifications: z
+						.object({
+							liveActivity: z
+								.boolean()
+								.describe("Whether the user wants to receive live activities."),
+							pushNotifications: z
+								.boolean()
+								.describe("Whether the user wants to receive push notifications."),
+						})
+						.describe("The user's preferred method for receiving notifications."),
+				}),
+				z.null(),
+			])
+			.describe("The updated preferences if successful, or null if failed."),
+	})
+	.describe("Response schema for updating user preferences.");
 
-export const projectDetailSchema = z.object({
-	id: z.string(),
-	object: z.literal("project"),
-	name: z.string(),
-	vercelProjectId: z.string().optional(),
-});
+/**
+ * @description Response schema for retrieving user preferences.
+ */
+export const userPreferencesResponseSchemaSchema = z
+	.object({
+		object: z.literal("user_preferences").describe("Object type identifier."),
+		preferences: z
+			.union([
+				z.object({
+					notifications: z
+						.object({
+							liveActivity: z
+								.boolean()
+								.describe("Whether the user wants to receive live activities."),
+							pushNotifications: z
+								.boolean()
+								.describe("Whether the user wants to receive push notifications."),
+						})
+						.describe("The user's preferred method for receiving notifications."),
+				}),
+				z.null(),
+			])
+			.describe("The user's current preferences, or null if errored."),
+	})
+	.describe("Response schema for retrieving user preferences.");
 
-export const projectSummarySchema = z.object({
-	id: z.string(),
-	object: z.literal("project"),
-	name: z.string(),
-	vercelProjectId: z.string().optional(),
-});
+/**
+ * @description User preferences configuration including notification settings.
+ */
+export const userPreferencesSchemaSchema = z
+	.object({
+		notifications: z
+			.object({
+				liveActivity: z.boolean().describe("Whether the user wants to receive live activities."),
+				pushNotifications: z
+					.boolean()
+					.describe("Whether the user wants to receive push notifications."),
+			})
+			.describe("The user's preferred method for receiving notifications."),
+	})
+	.describe("User preferences configuration including notification settings.");
 
-export const scopeSummarySchema = z.object({
-	id: z.string(),
-	object: z.literal("scope"),
-	name: z.string().optional(),
-});
-
-export const userDetailSchema = z.object({
-	id: z.string(),
-	object: z.literal("user"),
-	name: z.string().optional(),
-	email: z.string(),
-	avatar: z.string(),
-});
+/**
+ * @description Details of the authenticated user, including profile and contact information.
+ */
+export const userSummarySchemaSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the user."),
+		object: z.literal("user").describe("Fixed value identifying this object as a user."),
+		name: z.optional(z.string().describe("Optional full name of the user.")),
+		email: z.string().describe("The user's email address."),
+		avatar: z.string().describe("URL to the user's avatar image."),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The ISO timestamp representing when the user was created."),
+		updatedAt: z.optional(
+			z.string().datetime().describe("The ISO timestamp of the last update to the user."),
+		),
+	})
+	.describe("Details of the authenticated user, including profile and contact information.");
 
 export const vercelProjectDetailSchema = z.object({
-	id: z.string(),
-	object: z.literal("vercel_project"),
-	name: z.string(),
+	id: z.string().describe("A unique identifier for the linked Vercel project."),
+	object: z
+		.literal("vercel_project")
+		.describe("Fixed value identifying this object as a Vercel project."),
+	name: z.string().describe("The name of the Vercel project."),
 });
 
-export const versionDetailSchema = z.object({
-	id: z.string(),
-	object: z.literal("version"),
-	status: z.enum(["completed", "failed", "pending"]),
-	files: z.array(
-		z.object({
-			object: z.literal("file"),
-			name: z.string(),
-			content: z.string(),
-		}),
-	),
+/**
+ * @description Basic metadata about a Vercel project connected to a v0 project.
+ */
+export const vercelProjectSummarySchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the linked Vercel project."),
+		object: z
+			.literal("vercel_project")
+			.describe("Fixed value identifying this object as a Vercel project."),
+		name: z.string().describe("The name of the Vercel project."),
+	})
+	.describe("Basic metadata about a Vercel project connected to a v0 project.");
+
+/**
+ * @description Detailed version data including file contents.
+ */
+export const versionDetailSchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the version."),
+		object: z.literal("version").describe("Fixed value identifying this object as a version."),
+		status: z
+			.enum(["completed", "failed", "pending"])
+			.describe("The current status of the version generation process."),
+		demoUrl: z.optional(z.string().describe("Optional URL for previewing the generated output.")),
+		screenshotUrl: z.optional(z.string().describe("URL to retrieve a screenshot of this version.")),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The date and time when the version was created, in ISO 8601 format."),
+		updatedAt: z.optional(
+			z
+				.string()
+				.datetime()
+				.describe("The date and time when the version was last updated, in ISO 8601 format."),
+		),
+		files: z
+			.array(
+				z
+					.object({
+						object: z.literal("file").describe("Fixed value identifying this object as a file."),
+						name: z.string().describe("The name of the file, including its extension."),
+						content: z.string().describe("The full contents of the file as a raw string."),
+						locked: z
+							.boolean()
+							.describe(
+								"Whether the file is locked to prevent AI from overwriting it during new version generation.",
+							),
+					})
+					.describe("Detailed representation of a file, including its content and lock status."),
+			)
+			.describe("A list of files that were generated or included in this version."),
+	})
+	.describe("Detailed version data including file contents.");
+
+/**
+ * @description Summary of a generated version of a chat, including its status and optional demo link.
+ */
+export const versionSummarySchema = z
+	.object({
+		id: z.string().describe("A unique identifier for the version."),
+		object: z.literal("version").describe("Fixed value identifying this object as a version."),
+		status: z
+			.enum(["completed", "failed", "pending"])
+			.describe("The current status of the version generation process."),
+		demoUrl: z.optional(z.string().describe("Optional URL for previewing the generated output.")),
+		screenshotUrl: z.optional(z.string().describe("URL to retrieve a screenshot of this version.")),
+		createdAt: z
+			.string()
+			.datetime()
+			.describe("The date and time when the version was created, in ISO 8601 format."),
+		updatedAt: z.optional(
+			z
+				.string()
+				.datetime()
+				.describe("The date and time when the version was last updated, in ISO 8601 format."),
+		),
+	})
+	.describe(
+		"Summary of a generated version of a chat, including its status and optional demo link.",
+	);
+
+/**
+ * @description List response containing multiple version summaries with cursor-based pagination.
+ */
+export const versionSummaryListSchema = z
+	.object({
+		object: z.literal("list").describe("Fixed value identifying this as a list response."),
+		data: z
+			.array(
+				z
+					.object({
+						id: z.string().describe("A unique identifier for the version."),
+						object: z
+							.literal("version")
+							.describe("Fixed value identifying this object as a version."),
+						status: z
+							.enum(["completed", "failed", "pending"])
+							.describe("The current status of the version generation process."),
+						demoUrl: z.optional(
+							z.string().describe("Optional URL for previewing the generated output."),
+						),
+						screenshotUrl: z.optional(
+							z.string().describe("URL to retrieve a screenshot of this version."),
+						),
+						createdAt: z
+							.string()
+							.datetime()
+							.describe("The date and time when the version was created, in ISO 8601 format."),
+						updatedAt: z.optional(
+							z
+								.string()
+								.datetime()
+								.describe(
+									"The date and time when the version was last updated, in ISO 8601 format.",
+								),
+						),
+					})
+					.describe(
+						"Summary of a generated version of a chat, including its status and optional demo link.",
+					),
+			)
+			.describe("Array of version summaries in this page of results."),
+		pagination: z
+			.object({
+				hasMore: z
+					.boolean()
+					.describe("Indicates if there are more results available beyond this page."),
+				nextCursor: z.optional(
+					z.string().describe("Cursor for fetching the next page of results."),
+				),
+				nextUrl: z.optional(
+					z.string().describe("API URL for retrieving the next page of results."),
+				),
+			})
+			.describe("Pagination metadata for navigating through multiple pages of results."),
+	})
+	.describe("List response containing multiple version summaries with cursor-based pagination.");
+
+export const unauthorizedErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("unauthorized_error"),
+	}),
 });
 
-export const versionSummarySchema = z.object({
-	id: z.string(),
-	object: z.literal("version"),
-	status: z.enum(["completed", "failed", "pending"]),
+export const forbiddenErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("forbidden_error"),
+	}),
+});
+
+export const notFoundErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("not_found_error"),
+	}),
+});
+
+export const conflictErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("conflict_error"),
+	}),
+});
+
+export const payloadTooLargeErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("payload_too_large_error"),
+	}),
+});
+
+export const unprocessableEntityErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("unprocessable_entity_error"),
+	}),
+});
+
+export const tooManyRequestsErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("too_many_requests_error"),
+	}),
+});
+
+export const internalServerErrorSchema = z.object({
+	error: z.object({
+		message: z.string(),
+		type: z.literal("internal_server_error"),
+	}),
 });
 
 /**
@@ -248,14 +1725,26 @@ export const chatsCreate500Schema = z.unknown();
 export const chatsCreateMutationResponseSchema = z.lazy(() => chatsCreate200Schema);
 
 export const chatsFindQueryParamsSchema = z.object({
-	limit: z.coerce.number().max(60).default(60).describe('Query parameter "limit"'),
-	offset: z.coerce.number().default(0).describe('Query parameter "offset"'),
-	isFavorite: z
-		.boolean()
+	limit: z.coerce
+		.number()
+		.max(60)
+		.default(60)
 		.describe(
-			"If true, only favorites will be returned. If false, unfavorited chats will be returned. If not provided, all chats will be returned.",
-		)
-		.optional(),
+			"Specifies the maximum number of chat records to return in a single response. Useful for paginating results when there are many chats.",
+		),
+	offset: z.coerce
+		.number()
+		.default(0)
+		.describe(
+			"Determines the starting point for pagination. Used in conjunction with limit to retrieve a specific page of chat results.",
+		),
+	isFavorite: z.optional(
+		z
+			.enum(["true", "false"])
+			.describe(
+				'Filters chats by their "favorite" status. Accepts `"true"` or `"false"` (as strings, not booleans).\n\n- `"true"`: returns only chats marked as favorites.\n- `"false"`: returns only non-favorite chats.',
+			),
+	),
 });
 
 /**
@@ -308,52 +1797,56 @@ export const chatsFindQueryResponseSchema = z.lazy(() => chatsFind200Schema);
 /**
  * @description Success
  */
-export const chatsInitCreate200Schema = z.unknown();
+export const chatsInit200Schema = z.unknown();
 
 /**
  * @description Unauthorized
  */
-export const chatsInitCreate401Schema = z.unknown();
+export const chatsInit401Schema = z.unknown();
 
 /**
  * @description Forbidden
  */
-export const chatsInitCreate403Schema = z.unknown();
+export const chatsInit403Schema = z.unknown();
 
 /**
  * @description Not Found
  */
-export const chatsInitCreate404Schema = z.unknown();
+export const chatsInit404Schema = z.unknown();
 
 /**
  * @description Conflict
  */
-export const chatsInitCreate409Schema = z.unknown();
+export const chatsInit409Schema = z.unknown();
 
 /**
  * @description Payload Too Large
  */
-export const chatsInitCreate413Schema = z.unknown();
+export const chatsInit413Schema = z.unknown();
 
 /**
  * @description Unprocessable Entity
  */
-export const chatsInitCreate422Schema = z.unknown();
+export const chatsInit422Schema = z.unknown();
 
 /**
  * @description Too Many Requests
  */
-export const chatsInitCreate429Schema = z.unknown();
+export const chatsInit429Schema = z.unknown();
 
 /**
  * @description Internal Server Error
  */
-export const chatsInitCreate500Schema = z.unknown();
+export const chatsInit500Schema = z.unknown();
 
-export const chatsInitCreateMutationResponseSchema = z.lazy(() => chatsInitCreate200Schema);
+export const chatsInitMutationResponseSchema = z.lazy(() => chatsInit200Schema);
 
 export const chatsDeletePathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat to delete. This must be passed as a path parameter in the URL.",
+		),
 });
 
 /**
@@ -404,7 +1897,11 @@ export const chatsDelete500Schema = z.unknown();
 export const chatsDeleteMutationResponseSchema = z.lazy(() => chatsDelete200Schema);
 
 export const chatsGetByIdPathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat to retrieve. Must be provided as a path parameter.",
+		),
 });
 
 /**
@@ -455,7 +1952,9 @@ export const chatsGetById500Schema = z.unknown();
 export const chatsGetByIdQueryResponseSchema = z.lazy(() => chatsGetById200Schema);
 
 export const chatsUpdatePathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+	chatId: z
+		.string()
+		.describe("The unique identifier of the chat to update. Provided as a path parameter."),
 });
 
 /**
@@ -506,7 +2005,9 @@ export const chatsUpdate500Schema = z.unknown();
 export const chatsUpdateMutationResponseSchema = z.lazy(() => chatsUpdate200Schema);
 
 export const chatsFavoritePathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+	chatId: z
+		.string()
+		.describe("The unique identifier of the chat to update. Provided as a path parameter."),
 });
 
 /**
@@ -557,7 +2058,9 @@ export const chatsFavorite500Schema = z.unknown();
 export const chatsFavoriteMutationResponseSchema = z.lazy(() => chatsFavorite200Schema);
 
 export const chatsForkPathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+	chatId: z
+		.string()
+		.describe("The unique identifier of the chat to fork. Provided as a path parameter."),
 });
 
 /**
@@ -608,7 +2111,7 @@ export const chatsFork500Schema = z.unknown();
 export const chatsForkMutationResponseSchema = z.lazy(() => chatsFork200Schema);
 
 export const projectsGetByChatIdPathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+	chatId: z.string().describe("The ID of the chat to retrieve the associated project for."),
 });
 
 /**
@@ -658,8 +2161,79 @@ export const projectsGetByChatId500Schema = z.unknown();
 
 export const projectsGetByChatIdQueryResponseSchema = z.lazy(() => projectsGetByChatId200Schema);
 
+export const chatsFindMessagesPathParamsSchema = z.object({
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat to retrieve messages for. Provided as a path parameter.",
+		),
+});
+
+export const chatsFindMessagesQueryParamsSchema = z.object({
+	limit: z.coerce
+		.number()
+		.min(1)
+		.max(150)
+		.default(20)
+		.describe(
+			"Specifies the maximum number of message records to return in a single response. Useful for paginating results when there are many messages.",
+		),
+	cursor: z.optional(z.string().describe("Base64 encoded cursor containing pagination data")),
+});
+
+/**
+ * @description Success
+ */
+export const chatsFindMessages200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const chatsFindMessages401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const chatsFindMessages403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const chatsFindMessages404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const chatsFindMessages409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const chatsFindMessages413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const chatsFindMessages422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const chatsFindMessages429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const chatsFindMessages500Schema = z.unknown();
+
+export const chatsFindMessagesQueryResponseSchema = z.lazy(() => chatsFindMessages200Schema);
+
 export const chatsSendMessagePathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat to send the message to. Provided as a path parameter.",
+		),
 });
 
 /**
@@ -709,60 +2283,344 @@ export const chatsSendMessage500Schema = z.unknown();
 
 export const chatsSendMessageMutationResponseSchema = z.lazy(() => chatsSendMessage200Schema);
 
-export const chatsGetMetadataPathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
+export const chatsGetMessagePathParamsSchema = z.object({
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat containing the message. Provided as a path parameter.",
+		),
+	messageId: z
+		.string()
+		.describe("The unique identifier of the message to retrieve. Provided as a path parameter."),
 });
 
 /**
  * @description Success
  */
-export const chatsGetMetadata200Schema = z.unknown();
+export const chatsGetMessage200Schema = z.unknown();
 
 /**
  * @description Unauthorized
  */
-export const chatsGetMetadata401Schema = z.unknown();
+export const chatsGetMessage401Schema = z.unknown();
 
 /**
  * @description Forbidden
  */
-export const chatsGetMetadata403Schema = z.unknown();
+export const chatsGetMessage403Schema = z.unknown();
 
 /**
  * @description Not Found
  */
-export const chatsGetMetadata404Schema = z.unknown();
+export const chatsGetMessage404Schema = z.unknown();
 
 /**
  * @description Conflict
  */
-export const chatsGetMetadata409Schema = z.unknown();
+export const chatsGetMessage409Schema = z.unknown();
 
 /**
  * @description Payload Too Large
  */
-export const chatsGetMetadata413Schema = z.unknown();
+export const chatsGetMessage413Schema = z.unknown();
 
 /**
  * @description Unprocessable Entity
  */
-export const chatsGetMetadata422Schema = z.unknown();
+export const chatsGetMessage422Schema = z.unknown();
 
 /**
  * @description Too Many Requests
  */
-export const chatsGetMetadata429Schema = z.unknown();
+export const chatsGetMessage429Schema = z.unknown();
 
 /**
  * @description Internal Server Error
  */
-export const chatsGetMetadata500Schema = z.unknown();
+export const chatsGetMessage500Schema = z.unknown();
 
-export const chatsGetMetadataQueryResponseSchema = z.lazy(() => chatsGetMetadata200Schema);
+export const chatsGetMessageQueryResponseSchema = z.lazy(() => chatsGetMessage200Schema);
+
+export const chatsFindVersionsPathParamsSchema = z.object({
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat to retrieve versions for. Provided as a path parameter.",
+		),
+});
+
+export const chatsFindVersionsQueryParamsSchema = z.object({
+	limit: z.coerce
+		.number()
+		.min(1)
+		.max(150)
+		.default(20)
+		.describe(
+			"Specifies the maximum number of version records to return in a single response. Useful for paginating results when there are many versions.",
+		),
+	cursor: z.optional(z.string().describe("Base64 encoded cursor containing pagination data")),
+});
+
+/**
+ * @description Success
+ */
+export const chatsFindVersions200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const chatsFindVersions401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const chatsFindVersions403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const chatsFindVersions404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const chatsFindVersions409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const chatsFindVersions413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const chatsFindVersions422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const chatsFindVersions429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const chatsFindVersions500Schema = z.unknown();
+
+export const chatsFindVersionsQueryResponseSchema = z.lazy(() => chatsFindVersions200Schema);
+
+export const chatsGetVersionPathParamsSchema = z.object({
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat containing the version. Provided as a path parameter.",
+		),
+	versionId: z
+		.string()
+		.describe("The unique identifier of the version to retrieve. Provided as a path parameter."),
+});
+
+export const chatsGetVersionQueryParamsSchema = z
+	.object({
+		includeDefaultFiles: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe(
+					"When true, includes all default files (package.json, configuration files, etc.) that would be part of a ZIP download. When false or omitted, returns only the generated source files.",
+				),
+		),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const chatsGetVersion200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const chatsGetVersion401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const chatsGetVersion403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const chatsGetVersion404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const chatsGetVersion409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const chatsGetVersion413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const chatsGetVersion422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const chatsGetVersion429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const chatsGetVersion500Schema = z.unknown();
+
+export const chatsGetVersionQueryResponseSchema = z.lazy(() => chatsGetVersion200Schema);
+
+export const chatsUpdateVersionPathParamsSchema = z.object({
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat containing the version to update. Provided as a path parameter.",
+		),
+	versionId: z
+		.string()
+		.describe(
+			"The unique identifier of the version (block) to update. Provided as a path parameter.",
+		),
+});
+
+/**
+ * @description Success
+ */
+export const chatsUpdateVersion200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const chatsUpdateVersion401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const chatsUpdateVersion403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const chatsUpdateVersion404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const chatsUpdateVersion409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const chatsUpdateVersion413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const chatsUpdateVersion422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const chatsUpdateVersion429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const chatsUpdateVersion500Schema = z.unknown();
+
+export const chatsUpdateVersionMutationResponseSchema = z.lazy(() => chatsUpdateVersion200Schema);
+
+export const chatsDownloadVersionPathParamsSchema = z.object({
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat containing the version. Provided as a path parameter.",
+		),
+	versionId: z
+		.string()
+		.describe("The unique identifier of the version to download. Provided as a path parameter."),
+});
+
+export const chatsDownloadVersionQueryParamsSchema = z.object({
+	format: z
+		.enum(["zip", "tarball"])
+		.default("zip")
+		.describe(
+			'The archive format for the download. Choose "zip" for broad compatibility or "tarball" for Unix/Linux systems.',
+		),
+	includeDefaultFiles: z.optional(
+		z
+			.enum(["true", "false"])
+			.describe(
+				"When true, includes all default files (package.json, configuration files, etc.) that would be part of a complete deployment. When false or omitted, returns only the generated source files.",
+			),
+	),
+});
+
+/**
+ * @description Success
+ */
+export const chatsDownloadVersion200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const chatsDownloadVersion401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const chatsDownloadVersion403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const chatsDownloadVersion404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const chatsDownloadVersion409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const chatsDownloadVersion413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const chatsDownloadVersion422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const chatsDownloadVersion429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const chatsDownloadVersion500Schema = z.unknown();
+
+export const chatsDownloadVersionQueryResponseSchema = z.lazy(() => chatsDownloadVersion200Schema);
 
 export const chatsResumePathParamsSchema = z.object({
-	chatId: z.string().describe('Path parameter "chatId"'),
-	messageId: z.string().describe('Path parameter "messageId"'),
+	chatId: z
+		.string()
+		.describe(
+			"The unique identifier of the chat containing the message to resume. Provided as a path parameter.",
+		),
+	messageId: z
+		.string()
+		.describe("The identifier of the specific message to resume. Provided as a path parameter."),
 });
 
 /**
@@ -812,13 +2670,225 @@ export const chatsResume500Schema = z.unknown();
 
 export const chatsResumeMutationResponseSchema = z.lazy(() => chatsResume200Schema);
 
-export const deploymentsFindLogsPathParamsSchema = z.object({
+export const deploymentsFindQueryParamsSchema = z.object({
+	projectId: z.string().describe("The ID of the project to find deployments for"),
+	chatId: z.string().describe("The ID of the chat to find deployments for"),
+	versionId: z.string().describe("The ID of the version to find deployments for"),
+});
+
+/**
+ * @description Success
+ */
+export const deploymentsFind200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const deploymentsFind401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const deploymentsFind403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const deploymentsFind404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const deploymentsFind409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const deploymentsFind413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const deploymentsFind422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const deploymentsFind429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const deploymentsFind500Schema = z.unknown();
+
+export const deploymentsFindQueryResponseSchema = z.lazy(() => deploymentsFind200Schema);
+
+/**
+ * @description Success
+ */
+export const deploymentsCreate200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const deploymentsCreate401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const deploymentsCreate403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const deploymentsCreate404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const deploymentsCreate409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const deploymentsCreate413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const deploymentsCreate422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const deploymentsCreate429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const deploymentsCreate500Schema = z.unknown();
+
+export const deploymentsCreateMutationResponseSchema = z.lazy(() => deploymentsCreate200Schema);
+
+export const deploymentsGetByIdPathParamsSchema = z.object({
 	deploymentId: z.string().describe('Path parameter "deploymentId"'),
+});
+
+/**
+ * @description Success
+ */
+export const deploymentsGetById200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const deploymentsGetById401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const deploymentsGetById403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const deploymentsGetById404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const deploymentsGetById409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const deploymentsGetById413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const deploymentsGetById422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const deploymentsGetById429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const deploymentsGetById500Schema = z.unknown();
+
+export const deploymentsGetByIdQueryResponseSchema = z.lazy(() => deploymentsGetById200Schema);
+
+export const deploymentsDeletePathParamsSchema = z.object({
+	deploymentId: z.string().describe('Path parameter "deploymentId"'),
+});
+
+/**
+ * @description Success
+ */
+export const deploymentsDelete200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const deploymentsDelete401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const deploymentsDelete403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const deploymentsDelete404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const deploymentsDelete409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const deploymentsDelete413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const deploymentsDelete422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const deploymentsDelete429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const deploymentsDelete500Schema = z.unknown();
+
+export const deploymentsDeleteMutationResponseSchema = z.lazy(() => deploymentsDelete200Schema);
+
+export const deploymentsFindLogsPathParamsSchema = z.object({
+	deploymentId: z
+		.string()
+		.describe(
+			"The unique identifier of the deployment to retrieve logs for. Provided as a path parameter.",
+		),
 });
 
 export const deploymentsFindLogsQueryParamsSchema = z
 	.object({
-		since: z.coerce.number().describe('Query parameter "since"').optional(),
+		since: z.optional(
+			z.coerce
+				.number()
+				.describe(
+					"A UNIX timestamp (in seconds) used to filter logs. Returns only log entries generated after the specified time.",
+				),
+		),
 	})
 	.optional();
 
@@ -870,7 +2940,11 @@ export const deploymentsFindLogs500Schema = z.unknown();
 export const deploymentsFindLogsQueryResponseSchema = z.lazy(() => deploymentsFindLogs200Schema);
 
 export const deploymentsFindErrorsPathParamsSchema = z.object({
-	deploymentId: z.string().describe('Path parameter "deploymentId"'),
+	deploymentId: z
+		.string()
+		.describe(
+			"The unique identifier of the deployment to inspect for errors. Provided as a path parameter.",
+		),
 });
 
 /**
@@ -921,6 +2995,253 @@ export const deploymentsFindErrors500Schema = z.unknown();
 export const deploymentsFindErrorsQueryResponseSchema = z.lazy(
 	() => deploymentsFindErrors200Schema,
 );
+
+/**
+ * @description Success
+ */
+export const hooksFind200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const hooksFind401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const hooksFind403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const hooksFind404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const hooksFind409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const hooksFind413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const hooksFind422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const hooksFind429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const hooksFind500Schema = z.unknown();
+
+export const hooksFindQueryResponseSchema = z.lazy(() => hooksFind200Schema);
+
+/**
+ * @description Success
+ */
+export const hooksCreate200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const hooksCreate401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const hooksCreate403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const hooksCreate404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const hooksCreate409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const hooksCreate413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const hooksCreate422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const hooksCreate429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const hooksCreate500Schema = z.unknown();
+
+export const hooksCreateMutationResponseSchema = z.lazy(() => hooksCreate200Schema);
+
+export const hooksGetByIdPathParamsSchema = z.object({
+	hookId: z.string().describe("The unique identifier of the hook to retrieve."),
+});
+
+/**
+ * @description Success
+ */
+export const hooksGetById200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const hooksGetById401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const hooksGetById403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const hooksGetById404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const hooksGetById409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const hooksGetById413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const hooksGetById422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const hooksGetById429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const hooksGetById500Schema = z.unknown();
+
+export const hooksGetByIdQueryResponseSchema = z.lazy(() => hooksGetById200Schema);
+
+export const hooksUpdatePathParamsSchema = z.object({
+	hookId: z.string().describe("The ID of the webhook to update. Provided as a path parameter."),
+});
+
+/**
+ * @description Success
+ */
+export const hooksUpdate200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const hooksUpdate401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const hooksUpdate403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const hooksUpdate404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const hooksUpdate409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const hooksUpdate413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const hooksUpdate422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const hooksUpdate429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const hooksUpdate500Schema = z.unknown();
+
+export const hooksUpdateMutationResponseSchema = z.lazy(() => hooksUpdate200Schema);
+
+export const hooksDeletePathParamsSchema = z.object({
+	hookId: z.string().describe("The ID of the webhook to delete. Provided as a path parameter."),
+});
+
+/**
+ * @description Success
+ */
+export const hooksDelete200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const hooksDelete401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const hooksDelete403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const hooksDelete404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const hooksDelete409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const hooksDelete413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const hooksDelete422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const hooksDelete429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const hooksDelete500Schema = z.unknown();
+
+export const hooksDeleteMutationResponseSchema = z.lazy(() => hooksDelete200Schema);
 
 /**
  * @description Success
@@ -1114,8 +3435,167 @@ export const projectsCreate500Schema = z.unknown();
 
 export const projectsCreateMutationResponseSchema = z.lazy(() => projectsCreate200Schema);
 
+export const projectsGetByIdPathParamsSchema = z.object({
+	projectId: z.string().describe("The unique identifier of the project to retrieve."),
+});
+
+/**
+ * @description Success
+ */
+export const projectsGetById200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsGetById401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsGetById403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsGetById404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsGetById409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsGetById413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsGetById422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsGetById429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsGetById500Schema = z.unknown();
+
+export const projectsGetByIdQueryResponseSchema = z.lazy(() => projectsGetById200Schema);
+
+export const projectsUpdatePathParamsSchema = z.object({
+	projectId: z
+		.string()
+		.describe("The unique identifier of the project to update. Provided as a path parameter."),
+});
+
+/**
+ * @description Success
+ */
+export const projectsUpdate200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsUpdate401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsUpdate403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsUpdate404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsUpdate409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsUpdate413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsUpdate422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsUpdate429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsUpdate500Schema = z.unknown();
+
+export const projectsUpdateMutationResponseSchema = z.lazy(() => projectsUpdate200Schema);
+
+export const projectsDeletePathParamsSchema = z.object({
+	projectId: z
+		.string()
+		.describe(
+			"The unique identifier of the project to delete. This must be passed as a path parameter in the URL.",
+		),
+});
+
+/**
+ * @description Success
+ */
+export const projectsDelete200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsDelete401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsDelete403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsDelete404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsDelete409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsDelete413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsDelete422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsDelete429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsDelete500Schema = z.unknown();
+
+export const projectsDeleteMutationResponseSchema = z.lazy(() => projectsDelete200Schema);
+
 export const projectsAssignPathParamsSchema = z.object({
-	projectId: z.string().describe('Path parameter "projectId"'),
+	projectId: z.string().describe("The ID of the project to assign."),
 });
 
 /**
@@ -1165,9 +3645,337 @@ export const projectsAssign500Schema = z.unknown();
 
 export const projectsAssignMutationResponseSchema = z.lazy(() => projectsAssign200Schema);
 
+export const projectsFindEnvVarsPathParamsSchema = z.object({
+	projectId: z
+		.string()
+		.describe(
+			"The unique identifier of the project whose environment variables should be retrieved.",
+		),
+});
+
+export const projectsFindEnvVarsQueryParamsSchema = z
+	.object({
+		decrypted: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe("Whether to return decrypted values. Defaults to false (encrypted)."),
+		),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const projectsFindEnvVars200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsFindEnvVars401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsFindEnvVars403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsFindEnvVars404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsFindEnvVars409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsFindEnvVars413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsFindEnvVars422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsFindEnvVars429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsFindEnvVars500Schema = z.unknown();
+
+export const projectsFindEnvVarsQueryResponseSchema = z.lazy(() => projectsFindEnvVars200Schema);
+
+export const projectsCreateEnvVarsPathParamsSchema = z.object({
+	projectId: z
+		.string()
+		.describe(
+			"The unique identifier of the project where environment variables should be created.",
+		),
+});
+
+export const projectsCreateEnvVarsQueryParamsSchema = z
+	.object({
+		decrypted: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe("Whether to return decrypted values. Defaults to false (encrypted)."),
+		),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const projectsCreateEnvVars200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsCreateEnvVars401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsCreateEnvVars403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsCreateEnvVars404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsCreateEnvVars409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsCreateEnvVars413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsCreateEnvVars422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsCreateEnvVars429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsCreateEnvVars500Schema = z.unknown();
+
+export const projectsCreateEnvVarsMutationResponseSchema = z.lazy(
+	() => projectsCreateEnvVars200Schema,
+);
+
+export const projectsUpdateEnvVarsPathParamsSchema = z.object({
+	projectId: z
+		.string()
+		.describe(
+			"The unique identifier of the project whose environment variables should be updated.",
+		),
+});
+
+export const projectsUpdateEnvVarsQueryParamsSchema = z
+	.object({
+		decrypted: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe("Whether to return decrypted values. Defaults to false (encrypted)."),
+		),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const projectsUpdateEnvVars200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsUpdateEnvVars401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsUpdateEnvVars403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsUpdateEnvVars404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsUpdateEnvVars409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsUpdateEnvVars413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsUpdateEnvVars422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsUpdateEnvVars429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsUpdateEnvVars500Schema = z.unknown();
+
+export const projectsUpdateEnvVarsMutationResponseSchema = z.lazy(
+	() => projectsUpdateEnvVars200Schema,
+);
+
+export const projectsDeleteEnvVarsPathParamsSchema = z.object({
+	projectId: z
+		.string()
+		.describe(
+			"The unique identifier of the project whose environment variables should be deleted.",
+		),
+});
+
+/**
+ * @description Success
+ */
+export const projectsDeleteEnvVars200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsDeleteEnvVars401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsDeleteEnvVars403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsDeleteEnvVars404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsDeleteEnvVars409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsDeleteEnvVars413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsDeleteEnvVars422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsDeleteEnvVars429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsDeleteEnvVars500Schema = z.unknown();
+
+export const projectsDeleteEnvVarsMutationResponseSchema = z.lazy(
+	() => projectsDeleteEnvVars200Schema,
+);
+
+export const projectsGetEnvVarPathParamsSchema = z.object({
+	projectId: z
+		.string()
+		.describe("The unique identifier of the project that owns the environment variable."),
+	environmentVariableId: z
+		.string()
+		.describe("The unique identifier of the environment variable to retrieve."),
+});
+
+export const projectsGetEnvVarQueryParamsSchema = z
+	.object({
+		decrypted: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe("Whether to return decrypted values. Defaults to false (encrypted)."),
+		),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const projectsGetEnvVar200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const projectsGetEnvVar401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const projectsGetEnvVar403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const projectsGetEnvVar404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const projectsGetEnvVar409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const projectsGetEnvVar413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const projectsGetEnvVar422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const projectsGetEnvVar429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const projectsGetEnvVar500Schema = z.unknown();
+
+export const projectsGetEnvVarQueryResponseSchema = z.lazy(() => projectsGetEnvVar200Schema);
+
 export const rateLimitsFindQueryParamsSchema = z
 	.object({
-		scope: z.string().describe('Query parameter "scope"').optional(),
+		scope: z.optional(
+			z
+				.string()
+				.describe(
+					"The context or namespace to check rate limits for (e.g., a project slug or feature area).",
+				),
+		),
 	})
 	.optional();
 
@@ -1267,7 +4075,11 @@ export const userGetQueryResponseSchema = z.lazy(() => userGet200Schema);
 
 export const userGetBillingQueryParamsSchema = z
 	.object({
-		scope: z.string().describe('Query parameter "scope"').optional(),
+		scope: z.optional(
+			z
+				.string()
+				.describe("Filters billing data by a specific scope, such as a project ID or slug."),
+		),
 	})
 	.optional();
 
@@ -1411,3 +4223,60 @@ export const userGetScopes429Schema = z.unknown();
 export const userGetScopes500Schema = z.unknown();
 
 export const userGetScopesQueryResponseSchema = z.lazy(() => userGetScopes200Schema);
+
+export const reportsGetUsageQueryParamsSchema = z.object({
+	startDate: z.optional(z.string().datetime().describe('Query parameter "startDate"')),
+	endDate: z.optional(z.string().datetime().describe('Query parameter "endDate"')),
+	chatId: z.optional(z.string().describe('Query parameter "chatId"')),
+	messageId: z.optional(z.string().describe('Query parameter "messageId"')),
+	userId: z.optional(z.string().describe('Query parameter "userId"')),
+	limit: z.coerce.number().min(1).max(150).default(20).describe('Query parameter "limit"'),
+	cursor: z.optional(z.string().describe("Base64 encoded cursor containing pagination data")),
+});
+
+/**
+ * @description Success
+ */
+export const reportsGetUsage200Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const reportsGetUsage401Schema = z.unknown();
+
+/**
+ * @description Forbidden
+ */
+export const reportsGetUsage403Schema = z.unknown();
+
+/**
+ * @description Not Found
+ */
+export const reportsGetUsage404Schema = z.unknown();
+
+/**
+ * @description Conflict
+ */
+export const reportsGetUsage409Schema = z.unknown();
+
+/**
+ * @description Payload Too Large
+ */
+export const reportsGetUsage413Schema = z.unknown();
+
+/**
+ * @description Unprocessable Entity
+ */
+export const reportsGetUsage422Schema = z.unknown();
+
+/**
+ * @description Too Many Requests
+ */
+export const reportsGetUsage429Schema = z.unknown();
+
+/**
+ * @description Internal Server Error
+ */
+export const reportsGetUsage500Schema = z.unknown();
+
+export const reportsGetUsageQueryResponseSchema = z.lazy(() => reportsGetUsage200Schema);

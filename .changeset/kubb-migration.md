@@ -1,5 +1,4 @@
 ---
-"cloudflare-api-js": major
 "keycloak-api": major
 "litellm-api": major
 "netlify-api": major

@@ -9,18 +9,27 @@ import { clientGenerator } from "./client/operations";
 import { serverGenerator } from "./mcp/server";
 import { toolsGenerator } from "./mcp/tools";
 
-export const baseConfig: Omit<UserConfig, "input"> = {
-	root: ".",
-	output: {
-		path: "./src/generated",
-		extension: {
-			".ts": "",
-		},
-		format: "biome",
-		lint: false,
-		clean: true,
-	},
-	plugins: [
+export interface CreateConfigOptions {
+	/** Name for multi-config setups */
+	name?: string;
+	/** Output path for generated files (default: "./src/generated") */
+	outputPath?: string;
+	/** Import path for the fetcher utility (default: "../utils/fetcher") */
+	importPath?: string;
+	/** Skip Zod schema generation (default: false) */
+	skipZod?: boolean;
+	/** Skip MCP generation (default: false) */
+	skipMcp?: boolean;
+}
+
+interface CreatePluginsOptions {
+	importPath: string;
+	skipZod?: boolean;
+	skipMcp?: boolean;
+}
+
+function createPlugins({ importPath, skipZod, skipMcp }: CreatePluginsOptions) {
+	const plugins = [
 		pluginOas({
 			validate: false,
 			output: {
@@ -51,28 +60,64 @@ export const baseConfig: Omit<UserConfig, "input"> = {
 			pathParamsType: "object",
 			paramsType: "object",
 			urlType: "export",
-			importPath: "../utils/fetcher",
+			importPath,
 			generators: [clientGenerator, extraGenerator] as any[], // Workaround for generator mismatches
 		}),
-		pluginZod({
-			output: {
-				path: "./schemas.ts",
-				barrelType: false,
-				extension: { ".ts": "" },
-			},
-			dateType: "string",
-			unknownType: "unknown",
-			importPath: "zod",
-			version: "4",
-		}),
-		pluginMcp({
-			output: {
-				path: "./mcp.ts",
-				barrelType: false,
-				extension: { ".ts": "" },
-			},
-			client: { importPath: "../utils/fetcher" },
-			generators: [toolsGenerator, serverGenerator] as any[], // Workaround for generator mismatches
-		}),
-	],
-};
+	];
+
+	if (!skipZod) {
+		plugins.push(
+			pluginZod({
+				output: {
+					path: "./schemas.ts",
+					barrelType: false,
+					extension: { ".ts": "" },
+				},
+				dateType: "string",
+				unknownType: "unknown",
+				importPath: "zod",
+				version: "4",
+			}),
+		);
+	}
+
+	if (!skipMcp) {
+		plugins.push(
+			pluginMcp({
+				output: {
+					path: "./mcp.ts",
+					barrelType: false,
+					extension: { ".ts": "" },
+				},
+				client: { importPath },
+				generators: [toolsGenerator, serverGenerator] as any[], // Workaround for generator mismatches
+			}),
+		);
+	}
+
+	return plugins;
+}
+
+export function createConfig(options: CreateConfigOptions = {}): Omit<UserConfig, "input"> {
+	const {
+		name,
+		outputPath = "./src/generated",
+		importPath = "../utils/fetcher",
+		skipZod,
+		skipMcp,
+	} = options;
+	return {
+		name,
+		root: ".",
+		output: {
+			path: outputPath,
+			extension: { ".ts": "" },
+			format: "biome",
+			lint: false,
+			clean: true,
+		},
+		plugins: createPlugins({ importPath, skipZod, skipMcp }),
+	};
+}
+
+export const baseConfig: Omit<UserConfig, "input"> = createConfig();

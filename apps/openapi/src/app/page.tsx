@@ -32,16 +32,6 @@ const api = new V0Api({ token: '...' });
 const projects = await api.api.projects.getProjects();`,
 		},
 		{
-			id: "cloudflare",
-			name: "Cloudflare",
-			packageName: "cloudflare-api-js",
-			version: versions["cloudflare-api-js"],
-			usage: `import { CloudflareApi } from 'cloudflare-api-js';
-
-const api = new CloudflareApi({ apiKey: '...', email: '...' });
-const zones = await api.zones.getZones({});`,
-		},
-		{
 			id: "netlify",
 			name: "Netlify",
 			packageName: "netlify-api",

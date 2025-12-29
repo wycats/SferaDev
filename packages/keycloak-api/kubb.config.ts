@@ -1,78 +1,9 @@
 import fs from "node:fs";
-import type { UserConfig } from "@kubb/core";
 import { defineConfig } from "@kubb/core";
-import { pluginClient } from "@kubb/plugin-client";
-import { pluginOas } from "@kubb/plugin-oas";
-import { pluginTs } from "@kubb/plugin-ts";
-import { pluginZod } from "@kubb/plugin-zod";
-import { clientGenerator, extraGenerator } from "@sferadev/openapi-utils";
+import { createConfig } from "@sferadev/openapi-utils";
 import c from "case";
 import type { OpenAPIObject, PathItemObject } from "openapi3-ts/oas30";
 import yaml from "yaml";
-
-function createPlugins(importPath: string) {
-	return [
-		pluginOas({
-			validate: false,
-			output: {
-				path: "./json",
-				barrelType: false,
-			},
-			serverIndex: 0,
-			contentType: "application/json",
-		}),
-		pluginTs({
-			output: {
-				path: "./types.ts",
-				barrelType: false,
-			},
-			enumType: "asConst",
-			enumSuffix: "Enum",
-			dateType: "string",
-			unknownType: "unknown",
-			optionalType: "questionTokenAndUndefined",
-		}),
-		pluginClient({
-			output: {
-				path: "./components.ts",
-				barrelType: false,
-			},
-			client: "fetch",
-			dataReturnType: "data",
-			pathParamsType: "object",
-			paramsType: "object",
-			urlType: "export",
-			importPath,
-			generators: [clientGenerator, extraGenerator] as any[],
-		}),
-		pluginZod({
-			output: {
-				path: "./schemas.ts",
-				barrelType: false,
-			},
-			dateType: "string",
-			unknownType: "unknown",
-			importPath: "zod",
-			version: "4",
-		}),
-	];
-}
-
-function createConfig(name: string, openAPIDocument: OpenAPIObject): UserConfig {
-	return {
-		name,
-		root: ".",
-		input: { data: openAPIDocument },
-		output: {
-			path: `./src/${name}/generated`,
-			extension: { ".ts": "" },
-			format: "biome",
-			lint: false,
-			clean: true,
-		},
-		plugins: createPlugins("../../utils/fetcher"),
-	};
-}
 
 export default defineConfig(async () => {
 	// Fetch admin OpenAPI spec
@@ -87,7 +18,24 @@ export default defineConfig(async () => {
 	let accountSpec: OpenAPIObject = yaml.parse(accountYaml);
 	accountSpec = transformSpec(accountSpec);
 
-	return [createConfig("admin", adminSpec), createConfig("account", accountSpec)];
+	return [
+		{
+			...createConfig({
+				name: "admin",
+				outputPath: "./src/admin/generated",
+				importPath: "../../utils/fetcher",
+			}),
+			input: { data: adminSpec },
+		},
+		{
+			...createConfig({
+				name: "account",
+				outputPath: "./src/account/generated",
+				importPath: "../../utils/fetcher",
+			}),
+			input: { data: accountSpec },
+		},
+	];
 });
 
 function transformSpec(openAPIDocument: OpenAPIObject): OpenAPIObject {

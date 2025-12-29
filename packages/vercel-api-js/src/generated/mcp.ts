@@ -2001,7 +2001,7 @@ import type {
  * {@link /v1/access-groups/:idOrName}
  */
 export async function readAccessGroup({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2011,7 +2011,7 @@ export async function readAccessGroup({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -2023,7 +2023,7 @@ export async function readAccessGroup({
 		ReadAccessGroupPathParams
 	>({
 		method: "GET",
-		url: `/v1/access-groups/${idOrName}`,
+		url: `/v1/access-groups/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2037,7 +2037,7 @@ export async function readAccessGroup({
  * {@link /v1/access-groups/:idOrName}
  */
 export async function updateAccessGroup({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2047,7 +2047,7 @@ export async function updateAccessGroup({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -2059,7 +2059,7 @@ export async function updateAccessGroup({
 		UpdateAccessGroupPathParams
 	>({
 		method: "POST",
-		url: `/v1/access-groups/${idOrName}`,
+		url: `/v1/access-groups/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2074,7 +2074,7 @@ export async function updateAccessGroup({
  * {@link /v1/access-groups/:idOrName}
  */
 export async function deleteAccessGroup({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2084,7 +2084,7 @@ export async function deleteAccessGroup({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -2096,7 +2096,7 @@ export async function deleteAccessGroup({
 		DeleteAccessGroupPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/access-groups/${idOrName}`,
+		url: `/v1/access-groups/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2110,7 +2110,7 @@ export async function deleteAccessGroup({
  * {@link /v1/access-groups/:idOrName/members}
  */
 export async function listAccessGroupMembers({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2120,7 +2120,7 @@ export async function listAccessGroupMembers({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -2132,7 +2132,7 @@ export async function listAccessGroupMembers({
 		ListAccessGroupMembersPathParams
 	>({
 		method: "GET",
-		url: `/v1/access-groups/${idOrName}/members`,
+		url: `/v1/access-groups/${pathParams["idOrName"]}/members`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2209,7 +2209,7 @@ export async function createAccessGroup({
  * {@link /v1/access-groups/:idOrName/projects}
  */
 export async function listAccessGroupProjects({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2219,7 +2219,7 @@ export async function listAccessGroupProjects({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -2233,7 +2233,7 @@ export async function listAccessGroupProjects({
 		ListAccessGroupProjectsPathParams
 	>({
 		method: "GET",
-		url: `/v1/access-groups/${idOrName}/projects`,
+		url: `/v1/access-groups/${pathParams["idOrName"]}/projects`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2247,7 +2247,7 @@ export async function listAccessGroupProjects({
  * {@link /v1/access-groups/:accessGroupIdOrName/projects}
  */
 export async function createAccessGroupProject({
-	pathParams: { accessGroupIdOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2257,7 +2257,7 @@ export async function createAccessGroupProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!accessGroupIdOrName) {
+	if (!pathParams["accessGroupIdOrName"]) {
 		throw new Error(`Missing required path parameter: accessGroupIdOrName`);
 	}
 	const data = await request<
@@ -2271,7 +2271,7 @@ export async function createAccessGroupProject({
 		CreateAccessGroupProjectPathParams
 	>({
 		method: "POST",
-		url: `/v1/access-groups/${accessGroupIdOrName}/projects`,
+		url: `/v1/access-groups/${pathParams["accessGroupIdOrName"]}/projects`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2286,7 +2286,7 @@ export async function createAccessGroupProject({
  * {@link /v1/access-groups/:accessGroupIdOrName/projects/:projectId}
  */
 export async function readAccessGroupProject({
-	pathParams: { accessGroupIdOrName, projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2296,11 +2296,11 @@ export async function readAccessGroupProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!accessGroupIdOrName) {
+	if (!pathParams["accessGroupIdOrName"]) {
 		throw new Error(`Missing required path parameter: accessGroupIdOrName`);
 	}
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -2312,7 +2312,7 @@ export async function readAccessGroupProject({
 		ReadAccessGroupProjectPathParams
 	>({
 		method: "GET",
-		url: `/v1/access-groups/${accessGroupIdOrName}/projects/${projectId}`,
+		url: `/v1/access-groups/${pathParams["accessGroupIdOrName"]}/projects/${pathParams["projectId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2326,7 +2326,7 @@ export async function readAccessGroupProject({
  * {@link /v1/access-groups/:accessGroupIdOrName/projects/:projectId}
  */
 export async function updateAccessGroupProject({
-	pathParams: { accessGroupIdOrName, projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2336,11 +2336,11 @@ export async function updateAccessGroupProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!accessGroupIdOrName) {
+	if (!pathParams["accessGroupIdOrName"]) {
 		throw new Error(`Missing required path parameter: accessGroupIdOrName`);
 	}
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -2354,7 +2354,7 @@ export async function updateAccessGroupProject({
 		UpdateAccessGroupProjectPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/access-groups/${accessGroupIdOrName}/projects/${projectId}`,
+		url: `/v1/access-groups/${pathParams["accessGroupIdOrName"]}/projects/${pathParams["projectId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2369,7 +2369,7 @@ export async function updateAccessGroupProject({
  * {@link /v1/access-groups/:accessGroupIdOrName/projects/:projectId}
  */
 export async function deleteAccessGroupProject({
-	pathParams: { accessGroupIdOrName, projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2379,11 +2379,11 @@ export async function deleteAccessGroupProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!accessGroupIdOrName) {
+	if (!pathParams["accessGroupIdOrName"]) {
 		throw new Error(`Missing required path parameter: accessGroupIdOrName`);
 	}
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -2397,7 +2397,7 @@ export async function deleteAccessGroupProject({
 		DeleteAccessGroupProjectPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/access-groups/${accessGroupIdOrName}/projects/${projectId}`,
+		url: `/v1/access-groups/${pathParams["accessGroupIdOrName"]}/projects/${pathParams["projectId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2476,7 +2476,7 @@ export async function status({
  * {@link /v8/artifacts/:hash}
  */
 export async function uploadArtifact({
-	pathParams: { hash },
+	pathParams,
 	headers,
 	queryParams,
 	config = {},
@@ -2488,7 +2488,7 @@ export async function uploadArtifact({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!hash) {
+	if (!pathParams["hash"]) {
 		throw new Error(`Missing required path parameter: hash`);
 	}
 	const data = await request<
@@ -2500,7 +2500,7 @@ export async function uploadArtifact({
 		UploadArtifactPathParams
 	>({
 		method: "PUT",
-		url: `/v8/artifacts/${hash}`,
+		url: `/v8/artifacts/${pathParams["hash"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2515,7 +2515,7 @@ export async function uploadArtifact({
  * {@link /v8/artifacts/:hash}
  */
 export async function downloadArtifact({
-	pathParams: { hash },
+	pathParams,
 	queryParams,
 	headers,
 	config = {},
@@ -2527,7 +2527,7 @@ export async function downloadArtifact({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!hash) {
+	if (!pathParams["hash"]) {
 		throw new Error(`Missing required path parameter: hash`);
 	}
 	const data = await request<
@@ -2545,7 +2545,7 @@ export async function downloadArtifact({
 		DownloadArtifactPathParams
 	>({
 		method: "GET",
-		url: `/v8/artifacts/${hash}`,
+		url: `/v8/artifacts/${pathParams["hash"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2830,7 +2830,7 @@ export async function updateVersion({
  * {@link /v1/deployments/:deploymentId/checks}
  */
 export async function createCheck({
-	pathParams: { deploymentId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2840,7 +2840,7 @@ export async function createCheck({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 	const data = await request<
@@ -2852,7 +2852,7 @@ export async function createCheck({
 		CreateCheckPathParams
 	>({
 		method: "POST",
-		url: `/v1/deployments/${deploymentId}/checks`,
+		url: `/v1/deployments/${pathParams["deploymentId"]}/checks`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2867,7 +2867,7 @@ export async function createCheck({
  * {@link /v1/deployments/:deploymentId/checks}
  */
 export async function getAllChecks({
-	pathParams: { deploymentId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2877,7 +2877,7 @@ export async function getAllChecks({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 	const data = await request<
@@ -2889,7 +2889,7 @@ export async function getAllChecks({
 		GetAllChecksPathParams
 	>({
 		method: "GET",
-		url: `/v1/deployments/${deploymentId}/checks`,
+		url: `/v1/deployments/${pathParams["deploymentId"]}/checks`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2903,7 +2903,7 @@ export async function getAllChecks({
  * {@link /v1/deployments/:deploymentId/checks/:checkId}
  */
 export async function getCheck({
-	pathParams: { deploymentId, checkId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2913,11 +2913,11 @@ export async function getCheck({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 
-	if (!checkId) {
+	if (!pathParams["checkId"]) {
 		throw new Error(`Missing required path parameter: checkId`);
 	}
 	const data = await request<
@@ -2929,7 +2929,7 @@ export async function getCheck({
 		GetCheckPathParams
 	>({
 		method: "GET",
-		url: `/v1/deployments/${deploymentId}/checks/${checkId}`,
+		url: `/v1/deployments/${pathParams["deploymentId"]}/checks/${pathParams["checkId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2943,7 +2943,7 @@ export async function getCheck({
  * {@link /v1/deployments/:deploymentId/checks/:checkId}
  */
 export async function updateCheck({
-	pathParams: { deploymentId, checkId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2953,11 +2953,11 @@ export async function updateCheck({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 
-	if (!checkId) {
+	if (!pathParams["checkId"]) {
 		throw new Error(`Missing required path parameter: checkId`);
 	}
 	const data = await request<
@@ -2971,7 +2971,7 @@ export async function updateCheck({
 		UpdateCheckPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/deployments/${deploymentId}/checks/${checkId}`,
+		url: `/v1/deployments/${pathParams["deploymentId"]}/checks/${pathParams["checkId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -2986,7 +2986,7 @@ export async function updateCheck({
  * {@link /v1/deployments/:deploymentId/checks/:checkId/rerequest}
  */
 export async function rerequestCheck({
-	pathParams: { deploymentId, checkId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -2996,11 +2996,11 @@ export async function rerequestCheck({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 
-	if (!checkId) {
+	if (!pathParams["checkId"]) {
 		throw new Error(`Missing required path parameter: checkId`);
 	}
 	const data = await request<
@@ -3012,7 +3012,7 @@ export async function rerequestCheck({
 		RerequestCheckPathParams
 	>({
 		method: "POST",
-		url: `/v1/deployments/${deploymentId}/checks/${checkId}/rerequest`,
+		url: `/v1/deployments/${pathParams["deploymentId"]}/checks/${pathParams["checkId"]}/rerequest`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3089,7 +3089,7 @@ export async function updateDataCacheBillingSettings({
  * {@link /v1/data-cache/projects/:projectId}
  */
 export async function updateProjectDataCache({
-	pathParams: { projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3099,7 +3099,7 @@ export async function updateProjectDataCache({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -3116,7 +3116,7 @@ export async function updateProjectDataCache({
 		UpdateProjectDataCachePathParams
 	>({
 		method: "PATCH",
-		url: `/v1/data-cache/projects/${projectId}`,
+		url: `/v1/data-cache/projects/${pathParams["projectId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3131,7 +3131,7 @@ export async function updateProjectDataCache({
  * {@link /v3/deployments/:idOrUrl/events}
  */
 export async function getDeploymentEvents({
-	pathParams: { idOrUrl },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3141,7 +3141,7 @@ export async function getDeploymentEvents({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrUrl) {
+	if (!pathParams["idOrUrl"]) {
 		throw new Error(`Missing required path parameter: idOrUrl`);
 	}
 	const data = await request<
@@ -3158,7 +3158,7 @@ export async function getDeploymentEvents({
 		GetDeploymentEventsPathParams
 	>({
 		method: "GET",
-		url: `/v3/deployments/${idOrUrl}/events`,
+		url: `/v3/deployments/${pathParams["idOrUrl"]}/events`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3172,7 +3172,7 @@ export async function getDeploymentEvents({
  * {@link /v1/deployments/:deploymentId/integrations/:integrationConfigurationId/resources/:resourceId/actions/:action}
  */
 export async function updateIntegrationDeploymentAction({
-	pathParams: { deploymentId, integrationConfigurationId, resourceId, action },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateIntegrationDeploymentActionPathParams;
@@ -3180,19 +3180,19 @@ export async function updateIntegrationDeploymentAction({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 
-	if (!action) {
+	if (!pathParams["action"]) {
 		throw new Error(`Missing required path parameter: action`);
 	}
 	const data = await request<
@@ -3208,7 +3208,7 @@ export async function updateIntegrationDeploymentAction({
 		UpdateIntegrationDeploymentActionPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/deployments/${deploymentId}/integrations/${integrationConfigurationId}/resources/${resourceId}/actions/${action}`,
+		url: `/v1/deployments/${pathParams["deploymentId"]}/integrations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}/actions/${pathParams["action"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -3222,7 +3222,7 @@ export async function updateIntegrationDeploymentAction({
  * {@link /v13/deployments/:idOrUrl}
  */
 export async function getDeployment({
-	pathParams: { idOrUrl },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3232,7 +3232,7 @@ export async function getDeployment({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrUrl) {
+	if (!pathParams["idOrUrl"]) {
 		throw new Error(`Missing required path parameter: idOrUrl`);
 	}
 	const data = await request<
@@ -3244,7 +3244,7 @@ export async function getDeployment({
 		GetDeploymentPathParams
 	>({
 		method: "GET",
-		url: `/v13/deployments/${idOrUrl}`,
+		url: `/v13/deployments/${pathParams["idOrUrl"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3298,7 +3298,7 @@ export async function createDeployment({
  * {@link /v12/deployments/:id/cancel}
  */
 export async function cancelDeployment({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3308,7 +3308,7 @@ export async function cancelDeployment({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -3322,7 +3322,7 @@ export async function cancelDeployment({
 		CancelDeploymentPathParams
 	>({
 		method: "PATCH",
-		url: `/v12/deployments/${id}/cancel`,
+		url: `/v12/deployments/${pathParams["id"]}/cancel`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3410,7 +3410,7 @@ export async function checkDomainStatus({
  * {@link /v4/domains/:domain/records}
  */
 export async function getRecords({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3420,7 +3420,7 @@ export async function getRecords({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3432,7 +3432,7 @@ export async function getRecords({
 		GetRecordsPathParams
 	>({
 		method: "GET",
-		url: `/v4/domains/${domain}/records`,
+		url: `/v4/domains/${pathParams["domain"]}/records`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3446,7 +3446,7 @@ export async function getRecords({
  * {@link /v2/domains/:domain/records}
  */
 export async function createRecord({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3456,7 +3456,7 @@ export async function createRecord({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3475,7 +3475,7 @@ export async function createRecord({
 		CreateRecordPathParams
 	>({
 		method: "POST",
-		url: `/v2/domains/${domain}/records`,
+		url: `/v2/domains/${pathParams["domain"]}/records`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3490,7 +3490,7 @@ export async function createRecord({
  * {@link /v1/domains/records/:recordId}
  */
 export async function updateRecord({
-	pathParams: { recordId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3500,7 +3500,7 @@ export async function updateRecord({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!recordId) {
+	if (!pathParams["recordId"]) {
 		throw new Error(`Missing required path parameter: recordId`);
 	}
 	const data = await request<
@@ -3519,7 +3519,7 @@ export async function updateRecord({
 		UpdateRecordPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/domains/records/${recordId}`,
+		url: `/v1/domains/records/${pathParams["recordId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3534,7 +3534,7 @@ export async function updateRecord({
  * {@link /v2/domains/:domain/records/:recordId}
  */
 export async function removeRecord({
-	pathParams: { domain, recordId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3544,11 +3544,11 @@ export async function removeRecord({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 
-	if (!recordId) {
+	if (!pathParams["recordId"]) {
 		throw new Error(`Missing required path parameter: recordId`);
 	}
 	const data = await request<
@@ -3560,7 +3560,7 @@ export async function removeRecord({
 		RemoveRecordPathParams
 	>({
 		method: "DELETE",
-		url: `/v2/domains/${domain}/records/${recordId}`,
+		url: `/v2/domains/${pathParams["domain"]}/records/${pathParams["recordId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3611,7 +3611,7 @@ export async function getSupportedTlds({
  * {@link /v1/registrar/tlds/:tld/price}
  */
 export async function getTldPrice({
-	pathParams: { tld },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3621,7 +3621,7 @@ export async function getTldPrice({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!tld) {
+	if (!pathParams["tld"]) {
 		throw new Error(`Missing required path parameter: tld`);
 	}
 	const data = await request<
@@ -3635,7 +3635,7 @@ export async function getTldPrice({
 		GetTldPricePathParams
 	>({
 		method: "GET",
-		url: `/v1/registrar/tlds/${tld}/price`,
+		url: `/v1/registrar/tlds/${pathParams["tld"]}/price`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3649,7 +3649,7 @@ export async function getTldPrice({
  * {@link /v1/registrar/domains/:domain/availability}
  */
 export async function getDomainAvailability({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3659,7 +3659,7 @@ export async function getDomainAvailability({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3678,7 +3678,7 @@ export async function getDomainAvailability({
 		GetDomainAvailabilityPathParams
 	>({
 		method: "GET",
-		url: `/v1/registrar/domains/${domain}/availability`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/availability`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3692,7 +3692,7 @@ export async function getDomainAvailability({
  * {@link /v1/registrar/domains/:domain/price}
  */
 export async function getDomainPrice({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3702,7 +3702,7 @@ export async function getDomainPrice({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3720,7 +3720,7 @@ export async function getDomainPrice({
 		GetDomainPricePathParams
 	>({
 		method: "GET",
-		url: `/v1/registrar/domains/${domain}/price`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/price`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3772,7 +3772,7 @@ export async function getBulkAvailability({
  * {@link /v1/registrar/domains/:domain/auth-code}
  */
 export async function getDomainAuthCode({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3782,7 +3782,7 @@ export async function getDomainAuthCode({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3802,7 +3802,7 @@ export async function getDomainAuthCode({
 		GetDomainAuthCodePathParams
 	>({
 		method: "GET",
-		url: `/v1/registrar/domains/${domain}/auth-code`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/auth-code`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3816,7 +3816,7 @@ export async function getDomainAuthCode({
  * {@link /v1/registrar/domains/:domain/buy}
  */
 export async function buySingleDomain({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3826,7 +3826,7 @@ export async function buySingleDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3844,7 +3844,7 @@ export async function buySingleDomain({
 		BuySingleDomainPathParams
 	>({
 		method: "POST",
-		url: `/v1/registrar/domains/${domain}/buy`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/buy`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3891,7 +3891,7 @@ export async function buyDomains({
  * {@link /v1/registrar/domains/:domain/transfer}
  */
 export async function transferInDomain({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3901,7 +3901,7 @@ export async function transferInDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3919,7 +3919,7 @@ export async function transferInDomain({
 		TransferInDomainPathParams
 	>({
 		method: "POST",
-		url: `/v1/registrar/domains/${domain}/transfer`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/transfer`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3934,7 +3934,7 @@ export async function transferInDomain({
  * {@link /v1/registrar/domains/:domain/transfer}
  */
 export async function getDomainTransferIn({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3944,7 +3944,7 @@ export async function getDomainTransferIn({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -3963,7 +3963,7 @@ export async function getDomainTransferIn({
 		GetDomainTransferInPathParams
 	>({
 		method: "GET",
-		url: `/v1/registrar/domains/${domain}/transfer`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/transfer`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -3977,7 +3977,7 @@ export async function getDomainTransferIn({
  * {@link /v1/registrar/domains/:domain/renew}
  */
 export async function renewDomain({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -3987,7 +3987,7 @@ export async function renewDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4006,7 +4006,7 @@ export async function renewDomain({
 		RenewDomainPathParams
 	>({
 		method: "POST",
-		url: `/v1/registrar/domains/${domain}/renew`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/renew`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4021,7 +4021,7 @@ export async function renewDomain({
  * {@link /v1/registrar/domains/:domain/auto-renew}
  */
 export async function updateDomainAutoRenew({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4031,7 +4031,7 @@ export async function updateDomainAutoRenew({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4050,7 +4050,7 @@ export async function updateDomainAutoRenew({
 		UpdateDomainAutoRenewPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/registrar/domains/${domain}/auto-renew`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/auto-renew`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4065,7 +4065,7 @@ export async function updateDomainAutoRenew({
  * {@link /v1/registrar/domains/:domain/nameservers}
  */
 export async function updateDomainNameservers({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4075,7 +4075,7 @@ export async function updateDomainNameservers({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4094,7 +4094,7 @@ export async function updateDomainNameservers({
 		UpdateDomainNameserversPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/registrar/domains/${domain}/nameservers`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/nameservers`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4109,7 +4109,7 @@ export async function updateDomainNameservers({
  * {@link /v1/registrar/domains/:domain/contact-info/schema}
  */
 export async function getContactInfoSchema({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4119,7 +4119,7 @@ export async function getContactInfoSchema({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4137,7 +4137,7 @@ export async function getContactInfoSchema({
 		GetContactInfoSchemaPathParams
 	>({
 		method: "GET",
-		url: `/v1/registrar/domains/${domain}/contact-info/schema`,
+		url: `/v1/registrar/domains/${pathParams["domain"]}/contact-info/schema`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4151,7 +4151,7 @@ export async function getContactInfoSchema({
  * {@link /v1/registrar/orders/:orderId}
  */
 export async function getOrder({
-	pathParams: { orderId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4161,7 +4161,7 @@ export async function getOrder({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!orderId) {
+	if (!pathParams["orderId"]) {
 		throw new Error(`Missing required path parameter: orderId`);
 	}
 	const data = await request<
@@ -4173,7 +4173,7 @@ export async function getOrder({
 		GetOrderPathParams
 	>({
 		method: "GET",
-		url: `/v1/registrar/orders/${orderId}`,
+		url: `/v1/registrar/orders/${pathParams["orderId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4187,7 +4187,7 @@ export async function getOrder({
  * {@link /v6/domains/:domain/config}
  */
 export async function getDomainConfig({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4197,7 +4197,7 @@ export async function getDomainConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4209,7 +4209,7 @@ export async function getDomainConfig({
 		GetDomainConfigPathParams
 	>({
 		method: "GET",
-		url: `/v6/domains/${domain}/config`,
+		url: `/v6/domains/${pathParams["domain"]}/config`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4223,7 +4223,7 @@ export async function getDomainConfig({
  * {@link /v5/domains/:domain}
  */
 export async function getDomain({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4233,7 +4233,7 @@ export async function getDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4245,7 +4245,7 @@ export async function getDomain({
 		GetDomainPathParams
 	>({
 		method: "GET",
-		url: `/v5/domains/${domain}`,
+		url: `/v5/domains/${pathParams["domain"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4329,7 +4329,7 @@ export async function createOrTransferDomain({
  * {@link /v3/domains/:domain}
  */
 export async function patchDomain({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4339,7 +4339,7 @@ export async function patchDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4358,7 +4358,7 @@ export async function patchDomain({
 		PatchDomainPathParams
 	>({
 		method: "PATCH",
-		url: `/v3/domains/${domain}`,
+		url: `/v3/domains/${pathParams["domain"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4373,7 +4373,7 @@ export async function patchDomain({
  * {@link /v6/domains/:domain}
  */
 export async function deleteDomain({
-	pathParams: { domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4383,7 +4383,7 @@ export async function deleteDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -4397,7 +4397,7 @@ export async function deleteDomain({
 		DeleteDomainPathParams
 	>({
 		method: "DELETE",
-		url: `/v6/domains/${domain}`,
+		url: `/v6/domains/${pathParams["domain"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4411,7 +4411,7 @@ export async function deleteDomain({
  * {@link /v1/log-drains/:id}
  */
 export async function getConfigurableLogDrain({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4421,7 +4421,7 @@ export async function getConfigurableLogDrain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -4438,7 +4438,7 @@ export async function getConfigurableLogDrain({
 		GetConfigurableLogDrainPathParams
 	>({
 		method: "GET",
-		url: `/v1/log-drains/${id}`,
+		url: `/v1/log-drains/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4452,7 +4452,7 @@ export async function getConfigurableLogDrain({
  * {@link /v1/log-drains/:id}
  */
 export async function deleteConfigurableLogDrain({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4462,7 +4462,7 @@ export async function deleteConfigurableLogDrain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -4479,7 +4479,7 @@ export async function deleteConfigurableLogDrain({
 		DeleteConfigurableLogDrainPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/log-drains/${id}`,
+		url: `/v1/log-drains/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4621,7 +4621,7 @@ export async function getDrains({
  * {@link /v1/drains/:id}
  */
 export async function deleteDrain({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4631,7 +4631,7 @@ export async function deleteDrain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -4643,7 +4643,7 @@ export async function deleteDrain({
 		DeleteDrainPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/drains/${id}`,
+		url: `/v1/drains/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4657,7 +4657,7 @@ export async function deleteDrain({
  * {@link /v1/drains/:id}
  */
 export async function getDrain({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4667,7 +4667,7 @@ export async function getDrain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -4679,7 +4679,7 @@ export async function getDrain({
 		GetDrainPathParams
 	>({
 		method: "GET",
-		url: `/v1/drains/${id}`,
+		url: `/v1/drains/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4693,7 +4693,7 @@ export async function getDrain({
  * {@link /v1/drains/:id}
  */
 export async function updateDrain({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4703,7 +4703,7 @@ export async function updateDrain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -4715,7 +4715,7 @@ export async function updateDrain({
 		UpdateDrainPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/drains/${id}`,
+		url: `/v1/drains/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -4974,7 +4974,7 @@ export async function createEdgeConfig({
  * {@link /v1/edge-config/:edgeConfigId}
  */
 export async function getEdgeConfig({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -4984,7 +4984,7 @@ export async function getEdgeConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -4996,7 +4996,7 @@ export async function getEdgeConfig({
 		GetEdgeConfigPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5010,7 +5010,7 @@ export async function getEdgeConfig({
  * {@link /v1/edge-config/:edgeConfigId}
  */
 export async function updateEdgeConfig({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5020,7 +5020,7 @@ export async function updateEdgeConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5039,7 +5039,7 @@ export async function updateEdgeConfig({
 		UpdateEdgeConfigPathParams
 	>({
 		method: "PUT",
-		url: `/v1/edge-config/${edgeConfigId}`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5054,7 +5054,7 @@ export async function updateEdgeConfig({
  * {@link /v1/edge-config/:edgeConfigId}
  */
 export async function deleteEdgeConfig({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5064,7 +5064,7 @@ export async function deleteEdgeConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5082,7 +5082,7 @@ export async function deleteEdgeConfig({
 		DeleteEdgeConfigPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/edge-config/${edgeConfigId}`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5096,7 +5096,7 @@ export async function deleteEdgeConfig({
  * {@link /v1/edge-config/:edgeConfigId/items}
  */
 export async function getEdgeConfigItems({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5106,7 +5106,7 @@ export async function getEdgeConfigItems({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5120,7 +5120,7 @@ export async function getEdgeConfigItems({
 		GetEdgeConfigItemsPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}/items`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/items`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5134,7 +5134,7 @@ export async function getEdgeConfigItems({
  * {@link /v1/edge-config/:edgeConfigId/items}
  */
 export async function patchEdgeConfigItems({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5144,7 +5144,7 @@ export async function patchEdgeConfigItems({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5164,7 +5164,7 @@ export async function patchEdgeConfigItems({
 		PatchEdgeConfigItemsPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/edge-config/${edgeConfigId}/items`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/items`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5179,7 +5179,7 @@ export async function patchEdgeConfigItems({
  * {@link /v1/edge-config/:edgeConfigId/schema}
  */
 export async function getEdgeConfigSchema({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5189,7 +5189,7 @@ export async function getEdgeConfigSchema({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5206,7 +5206,7 @@ export async function getEdgeConfigSchema({
 		GetEdgeConfigSchemaPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}/schema`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/schema`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5220,7 +5220,7 @@ export async function getEdgeConfigSchema({
  * {@link /v1/edge-config/:edgeConfigId/schema}
  */
 export async function patchEdgeConfigSchema({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5230,7 +5230,7 @@ export async function patchEdgeConfigSchema({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5249,7 +5249,7 @@ export async function patchEdgeConfigSchema({
 		PatchEdgeConfigSchemaPathParams
 	>({
 		method: "POST",
-		url: `/v1/edge-config/${edgeConfigId}/schema`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/schema`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5264,7 +5264,7 @@ export async function patchEdgeConfigSchema({
  * {@link /v1/edge-config/:edgeConfigId/schema}
  */
 export async function deleteEdgeConfigSchema({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5274,7 +5274,7 @@ export async function deleteEdgeConfigSchema({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5293,7 +5293,7 @@ export async function deleteEdgeConfigSchema({
 		DeleteEdgeConfigSchemaPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/edge-config/${edgeConfigId}/schema`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/schema`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5307,7 +5307,7 @@ export async function deleteEdgeConfigSchema({
  * {@link /v1/edge-config/:edgeConfigId/item/:edgeConfigItemKey}
  */
 export async function getEdgeConfigItem({
-	pathParams: { edgeConfigId, edgeConfigItemKey },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5317,11 +5317,11 @@ export async function getEdgeConfigItem({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 
-	if (!edgeConfigItemKey) {
+	if (!pathParams["edgeConfigItemKey"]) {
 		throw new Error(`Missing required path parameter: edgeConfigItemKey`);
 	}
 	const data = await request<
@@ -5335,7 +5335,7 @@ export async function getEdgeConfigItem({
 		GetEdgeConfigItemPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}/item/${edgeConfigItemKey}`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/item/${pathParams["edgeConfigItemKey"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5349,7 +5349,7 @@ export async function getEdgeConfigItem({
  * {@link /v1/edge-config/:edgeConfigId/tokens}
  */
 export async function getEdgeConfigTokens({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5359,7 +5359,7 @@ export async function getEdgeConfigTokens({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5376,7 +5376,7 @@ export async function getEdgeConfigTokens({
 		GetEdgeConfigTokensPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}/tokens`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/tokens`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5390,7 +5390,7 @@ export async function getEdgeConfigTokens({
  * {@link /v1/edge-config/:edgeConfigId/tokens}
  */
 export async function deleteEdgeConfigTokens({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5400,7 +5400,7 @@ export async function deleteEdgeConfigTokens({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5419,7 +5419,7 @@ export async function deleteEdgeConfigTokens({
 		DeleteEdgeConfigTokensPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/edge-config/${edgeConfigId}/tokens`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/tokens`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5434,7 +5434,7 @@ export async function deleteEdgeConfigTokens({
  * {@link /v1/edge-config/:edgeConfigId/token/:token}
  */
 export async function getEdgeConfigToken({
-	pathParams: { edgeConfigId, token },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5444,11 +5444,11 @@ export async function getEdgeConfigToken({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 
-	if (!token) {
+	if (!pathParams["token"]) {
 		throw new Error(`Missing required path parameter: token`);
 	}
 	const data = await request<
@@ -5462,7 +5462,7 @@ export async function getEdgeConfigToken({
 		GetEdgeConfigTokenPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}/token/${token}`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/token/${pathParams["token"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5476,7 +5476,7 @@ export async function getEdgeConfigToken({
  * {@link /v1/edge-config/:edgeConfigId/token}
  */
 export async function createEdgeConfigToken({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5486,7 +5486,7 @@ export async function createEdgeConfigToken({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5505,7 +5505,7 @@ export async function createEdgeConfigToken({
 		CreateEdgeConfigTokenPathParams
 	>({
 		method: "POST",
-		url: `/v1/edge-config/${edgeConfigId}/token`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/token`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5520,7 +5520,7 @@ export async function createEdgeConfigToken({
  * {@link /v1/edge-config/:edgeConfigId/backups/:edgeConfigBackupVersionId}
  */
 export async function getEdgeConfigBackup({
-	pathParams: { edgeConfigId, edgeConfigBackupVersionId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5530,11 +5530,11 @@ export async function getEdgeConfigBackup({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 
-	if (!edgeConfigBackupVersionId) {
+	if (!pathParams["edgeConfigBackupVersionId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigBackupVersionId`);
 	}
 	const data = await request<
@@ -5551,7 +5551,7 @@ export async function getEdgeConfigBackup({
 		GetEdgeConfigBackupPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}/backups/${edgeConfigBackupVersionId}`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/backups/${pathParams["edgeConfigBackupVersionId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5565,7 +5565,7 @@ export async function getEdgeConfigBackup({
  * {@link /v1/edge-config/:edgeConfigId/backups}
  */
 export async function getEdgeConfigBackups({
-	pathParams: { edgeConfigId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5575,7 +5575,7 @@ export async function getEdgeConfigBackups({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!edgeConfigId) {
+	if (!pathParams["edgeConfigId"]) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
 	const data = await request<
@@ -5592,7 +5592,7 @@ export async function getEdgeConfigBackups({
 		GetEdgeConfigBackupsPathParams
 	>({
 		method: "GET",
-		url: `/v1/edge-config/${edgeConfigId}/backups`,
+		url: `/v1/edge-config/${pathParams["edgeConfigId"]}/backups`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5753,7 +5753,7 @@ export async function deleteSharedEnvVariable({
  * {@link /v1/env/:id}
  */
 export async function getSharedEnvVar({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5763,7 +5763,7 @@ export async function getSharedEnvVar({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -5775,7 +5775,7 @@ export async function getSharedEnvVar({
 		GetSharedEnvVarPathParams
 	>({
 		method: "GET",
-		url: `/v1/env/${id}`,
+		url: `/v1/env/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5789,7 +5789,7 @@ export async function getSharedEnvVar({
  * {@link /v1/env/:id/unlink/:projectId}
  */
 export async function unlinkSharedEnvVariable({
-	pathParams: { id, projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5799,11 +5799,11 @@ export async function unlinkSharedEnvVariable({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -5817,7 +5817,7 @@ export async function unlinkSharedEnvVariable({
 		UnlinkSharedEnvVariablePathParams
 	>({
 		method: "PATCH",
-		url: `/v1/env/${id}/unlink/${projectId}`,
+		url: `/v1/env/${pathParams["id"]}/unlink/${pathParams["projectId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5933,7 +5933,7 @@ export async function searchRepo({
  * {@link /v1/integrations/integration/:integrationIdOrSlug/products/:productIdOrSlug/plans}
  */
 export async function getBillingPlans({
-	pathParams: { integrationIdOrSlug, productIdOrSlug },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5943,11 +5943,11 @@ export async function getBillingPlans({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationIdOrSlug) {
+	if (!pathParams["integrationIdOrSlug"]) {
 		throw new Error(`Missing required path parameter: integrationIdOrSlug`);
 	}
 
-	if (!productIdOrSlug) {
+	if (!pathParams["productIdOrSlug"]) {
 		throw new Error(`Missing required path parameter: productIdOrSlug`);
 	}
 	const data = await request<
@@ -5959,7 +5959,7 @@ export async function getBillingPlans({
 		GetBillingPlansPathParams
 	>({
 		method: "GET",
-		url: `/v1/integrations/integration/${integrationIdOrSlug}/products/${productIdOrSlug}/plans`,
+		url: `/v1/integrations/integration/${pathParams["integrationIdOrSlug"]}/products/${pathParams["productIdOrSlug"]}/plans`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -5973,7 +5973,7 @@ export async function getBillingPlans({
  * {@link /v1/integrations/installations/:integrationConfigurationId/resources/:resourceId/connections}
  */
 export async function connectIntegrationResourceToProject({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -5983,11 +5983,11 @@ export async function connectIntegrationResourceToProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -6004,7 +6004,7 @@ export async function connectIntegrationResourceToProject({
 		ConnectIntegrationResourceToProjectPathParams
 	>({
 		method: "POST",
-		url: `/v1/integrations/installations/${integrationConfigurationId}/resources/${resourceId}/connections`,
+		url: `/v1/integrations/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}/connections`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -6019,7 +6019,7 @@ export async function connectIntegrationResourceToProject({
  * {@link /v1/installations/:integrationConfigurationId}
  */
 export async function updateInstallation({
-	pathParams: { integrationConfigurationId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateInstallationPathParams;
@@ -6027,7 +6027,7 @@ export async function updateInstallation({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 	const data = await request<
@@ -6041,7 +6041,7 @@ export async function updateInstallation({
 		UpdateInstallationPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/installations/${integrationConfigurationId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6055,7 +6055,7 @@ export async function updateInstallation({
  * {@link /v1/installations/:integrationConfigurationId/account}
  */
 export async function getAccountInfo({
-	pathParams: { integrationConfigurationId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: GetAccountInfoPathParams;
@@ -6063,7 +6063,7 @@ export async function getAccountInfo({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 	const data = await request<
@@ -6075,7 +6075,7 @@ export async function getAccountInfo({
 		GetAccountInfoPathParams
 	>({
 		method: "GET",
-		url: `/v1/installations/${integrationConfigurationId}/account`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/account`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -6088,7 +6088,7 @@ export async function getAccountInfo({
  * {@link /v1/installations/:integrationConfigurationId/member/:memberId}
  */
 export async function getMember({
-	pathParams: { integrationConfigurationId, memberId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: GetMemberPathParams;
@@ -6096,11 +6096,11 @@ export async function getMember({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!memberId) {
+	if (!pathParams["memberId"]) {
 		throw new Error(`Missing required path parameter: memberId`);
 	}
 	const data = await request<
@@ -6112,7 +6112,7 @@ export async function getMember({
 		GetMemberPathParams
 	>({
 		method: "GET",
-		url: `/v1/installations/${integrationConfigurationId}/member/${memberId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/member/${pathParams["memberId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -6125,7 +6125,7 @@ export async function getMember({
  * {@link /v1/installations/:integrationConfigurationId/events}
  */
 export async function createEvent({
-	pathParams: { integrationConfigurationId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: CreateEventPathParams;
@@ -6133,7 +6133,7 @@ export async function createEvent({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 	const data = await request<
@@ -6145,7 +6145,7 @@ export async function createEvent({
 		CreateEventPathParams
 	>({
 		method: "POST",
-		url: `/v1/installations/${integrationConfigurationId}/events`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/events`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6159,7 +6159,7 @@ export async function createEvent({
  * {@link /v1/installations/:integrationConfigurationId/resources}
  */
 export async function getIntegrationResources({
-	pathParams: { integrationConfigurationId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: GetIntegrationResourcesPathParams;
@@ -6167,7 +6167,7 @@ export async function getIntegrationResources({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 	const data = await request<
@@ -6184,7 +6184,7 @@ export async function getIntegrationResources({
 		GetIntegrationResourcesPathParams
 	>({
 		method: "GET",
-		url: `/v1/installations/${integrationConfigurationId}/resources`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -6197,7 +6197,7 @@ export async function getIntegrationResources({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId}
  */
 export async function getIntegrationResource({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: GetIntegrationResourcePathParams;
@@ -6205,11 +6205,11 @@ export async function getIntegrationResource({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -6226,7 +6226,7 @@ export async function getIntegrationResource({
 		GetIntegrationResourcePathParams
 	>({
 		method: "GET",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -6239,7 +6239,7 @@ export async function getIntegrationResource({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId}
  */
 export async function deleteIntegrationResource({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: DeleteIntegrationResourcePathParams;
@@ -6247,11 +6247,11 @@ export async function deleteIntegrationResource({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -6268,7 +6268,7 @@ export async function deleteIntegrationResource({
 		DeleteIntegrationResourcePathParams
 	>({
 		method: "DELETE",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -6281,7 +6281,7 @@ export async function deleteIntegrationResource({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId}
  */
 export async function importResource({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: ImportResourcePathParams;
@@ -6289,11 +6289,11 @@ export async function importResource({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -6313,7 +6313,7 @@ export async function importResource({
 		ImportResourcePathParams
 	>({
 		method: "PUT",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6327,7 +6327,7 @@ export async function importResource({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId}
  */
 export async function updateResource({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateResourcePathParams;
@@ -6335,11 +6335,11 @@ export async function updateResource({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -6358,7 +6358,7 @@ export async function updateResource({
 		UpdateResourcePathParams
 	>({
 		method: "PATCH",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6372,7 +6372,7 @@ export async function updateResource({
  * {@link /v1/installations/:integrationConfigurationId/billing}
  */
 export async function submitBillingData({
-	pathParams: { integrationConfigurationId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: SubmitBillingDataPathParams;
@@ -6380,7 +6380,7 @@ export async function submitBillingData({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 	const data = await request<
@@ -6394,7 +6394,7 @@ export async function submitBillingData({
 		SubmitBillingDataPathParams
 	>({
 		method: "POST",
-		url: `/v1/installations/${integrationConfigurationId}/billing`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/billing`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6408,7 +6408,7 @@ export async function submitBillingData({
  * {@link /v1/installations/:integrationConfigurationId/billing/invoices}
  */
 export async function submitInvoice({
-	pathParams: { integrationConfigurationId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: SubmitInvoicePathParams;
@@ -6416,7 +6416,7 @@ export async function submitInvoice({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 	const data = await request<
@@ -6430,7 +6430,7 @@ export async function submitInvoice({
 		SubmitInvoicePathParams
 	>({
 		method: "POST",
-		url: `/v1/installations/${integrationConfigurationId}/billing/invoices`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/billing/invoices`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6444,7 +6444,7 @@ export async function submitInvoice({
  * {@link /v1/installations/:integrationConfigurationId/billing/invoices/:invoiceId}
  */
 export async function getInvoice({
-	pathParams: { integrationConfigurationId, invoiceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: GetInvoicePathParams;
@@ -6452,11 +6452,11 @@ export async function getInvoice({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!invoiceId) {
+	if (!pathParams["invoiceId"]) {
 		throw new Error(`Missing required path parameter: invoiceId`);
 	}
 	const data = await request<
@@ -6468,7 +6468,7 @@ export async function getInvoice({
 		GetInvoicePathParams
 	>({
 		method: "GET",
-		url: `/v1/installations/${integrationConfigurationId}/billing/invoices/${invoiceId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/billing/invoices/${pathParams["invoiceId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -6481,7 +6481,7 @@ export async function getInvoice({
  * {@link /v1/installations/:integrationConfigurationId/billing/invoices/:invoiceId/actions}
  */
 export async function updateInvoice({
-	pathParams: { integrationConfigurationId, invoiceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateInvoicePathParams;
@@ -6489,11 +6489,11 @@ export async function updateInvoice({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!invoiceId) {
+	if (!pathParams["invoiceId"]) {
 		throw new Error(`Missing required path parameter: invoiceId`);
 	}
 	const data = await request<
@@ -6507,7 +6507,7 @@ export async function updateInvoice({
 		UpdateInvoicePathParams
 	>({
 		method: "POST",
-		url: `/v1/installations/${integrationConfigurationId}/billing/invoices/${invoiceId}/actions`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/billing/invoices/${pathParams["invoiceId"]}/actions`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6521,7 +6521,7 @@ export async function updateInvoice({
  * {@link /v1/installations/:integrationConfigurationId/billing/balance}
  */
 export async function submitPrepaymentBalances({
-	pathParams: { integrationConfigurationId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: SubmitPrepaymentBalancesPathParams;
@@ -6529,7 +6529,7 @@ export async function submitPrepaymentBalances({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 	const data = await request<
@@ -6546,7 +6546,7 @@ export async function submitPrepaymentBalances({
 		SubmitPrepaymentBalancesPathParams
 	>({
 		method: "POST",
-		url: `/v1/installations/${integrationConfigurationId}/billing/balance`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/billing/balance`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6560,7 +6560,7 @@ export async function submitPrepaymentBalances({
  * {@link /v1/installations/:integrationConfigurationId/products/:integrationProductIdOrSlug/resources/:resourceId/secrets}
  */
 export async function updateResourceSecrets({
-	pathParams: { integrationConfigurationId, integrationProductIdOrSlug, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateResourceSecretsPathParams;
@@ -6568,15 +6568,15 @@ export async function updateResourceSecrets({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!integrationProductIdOrSlug) {
+	if (!pathParams["integrationProductIdOrSlug"]) {
 		throw new Error(`Missing required path parameter: integrationProductIdOrSlug`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -6595,7 +6595,7 @@ export async function updateResourceSecrets({
 		UpdateResourceSecretsPathParams
 	>({
 		method: "PUT",
-		url: `/v1/installations/${integrationConfigurationId}/products/${integrationProductIdOrSlug}/resources/${resourceId}/secrets`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/products/${pathParams["integrationProductIdOrSlug"]}/resources/${pathParams["resourceId"]}/secrets`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6609,7 +6609,7 @@ export async function updateResourceSecrets({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId/secrets}
  */
 export async function updateResourceSecretsById({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateResourceSecretsByIdPathParams;
@@ -6617,11 +6617,11 @@ export async function updateResourceSecretsById({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -6640,7 +6640,7 @@ export async function updateResourceSecretsById({
 		UpdateResourceSecretsByIdPathParams
 	>({
 		method: "PUT",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}/secrets`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}/secrets`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -6685,7 +6685,7 @@ export async function getConfigurations({
  * {@link /v1/integrations/configuration/:id}
  */
 export async function getConfiguration({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -6695,7 +6695,7 @@ export async function getConfiguration({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -6709,7 +6709,7 @@ export async function getConfiguration({
 		GetConfigurationPathParams
 	>({
 		method: "GET",
-		url: `/v1/integrations/configuration/${id}`,
+		url: `/v1/integrations/configuration/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -6723,7 +6723,7 @@ export async function getConfiguration({
  * {@link /v1/integrations/configuration/:id}
  */
 export async function deleteConfiguration({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -6733,7 +6733,7 @@ export async function deleteConfiguration({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -6750,7 +6750,7 @@ export async function deleteConfiguration({
 		DeleteConfigurationPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/integrations/configuration/${id}`,
+		url: `/v1/integrations/configuration/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -6764,7 +6764,7 @@ export async function deleteConfiguration({
  * {@link /v1/integrations/configuration/:id/products}
  */
 export async function getConfigurationProducts({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -6774,7 +6774,7 @@ export async function getConfigurationProducts({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -6792,7 +6792,7 @@ export async function getConfigurationProducts({
 		GetConfigurationProductsPathParams
 	>({
 		method: "GET",
-		url: `/v1/integrations/configuration/${id}/products`,
+		url: `/v1/integrations/configuration/${pathParams["id"]}/products`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -6902,7 +6902,7 @@ export async function createLogDrain({
  * {@link /v1/integrations/log-drains/:id}
  */
 export async function deleteIntegrationLogDrain({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -6912,7 +6912,7 @@ export async function deleteIntegrationLogDrain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -6929,7 +6929,7 @@ export async function deleteIntegrationLogDrain({
 		DeleteIntegrationLogDrainPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/integrations/log-drains/${id}`,
+		url: `/v1/integrations/log-drains/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -6943,7 +6943,7 @@ export async function deleteIntegrationLogDrain({
  * {@link /v1/projects/:projectId/deployments/:deploymentId/runtime-logs}
  */
 export async function getRuntimeLogs({
-	pathParams: { projectId, deploymentId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -6953,11 +6953,11 @@ export async function getRuntimeLogs({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 	const data = await request<
@@ -6969,7 +6969,7 @@ export async function getRuntimeLogs({
 		GetRuntimeLogsPathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${projectId}/deployments/${deploymentId}/runtime-logs`,
+		url: `/v1/projects/${pathParams["projectId"]}/deployments/${pathParams["deploymentId"]}/runtime-logs`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -6983,7 +6983,7 @@ export async function getRuntimeLogs({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId/experimentation/items}
  */
 export async function createExperimentationItem({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: CreateExperimentationItemPathParams;
@@ -6991,11 +6991,11 @@ export async function createExperimentationItem({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -7012,7 +7012,7 @@ export async function createExperimentationItem({
 		CreateExperimentationItemPathParams
 	>({
 		method: "POST",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}/experimentation/items`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}/experimentation/items`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -7026,7 +7026,7 @@ export async function createExperimentationItem({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId/experimentation/items/:itemId}
  */
 export async function updateExperimentationItem({
-	pathParams: { integrationConfigurationId, resourceId, itemId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateExperimentationItemPathParams;
@@ -7034,15 +7034,15 @@ export async function updateExperimentationItem({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 
-	if (!itemId) {
+	if (!pathParams["itemId"]) {
 		throw new Error(`Missing required path parameter: itemId`);
 	}
 	const data = await request<
@@ -7059,7 +7059,7 @@ export async function updateExperimentationItem({
 		UpdateExperimentationItemPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}/experimentation/items/${itemId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}/experimentation/items/${pathParams["itemId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -7073,7 +7073,7 @@ export async function updateExperimentationItem({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId/experimentation/items/:itemId}
  */
 export async function deleteExperimentationItem({
-	pathParams: { integrationConfigurationId, resourceId, itemId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: DeleteExperimentationItemPathParams;
@@ -7081,15 +7081,15 @@ export async function deleteExperimentationItem({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 
-	if (!itemId) {
+	if (!pathParams["itemId"]) {
 		throw new Error(`Missing required path parameter: itemId`);
 	}
 	const data = await request<
@@ -7106,7 +7106,7 @@ export async function deleteExperimentationItem({
 		DeleteExperimentationItemPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}/experimentation/items/${itemId}`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}/experimentation/items/${pathParams["itemId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -7119,7 +7119,7 @@ export async function deleteExperimentationItem({
  * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId/experimentation/edge-config}
  */
 export async function updateExperimentationEdgeConfig({
-	pathParams: { integrationConfigurationId, resourceId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateExperimentationEdgeConfigPathParams;
@@ -7127,11 +7127,11 @@ export async function updateExperimentationEdgeConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!integrationConfigurationId) {
+	if (!pathParams["integrationConfigurationId"]) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
 
-	if (!resourceId) {
+	if (!pathParams["resourceId"]) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
 	const data = await request<
@@ -7150,7 +7150,7 @@ export async function updateExperimentationEdgeConfig({
 		UpdateExperimentationEdgeConfigPathParams
 	>({
 		method: "PUT",
-		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}/experimentation/edge-config`,
+		url: `/v1/installations/${pathParams["integrationConfigurationId"]}/resources/${pathParams["resourceId"]}/experimentation/edge-config`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -7164,7 +7164,7 @@ export async function updateExperimentationEdgeConfig({
  * {@link /v1/projects/:idOrName/members}
  */
 export async function getProjectMembers({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7174,7 +7174,7 @@ export async function getProjectMembers({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7186,7 +7186,7 @@ export async function getProjectMembers({
 		GetProjectMembersPathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${idOrName}/members`,
+		url: `/v1/projects/${pathParams["idOrName"]}/members`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7200,7 +7200,7 @@ export async function getProjectMembers({
  * {@link /v1/projects/:idOrName/members}
  */
 export async function addProjectMember({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7210,7 +7210,7 @@ export async function addProjectMember({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7224,7 +7224,7 @@ export async function addProjectMember({
 		AddProjectMemberPathParams
 	>({
 		method: "POST",
-		url: `/v1/projects/${idOrName}/members`,
+		url: `/v1/projects/${pathParams["idOrName"]}/members`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7239,7 +7239,7 @@ export async function addProjectMember({
  * {@link /v1/projects/:idOrName/members/:uid}
  */
 export async function removeProjectMember({
-	pathParams: { idOrName, uid },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7249,11 +7249,11 @@ export async function removeProjectMember({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!uid) {
+	if (!pathParams["uid"]) {
 		throw new Error(`Missing required path parameter: uid`);
 	}
 	const data = await request<
@@ -7265,7 +7265,7 @@ export async function removeProjectMember({
 		RemoveProjectMemberPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/projects/${idOrName}/members/${uid}`,
+		url: `/v1/projects/${pathParams["idOrName"]}/members/${pathParams["uid"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7352,7 +7352,7 @@ export async function createProject({
  * {@link /v9/projects/:idOrName}
  */
 export async function getProject({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7362,7 +7362,7 @@ export async function getProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7374,7 +7374,7 @@ export async function getProject({
 		GetProjectPathParams
 	>({
 		method: "GET",
-		url: `/v9/projects/${idOrName}`,
+		url: `/v9/projects/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7388,7 +7388,7 @@ export async function getProject({
  * {@link /v9/projects/:idOrName}
  */
 export async function updateProject({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7398,7 +7398,7 @@ export async function updateProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7418,7 +7418,7 @@ export async function updateProject({
 		UpdateProjectPathParams
 	>({
 		method: "PATCH",
-		url: `/v9/projects/${idOrName}`,
+		url: `/v9/projects/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7433,7 +7433,7 @@ export async function updateProject({
  * {@link /v9/projects/:idOrName}
  */
 export async function deleteProject({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7443,7 +7443,7 @@ export async function deleteProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7455,7 +7455,7 @@ export async function deleteProject({
 		DeleteProjectPathParams
 	>({
 		method: "DELETE",
-		url: `/v9/projects/${idOrName}`,
+		url: `/v9/projects/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7469,7 +7469,7 @@ export async function deleteProject({
  * {@link /v1/projects/:idOrName/shared-connect-links}
  */
 export async function updateStaticIps({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7479,7 +7479,7 @@ export async function updateStaticIps({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7498,7 +7498,7 @@ export async function updateStaticIps({
 		UpdateStaticIpsPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/projects/${idOrName}/shared-connect-links`,
+		url: `/v1/projects/${pathParams["idOrName"]}/shared-connect-links`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7513,7 +7513,7 @@ export async function updateStaticIps({
  * {@link /v9/projects/:idOrName/custom-environments}
  */
 export async function createCustomEnvironment({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7523,7 +7523,7 @@ export async function createCustomEnvironment({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7541,7 +7541,7 @@ export async function createCustomEnvironment({
 		CreateCustomEnvironmentPathParams
 	>({
 		method: "POST",
-		url: `/v9/projects/${idOrName}/custom-environments`,
+		url: `/v9/projects/${pathParams["idOrName"]}/custom-environments`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7556,7 +7556,7 @@ export async function createCustomEnvironment({
  * {@link /v9/projects/:idOrName/custom-environments}
  */
 export async function listCustomEnvironments({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7566,7 +7566,7 @@ export async function listCustomEnvironments({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7578,7 +7578,7 @@ export async function listCustomEnvironments({
 		ListCustomEnvironmentsPathParams
 	>({
 		method: "GET",
-		url: `/v9/projects/${idOrName}/custom-environments`,
+		url: `/v9/projects/${pathParams["idOrName"]}/custom-environments`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7592,7 +7592,7 @@ export async function listCustomEnvironments({
  * {@link /v9/projects/:idOrName/custom-environments/:environmentSlugOrId}
  */
 export async function getCustomEnvironment({
-	pathParams: { idOrName, environmentSlugOrId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7602,11 +7602,11 @@ export async function getCustomEnvironment({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!environmentSlugOrId) {
+	if (!pathParams["environmentSlugOrId"]) {
 		throw new Error(`Missing required path parameter: environmentSlugOrId`);
 	}
 	const data = await request<
@@ -7623,7 +7623,7 @@ export async function getCustomEnvironment({
 		GetCustomEnvironmentPathParams
 	>({
 		method: "GET",
-		url: `/v9/projects/${idOrName}/custom-environments/${environmentSlugOrId}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/custom-environments/${pathParams["environmentSlugOrId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7637,7 +7637,7 @@ export async function getCustomEnvironment({
  * {@link /v9/projects/:idOrName/custom-environments/:environmentSlugOrId}
  */
 export async function updateCustomEnvironment({
-	pathParams: { idOrName, environmentSlugOrId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7647,11 +7647,11 @@ export async function updateCustomEnvironment({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!environmentSlugOrId) {
+	if (!pathParams["environmentSlugOrId"]) {
 		throw new Error(`Missing required path parameter: environmentSlugOrId`);
 	}
 	const data = await request<
@@ -7669,7 +7669,7 @@ export async function updateCustomEnvironment({
 		UpdateCustomEnvironmentPathParams
 	>({
 		method: "PATCH",
-		url: `/v9/projects/${idOrName}/custom-environments/${environmentSlugOrId}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/custom-environments/${pathParams["environmentSlugOrId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7684,7 +7684,7 @@ export async function updateCustomEnvironment({
  * {@link /v9/projects/:idOrName/custom-environments/:environmentSlugOrId}
  */
 export async function removeCustomEnvironment({
-	pathParams: { idOrName, environmentSlugOrId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7694,11 +7694,11 @@ export async function removeCustomEnvironment({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!environmentSlugOrId) {
+	if (!pathParams["environmentSlugOrId"]) {
 		throw new Error(`Missing required path parameter: environmentSlugOrId`);
 	}
 	const data = await request<
@@ -7712,7 +7712,7 @@ export async function removeCustomEnvironment({
 		RemoveCustomEnvironmentPathParams
 	>({
 		method: "DELETE",
-		url: `/v9/projects/${idOrName}/custom-environments/${environmentSlugOrId}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/custom-environments/${pathParams["environmentSlugOrId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7727,7 +7727,7 @@ export async function removeCustomEnvironment({
  * {@link /v9/projects/:idOrName/domains}
  */
 export async function getProjectDomains({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7737,7 +7737,7 @@ export async function getProjectDomains({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7749,7 +7749,7 @@ export async function getProjectDomains({
 		GetProjectDomainsPathParams
 	>({
 		method: "GET",
-		url: `/v9/projects/${idOrName}/domains`,
+		url: `/v9/projects/${pathParams["idOrName"]}/domains`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7763,7 +7763,7 @@ export async function getProjectDomains({
  * {@link /v9/projects/:idOrName/domains/:domain}
  */
 export async function getProjectDomain({
-	pathParams: { idOrName, domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7773,11 +7773,11 @@ export async function getProjectDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -7789,7 +7789,7 @@ export async function getProjectDomain({
 		GetProjectDomainPathParams
 	>({
 		method: "GET",
-		url: `/v9/projects/${idOrName}/domains/${domain}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/domains/${pathParams["domain"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7803,7 +7803,7 @@ export async function getProjectDomain({
  * {@link /v9/projects/:idOrName/domains/:domain}
  */
 export async function updateProjectDomain({
-	pathParams: { idOrName, domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7813,11 +7813,11 @@ export async function updateProjectDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -7834,7 +7834,7 @@ export async function updateProjectDomain({
 		UpdateProjectDomainPathParams
 	>({
 		method: "PATCH",
-		url: `/v9/projects/${idOrName}/domains/${domain}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/domains/${pathParams["domain"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7849,7 +7849,7 @@ export async function updateProjectDomain({
  * {@link /v9/projects/:idOrName/domains/:domain}
  */
 export async function removeProjectDomain({
-	pathParams: { idOrName, domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7859,11 +7859,11 @@ export async function removeProjectDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -7881,7 +7881,7 @@ export async function removeProjectDomain({
 		RemoveProjectDomainPathParams
 	>({
 		method: "DELETE",
-		url: `/v9/projects/${idOrName}/domains/${domain}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/domains/${pathParams["domain"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7896,7 +7896,7 @@ export async function removeProjectDomain({
  * {@link /v10/projects/:idOrName/domains}
  */
 export async function addProjectDomain({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7906,7 +7906,7 @@ export async function addProjectDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -7924,7 +7924,7 @@ export async function addProjectDomain({
 		AddProjectDomainPathParams
 	>({
 		method: "POST",
-		url: `/v10/projects/${idOrName}/domains`,
+		url: `/v10/projects/${pathParams["idOrName"]}/domains`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7939,7 +7939,7 @@ export async function addProjectDomain({
  * {@link /v1/projects/:idOrName/domains/:domain/move}
  */
 export async function moveProjectDomain({
-	pathParams: { idOrName, domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7949,11 +7949,11 @@ export async function moveProjectDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -7967,7 +7967,7 @@ export async function moveProjectDomain({
 		MoveProjectDomainPathParams
 	>({
 		method: "POST",
-		url: `/v1/projects/${idOrName}/domains/${domain}/move`,
+		url: `/v1/projects/${pathParams["idOrName"]}/domains/${pathParams["domain"]}/move`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -7982,7 +7982,7 @@ export async function moveProjectDomain({
  * {@link /v9/projects/:idOrName/domains/:domain/verify}
  */
 export async function verifyProjectDomain({
-	pathParams: { idOrName, domain },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -7992,11 +7992,11 @@ export async function verifyProjectDomain({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!domain) {
+	if (!pathParams["domain"]) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
 	const data = await request<
@@ -8008,7 +8008,7 @@ export async function verifyProjectDomain({
 		VerifyProjectDomainPathParams
 	>({
 		method: "POST",
-		url: `/v9/projects/${idOrName}/domains/${domain}/verify`,
+		url: `/v9/projects/${pathParams["idOrName"]}/domains/${pathParams["domain"]}/verify`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8022,7 +8022,7 @@ export async function verifyProjectDomain({
  * {@link /v10/projects/:idOrName/env}
  */
 export async function filterProjectEnvs({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8032,7 +8032,7 @@ export async function filterProjectEnvs({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8044,7 +8044,7 @@ export async function filterProjectEnvs({
 		FilterProjectEnvsPathParams
 	>({
 		method: "GET",
-		url: `/v10/projects/${idOrName}/env`,
+		url: `/v10/projects/${pathParams["idOrName"]}/env`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8058,7 +8058,7 @@ export async function filterProjectEnvs({
  * {@link /v10/projects/:idOrName/env}
  */
 export async function createProjectEnv({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8068,7 +8068,7 @@ export async function createProjectEnv({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8089,7 +8089,7 @@ export async function createProjectEnv({
 		CreateProjectEnvPathParams
 	>({
 		method: "POST",
-		url: `/v10/projects/${idOrName}/env`,
+		url: `/v10/projects/${pathParams["idOrName"]}/env`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8104,7 +8104,7 @@ export async function createProjectEnv({
  * {@link /v1/projects/:idOrName/env/:id}
  */
 export async function getProjectEnv({
-	pathParams: { idOrName, id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8114,11 +8114,11 @@ export async function getProjectEnv({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -8130,7 +8130,7 @@ export async function getProjectEnv({
 		GetProjectEnvPathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${idOrName}/env/${id}`,
+		url: `/v1/projects/${pathParams["idOrName"]}/env/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8144,7 +8144,7 @@ export async function getProjectEnv({
  * {@link /v9/projects/:idOrName/env/:id}
  */
 export async function removeProjectEnv({
-	pathParams: { idOrName, id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8154,11 +8154,11 @@ export async function removeProjectEnv({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -8176,7 +8176,7 @@ export async function removeProjectEnv({
 		RemoveProjectEnvPathParams
 	>({
 		method: "DELETE",
-		url: `/v9/projects/${idOrName}/env/${id}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/env/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8190,7 +8190,7 @@ export async function removeProjectEnv({
  * {@link /v9/projects/:idOrName/env/:id}
  */
 export async function editProjectEnv({
-	pathParams: { idOrName, id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8200,11 +8200,11 @@ export async function editProjectEnv({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -8224,7 +8224,7 @@ export async function editProjectEnv({
 		EditProjectEnvPathParams
 	>({
 		method: "PATCH",
-		url: `/v9/projects/${idOrName}/env/${id}`,
+		url: `/v9/projects/${pathParams["idOrName"]}/env/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8239,7 +8239,7 @@ export async function editProjectEnv({
  * {@link /v1/projects/:idOrName/env}
  */
 export async function batchRemoveProjectEnv({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8249,7 +8249,7 @@ export async function batchRemoveProjectEnv({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8267,7 +8267,7 @@ export async function batchRemoveProjectEnv({
 		BatchRemoveProjectEnvPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/projects/${idOrName}/env`,
+		url: `/v1/projects/${pathParams["idOrName"]}/env`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8282,7 +8282,7 @@ export async function batchRemoveProjectEnv({
  * {@link /v1/projects/:idOrName/client-cert}
  */
 export async function uploadProjectClientCert({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8292,7 +8292,7 @@ export async function uploadProjectClientCert({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8312,7 +8312,7 @@ export async function uploadProjectClientCert({
 		UploadProjectClientCertPathParams
 	>({
 		method: "POST",
-		url: `/v1/projects/${idOrName}/client-cert`,
+		url: `/v1/projects/${pathParams["idOrName"]}/client-cert`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8327,7 +8327,7 @@ export async function uploadProjectClientCert({
  * {@link /v1/projects/:idOrName/client-cert}
  */
 export async function getProjectClientCerts({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8337,7 +8337,7 @@ export async function getProjectClientCerts({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8354,7 +8354,7 @@ export async function getProjectClientCerts({
 		GetProjectClientCertsPathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${idOrName}/client-cert`,
+		url: `/v1/projects/${pathParams["idOrName"]}/client-cert`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8368,7 +8368,7 @@ export async function getProjectClientCerts({
  * {@link /v1/projects/:idOrName/client-cert/:certId}
  */
 export async function deleteProjectClientCert({
-	pathParams: { idOrName, certId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8378,11 +8378,11 @@ export async function deleteProjectClientCert({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 
-	if (!certId) {
+	if (!pathParams["certId"]) {
 		throw new Error(`Missing required path parameter: certId`);
 	}
 	const data = await request<
@@ -8400,7 +8400,7 @@ export async function deleteProjectClientCert({
 		DeleteProjectClientCertPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/projects/${idOrName}/client-cert/${certId}`,
+		url: `/v1/projects/${pathParams["idOrName"]}/client-cert/${pathParams["certId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8414,7 +8414,7 @@ export async function deleteProjectClientCert({
  * {@link /v1/projects/:idOrName/rolling-release/billing}
  */
 export async function getRollingReleaseBillingStatus({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8424,7 +8424,7 @@ export async function getRollingReleaseBillingStatus({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8441,7 +8441,7 @@ export async function getRollingReleaseBillingStatus({
 		GetRollingReleaseBillingStatusPathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${idOrName}/rolling-release/billing`,
+		url: `/v1/projects/${pathParams["idOrName"]}/rolling-release/billing`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8455,7 +8455,7 @@ export async function getRollingReleaseBillingStatus({
  * {@link /v1/projects/:idOrName/rolling-release/config}
  */
 export async function getRollingReleaseConfig({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8465,7 +8465,7 @@ export async function getRollingReleaseConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8482,7 +8482,7 @@ export async function getRollingReleaseConfig({
 		GetRollingReleaseConfigPathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${idOrName}/rolling-release/config`,
+		url: `/v1/projects/${pathParams["idOrName"]}/rolling-release/config`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8496,7 +8496,7 @@ export async function getRollingReleaseConfig({
  * {@link /v1/projects/:idOrName/rolling-release/config}
  */
 export async function deleteRollingReleaseConfig({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8506,7 +8506,7 @@ export async function deleteRollingReleaseConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8523,7 +8523,7 @@ export async function deleteRollingReleaseConfig({
 		DeleteRollingReleaseConfigPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/projects/${idOrName}/rolling-release/config`,
+		url: `/v1/projects/${pathParams["idOrName"]}/rolling-release/config`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8537,7 +8537,7 @@ export async function deleteRollingReleaseConfig({
  * {@link /v1/projects/:idOrName/rolling-release/config}
  */
 export async function updateRollingReleaseConfig({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8547,7 +8547,7 @@ export async function updateRollingReleaseConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8564,7 +8564,7 @@ export async function updateRollingReleaseConfig({
 		UpdateRollingReleaseConfigPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/projects/${idOrName}/rolling-release/config`,
+		url: `/v1/projects/${pathParams["idOrName"]}/rolling-release/config`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8578,7 +8578,7 @@ export async function updateRollingReleaseConfig({
  * {@link /v1/projects/:idOrName/rolling-release}
  */
 export async function getRollingRelease({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8588,7 +8588,7 @@ export async function getRollingRelease({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8602,7 +8602,7 @@ export async function getRollingRelease({
 		GetRollingReleasePathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${idOrName}/rolling-release`,
+		url: `/v1/projects/${pathParams["idOrName"]}/rolling-release`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8616,7 +8616,7 @@ export async function getRollingRelease({
  * {@link /v1/projects/:idOrName/rolling-release/approve-stage}
  */
 export async function approveRollingReleaseStage({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8626,7 +8626,7 @@ export async function approveRollingReleaseStage({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8644,7 +8644,7 @@ export async function approveRollingReleaseStage({
 		ApproveRollingReleaseStagePathParams
 	>({
 		method: "POST",
-		url: `/v1/projects/${idOrName}/rolling-release/approve-stage`,
+		url: `/v1/projects/${pathParams["idOrName"]}/rolling-release/approve-stage`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8659,7 +8659,7 @@ export async function approveRollingReleaseStage({
  * {@link /v1/projects/:idOrName/rolling-release/complete}
  */
 export async function completeRollingRelease({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8669,7 +8669,7 @@ export async function completeRollingRelease({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8686,7 +8686,7 @@ export async function completeRollingRelease({
 		CompleteRollingReleasePathParams
 	>({
 		method: "POST",
-		url: `/v1/projects/${idOrName}/rolling-release/complete`,
+		url: `/v1/projects/${pathParams["idOrName"]}/rolling-release/complete`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8701,7 +8701,7 @@ export async function completeRollingRelease({
  * {@link /projects/:idOrName/transfer-request}
  */
 export async function createProjectTransferRequest({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8711,7 +8711,7 @@ export async function createProjectTransferRequest({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8727,7 +8727,7 @@ export async function createProjectTransferRequest({
 		CreateProjectTransferRequestPathParams
 	>({
 		method: "POST",
-		url: `/projects/${idOrName}/transfer-request`,
+		url: `/projects/${pathParams["idOrName"]}/transfer-request`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8742,7 +8742,7 @@ export async function createProjectTransferRequest({
  * {@link /projects/transfer-request/:code}
  */
 export async function acceptProjectTransferRequest({
-	pathParams: { code },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8752,7 +8752,7 @@ export async function acceptProjectTransferRequest({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!code) {
+	if (!pathParams["code"]) {
 		throw new Error(`Missing required path parameter: code`);
 	}
 	const data = await request<
@@ -8770,7 +8770,7 @@ export async function acceptProjectTransferRequest({
 		AcceptProjectTransferRequestPathParams
 	>({
 		method: "PUT",
-		url: `/projects/transfer-request/${code}`,
+		url: `/projects/transfer-request/${pathParams["code"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8785,7 +8785,7 @@ export async function acceptProjectTransferRequest({
  * {@link /v1/projects/:idOrName/protection-bypass}
  */
 export async function updateProjectProtectionBypass({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8795,7 +8795,7 @@ export async function updateProjectProtectionBypass({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -8813,7 +8813,7 @@ export async function updateProjectProtectionBypass({
 		UpdateProjectProtectionBypassPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/projects/${idOrName}/protection-bypass`,
+		url: `/v1/projects/${pathParams["idOrName"]}/protection-bypass`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8828,7 +8828,7 @@ export async function updateProjectProtectionBypass({
  * {@link /v10/projects/:projectId/promote/:deploymentId}
  */
 export async function requestPromote({
-	pathParams: { projectId, deploymentId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8838,11 +8838,11 @@ export async function requestPromote({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 
-	if (!deploymentId) {
+	if (!pathParams["deploymentId"]) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
 	const data = await request<
@@ -8854,7 +8854,7 @@ export async function requestPromote({
 		RequestPromotePathParams
 	>({
 		method: "POST",
-		url: `/v10/projects/${projectId}/promote/${deploymentId}`,
+		url: `/v10/projects/${pathParams["projectId"]}/promote/${pathParams["deploymentId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8868,7 +8868,7 @@ export async function requestPromote({
  * {@link /v1/projects/:projectId/promote/aliases}
  */
 export async function listPromoteAliases({
-	pathParams: { projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8878,7 +8878,7 @@ export async function listPromoteAliases({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -8892,7 +8892,7 @@ export async function listPromoteAliases({
 		ListPromoteAliasesPathParams
 	>({
 		method: "GET",
-		url: `/v1/projects/${projectId}/promote/aliases`,
+		url: `/v1/projects/${pathParams["projectId"]}/promote/aliases`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8906,7 +8906,7 @@ export async function listPromoteAliases({
  * {@link /v1/projects/:projectId/pause}
  */
 export async function pauseProject({
-	pathParams: { projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8916,7 +8916,7 @@ export async function pauseProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -8928,7 +8928,7 @@ export async function pauseProject({
 		PauseProjectPathParams
 	>({
 		method: "POST",
-		url: `/v1/projects/${projectId}/pause`,
+		url: `/v1/projects/${pathParams["projectId"]}/pause`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -8942,7 +8942,7 @@ export async function pauseProject({
  * {@link /v1/projects/:projectId/unpause}
  */
 export async function unpauseProject({
-	pathParams: { projectId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -8952,7 +8952,7 @@ export async function unpauseProject({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!projectId) {
+	if (!pathParams["projectId"]) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
 	const data = await request<
@@ -8964,7 +8964,7 @@ export async function unpauseProject({
 		UnpauseProjectPathParams
 	>({
 		method: "POST",
-		url: `/v1/projects/${projectId}/unpause`,
+		url: `/v1/projects/${pathParams["projectId"]}/unpause`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9093,7 +9093,7 @@ export async function updateFirewallConfig({
  * {@link /v1/security/firewall/config/:configVersion}
  */
 export async function getFirewallConfig({
-	pathParams: { configVersion },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -9103,7 +9103,7 @@ export async function getFirewallConfig({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!configVersion) {
+	if (!pathParams["configVersion"]) {
 		throw new Error(`Missing required path parameter: configVersion`);
 	}
 	const data = await request<
@@ -9117,7 +9117,7 @@ export async function getFirewallConfig({
 		GetFirewallConfigPathParams
 	>({
 		method: "GET",
-		url: `/v1/security/firewall/config/${configVersion}`,
+		url: `/v1/security/firewall/config/${pathParams["configVersion"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9350,7 +9350,7 @@ export async function createIntegrationStoreDirect({
  * {@link /v3/teams/:teamId/members}
  */
 export async function getTeamMembers({
-	pathParams: { teamId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -9360,7 +9360,7 @@ export async function getTeamMembers({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9372,7 +9372,7 @@ export async function getTeamMembers({
 		GetTeamMembersPathParams
 	>({
 		method: "GET",
-		url: `/v3/teams/${teamId}/members`,
+		url: `/v3/teams/${pathParams["teamId"]}/members`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9386,7 +9386,7 @@ export async function getTeamMembers({
  * {@link /v2/teams/:teamId/members}
  */
 export async function inviteUserToTeam({
-	pathParams: { teamId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: InviteUserToTeamPathParams;
@@ -9394,7 +9394,7 @@ export async function inviteUserToTeam({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9408,7 +9408,7 @@ export async function inviteUserToTeam({
 		InviteUserToTeamPathParams
 	>({
 		method: "POST",
-		url: `/v2/teams/${teamId}/members`,
+		url: `/v2/teams/${pathParams["teamId"]}/members`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -9422,7 +9422,7 @@ export async function inviteUserToTeam({
  * {@link /v1/teams/:teamId/request}
  */
 export async function requestAccessToTeam({
-	pathParams: { teamId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: RequestAccessToTeamPathParams;
@@ -9430,7 +9430,7 @@ export async function requestAccessToTeam({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9448,7 +9448,7 @@ export async function requestAccessToTeam({
 		RequestAccessToTeamPathParams
 	>({
 		method: "POST",
-		url: `/v1/teams/${teamId}/request`,
+		url: `/v1/teams/${pathParams["teamId"]}/request`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -9462,7 +9462,7 @@ export async function requestAccessToTeam({
  * {@link /v1/teams/:teamId/request/:userId}
  */
 export async function getTeamAccessRequest({
-	pathParams: { userId, teamId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: GetTeamAccessRequestPathParams;
@@ -9470,11 +9470,11 @@ export async function getTeamAccessRequest({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!userId) {
+	if (!pathParams["userId"]) {
 		throw new Error(`Missing required path parameter: userId`);
 	}
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9491,7 +9491,7 @@ export async function getTeamAccessRequest({
 		GetTeamAccessRequestPathParams
 	>({
 		method: "GET",
-		url: `/v1/teams/${teamId}/request/${userId}`,
+		url: `/v1/teams/${pathParams["teamId"]}/request/${pathParams["userId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -9504,7 +9504,7 @@ export async function getTeamAccessRequest({
  * {@link /v1/teams/:teamId/members/teams/join}
  */
 export async function joinTeam({
-	pathParams: { teamId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: JoinTeamPathParams;
@@ -9512,7 +9512,7 @@ export async function joinTeam({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9524,7 +9524,7 @@ export async function joinTeam({
 		JoinTeamPathParams
 	>({
 		method: "POST",
-		url: `/v1/teams/${teamId}/members/teams/join`,
+		url: `/v1/teams/${pathParams["teamId"]}/members/teams/join`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -9538,7 +9538,7 @@ export async function joinTeam({
  * {@link /v1/teams/:teamId/members/:uid}
  */
 export async function updateTeamMember({
-	pathParams: { uid, teamId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: UpdateTeamMemberPathParams;
@@ -9546,11 +9546,11 @@ export async function updateTeamMember({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!uid) {
+	if (!pathParams["uid"]) {
 		throw new Error(`Missing required path parameter: uid`);
 	}
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9570,7 +9570,7 @@ export async function updateTeamMember({
 		UpdateTeamMemberPathParams
 	>({
 		method: "PATCH",
-		url: `/v1/teams/${teamId}/members/${uid}`,
+		url: `/v1/teams/${pathParams["teamId"]}/members/${pathParams["uid"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -9584,7 +9584,7 @@ export async function updateTeamMember({
  * {@link /v1/teams/:teamId/members/:uid}
  */
 export async function removeTeamMember({
-	pathParams: { uid, teamId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -9594,11 +9594,11 @@ export async function removeTeamMember({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!uid) {
+	if (!pathParams["uid"]) {
 		throw new Error(`Missing required path parameter: uid`);
 	}
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9616,7 +9616,7 @@ export async function removeTeamMember({
 		RemoveTeamMemberPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/teams/${teamId}/members/${uid}`,
+		url: `/v1/teams/${pathParams["teamId"]}/members/${pathParams["uid"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9630,7 +9630,7 @@ export async function removeTeamMember({
  * {@link /v2/teams/:teamId}
  */
 export async function getTeam({
-	pathParams: { teamId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -9640,7 +9640,7 @@ export async function getTeam({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9652,7 +9652,7 @@ export async function getTeam({
 		GetTeamPathParams
 	>({
 		method: "GET",
-		url: `/v2/teams/${teamId}`,
+		url: `/v2/teams/${pathParams["teamId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9666,7 +9666,7 @@ export async function getTeam({
  * {@link /v2/teams/:teamId}
  */
 export async function patchTeam({
-	pathParams: { teamId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -9676,7 +9676,7 @@ export async function patchTeam({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9688,7 +9688,7 @@ export async function patchTeam({
 		PatchTeamPathParams
 	>({
 		method: "PATCH",
-		url: `/v2/teams/${teamId}`,
+		url: `/v2/teams/${pathParams["teamId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9763,7 +9763,7 @@ export async function createTeam({
  * {@link /v1/teams/:teamId/dsync-roles}
  */
 export async function postTeamDsyncRoles({
-	pathParams: { teamId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -9773,7 +9773,7 @@ export async function postTeamDsyncRoles({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9785,7 +9785,7 @@ export async function postTeamDsyncRoles({
 		PostTeamDsyncRolesPathParams
 	>({
 		method: "POST",
-		url: `/v1/teams/${teamId}/dsync-roles`,
+		url: `/v1/teams/${pathParams["teamId"]}/dsync-roles`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9800,7 +9800,7 @@ export async function postTeamDsyncRoles({
  * {@link /v1/teams/:teamId}
  */
 export async function deleteTeam({
-	pathParams: { teamId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -9810,7 +9810,7 @@ export async function deleteTeam({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9822,7 +9822,7 @@ export async function deleteTeam({
 		DeleteTeamPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/teams/${teamId}`,
+		url: `/v1/teams/${pathParams["teamId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -9837,7 +9837,7 @@ export async function deleteTeam({
  * {@link /v1/teams/:teamId/invites/:inviteId}
  */
 export async function deleteTeamInviteCode({
-	pathParams: { inviteId, teamId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: DeleteTeamInviteCodePathParams;
@@ -9845,11 +9845,11 @@ export async function deleteTeamInviteCode({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!inviteId) {
+	if (!pathParams["inviteId"]) {
 		throw new Error(`Missing required path parameter: inviteId`);
 	}
 
-	if (!teamId) {
+	if (!pathParams["teamId"]) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
 	const data = await request<
@@ -9866,7 +9866,7 @@ export async function deleteTeamInviteCode({
 		DeleteTeamInviteCodePathParams
 	>({
 		method: "DELETE",
-		url: `/v1/teams/${teamId}/invites/${inviteId}`,
+		url: `/v1/teams/${pathParams["teamId"]}/invites/${pathParams["inviteId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -9968,7 +9968,7 @@ export async function createAuthToken({
  * {@link /v5/user/tokens/:tokenId}
  */
 export async function getAuthToken({
-	pathParams: { tokenId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: GetAuthTokenPathParams;
@@ -9976,7 +9976,7 @@ export async function getAuthToken({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!tokenId) {
+	if (!pathParams["tokenId"]) {
 		throw new Error(`Missing required path parameter: tokenId`);
 	}
 	const data = await request<
@@ -9988,7 +9988,7 @@ export async function getAuthToken({
 		GetAuthTokenPathParams
 	>({
 		method: "GET",
-		url: `/v5/user/tokens/${tokenId}`,
+		url: `/v5/user/tokens/${pathParams["tokenId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -10001,7 +10001,7 @@ export async function getAuthToken({
  * {@link /v3/user/tokens/:tokenId}
  */
 export async function deleteAuthToken({
-	pathParams: { tokenId },
+	pathParams,
 	config = {},
 }: {
 	pathParams: DeleteAuthTokenPathParams;
@@ -10009,7 +10009,7 @@ export async function deleteAuthToken({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!tokenId) {
+	if (!pathParams["tokenId"]) {
 		throw new Error(`Missing required path parameter: tokenId`);
 	}
 	const data = await request<
@@ -10021,7 +10021,7 @@ export async function deleteAuthToken({
 		DeleteAuthTokenPathParams
 	>({
 		method: "DELETE",
-		url: `/v3/user/tokens/${tokenId}`,
+		url: `/v3/user/tokens/${pathParams["tokenId"]}`,
 		baseUrl: "https://api.vercel.com",
 		...requestConfig,
 	});
@@ -10149,7 +10149,7 @@ export async function getWebhooks({
  * {@link /v1/webhooks/:id}
  */
 export async function getWebhook({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10159,7 +10159,7 @@ export async function getWebhook({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10171,7 +10171,7 @@ export async function getWebhook({
 		GetWebhookPathParams
 	>({
 		method: "GET",
-		url: `/v1/webhooks/${id}`,
+		url: `/v1/webhooks/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10185,7 +10185,7 @@ export async function getWebhook({
  * {@link /v1/webhooks/:id}
  */
 export async function deleteWebhook({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10195,7 +10195,7 @@ export async function deleteWebhook({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10207,7 +10207,7 @@ export async function deleteWebhook({
 		DeleteWebhookPathParams
 	>({
 		method: "DELETE",
-		url: `/v1/webhooks/${id}`,
+		url: `/v1/webhooks/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10221,7 +10221,7 @@ export async function deleteWebhook({
  * {@link /v2/deployments/:id/aliases}
  */
 export async function listDeploymentAliases({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10231,7 +10231,7 @@ export async function listDeploymentAliases({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10248,7 +10248,7 @@ export async function listDeploymentAliases({
 		ListDeploymentAliasesPathParams
 	>({
 		method: "GET",
-		url: `/v2/deployments/${id}/aliases`,
+		url: `/v2/deployments/${pathParams["id"]}/aliases`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10262,7 +10262,7 @@ export async function listDeploymentAliases({
  * {@link /v2/deployments/:id/aliases}
  */
 export async function assignAlias({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10272,7 +10272,7 @@ export async function assignAlias({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10291,7 +10291,7 @@ export async function assignAlias({
 		AssignAliasPathParams
 	>({
 		method: "POST",
-		url: `/v2/deployments/${id}/aliases`,
+		url: `/v2/deployments/${pathParams["id"]}/aliases`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10337,7 +10337,7 @@ export async function listAliases({
  * {@link /v4/aliases/:idOrAlias}
  */
 export async function getAlias({
-	pathParams: { idOrAlias },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10347,7 +10347,7 @@ export async function getAlias({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrAlias) {
+	if (!pathParams["idOrAlias"]) {
 		throw new Error(`Missing required path parameter: idOrAlias`);
 	}
 	const data = await request<
@@ -10359,7 +10359,7 @@ export async function getAlias({
 		GetAliasPathParams
 	>({
 		method: "GET",
-		url: `/v4/aliases/${idOrAlias}`,
+		url: `/v4/aliases/${pathParams["idOrAlias"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10373,7 +10373,7 @@ export async function getAlias({
  * {@link /v2/aliases/:aliasId}
  */
 export async function deleteAlias({
-	pathParams: { aliasId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10383,7 +10383,7 @@ export async function deleteAlias({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!aliasId) {
+	if (!pathParams["aliasId"]) {
 		throw new Error(`Missing required path parameter: aliasId`);
 	}
 	const data = await request<
@@ -10395,7 +10395,7 @@ export async function deleteAlias({
 		DeleteAliasPathParams
 	>({
 		method: "DELETE",
-		url: `/v2/aliases/${aliasId}`,
+		url: `/v2/aliases/${pathParams["aliasId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10409,7 +10409,7 @@ export async function deleteAlias({
  * {@link /aliases/:id/protection-bypass}
  */
 export async function patchUrlProtectionBypass({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10419,7 +10419,7 @@ export async function patchUrlProtectionBypass({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10439,7 +10439,7 @@ export async function patchUrlProtectionBypass({
 		PatchUrlProtectionBypassPathParams
 	>({
 		method: "PATCH",
-		url: `/aliases/${id}/protection-bypass`,
+		url: `/aliases/${pathParams["id"]}/protection-bypass`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10475,7 +10475,7 @@ export async function listCerts({
  * {@link /v8/certs/:id}
  */
 export async function getCertById({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10485,7 +10485,7 @@ export async function getCertById({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10497,7 +10497,7 @@ export async function getCertById({
 		GetCertByIdPathParams
 	>({
 		method: "GET",
-		url: `/v8/certs/${id}`,
+		url: `/v8/certs/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10511,7 +10511,7 @@ export async function getCertById({
  * {@link /v8/certs/:id}
  */
 export async function removeCert({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10521,7 +10521,7 @@ export async function removeCert({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10533,7 +10533,7 @@ export async function removeCert({
 		RemoveCertPathParams
 	>({
 		method: "DELETE",
-		url: `/v8/certs/${id}`,
+		url: `/v8/certs/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10619,7 +10619,7 @@ export async function uploadCert({
  * {@link /v6/deployments/:id/files}
  */
 export async function listDeploymentFiles({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10629,7 +10629,7 @@ export async function listDeploymentFiles({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10646,7 +10646,7 @@ export async function listDeploymentFiles({
 		ListDeploymentFilesPathParams
 	>({
 		method: "GET",
-		url: `/v6/deployments/${id}/files`,
+		url: `/v6/deployments/${pathParams["id"]}/files`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10660,7 +10660,7 @@ export async function listDeploymentFiles({
  * {@link /v8/deployments/:id/files/:fileId}
  */
 export async function getDeploymentFileContents({
-	pathParams: { id, fileId },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10670,11 +10670,11 @@ export async function getDeploymentFileContents({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 
-	if (!fileId) {
+	if (!pathParams["fileId"]) {
 		throw new Error(`Missing required path parameter: fileId`);
 	}
 	const data = await request<
@@ -10692,7 +10692,7 @@ export async function getDeploymentFileContents({
 		GetDeploymentFileContentsPathParams
 	>({
 		method: "GET",
-		url: `/v8/deployments/${id}/files/${fileId}`,
+		url: `/v8/deployments/${pathParams["id"]}/files/${pathParams["fileId"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10743,7 +10743,7 @@ export async function getDeployments({
  * {@link /v13/deployments/:id}
  */
 export async function deleteDeployment({
-	pathParams: { id },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10753,7 +10753,7 @@ export async function deleteDeployment({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!id) {
+	if (!pathParams["id"]) {
 		throw new Error(`Missing required path parameter: id`);
 	}
 	const data = await request<
@@ -10767,7 +10767,7 @@ export async function deleteDeployment({
 		DeleteDeploymentPathParams
 	>({
 		method: "DELETE",
-		url: `/v13/deployments/${id}`,
+		url: `/v13/deployments/${pathParams["id"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10812,7 +10812,7 @@ export async function getSecrets({
  * {@link /v2/secrets/:name}
  */
 export async function createSecret({
-	pathParams: { name },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10822,7 +10822,7 @@ export async function createSecret({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!name) {
+	if (!pathParams["name"]) {
 		throw new Error(`Missing required path parameter: name`);
 	}
 	const data = await request<
@@ -10836,7 +10836,7 @@ export async function createSecret({
 		CreateSecretPathParams
 	>({
 		method: "POST",
-		url: `/v2/secrets/${name}`,
+		url: `/v2/secrets/${pathParams["name"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10851,7 +10851,7 @@ export async function createSecret({
  * {@link /v2/secrets/:name}
  */
 export async function renameSecret({
-	pathParams: { name },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10861,7 +10861,7 @@ export async function renameSecret({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!name) {
+	if (!pathParams["name"]) {
 		throw new Error(`Missing required path parameter: name`);
 	}
 	const data = await request<
@@ -10873,7 +10873,7 @@ export async function renameSecret({
 		RenameSecretPathParams
 	>({
 		method: "PATCH",
-		url: `/v2/secrets/${name}`,
+		url: `/v2/secrets/${pathParams["name"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10888,7 +10888,7 @@ export async function renameSecret({
  * {@link /v3/secrets/:idOrName}
  */
 export async function getSecret({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10898,7 +10898,7 @@ export async function getSecret({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -10910,7 +10910,7 @@ export async function getSecret({
 		GetSecretPathParams
 	>({
 		method: "GET",
-		url: `/v3/secrets/${idOrName}`,
+		url: `/v3/secrets/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10924,7 +10924,7 @@ export async function getSecret({
  * {@link /v2/secrets/:idOrName}
  */
 export async function deleteSecret({
-	pathParams: { idOrName },
+	pathParams,
 	queryParams,
 	config = {},
 }: {
@@ -10934,7 +10934,7 @@ export async function deleteSecret({
 }): Promise<Promise<CallToolResult>> {
 	const { client: request = client, ...requestConfig } = config;
 
-	if (!idOrName) {
+	if (!pathParams["idOrName"]) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
 	const data = await request<
@@ -10946,7 +10946,7 @@ export async function deleteSecret({
 		DeleteSecretPathParams
 	>({
 		method: "DELETE",
-		url: `/v2/secrets/${idOrName}`,
+		url: `/v2/secrets/${pathParams["idOrName"]}`,
 		baseUrl: "https://api.vercel.com",
 		queryParams,
 		...requestConfig,
@@ -10959,12 +10959,14 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) {
 	const server = serverLike as McpServer;
 
-	server.tool(
+	server.registerTool(
 		"readAccessGroup",
-		"Allows to read an access group",
 		{
-			idOrName: readAccessGroupPathParamsSchema.shape["idOrName"],
-			queryParams: readAccessGroupQueryParamsSchema,
+			description: "Allows to read an access group",
+			inputSchema: {
+				idOrName: readAccessGroupPathParamsSchema.shape["idOrName"],
+				queryParams: readAccessGroupQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -10975,12 +10977,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateAccessGroup",
-		"Allows to update an access group metadata",
 		{
-			idOrName: updateAccessGroupPathParamsSchema.shape["idOrName"],
-			queryParams: updateAccessGroupQueryParamsSchema,
+			description: "Allows to update an access group metadata",
+			inputSchema: {
+				idOrName: updateAccessGroupPathParamsSchema.shape["idOrName"],
+				queryParams: updateAccessGroupQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -10991,12 +10995,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteAccessGroup",
-		"Allows to delete an access group",
 		{
-			idOrName: deleteAccessGroupPathParamsSchema.shape["idOrName"],
-			queryParams: deleteAccessGroupQueryParamsSchema,
+			description: "Allows to delete an access group",
+			inputSchema: {
+				idOrName: deleteAccessGroupPathParamsSchema.shape["idOrName"],
+				queryParams: deleteAccessGroupQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -11007,12 +11013,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listAccessGroupMembers",
-		"List members of an access group",
 		{
-			idOrName: listAccessGroupMembersPathParamsSchema.shape["idOrName"],
-			queryParams: listAccessGroupMembersQueryParamsSchema,
+			description: "List members of an access group",
+			inputSchema: {
+				idOrName: listAccessGroupMembersPathParamsSchema.shape["idOrName"],
+				queryParams: listAccessGroupMembersQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -11023,10 +11031,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listAccessGroups",
-		"List access groups",
-		{ queryParams: listAccessGroupsQueryParamsSchema },
+		{
+			description: "List access groups",
+			inputSchema: { queryParams: listAccessGroupsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await listAccessGroups({ queryParams, config });
@@ -11036,10 +11046,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createAccessGroup",
-		"Allows to create an access group",
-		{ queryParams: createAccessGroupQueryParamsSchema },
+		{
+			description: "Allows to create an access group",
+			inputSchema: { queryParams: createAccessGroupQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createAccessGroup({ queryParams, config });
@@ -11049,12 +11061,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listAccessGroupProjects",
-		"List projects of an access group",
 		{
-			idOrName: listAccessGroupProjectsPathParamsSchema.shape["idOrName"],
-			queryParams: listAccessGroupProjectsQueryParamsSchema,
+			description: "List projects of an access group",
+			inputSchema: {
+				idOrName: listAccessGroupProjectsPathParamsSchema.shape["idOrName"],
+				queryParams: listAccessGroupProjectsQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -11065,12 +11079,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createAccessGroupProject",
-		"Allows creation of an access group project",
 		{
-			accessGroupIdOrName: createAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
-			queryParams: createAccessGroupProjectQueryParamsSchema,
+			description: "Allows creation of an access group project",
+			inputSchema: {
+				accessGroupIdOrName: createAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
+				queryParams: createAccessGroupProjectQueryParamsSchema,
+			},
 		},
 		async ({ accessGroupIdOrName, queryParams }) => {
 			try {
@@ -11085,13 +11101,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"readAccessGroupProject",
-		"Allows reading an access group project",
 		{
-			accessGroupIdOrName: readAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
-			projectId: readAccessGroupProjectPathParamsSchema.shape["projectId"],
-			queryParams: readAccessGroupProjectQueryParamsSchema,
+			description: "Allows reading an access group project",
+			inputSchema: {
+				accessGroupIdOrName: readAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
+				projectId: readAccessGroupProjectPathParamsSchema.shape["projectId"],
+				queryParams: readAccessGroupProjectQueryParamsSchema,
+			},
 		},
 		async ({ accessGroupIdOrName, projectId, queryParams }) => {
 			try {
@@ -11106,13 +11124,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateAccessGroupProject",
-		"Allows update of an access group project",
 		{
-			accessGroupIdOrName: updateAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
-			projectId: updateAccessGroupProjectPathParamsSchema.shape["projectId"],
-			queryParams: updateAccessGroupProjectQueryParamsSchema,
+			description: "Allows update of an access group project",
+			inputSchema: {
+				accessGroupIdOrName: updateAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
+				projectId: updateAccessGroupProjectPathParamsSchema.shape["projectId"],
+				queryParams: updateAccessGroupProjectQueryParamsSchema,
+			},
 		},
 		async ({ accessGroupIdOrName, projectId, queryParams }) => {
 			try {
@@ -11127,13 +11147,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteAccessGroupProject",
-		"Allows deletion of an access group project",
 		{
-			accessGroupIdOrName: deleteAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
-			projectId: deleteAccessGroupProjectPathParamsSchema.shape["projectId"],
-			queryParams: deleteAccessGroupProjectQueryParamsSchema,
+			description: "Allows deletion of an access group project",
+			inputSchema: {
+				accessGroupIdOrName: deleteAccessGroupProjectPathParamsSchema.shape["accessGroupIdOrName"],
+				projectId: deleteAccessGroupProjectPathParamsSchema.shape["projectId"],
+				queryParams: deleteAccessGroupProjectQueryParamsSchema,
+			},
 		},
 		async ({ accessGroupIdOrName, projectId, queryParams }) => {
 			try {
@@ -11148,10 +11170,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"recordEvents",
-		"Records an artifacts cache usage event. The body of this request is an array of cache usage events. The supported event types are `HIT` and `MISS`. The source is either `LOCAL` the cache event was on the users filesystem cache or `REMOTE` if the cache event is for a remote cache. When the event is a `HIT` the request also accepts a number `duration` which is the time taken to generate the artifact in the cache.",
-		{ queryParams: recordEventsQueryParamsSchema, headers: recordEventsHeaderParamsSchema },
+		{
+			description:
+				"Records an artifacts cache usage event. The body of this request is an array of cache usage events. The supported event types are `HIT` and `MISS`. The source is either `LOCAL` the cache event was on the users filesystem cache or `REMOTE` if the cache event is for a remote cache. When the event is a `HIT` the request also accepts a number `duration` which is the time taken to generate the artifact in the cache.",
+			inputSchema: {
+				queryParams: recordEventsQueryParamsSchema,
+				headers: recordEventsHeaderParamsSchema,
+			},
+		},
 		async ({ queryParams, headers }) => {
 			try {
 				return await recordEvents({ queryParams, headers, config });
@@ -11161,10 +11189,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"status",
-		"Check the status of Remote Caching for this principal. Returns a JSON-encoded status indicating if Remote Caching is enabled, disabled, or disabled due to usage limits.",
-		{ queryParams: statusQueryParamsSchema },
+		{
+			description:
+				"Check the status of Remote Caching for this principal. Returns a JSON-encoded status indicating if Remote Caching is enabled, disabled, or disabled due to usage limits.",
+			inputSchema: { queryParams: statusQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await status({ queryParams, config });
@@ -11174,30 +11205,36 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"uploadArtifact",
-		"Uploads a cache artifact identified by the `hash` specified on the path. The cache artifact can then be downloaded with the provided `hash`.",
 		{
-			hash: uploadArtifactPathParamsSchema.shape["hash"],
-			headers: uploadArtifactHeaderParamsSchema,
-			queryParams: uploadArtifactQueryParamsSchema,
+			description:
+				"Uploads a cache artifact identified by the `hash` specified on the path. The cache artifact can then be downloaded with the provided `hash`.",
+			inputSchema: {
+				hash: uploadArtifactPathParamsSchema.shape["hash"],
+				headers: uploadArtifactHeaderParamsSchema,
+				queryParams: uploadArtifactQueryParamsSchema,
+			},
 		},
 		async ({ hash, headers, queryParams }) => {
 			try {
-				return await uploadArtifact({ pathParams: { hash }, headers, queryParams, config });
+				return await uploadArtifact({ pathParams: { hash }, queryParams, headers, config });
 			} catch (error) {
 				return { isError: true, content: [{ type: "text", text: JSON.stringify(error) }] };
 			}
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"downloadArtifact",
-		"Downloads a cache artifact indentified by its `hash` specified on the request path. The artifact is downloaded as an octet-stream. The client should verify the content-length header and response body.",
 		{
-			hash: downloadArtifactPathParamsSchema.shape["hash"],
-			queryParams: downloadArtifactQueryParamsSchema,
-			headers: downloadArtifactHeaderParamsSchema,
+			description:
+				"Downloads a cache artifact indentified by its `hash` specified on the request path. The artifact is downloaded as an octet-stream. The client should verify the content-length header and response body.",
+			inputSchema: {
+				hash: downloadArtifactPathParamsSchema.shape["hash"],
+				queryParams: downloadArtifactQueryParamsSchema,
+				headers: downloadArtifactHeaderParamsSchema,
+			},
 		},
 		async ({ hash, queryParams, headers }) => {
 			try {
@@ -11208,10 +11245,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"artifactQuery",
-		"Query information about an array of artifacts.",
-		{ queryParams: artifactQueryQueryParamsSchema },
+		{
+			description: "Query information about an array of artifacts.",
+			inputSchema: { queryParams: artifactQueryQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await artifactQuery({ queryParams, config });
@@ -11221,10 +11260,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"stageRedirects",
-		"Stages new redirects for a project and returns the new version.",
-		{ queryParams: stageRedirectsQueryParamsSchema },
+		{
+			description: "Stages new redirects for a project and returns the new version.",
+			inputSchema: { queryParams: stageRedirectsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await stageRedirects({ queryParams, config });
@@ -11234,10 +11275,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getRedirects",
-		"Get the version history for a project's bulk redirects",
-		{ queryParams: getRedirectsQueryParamsSchema },
+		{
+			description: "Get the version history for a project's bulk redirects",
+			inputSchema: { queryParams: getRedirectsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getRedirects({ queryParams, config });
@@ -11247,10 +11290,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteRedirects",
-		"Deletes the provided redirects from the latest version of the projects' bulk redirects. Stages a new change with the new redirects and returns the alias for the new version in the response.",
-		{ queryParams: deleteRedirectsQueryParamsSchema },
+		{
+			description:
+				"Deletes the provided redirects from the latest version of the projects' bulk redirects. Stages a new change with the new redirects and returns the alias for the new version in the response.",
+			inputSchema: { queryParams: deleteRedirectsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await deleteRedirects({ queryParams, config });
@@ -11260,10 +11306,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"editRedirect",
-		"Edits a single redirect identified by its source path. Stages a new change with the modified redirect and returns the alias for the new version in the response.",
-		{ queryParams: editRedirectQueryParamsSchema },
+		{
+			description:
+				"Edits a single redirect identified by its source path. Stages a new change with the modified redirect and returns the alias for the new version in the response.",
+			inputSchema: { queryParams: editRedirectQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await editRedirect({ queryParams, config });
@@ -11273,10 +11322,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"restoreRedirects",
-		"Restores the provided redirects in the staging version to the value in the production version. If no production version exists, removes the redirects from staging.",
-		{ queryParams: restoreRedirectsQueryParamsSchema },
+		{
+			description:
+				"Restores the provided redirects in the staging version to the value in the production version. If no production version exists, removes the redirects from staging.",
+			inputSchema: { queryParams: restoreRedirectsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await restoreRedirects({ queryParams, config });
@@ -11286,10 +11338,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getVersions",
-		"Get the version history for a project's bulk redirects",
-		{ queryParams: getVersionsQueryParamsSchema },
+		{
+			description: "Get the version history for a project's bulk redirects",
+			inputSchema: { queryParams: getVersionsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getVersions({ queryParams, config });
@@ -11299,10 +11353,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateVersion",
-		"Update a version by promoting staging to production or restoring a previous production version",
-		{ queryParams: updateVersionQueryParamsSchema },
+		{
+			description:
+				"Update a version by promoting staging to production or restoring a previous production version",
+			inputSchema: { queryParams: updateVersionQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await updateVersion({ queryParams, config });
@@ -11312,12 +11369,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createCheck",
-		"Creates a new check. This endpoint must be called with an OAuth2 or it will produce a 400 error.",
 		{
-			deploymentId: createCheckPathParamsSchema.shape["deploymentId"],
-			queryParams: createCheckQueryParamsSchema,
+			description:
+				"Creates a new check. This endpoint must be called with an OAuth2 or it will produce a 400 error.",
+			inputSchema: {
+				deploymentId: createCheckPathParamsSchema.shape["deploymentId"],
+				queryParams: createCheckQueryParamsSchema,
+			},
 		},
 		async ({ deploymentId, queryParams }) => {
 			try {
@@ -11328,12 +11388,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getAllChecks",
-		"List all of the checks created for a deployment.",
 		{
-			deploymentId: getAllChecksPathParamsSchema.shape["deploymentId"],
-			queryParams: getAllChecksQueryParamsSchema,
+			description: "List all of the checks created for a deployment.",
+			inputSchema: {
+				deploymentId: getAllChecksPathParamsSchema.shape["deploymentId"],
+				queryParams: getAllChecksQueryParamsSchema,
+			},
 		},
 		async ({ deploymentId, queryParams }) => {
 			try {
@@ -11344,13 +11406,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getCheck",
-		"Return a detailed response for a single check.",
 		{
-			deploymentId: getCheckPathParamsSchema.shape["deploymentId"],
-			checkId: getCheckPathParamsSchema.shape["checkId"],
-			queryParams: getCheckQueryParamsSchema,
+			description: "Return a detailed response for a single check.",
+			inputSchema: {
+				deploymentId: getCheckPathParamsSchema.shape["deploymentId"],
+				checkId: getCheckPathParamsSchema.shape["checkId"],
+				queryParams: getCheckQueryParamsSchema,
+			},
 		},
 		async ({ deploymentId, checkId, queryParams }) => {
 			try {
@@ -11361,13 +11425,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateCheck",
-		"Update an existing check. This endpoint must be called with an OAuth2 or it will produce a 400 error.",
 		{
-			deploymentId: updateCheckPathParamsSchema.shape["deploymentId"],
-			checkId: updateCheckPathParamsSchema.shape["checkId"],
-			queryParams: updateCheckQueryParamsSchema,
+			description:
+				"Update an existing check. This endpoint must be called with an OAuth2 or it will produce a 400 error.",
+			inputSchema: {
+				deploymentId: updateCheckPathParamsSchema.shape["deploymentId"],
+				checkId: updateCheckPathParamsSchema.shape["checkId"],
+				queryParams: updateCheckQueryParamsSchema,
+			},
 		},
 		async ({ deploymentId, checkId, queryParams }) => {
 			try {
@@ -11378,13 +11445,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"rerequestCheck",
-		"Rerequest a selected check that has failed.",
 		{
-			deploymentId: rerequestCheckPathParamsSchema.shape["deploymentId"],
-			checkId: rerequestCheckPathParamsSchema.shape["checkId"],
-			queryParams: rerequestCheckQueryParamsSchema,
+			description: "Rerequest a selected check that has failed.",
+			inputSchema: {
+				deploymentId: rerequestCheckPathParamsSchema.shape["deploymentId"],
+				checkId: rerequestCheckPathParamsSchema.shape["checkId"],
+				queryParams: rerequestCheckQueryParamsSchema,
+			},
 		},
 		async ({ deploymentId, checkId, queryParams }) => {
 			try {
@@ -11395,10 +11464,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"purgeAllDataCache",
-		"Make a DELETE request to /data-cache/purge-all",
-		{ queryParams: purgeAllDataCacheQueryParamsSchema },
+		{
+			description: "Make a DELETE request to /data-cache/purge-all",
+			inputSchema: { queryParams: purgeAllDataCacheQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await purgeAllDataCache({ queryParams, config });
@@ -11408,9 +11479,9 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateDataCacheBillingSettings",
-		"Make a PATCH request to /data-cache/billing-settings",
+		{ description: "Make a PATCH request to /data-cache/billing-settings" },
 		async () => {
 			try {
 				return await updateDataCacheBillingSettings({ config });
@@ -11420,12 +11491,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateProjectDataCache",
-		"Update the data cache feature on a project.",
 		{
-			projectId: updateProjectDataCachePathParamsSchema.shape["projectId"],
-			queryParams: updateProjectDataCacheQueryParamsSchema,
+			description: "Update the data cache feature on a project.",
+			inputSchema: {
+				projectId: updateProjectDataCachePathParamsSchema.shape["projectId"],
+				queryParams: updateProjectDataCacheQueryParamsSchema,
+			},
 		},
 		async ({ projectId, queryParams }) => {
 			try {
@@ -11436,12 +11509,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDeploymentEvents",
-		"Get the build logs of a deployment by deployment ID and build ID. It can work as an infinite stream of logs or as a JSON endpoint depending on the input parameters.",
 		{
-			idOrUrl: getDeploymentEventsPathParamsSchema.shape["idOrUrl"],
-			queryParams: getDeploymentEventsQueryParamsSchema,
+			description:
+				"Get the build logs of a deployment by deployment ID and build ID. It can work as an infinite stream of logs or as a JSON endpoint depending on the input parameters.",
+			inputSchema: {
+				idOrUrl: getDeploymentEventsPathParamsSchema.shape["idOrUrl"],
+				queryParams: getDeploymentEventsQueryParamsSchema,
+			},
 		},
 		async ({ idOrUrl, queryParams }) => {
 			try {
@@ -11452,15 +11528,18 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateIntegrationDeploymentAction",
-		"Updates the deployment integration action for the specified integration installation",
 		{
-			deploymentId: updateIntegrationDeploymentActionPathParamsSchema.shape["deploymentId"],
-			integrationConfigurationId:
-				updateIntegrationDeploymentActionPathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: updateIntegrationDeploymentActionPathParamsSchema.shape["resourceId"],
-			action: updateIntegrationDeploymentActionPathParamsSchema.shape["action"],
+			description:
+				"Updates the deployment integration action for the specified integration installation",
+			inputSchema: {
+				deploymentId: updateIntegrationDeploymentActionPathParamsSchema.shape["deploymentId"],
+				integrationConfigurationId:
+					updateIntegrationDeploymentActionPathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: updateIntegrationDeploymentActionPathParamsSchema.shape["resourceId"],
+				action: updateIntegrationDeploymentActionPathParamsSchema.shape["action"],
+			},
 		},
 		async ({ deploymentId, integrationConfigurationId, resourceId, action }) => {
 			try {
@@ -11474,12 +11553,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDeployment",
-		"Retrieves information for a deployment either by supplying its ID (`id` property) or Hostname (`url` property). Additional details will be included when the authenticated user or team is an owner of the deployment.",
 		{
-			idOrUrl: getDeploymentPathParamsSchema.shape["idOrUrl"],
-			queryParams: getDeploymentQueryParamsSchema,
+			description:
+				"Retrieves information for a deployment either by supplying its ID (`id` property) or Hostname (`url` property). Additional details will be included when the authenticated user or team is an owner of the deployment.",
+			inputSchema: {
+				idOrUrl: getDeploymentPathParamsSchema.shape["idOrUrl"],
+				queryParams: getDeploymentQueryParamsSchema,
+			},
 		},
 		async ({ idOrUrl, queryParams }) => {
 			try {
@@ -11490,10 +11572,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createDeployment",
-		"Create a new deployment with all the required and intended data. If the deployment is not a git deployment, all files must be provided with the request, either referenced or inlined. Additionally, a deployment id can be specified to redeploy a previous deployment.",
-		{ queryParams: createDeploymentQueryParamsSchema },
+		{
+			description:
+				"Create a new deployment with all the required and intended data. If the deployment is not a git deployment, all files must be provided with the request, either referenced or inlined. Additionally, a deployment id can be specified to redeploy a previous deployment.",
+			inputSchema: { queryParams: createDeploymentQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createDeployment({ queryParams, config });
@@ -11503,12 +11588,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"cancelDeployment",
-		"This endpoint allows you to cancel a deployment which is currently building, by supplying its `id` in the URL.",
 		{
-			id: cancelDeploymentPathParamsSchema.shape["id"],
-			queryParams: cancelDeploymentQueryParamsSchema,
+			description:
+				"This endpoint allows you to cancel a deployment which is currently building, by supplying its `id` in the URL.",
+			inputSchema: {
+				id: cancelDeploymentPathParamsSchema.shape["id"],
+				queryParams: cancelDeploymentQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -11519,10 +11607,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"checkDomainPrice",
-		"This endpoint is deprecated and replaced with the endpoint [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain). Check the price to purchase a domain and how long a single purchase period is.",
-		{ queryParams: checkDomainPriceQueryParamsSchema },
+		{
+			description:
+				"This endpoint is deprecated and replaced with the endpoint [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain). Check the price to purchase a domain and how long a single purchase period is.",
+			inputSchema: { queryParams: checkDomainPriceQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await checkDomainPrice({ queryParams, config });
@@ -11532,10 +11623,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"checkDomainStatus",
-		"This endpoint is deprecated and replaced with the endpoint [Get availability for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-availability-for-a-domain). Check if a domain name is available for purchase.",
-		{ queryParams: checkDomainStatusQueryParamsSchema },
+		{
+			description:
+				"This endpoint is deprecated and replaced with the endpoint [Get availability for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-availability-for-a-domain). Check if a domain name is available for purchase.",
+			inputSchema: { queryParams: checkDomainStatusQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await checkDomainStatus({ queryParams, config });
@@ -11545,12 +11639,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getRecords",
-		"Retrieves a list of DNS records created for a domain name. By default it returns 20 records if no limit is provided. The rest can be retrieved using the pagination options.",
 		{
-			domain: getRecordsPathParamsSchema.shape["domain"],
-			queryParams: getRecordsQueryParamsSchema,
+			description:
+				"Retrieves a list of DNS records created for a domain name. By default it returns 20 records if no limit is provided. The rest can be retrieved using the pagination options.",
+			inputSchema: {
+				domain: getRecordsPathParamsSchema.shape["domain"],
+				queryParams: getRecordsQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11561,12 +11658,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createRecord",
-		"Creates a DNS record for a domain.",
 		{
-			domain: createRecordPathParamsSchema.shape["domain"],
-			queryParams: createRecordQueryParamsSchema,
+			description: "Creates a DNS record for a domain.",
+			inputSchema: {
+				domain: createRecordPathParamsSchema.shape["domain"],
+				queryParams: createRecordQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11577,12 +11676,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateRecord",
-		"Updates an existing DNS record for a domain name.",
 		{
-			recordId: updateRecordPathParamsSchema.shape["recordId"],
-			queryParams: updateRecordQueryParamsSchema,
+			description: "Updates an existing DNS record for a domain name.",
+			inputSchema: {
+				recordId: updateRecordPathParamsSchema.shape["recordId"],
+				queryParams: updateRecordQueryParamsSchema,
+			},
 		},
 		async ({ recordId, queryParams }) => {
 			try {
@@ -11593,13 +11694,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeRecord",
-		"Removes an existing DNS record from a domain name.",
 		{
-			domain: removeRecordPathParamsSchema.shape["domain"],
-			recordId: removeRecordPathParamsSchema.shape["recordId"],
-			queryParams: removeRecordQueryParamsSchema,
+			description: "Removes an existing DNS record from a domain name.",
+			inputSchema: {
+				domain: removeRecordPathParamsSchema.shape["domain"],
+				recordId: removeRecordPathParamsSchema.shape["recordId"],
+				queryParams: removeRecordQueryParamsSchema,
+			},
 		},
 		async ({ domain, recordId, queryParams }) => {
 			try {
@@ -11610,10 +11713,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getSupportedTlds",
-		"Get a list of TLDs supported by Vercel",
-		{ queryParams: getSupportedTldsQueryParamsSchema },
+		{
+			description: "Get a list of TLDs supported by Vercel",
+			inputSchema: { queryParams: getSupportedTldsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getSupportedTlds({ queryParams, config });
@@ -11623,10 +11728,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getTldPrice",
-		"Get price data for a specific TLD. This only reflects base prices for the given TLD. Premium domains may have different prices. Use the [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain) endpoint to get the price data for a specific domain.",
-		{ tld: getTldPricePathParamsSchema.shape["tld"], queryParams: getTldPriceQueryParamsSchema },
+		{
+			description:
+				"Get price data for a specific TLD. This only reflects base prices for the given TLD. Premium domains may have different prices. Use the [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain) endpoint to get the price data for a specific domain.",
+			inputSchema: {
+				tld: getTldPricePathParamsSchema.shape["tld"],
+				queryParams: getTldPriceQueryParamsSchema,
+			},
+		},
 		async ({ tld, queryParams }) => {
 			try {
 				return await getTldPrice({ pathParams: { tld }, queryParams, config });
@@ -11636,12 +11747,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDomainAvailability",
-		"Get availability for a specific domain. If the domain is available, it can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.",
 		{
-			domain: getDomainAvailabilityPathParamsSchema.shape["domain"],
-			queryParams: getDomainAvailabilityQueryParamsSchema,
+			description:
+				"Get availability for a specific domain. If the domain is available, it can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.",
+			inputSchema: {
+				domain: getDomainAvailabilityPathParamsSchema.shape["domain"],
+				queryParams: getDomainAvailabilityQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11652,12 +11766,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDomainPrice",
-		"Get price data for a specific domain",
 		{
-			domain: getDomainPricePathParamsSchema.shape["domain"],
-			queryParams: getDomainPriceQueryParamsSchema,
+			description: "Get price data for a specific domain",
+			inputSchema: {
+				domain: getDomainPricePathParamsSchema.shape["domain"],
+				queryParams: getDomainPriceQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11668,10 +11784,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getBulkAvailability",
-		"Get availability for multiple domains. If the domains are available, they can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.",
-		{ queryParams: getBulkAvailabilityQueryParamsSchema },
+		{
+			description:
+				"Get availability for multiple domains. If the domains are available, they can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.",
+			inputSchema: { queryParams: getBulkAvailabilityQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getBulkAvailability({ queryParams, config });
@@ -11681,12 +11800,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDomainAuthCode",
-		"Get the auth code for a domain. This is required to transfer a domain from Vercel to another registrar.",
 		{
-			domain: getDomainAuthCodePathParamsSchema.shape["domain"],
-			queryParams: getDomainAuthCodeQueryParamsSchema,
+			description:
+				"Get the auth code for a domain. This is required to transfer a domain from Vercel to another registrar.",
+			inputSchema: {
+				domain: getDomainAuthCodePathParamsSchema.shape["domain"],
+				queryParams: getDomainAuthCodeQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11697,12 +11819,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"buySingleDomain",
-		"Buy a domain",
 		{
-			domain: buySingleDomainPathParamsSchema.shape["domain"],
-			queryParams: buySingleDomainQueryParamsSchema,
+			description: "Buy a domain",
+			inputSchema: {
+				domain: buySingleDomainPathParamsSchema.shape["domain"],
+				queryParams: buySingleDomainQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11713,10 +11837,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"buyDomains",
-		"Buy multiple domains at once",
-		{ queryParams: buyDomainsQueryParamsSchema },
+		{
+			description: "Buy multiple domains at once",
+			inputSchema: { queryParams: buyDomainsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await buyDomains({ queryParams, config });
@@ -11726,12 +11852,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"transferInDomain",
-		"Transfer a domain in from another registrar",
 		{
-			domain: transferInDomainPathParamsSchema.shape["domain"],
-			queryParams: transferInDomainQueryParamsSchema,
+			description: "Transfer a domain in from another registrar",
+			inputSchema: {
+				domain: transferInDomainPathParamsSchema.shape["domain"],
+				queryParams: transferInDomainQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11742,12 +11870,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDomainTransferIn",
-		"Get the transfer status for a domain",
 		{
-			domain: getDomainTransferInPathParamsSchema.shape["domain"],
-			queryParams: getDomainTransferInQueryParamsSchema,
+			description: "Get the transfer status for a domain",
+			inputSchema: {
+				domain: getDomainTransferInPathParamsSchema.shape["domain"],
+				queryParams: getDomainTransferInQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11758,12 +11888,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"renewDomain",
-		"Renew a domain",
 		{
-			domain: renewDomainPathParamsSchema.shape["domain"],
-			queryParams: renewDomainQueryParamsSchema,
+			description: "Renew a domain",
+			inputSchema: {
+				domain: renewDomainPathParamsSchema.shape["domain"],
+				queryParams: renewDomainQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11774,12 +11906,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateDomainAutoRenew",
-		"Update the auto-renew setting for a domain",
 		{
-			domain: updateDomainAutoRenewPathParamsSchema.shape["domain"],
-			queryParams: updateDomainAutoRenewQueryParamsSchema,
+			description: "Update the auto-renew setting for a domain",
+			inputSchema: {
+				domain: updateDomainAutoRenewPathParamsSchema.shape["domain"],
+				queryParams: updateDomainAutoRenewQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11790,12 +11924,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateDomainNameservers",
-		"Update the nameservers for a domain. Pass an empty array to use Vercel's default nameservers.",
 		{
-			domain: updateDomainNameserversPathParamsSchema.shape["domain"],
-			queryParams: updateDomainNameserversQueryParamsSchema,
+			description:
+				"Update the nameservers for a domain. Pass an empty array to use Vercel's default nameservers.",
+			inputSchema: {
+				domain: updateDomainNameserversPathParamsSchema.shape["domain"],
+				queryParams: updateDomainNameserversQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11806,12 +11943,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getContactInfoSchema",
-		"Some TLDs require additional contact information. Use this endpoint to get the schema for the tld-specific contact information for a domain.",
 		{
-			domain: getContactInfoSchemaPathParamsSchema.shape["domain"],
-			queryParams: getContactInfoSchemaQueryParamsSchema,
+			description:
+				"Some TLDs require additional contact information. Use this endpoint to get the schema for the tld-specific contact information for a domain.",
+			inputSchema: {
+				domain: getContactInfoSchemaPathParamsSchema.shape["domain"],
+				queryParams: getContactInfoSchemaQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11822,10 +11962,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getOrder",
-		"Get information about a domain order by its ID",
-		{ orderId: getOrderPathParamsSchema.shape["orderId"], queryParams: getOrderQueryParamsSchema },
+		{
+			description: "Get information about a domain order by its ID",
+			inputSchema: {
+				orderId: getOrderPathParamsSchema.shape["orderId"],
+				queryParams: getOrderQueryParamsSchema,
+			},
+		},
 		async ({ orderId, queryParams }) => {
 			try {
 				return await getOrder({ pathParams: { orderId }, queryParams, config });
@@ -11835,12 +11980,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDomainConfig",
-		"Get a Domain's configuration.",
 		{
-			domain: getDomainConfigPathParamsSchema.shape["domain"],
-			queryParams: getDomainConfigQueryParamsSchema,
+			description: "Get a Domain's configuration.",
+			inputSchema: {
+				domain: getDomainConfigPathParamsSchema.shape["domain"],
+				queryParams: getDomainConfigQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11851,10 +11998,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDomain",
-		"Get information for a single domain in an account or team.",
-		{ domain: getDomainPathParamsSchema.shape["domain"], queryParams: getDomainQueryParamsSchema },
+		{
+			description: "Get information for a single domain in an account or team.",
+			inputSchema: {
+				domain: getDomainPathParamsSchema.shape["domain"],
+				queryParams: getDomainQueryParamsSchema,
+			},
+		},
 		async ({ domain, queryParams }) => {
 			try {
 				return await getDomain({ pathParams: { domain }, queryParams, config });
@@ -11864,10 +12016,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDomains",
-		"Retrieves a list of domains registered for the authenticated user or team. By default it returns the last 20 domains if no limit is provided.",
-		{ queryParams: getDomainsQueryParamsSchema },
+		{
+			description:
+				"Retrieves a list of domains registered for the authenticated user or team. By default it returns the last 20 domains if no limit is provided.",
+			inputSchema: { queryParams: getDomainsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getDomains({ queryParams, config });
@@ -11877,10 +12032,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createOrTransferDomain",
-		"This endpoint is used for adding a new apex domain name with Vercel for the authenticating user. Note: This endpoint is no longer used for initiating domain transfers from external registrars to Vercel. For this, please use the endpoint [Transfer-in a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/transfer-in-a-domain).",
-		{ queryParams: createOrTransferDomainQueryParamsSchema },
+		{
+			description:
+				"This endpoint is used for adding a new apex domain name with Vercel for the authenticating user. Note: This endpoint is no longer used for initiating domain transfers from external registrars to Vercel. For this, please use the endpoint [Transfer-in a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/transfer-in-a-domain).",
+			inputSchema: { queryParams: createOrTransferDomainQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createOrTransferDomain({ queryParams, config });
@@ -11890,12 +12048,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"patchDomain",
-		"Update or move apex domain. Note: This endpoint is no longer used for updating auto-renew or nameservers. For this, please use the endpoints [Update auto-renew for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-auto-renew-for-a-domain) and [Update nameservers for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-nameservers-for-a-domain).",
 		{
-			domain: patchDomainPathParamsSchema.shape["domain"],
-			queryParams: patchDomainQueryParamsSchema,
+			description:
+				"Update or move apex domain. Note: This endpoint is no longer used for updating auto-renew or nameservers. For this, please use the endpoints [Update auto-renew for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-auto-renew-for-a-domain) and [Update nameservers for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-nameservers-for-a-domain).",
+			inputSchema: {
+				domain: patchDomainPathParamsSchema.shape["domain"],
+				queryParams: patchDomainQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11906,12 +12067,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteDomain",
-		"Delete a previously registered domain name from Vercel. Deleting a domain will automatically remove any associated aliases.",
 		{
-			domain: deleteDomainPathParamsSchema.shape["domain"],
-			queryParams: deleteDomainQueryParamsSchema,
+			description:
+				"Delete a previously registered domain name from Vercel. Deleting a domain will automatically remove any associated aliases.",
+			inputSchema: {
+				domain: deleteDomainPathParamsSchema.shape["domain"],
+				queryParams: deleteDomainQueryParamsSchema,
+			},
 		},
 		async ({ domain, queryParams }) => {
 			try {
@@ -11922,12 +12086,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getConfigurableLogDrain",
-		"Retrieves a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be accessed.",
 		{
-			id: getConfigurableLogDrainPathParamsSchema.shape["id"],
-			queryParams: getConfigurableLogDrainQueryParamsSchema,
+			description:
+				"Retrieves a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be accessed.",
+			inputSchema: {
+				id: getConfigurableLogDrainPathParamsSchema.shape["id"],
+				queryParams: getConfigurableLogDrainQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -11938,12 +12105,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteConfigurableLogDrain",
-		"Deletes a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be deleted.",
 		{
-			id: deleteConfigurableLogDrainPathParamsSchema.shape["id"],
-			queryParams: deleteConfigurableLogDrainQueryParamsSchema,
+			description:
+				"Deletes a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be deleted.",
+			inputSchema: {
+				id: deleteConfigurableLogDrainPathParamsSchema.shape["id"],
+				queryParams: deleteConfigurableLogDrainQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -11954,10 +12124,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getAllLogDrains",
-		"Retrieves a list of all the Log Drains owned by the account. This endpoint must be called with an account AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated account can be accessed.",
-		{ queryParams: getAllLogDrainsQueryParamsSchema },
+		{
+			description:
+				"Retrieves a list of all the Log Drains owned by the account. This endpoint must be called with an account AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated account can be accessed.",
+			inputSchema: { queryParams: getAllLogDrainsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getAllLogDrains({ queryParams, config });
@@ -11967,10 +12140,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createConfigurableLogDrain",
-		"Creates a configurable log drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed)",
-		{ queryParams: createConfigurableLogDrainQueryParamsSchema },
+		{
+			description:
+				"Creates a configurable log drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed)",
+			inputSchema: { queryParams: createConfigurableLogDrainQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createConfigurableLogDrain({ queryParams, config });
@@ -11980,10 +12156,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createDrain",
-		"Create a new Drain with the provided configuration.",
-		{ queryParams: createDrainQueryParamsSchema },
+		{
+			description: "Create a new Drain with the provided configuration.",
+			inputSchema: { queryParams: createDrainQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createDrain({ queryParams, config });
@@ -11993,10 +12171,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDrains",
-		"Allows to retrieve the list of Drains of the authenticated team.",
-		{ queryParams: getDrainsQueryParamsSchema },
+		{
+			description: "Allows to retrieve the list of Drains of the authenticated team.",
+			inputSchema: { queryParams: getDrainsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getDrains({ queryParams, config });
@@ -12006,10 +12186,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteDrain",
-		"Delete a specific Drain by passing the drain id in the URL.",
-		{ id: deleteDrainPathParamsSchema.shape["id"], queryParams: deleteDrainQueryParamsSchema },
+		{
+			description: "Delete a specific Drain by passing the drain id in the URL.",
+			inputSchema: {
+				id: deleteDrainPathParamsSchema.shape["id"],
+				queryParams: deleteDrainQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await deleteDrain({ pathParams: { id }, queryParams, config });
@@ -12019,10 +12204,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDrain",
-		"Get the information for a specific Drain by passing the drain id in the URL.",
-		{ id: getDrainPathParamsSchema.shape["id"], queryParams: getDrainQueryParamsSchema },
+		{
+			description: "Get the information for a specific Drain by passing the drain id in the URL.",
+			inputSchema: {
+				id: getDrainPathParamsSchema.shape["id"],
+				queryParams: getDrainQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await getDrain({ pathParams: { id }, queryParams, config });
@@ -12032,10 +12222,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateDrain",
-		"Update the configuration of an existing drain.",
-		{ id: updateDrainPathParamsSchema.shape["id"], queryParams: updateDrainQueryParamsSchema },
+		{
+			description: "Update the configuration of an existing drain.",
+			inputSchema: {
+				id: updateDrainPathParamsSchema.shape["id"],
+				queryParams: updateDrainQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await updateDrain({ pathParams: { id }, queryParams, config });
@@ -12045,10 +12240,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"testDrain",
-		"Validate the delivery configuration of a Drain using sample events.",
-		{ queryParams: testDrainQueryParamsSchema },
+		{
+			description: "Validate the delivery configuration of a Drain using sample events.",
+			inputSchema: { queryParams: testDrainQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await testDrain({ queryParams, config });
@@ -12058,10 +12255,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"invalidateByTags",
-		"Marks a cache tag as stale, causing cache entries associated with that tag to be revalidated in the background on the next request.",
-		{ queryParams: invalidateByTagsQueryParamsSchema },
+		{
+			description:
+				"Marks a cache tag as stale, causing cache entries associated with that tag to be revalidated in the background on the next request.",
+			inputSchema: { queryParams: invalidateByTagsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await invalidateByTags({ queryParams, config });
@@ -12071,10 +12271,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"dangerouslyDeleteByTags",
-		"Marks a cache tag as deleted, causing cache entries associated with that tag to be revalidated in the foreground on the next request. Use this method with caution because one tag can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.",
-		{ queryParams: dangerouslyDeleteByTagsQueryParamsSchema },
+		{
+			description:
+				"Marks a cache tag as deleted, causing cache entries associated with that tag to be revalidated in the foreground on the next request. Use this method with caution because one tag can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.",
+			inputSchema: { queryParams: dangerouslyDeleteByTagsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await dangerouslyDeleteByTags({ queryParams, config });
@@ -12084,10 +12287,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"invalidateBySrcImages",
-		"Marks a source image as stale, causing its corresponding transformed images to be revalidated in the background on the next request.",
-		{ queryParams: invalidateBySrcImagesQueryParamsSchema },
+		{
+			description:
+				"Marks a source image as stale, causing its corresponding transformed images to be revalidated in the background on the next request.",
+			inputSchema: { queryParams: invalidateBySrcImagesQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await invalidateBySrcImages({ queryParams, config });
@@ -12097,10 +12303,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"dangerouslyDeleteBySrcImages",
-		"Marks a source image as deleted, causing cache entries associated with that source image to be revalidated in the foreground on the next request. Use this method with caution because one source image can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.",
-		{ queryParams: dangerouslyDeleteBySrcImagesQueryParamsSchema },
+		{
+			description:
+				"Marks a source image as deleted, causing cache entries associated with that source image to be revalidated in the foreground on the next request. Use this method with caution because one source image can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.",
+			inputSchema: { queryParams: dangerouslyDeleteBySrcImagesQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await dangerouslyDeleteBySrcImages({ queryParams, config });
@@ -12110,10 +12319,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigs",
-		"Returns all Edge Configs.",
-		{ queryParams: getEdgeConfigsQueryParamsSchema },
+		{
+			description: "Returns all Edge Configs.",
+			inputSchema: { queryParams: getEdgeConfigsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getEdgeConfigs({ queryParams, config });
@@ -12123,10 +12334,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createEdgeConfig",
-		"Creates an Edge Config.",
-		{ queryParams: createEdgeConfigQueryParamsSchema },
+		{
+			description: "Creates an Edge Config.",
+			inputSchema: { queryParams: createEdgeConfigQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createEdgeConfig({ queryParams, config });
@@ -12136,12 +12349,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfig",
-		"Returns an Edge Config.",
 		{
-			edgeConfigId: getEdgeConfigPathParamsSchema.shape["edgeConfigId"],
-			queryParams: getEdgeConfigQueryParamsSchema,
+			description: "Returns an Edge Config.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigPathParamsSchema.shape["edgeConfigId"],
+				queryParams: getEdgeConfigQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12152,12 +12367,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateEdgeConfig",
-		"Updates an Edge Config.",
 		{
-			edgeConfigId: updateEdgeConfigPathParamsSchema.shape["edgeConfigId"],
-			queryParams: updateEdgeConfigQueryParamsSchema,
+			description: "Updates an Edge Config.",
+			inputSchema: {
+				edgeConfigId: updateEdgeConfigPathParamsSchema.shape["edgeConfigId"],
+				queryParams: updateEdgeConfigQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12168,12 +12385,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteEdgeConfig",
-		"Delete an Edge Config by id.",
 		{
-			edgeConfigId: deleteEdgeConfigPathParamsSchema.shape["edgeConfigId"],
-			queryParams: deleteEdgeConfigQueryParamsSchema,
+			description: "Delete an Edge Config by id.",
+			inputSchema: {
+				edgeConfigId: deleteEdgeConfigPathParamsSchema.shape["edgeConfigId"],
+				queryParams: deleteEdgeConfigQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12184,12 +12403,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigItems",
-		"Returns all items of an Edge Config.",
 		{
-			edgeConfigId: getEdgeConfigItemsPathParamsSchema.shape["edgeConfigId"],
-			queryParams: getEdgeConfigItemsQueryParamsSchema,
+			description: "Returns all items of an Edge Config.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigItemsPathParamsSchema.shape["edgeConfigId"],
+				queryParams: getEdgeConfigItemsQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12200,12 +12421,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"patchEdgeConfigItems",
-		"Update multiple Edge Config Items in batch.",
 		{
-			edgeConfigId: patchEdgeConfigItemsPathParamsSchema.shape["edgeConfigId"],
-			queryParams: patchEdgeConfigItemsQueryParamsSchema,
+			description: "Update multiple Edge Config Items in batch.",
+			inputSchema: {
+				edgeConfigId: patchEdgeConfigItemsPathParamsSchema.shape["edgeConfigId"],
+				queryParams: patchEdgeConfigItemsQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12216,12 +12439,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigSchema",
-		"Returns the schema of an Edge Config.",
 		{
-			edgeConfigId: getEdgeConfigSchemaPathParamsSchema.shape["edgeConfigId"],
-			queryParams: getEdgeConfigSchemaQueryParamsSchema,
+			description: "Returns the schema of an Edge Config.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigSchemaPathParamsSchema.shape["edgeConfigId"],
+				queryParams: getEdgeConfigSchemaQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12232,12 +12457,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"patchEdgeConfigSchema",
-		"Update an Edge Config's schema.",
 		{
-			edgeConfigId: patchEdgeConfigSchemaPathParamsSchema.shape["edgeConfigId"],
-			queryParams: patchEdgeConfigSchemaQueryParamsSchema,
+			description: "Update an Edge Config's schema.",
+			inputSchema: {
+				edgeConfigId: patchEdgeConfigSchemaPathParamsSchema.shape["edgeConfigId"],
+				queryParams: patchEdgeConfigSchemaQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12248,12 +12475,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteEdgeConfigSchema",
-		"Deletes the schema of existing Edge Config.",
 		{
-			edgeConfigId: deleteEdgeConfigSchemaPathParamsSchema.shape["edgeConfigId"],
-			queryParams: deleteEdgeConfigSchemaQueryParamsSchema,
+			description: "Deletes the schema of existing Edge Config.",
+			inputSchema: {
+				edgeConfigId: deleteEdgeConfigSchemaPathParamsSchema.shape["edgeConfigId"],
+				queryParams: deleteEdgeConfigSchemaQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12264,13 +12493,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigItem",
-		"Returns a specific Edge Config Item.",
 		{
-			edgeConfigId: getEdgeConfigItemPathParamsSchema.shape["edgeConfigId"],
-			edgeConfigItemKey: getEdgeConfigItemPathParamsSchema.shape["edgeConfigItemKey"],
-			queryParams: getEdgeConfigItemQueryParamsSchema,
+			description: "Returns a specific Edge Config Item.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigItemPathParamsSchema.shape["edgeConfigId"],
+				edgeConfigItemKey: getEdgeConfigItemPathParamsSchema.shape["edgeConfigItemKey"],
+				queryParams: getEdgeConfigItemQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, edgeConfigItemKey, queryParams }) => {
 			try {
@@ -12285,12 +12516,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigTokens",
-		"Returns all tokens of an Edge Config.",
 		{
-			edgeConfigId: getEdgeConfigTokensPathParamsSchema.shape["edgeConfigId"],
-			queryParams: getEdgeConfigTokensQueryParamsSchema,
+			description: "Returns all tokens of an Edge Config.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigTokensPathParamsSchema.shape["edgeConfigId"],
+				queryParams: getEdgeConfigTokensQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12301,12 +12534,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteEdgeConfigTokens",
-		"Deletes one or more tokens of an existing Edge Config.",
 		{
-			edgeConfigId: deleteEdgeConfigTokensPathParamsSchema.shape["edgeConfigId"],
-			queryParams: deleteEdgeConfigTokensQueryParamsSchema,
+			description: "Deletes one or more tokens of an existing Edge Config.",
+			inputSchema: {
+				edgeConfigId: deleteEdgeConfigTokensPathParamsSchema.shape["edgeConfigId"],
+				queryParams: deleteEdgeConfigTokensQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12317,13 +12552,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigToken",
-		"Return meta data about an Edge Config token.",
 		{
-			edgeConfigId: getEdgeConfigTokenPathParamsSchema.shape["edgeConfigId"],
-			token: getEdgeConfigTokenPathParamsSchema.shape["token"],
-			queryParams: getEdgeConfigTokenQueryParamsSchema,
+			description: "Return meta data about an Edge Config token.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigTokenPathParamsSchema.shape["edgeConfigId"],
+				token: getEdgeConfigTokenPathParamsSchema.shape["token"],
+				queryParams: getEdgeConfigTokenQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, token, queryParams }) => {
 			try {
@@ -12338,12 +12575,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createEdgeConfigToken",
-		"Adds a token to an existing Edge Config.",
 		{
-			edgeConfigId: createEdgeConfigTokenPathParamsSchema.shape["edgeConfigId"],
-			queryParams: createEdgeConfigTokenQueryParamsSchema,
+			description: "Adds a token to an existing Edge Config.",
+			inputSchema: {
+				edgeConfigId: createEdgeConfigTokenPathParamsSchema.shape["edgeConfigId"],
+				queryParams: createEdgeConfigTokenQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12354,14 +12593,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigBackup",
-		"Retrieves a specific version of an Edge Config from backup storage.",
 		{
-			edgeConfigId: getEdgeConfigBackupPathParamsSchema.shape["edgeConfigId"],
-			edgeConfigBackupVersionId:
-				getEdgeConfigBackupPathParamsSchema.shape["edgeConfigBackupVersionId"],
-			queryParams: getEdgeConfigBackupQueryParamsSchema,
+			description: "Retrieves a specific version of an Edge Config from backup storage.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigBackupPathParamsSchema.shape["edgeConfigId"],
+				edgeConfigBackupVersionId:
+					getEdgeConfigBackupPathParamsSchema.shape["edgeConfigBackupVersionId"],
+				queryParams: getEdgeConfigBackupQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, edgeConfigBackupVersionId, queryParams }) => {
 			try {
@@ -12376,12 +12617,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getEdgeConfigBackups",
-		"Returns backups of an Edge Config.",
 		{
-			edgeConfigId: getEdgeConfigBackupsPathParamsSchema.shape["edgeConfigId"],
-			queryParams: getEdgeConfigBackupsQueryParamsSchema,
+			description: "Returns backups of an Edge Config.",
+			inputSchema: {
+				edgeConfigId: getEdgeConfigBackupsPathParamsSchema.shape["edgeConfigId"],
+				queryParams: getEdgeConfigBackupsQueryParamsSchema,
+			},
 		},
 		async ({ edgeConfigId, queryParams }) => {
 			try {
@@ -12392,10 +12635,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createSharedEnvVariable",
-		"Creates shared environment variable(s) for a team.",
-		{ queryParams: createSharedEnvVariableQueryParamsSchema },
+		{
+			description: "Creates shared environment variable(s) for a team.",
+			inputSchema: { queryParams: createSharedEnvVariableQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createSharedEnvVariable({ queryParams, config });
@@ -12405,10 +12650,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listSharedEnvVariable",
-		"Lists all Shared Environment Variables for a team, taking into account optional filters.",
-		{ queryParams: listSharedEnvVariableQueryParamsSchema },
+		{
+			description:
+				"Lists all Shared Environment Variables for a team, taking into account optional filters.",
+			inputSchema: { queryParams: listSharedEnvVariableQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await listSharedEnvVariable({ queryParams, config });
@@ -12418,10 +12666,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateSharedEnvVariable",
-		"Updates a given Shared Environment Variable for a Team.",
-		{ queryParams: updateSharedEnvVariableQueryParamsSchema },
+		{
+			description: "Updates a given Shared Environment Variable for a Team.",
+			inputSchema: { queryParams: updateSharedEnvVariableQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await updateSharedEnvVariable({ queryParams, config });
@@ -12431,10 +12681,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteSharedEnvVariable",
-		"Deletes one or many Shared Environment Variables for a given team.",
-		{ queryParams: deleteSharedEnvVariableQueryParamsSchema },
+		{
+			description: "Deletes one or many Shared Environment Variables for a given team.",
+			inputSchema: { queryParams: deleteSharedEnvVariableQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await deleteSharedEnvVariable({ queryParams, config });
@@ -12444,12 +12696,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getSharedEnvVar",
-		"Retrieve the decrypted value of a Shared Environment Variable by id.",
 		{
-			id: getSharedEnvVarPathParamsSchema.shape["id"],
-			queryParams: getSharedEnvVarQueryParamsSchema,
+			description: "Retrieve the decrypted value of a Shared Environment Variable by id.",
+			inputSchema: {
+				id: getSharedEnvVarPathParamsSchema.shape["id"],
+				queryParams: getSharedEnvVarQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -12460,13 +12714,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"unlinkSharedEnvVariable",
-		"Disconnects a shared environment variable for a given project",
 		{
-			id: unlinkSharedEnvVariablePathParamsSchema.shape["id"],
-			projectId: unlinkSharedEnvVariablePathParamsSchema.shape["projectId"],
-			queryParams: unlinkSharedEnvVariableQueryParamsSchema,
+			description: "Disconnects a shared environment variable for a given project",
+			inputSchema: {
+				id: unlinkSharedEnvVariablePathParamsSchema.shape["id"],
+				projectId: unlinkSharedEnvVariablePathParamsSchema.shape["projectId"],
+				queryParams: unlinkSharedEnvVariableQueryParamsSchema,
+			},
 		},
 		async ({ id, projectId, queryParams }) => {
 			try {
@@ -12481,10 +12737,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listUserEvents",
-		'Retrieves a list of "events" generated by the User on Vercel. Events are generated when the User performs a particular action, such as logging in, creating a deployment, and joining a Team (just to name a few). When the `teamId` parameter is supplied, then the events that are returned will be in relation to the Team that was specified.',
-		{ queryParams: listUserEventsQueryParamsSchema },
+		{
+			description:
+				'Retrieves a list of "events" generated by the User on Vercel. Events are generated when the User performs a particular action, such as logging in, creating a deployment, and joining a Team (just to name a few). When the `teamId` parameter is supplied, then the events that are returned will be in relation to the Team that was specified.',
+			inputSchema: { queryParams: listUserEventsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await listUserEvents({ queryParams, config });
@@ -12494,10 +12753,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"gitNamespaces",
-		"Lists git namespaces for a supported provider. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider is not provided, it will try to obtain it from the user that authenticated the request.",
-		{ queryParams: gitNamespacesQueryParamsSchema },
+		{
+			description:
+				"Lists git namespaces for a supported provider. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider is not provided, it will try to obtain it from the user that authenticated the request.",
+			inputSchema: { queryParams: gitNamespacesQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await gitNamespaces({ queryParams, config });
@@ -12507,10 +12769,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"searchRepo",
-		"Lists git repositories linked to a namespace `id` for a supported provider. A specific namespace `id` can be obtained via the `git-namespaces`  endpoint. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider or namespace is not provided, it will try to obtain it from the user that authenticated the request.",
-		{ queryParams: searchRepoQueryParamsSchema },
+		{
+			description:
+				"Lists git repositories linked to a namespace `id` for a supported provider. A specific namespace `id` can be obtained via the `git-namespaces`  endpoint. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider or namespace is not provided, it will try to obtain it from the user that authenticated the request.",
+			inputSchema: { queryParams: searchRepoQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await searchRepo({ queryParams, config });
@@ -12520,13 +12785,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getBillingPlans",
-		"Get a list of billing plans for an integration and product.",
 		{
-			integrationIdOrSlug: getBillingPlansPathParamsSchema.shape["integrationIdOrSlug"],
-			productIdOrSlug: getBillingPlansPathParamsSchema.shape["productIdOrSlug"],
-			queryParams: getBillingPlansQueryParamsSchema,
+			description: "Get a list of billing plans for an integration and product.",
+			inputSchema: {
+				integrationIdOrSlug: getBillingPlansPathParamsSchema.shape["integrationIdOrSlug"],
+				productIdOrSlug: getBillingPlansPathParamsSchema.shape["productIdOrSlug"],
+				queryParams: getBillingPlansQueryParamsSchema,
+			},
 		},
 		async ({ integrationIdOrSlug, productIdOrSlug, queryParams }) => {
 			try {
@@ -12541,14 +12808,17 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"connectIntegrationResourceToProject",
-		"Connects an integration resource to a Vercel project. This endpoint establishes a connection between a provisioned integration resource (from storage APIs like `POST /v1/storage/stores/integration/direct`) and a specific Vercel project.",
 		{
-			integrationConfigurationId:
-				connectIntegrationResourceToProjectPathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: connectIntegrationResourceToProjectPathParamsSchema.shape["resourceId"],
-			queryParams: connectIntegrationResourceToProjectQueryParamsSchema,
+			description:
+				"Connects an integration resource to a Vercel project. This endpoint establishes a connection between a provisioned integration resource (from storage APIs like `POST /v1/storage/stores/integration/direct`) and a specific Vercel project.",
+			inputSchema: {
+				integrationConfigurationId:
+					connectIntegrationResourceToProjectPathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: connectIntegrationResourceToProjectPathParamsSchema.shape["resourceId"],
+				queryParams: connectIntegrationResourceToProjectQueryParamsSchema,
+			},
 		},
 		async ({ integrationConfigurationId, resourceId, queryParams }) => {
 			try {
@@ -12563,12 +12833,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateInstallation",
-		"This endpoint updates an integration installation.",
 		{
-			integrationConfigurationId:
-				updateInstallationPathParamsSchema.shape["integrationConfigurationId"],
+			description: "This endpoint updates an integration installation.",
+			inputSchema: {
+				integrationConfigurationId:
+					updateInstallationPathParamsSchema.shape["integrationConfigurationId"],
+			},
 		},
 		async ({ integrationConfigurationId }) => {
 			try {
@@ -12579,12 +12851,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getAccountInfo",
-		"Fetches the best account or user’s contact info",
 		{
-			integrationConfigurationId:
-				getAccountInfoPathParamsSchema.shape["integrationConfigurationId"],
+			description: "Fetches the best account or user’s contact info",
+			inputSchema: {
+				integrationConfigurationId:
+					getAccountInfoPathParamsSchema.shape["integrationConfigurationId"],
+			},
 		},
 		async ({ integrationConfigurationId }) => {
 			try {
@@ -12595,12 +12869,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getMember",
-		'Returns the member role and other information for a given member ID ("user_id" claim in the SSO OIDC token).',
 		{
-			integrationConfigurationId: getMemberPathParamsSchema.shape["integrationConfigurationId"],
-			memberId: getMemberPathParamsSchema.shape["memberId"],
+			description:
+				'Returns the member role and other information for a given member ID ("user_id" claim in the SSO OIDC token).',
+			inputSchema: {
+				integrationConfigurationId: getMemberPathParamsSchema.shape["integrationConfigurationId"],
+				memberId: getMemberPathParamsSchema.shape["memberId"],
+			},
 		},
 		async ({ integrationConfigurationId, memberId }) => {
 			try {
@@ -12611,10 +12888,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createEvent",
-		"Partner notifies Vercel of any changes made to an Installation or a Resource. Vercel is expected to use `list-resources` and other read APIs to get the new state.<br/> <br/> `resource.updated` event should be dispatched when any state of a resource linked to Vercel is modified by the partner.<br/> `installation.updated` event should be dispatched when an installation's billing plan is changed via the provider instead of Vercel.<br/> <br/> Resource update use cases: <br/> <br/> - The user renames a database in the partner’s application. The partner should dispatch a `resource.updated` event to notify Vercel to update the resource in Vercel’s datastores.<br/> - A resource has been suspended due to a lack of use. The partner should dispatch a `resource.updated` event to notify Vercel to update the resource's status in Vercel's datastores.<br/>",
-		{ integrationConfigurationId: createEventPathParamsSchema.shape["integrationConfigurationId"] },
+		{
+			description:
+				"Partner notifies Vercel of any changes made to an Installation or a Resource. Vercel is expected to use `list-resources` and other read APIs to get the new state.<br/> <br/> `resource.updated` event should be dispatched when any state of a resource linked to Vercel is modified by the partner.<br/> `installation.updated` event should be dispatched when an installation's billing plan is changed via the provider instead of Vercel.<br/> <br/> Resource update use cases: <br/> <br/> - The user renames a database in the partner’s application. The partner should dispatch a `resource.updated` event to notify Vercel to update the resource in Vercel’s datastores.<br/> - A resource has been suspended due to a lack of use. The partner should dispatch a `resource.updated` event to notify Vercel to update the resource's status in Vercel's datastores.<br/>",
+			inputSchema: {
+				integrationConfigurationId: createEventPathParamsSchema.shape["integrationConfigurationId"],
+			},
+		},
 		async ({ integrationConfigurationId }) => {
 			try {
 				return await createEvent({ pathParams: { integrationConfigurationId }, config });
@@ -12624,12 +12906,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getIntegrationResources",
-		"Get all resources for a given installation ID.",
 		{
-			integrationConfigurationId:
-				getIntegrationResourcesPathParamsSchema.shape["integrationConfigurationId"],
+			description: "Get all resources for a given installation ID.",
+			inputSchema: {
+				integrationConfigurationId:
+					getIntegrationResourcesPathParamsSchema.shape["integrationConfigurationId"],
+			},
 		},
 		async ({ integrationConfigurationId }) => {
 			try {
@@ -12643,13 +12927,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getIntegrationResource",
-		"Get a resource by its partner ID.",
 		{
-			integrationConfigurationId:
-				getIntegrationResourcePathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: getIntegrationResourcePathParamsSchema.shape["resourceId"],
+			description: "Get a resource by its partner ID.",
+			inputSchema: {
+				integrationConfigurationId:
+					getIntegrationResourcePathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: getIntegrationResourcePathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId }) => {
 			try {
@@ -12663,13 +12949,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteIntegrationResource",
-		"Delete a resource owned by the selected installation ID.",
 		{
-			integrationConfigurationId:
-				deleteIntegrationResourcePathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: deleteIntegrationResourcePathParamsSchema.shape["resourceId"],
+			description: "Delete a resource owned by the selected installation ID.",
+			inputSchema: {
+				integrationConfigurationId:
+					deleteIntegrationResourcePathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: deleteIntegrationResourcePathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId }) => {
 			try {
@@ -12683,13 +12971,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"importResource",
-		"This endpoint imports (upserts) a resource to Vercel's installation. This may be needed if resources can be independently created on the partner's side and need to be synchronized to Vercel.",
 		{
-			integrationConfigurationId:
-				importResourcePathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: importResourcePathParamsSchema.shape["resourceId"],
+			description:
+				"This endpoint imports (upserts) a resource to Vercel's installation. This may be needed if resources can be independently created on the partner's side and need to be synchronized to Vercel.",
+			inputSchema: {
+				integrationConfigurationId:
+					importResourcePathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: importResourcePathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId }) => {
 			try {
@@ -12703,13 +12994,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateResource",
-		"This endpoint updates an existing resource in the installation. All parameters are optional, allowing partial updates.",
 		{
-			integrationConfigurationId:
-				updateResourcePathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: updateResourcePathParamsSchema.shape["resourceId"],
+			description:
+				"This endpoint updates an existing resource in the installation. All parameters are optional, allowing partial updates.",
+			inputSchema: {
+				integrationConfigurationId:
+					updateResourcePathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: updateResourcePathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId }) => {
 			try {
@@ -12723,12 +13017,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"submitBillingData",
-		"Sends the billing and usage data. The partner should do this at least once a day and ideally once per hour. <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request.",
 		{
-			integrationConfigurationId:
-				submitBillingDataPathParamsSchema.shape["integrationConfigurationId"],
+			description:
+				"Sends the billing and usage data. The partner should do this at least once a day and ideally once per hour. <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request.",
+			inputSchema: {
+				integrationConfigurationId:
+					submitBillingDataPathParamsSchema.shape["integrationConfigurationId"],
+			},
 		},
 		async ({ integrationConfigurationId }) => {
 			try {
@@ -12739,11 +13036,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"submitInvoice",
-		"This endpoint allows the partner to submit an invoice to Vercel. The invoice is created in Vercel's billing system and sent to the customer. Depending on the type of billing plan, the invoice can be sent at a time of signup, at the start of the billing period, or at the end of the billing period.<br/> <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request. <br/> There are several limitations to the invoice submission:<br/> <br/> 1. A resource can only be billed once per the billing period and the billing plan.<br/> 2. The billing plan used to bill the resource must have been active for this resource during the billing period.<br/> 3. The billing plan used must be a subscription plan.<br/> 4. The interim usage data must be sent hourly for all types of subscriptions. See [Send subscription billing and usage data](#send-subscription-billing-and-usage-data) API on how to send interim billing and usage data.<br/>",
 		{
-			integrationConfigurationId: submitInvoicePathParamsSchema.shape["integrationConfigurationId"],
+			description:
+				"This endpoint allows the partner to submit an invoice to Vercel. The invoice is created in Vercel's billing system and sent to the customer. Depending on the type of billing plan, the invoice can be sent at a time of signup, at the start of the billing period, or at the end of the billing period.<br/> <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request. <br/> There are several limitations to the invoice submission:<br/> <br/> 1. A resource can only be billed once per the billing period and the billing plan.<br/> 2. The billing plan used to bill the resource must have been active for this resource during the billing period.<br/> 3. The billing plan used must be a subscription plan.<br/> 4. The interim usage data must be sent hourly for all types of subscriptions. See [Send subscription billing and usage data](#send-subscription-billing-and-usage-data) API on how to send interim billing and usage data.<br/>",
+			inputSchema: {
+				integrationConfigurationId:
+					submitInvoicePathParamsSchema.shape["integrationConfigurationId"],
+			},
 		},
 		async ({ integrationConfigurationId }) => {
 			try {
@@ -12754,12 +13055,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getInvoice",
-		"Get Invoice details and status for a given invoice ID.<br/> <br/> See Billing Events with Webhooks documentation on how to receive invoice events. This endpoint is used to retrieve the invoice details.",
 		{
-			integrationConfigurationId: getInvoicePathParamsSchema.shape["integrationConfigurationId"],
-			invoiceId: getInvoicePathParamsSchema.shape["invoiceId"],
+			description:
+				"Get Invoice details and status for a given invoice ID.<br/> <br/> See Billing Events with Webhooks documentation on how to receive invoice events. This endpoint is used to retrieve the invoice details.",
+			inputSchema: {
+				integrationConfigurationId: getInvoicePathParamsSchema.shape["integrationConfigurationId"],
+				invoiceId: getInvoicePathParamsSchema.shape["invoiceId"],
+			},
 		},
 		async ({ integrationConfigurationId, invoiceId }) => {
 			try {
@@ -12770,12 +13074,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateInvoice",
-		"This endpoint allows the partner to request a refund for an invoice to Vercel. The invoice is created using the [Submit Invoice API](#submit-invoice-api).",
 		{
-			integrationConfigurationId: updateInvoicePathParamsSchema.shape["integrationConfigurationId"],
-			invoiceId: updateInvoicePathParamsSchema.shape["invoiceId"],
+			description:
+				"This endpoint allows the partner to request a refund for an invoice to Vercel. The invoice is created using the [Submit Invoice API](#submit-invoice-api).",
+			inputSchema: {
+				integrationConfigurationId:
+					updateInvoicePathParamsSchema.shape["integrationConfigurationId"],
+				invoiceId: updateInvoicePathParamsSchema.shape["invoiceId"],
+			},
 		},
 		async ({ integrationConfigurationId, invoiceId }) => {
 			try {
@@ -12789,12 +13097,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"submitPrepaymentBalances",
-		"Sends the prepayment balances. The partner should do this at least once a day and ideally once per hour. <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request.",
 		{
-			integrationConfigurationId:
-				submitPrepaymentBalancesPathParamsSchema.shape["integrationConfigurationId"],
+			description:
+				"Sends the prepayment balances. The partner should do this at least once a day and ideally once per hour. <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request.",
+			inputSchema: {
+				integrationConfigurationId:
+					submitPrepaymentBalancesPathParamsSchema.shape["integrationConfigurationId"],
+			},
 		},
 		async ({ integrationConfigurationId }) => {
 			try {
@@ -12808,15 +13119,18 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateResourceSecrets",
-		"This endpoint is deprecated and replaced with the endpoint [Update Resource Secrets](#update-resource-secrets). <br/> This endpoint updates the secrets of a resource. If a resource has projects connected, the connected secrets are updated with the new secrets. The old secrets may still be used by existing connected projects because they are not automatically redeployed. Redeployment is a manual action and must be completed by the user. All new project connections will use the new secrets.<br/> <br/> Use cases for this endpoint:<br/> <br/> - Resetting the credentials of a database in the partner. If the user requests the credentials to be updated in the partner’s application, the partner post the new set of secrets to Vercel, the user should redeploy their application and the expire the old credentials.<br/>",
 		{
-			integrationConfigurationId:
-				updateResourceSecretsPathParamsSchema.shape["integrationConfigurationId"],
-			integrationProductIdOrSlug:
-				updateResourceSecretsPathParamsSchema.shape["integrationProductIdOrSlug"],
-			resourceId: updateResourceSecretsPathParamsSchema.shape["resourceId"],
+			description:
+				"This endpoint is deprecated and replaced with the endpoint [Update Resource Secrets](#update-resource-secrets). <br/> This endpoint updates the secrets of a resource. If a resource has projects connected, the connected secrets are updated with the new secrets. The old secrets may still be used by existing connected projects because they are not automatically redeployed. Redeployment is a manual action and must be completed by the user. All new project connections will use the new secrets.<br/> <br/> Use cases for this endpoint:<br/> <br/> - Resetting the credentials of a database in the partner. If the user requests the credentials to be updated in the partner’s application, the partner post the new set of secrets to Vercel, the user should redeploy their application and the expire the old credentials.<br/>",
+			inputSchema: {
+				integrationConfigurationId:
+					updateResourceSecretsPathParamsSchema.shape["integrationConfigurationId"],
+				integrationProductIdOrSlug:
+					updateResourceSecretsPathParamsSchema.shape["integrationProductIdOrSlug"],
+				resourceId: updateResourceSecretsPathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, integrationProductIdOrSlug, resourceId }) => {
 			try {
@@ -12830,13 +13144,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateResourceSecretsById",
-		"This endpoint updates the secrets of a resource. If a resource has projects connected, the connected secrets are updated with the new secrets. The old secrets may still be used by existing connected projects because they are not automatically redeployed. Redeployment is a manual action and must be completed by the user. All new project connections will use the new secrets.<br/> <br/> Use cases for this endpoint:<br/> <br/> - Resetting the credentials of a database in the partner. If the user requests the credentials to be updated in the partner’s application, the partner post the new set of secrets to Vercel, the user should redeploy their application and the expire the old credentials.<br/>",
 		{
-			integrationConfigurationId:
-				updateResourceSecretsByIdPathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: updateResourceSecretsByIdPathParamsSchema.shape["resourceId"],
+			description:
+				"This endpoint updates the secrets of a resource. If a resource has projects connected, the connected secrets are updated with the new secrets. The old secrets may still be used by existing connected projects because they are not automatically redeployed. Redeployment is a manual action and must be completed by the user. All new project connections will use the new secrets.<br/> <br/> Use cases for this endpoint:<br/> <br/> - Resetting the credentials of a database in the partner. If the user requests the credentials to be updated in the partner’s application, the partner post the new set of secrets to Vercel, the user should redeploy their application and the expire the old credentials.<br/>",
+			inputSchema: {
+				integrationConfigurationId:
+					updateResourceSecretsByIdPathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: updateResourceSecretsByIdPathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId }) => {
 			try {
@@ -12850,10 +13167,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getConfigurations",
-		"Allows to retrieve all configurations for an authenticated integration. When the `project` view is used, configurations generated for the authorization flow will be filtered out of the results.",
-		{ queryParams: getConfigurationsQueryParamsSchema },
+		{
+			description:
+				"Allows to retrieve all configurations for an authenticated integration. When the `project` view is used, configurations generated for the authorization flow will be filtered out of the results.",
+			inputSchema: { queryParams: getConfigurationsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getConfigurations({ queryParams, config });
@@ -12863,12 +13183,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getConfiguration",
-		"Allows to retrieve a the configuration with the provided id in case it exists. The authenticated user or team must be the owner of the config in order to access it.",
 		{
-			id: getConfigurationPathParamsSchema.shape["id"],
-			queryParams: getConfigurationQueryParamsSchema,
+			description:
+				"Allows to retrieve a the configuration with the provided id in case it exists. The authenticated user or team must be the owner of the config in order to access it.",
+			inputSchema: {
+				id: getConfigurationPathParamsSchema.shape["id"],
+				queryParams: getConfigurationQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -12879,12 +13202,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteConfiguration",
-		"Allows to remove the configuration with the `id` provided in the parameters. The configuration and all of its resources will be removed. This includes Webhooks, LogDrains and Project Env variables.",
 		{
-			id: deleteConfigurationPathParamsSchema.shape["id"],
-			queryParams: deleteConfigurationQueryParamsSchema,
+			description:
+				"Allows to remove the configuration with the `id` provided in the parameters. The configuration and all of its resources will be removed. This includes Webhooks, LogDrains and Project Env variables.",
+			inputSchema: {
+				id: deleteConfigurationPathParamsSchema.shape["id"],
+				queryParams: deleteConfigurationQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -12895,12 +13221,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getConfigurationProducts",
-		"Lists all products available for an integration configuration. Use this endpoint to discover what integration products are available for your integration configuration. The returned product IDs or slugs can then be used with storage provisioning endpoints like `POST /v1/storage/stores/integration/direct`. ## Workflow 1. Get your integration configurations: `GET /v1/integrations/configurations` 2. **Use this endpoint**: Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Create storage resource: `POST /v1/storage/stores/integration/direct` ## Response Returns an array of products with their IDs, slugs, names, supported protocols, and metadata requirements. Each product represents a different type of resource you can provision. The `metadataSchema` field contains a JSON Schema that defines: - **Required metadata**: Fields that must be provided during storage creation - **Optional metadata**: Fields that can be provided but are not mandatory - **Field validation**: Data types, allowed values, and constraints Use this schema to validate metadata before calling the storage creation endpoint.",
 		{
-			id: getConfigurationProductsPathParamsSchema.shape["id"],
-			queryParams: getConfigurationProductsQueryParamsSchema,
+			description:
+				"Lists all products available for an integration configuration. Use this endpoint to discover what integration products are available for your integration configuration. The returned product IDs or slugs can then be used with storage provisioning endpoints like `POST /v1/storage/stores/integration/direct`. ## Workflow 1. Get your integration configurations: `GET /v1/integrations/configurations` 2. **Use this endpoint**: Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Create storage resource: `POST /v1/storage/stores/integration/direct` ## Response Returns an array of products with their IDs, slugs, names, supported protocols, and metadata requirements. Each product represents a different type of resource you can provision. The `metadataSchema` field contains a JSON Schema that defines: - **Required metadata**: Fields that must be provided during storage creation - **Optional metadata**: Fields that can be provided but are not mandatory - **Field validation**: Data types, allowed values, and constraints Use this schema to validate metadata before calling the storage creation endpoint.",
+			inputSchema: {
+				id: getConfigurationProductsPathParamsSchema.shape["id"],
+				queryParams: getConfigurationProductsQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -12911,9 +13240,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"exchangeSsoToken",
-		"During the autorization process, Vercel sends the user to the provider [redirectLoginUrl](https://vercel.com/docs/integrations/create-integration/submit-integration#redirect-login-url), that includes the OAuth authorization `code` parameter. The provider then calls the SSO Token Exchange endpoint with the sent code and receives the OIDC token. They log the user in based on this token and redirects the user back to the Vercel account using deep-link parameters included the redirectLoginUrl. Providers should not persist the returned `id_token` in a database since the token will expire. See [**Authentication with SSO**](https://vercel.com/docs/integrations/create-integration/marketplace-api#authentication-with-sso) for more details.",
+		{
+			description:
+				"During the autorization process, Vercel sends the user to the provider [redirectLoginUrl](https://vercel.com/docs/integrations/create-integration/submit-integration#redirect-login-url), that includes the OAuth authorization `code` parameter. The provider then calls the SSO Token Exchange endpoint with the sent code and receives the OIDC token. They log the user in based on this token and redirects the user back to the Vercel account using deep-link parameters included the redirectLoginUrl. Providers should not persist the returned `id_token` in a database since the token will expire. See [**Authentication with SSO**](https://vercel.com/docs/integrations/create-integration/marketplace-api#authentication-with-sso) for more details.",
+		},
 		async () => {
 			try {
 				return await exchangeSsoToken({ config });
@@ -12923,10 +13255,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getIntegrationLogDrains",
-		"Retrieves a list of all Integration log drains that are defined for the authenticated user or team. When using an OAuth2 token, the list is limited to log drains created by the authenticated integration.",
-		{ queryParams: getIntegrationLogDrainsQueryParamsSchema },
+		{
+			description:
+				"Retrieves a list of all Integration log drains that are defined for the authenticated user or team. When using an OAuth2 token, the list is limited to log drains created by the authenticated integration.",
+			inputSchema: { queryParams: getIntegrationLogDrainsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getIntegrationLogDrains({ queryParams, config });
@@ -12936,10 +13271,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createLogDrain",
-		"Creates an Integration log drain. This endpoint must be called with an OAuth2 client (integration), since log drains are tied to integrations. If it is called with a different token type it will produce a 400 error.",
-		{ queryParams: createLogDrainQueryParamsSchema },
+		{
+			description:
+				"Creates an Integration log drain. This endpoint must be called with an OAuth2 client (integration), since log drains are tied to integrations. If it is called with a different token type it will produce a 400 error.",
+			inputSchema: { queryParams: createLogDrainQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createLogDrain({ queryParams, config });
@@ -12949,12 +13287,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteIntegrationLogDrain",
-		"Deletes the Integration log drain with the provided `id`. When using an OAuth2 Token, the log drain can be deleted only if the integration owns it.",
 		{
-			id: deleteIntegrationLogDrainPathParamsSchema.shape["id"],
-			queryParams: deleteIntegrationLogDrainQueryParamsSchema,
+			description:
+				"Deletes the Integration log drain with the provided `id`. When using an OAuth2 Token, the log drain can be deleted only if the integration owns it.",
+			inputSchema: {
+				id: deleteIntegrationLogDrainPathParamsSchema.shape["id"],
+				queryParams: deleteIntegrationLogDrainQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -12965,13 +13306,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getRuntimeLogs",
-		"Returns a stream of logs for a given deployment.",
 		{
-			projectId: getRuntimeLogsPathParamsSchema.shape["projectId"],
-			deploymentId: getRuntimeLogsPathParamsSchema.shape["deploymentId"],
-			queryParams: getRuntimeLogsQueryParamsSchema,
+			description: "Returns a stream of logs for a given deployment.",
+			inputSchema: {
+				projectId: getRuntimeLogsPathParamsSchema.shape["projectId"],
+				deploymentId: getRuntimeLogsPathParamsSchema.shape["deploymentId"],
+				queryParams: getRuntimeLogsQueryParamsSchema,
+			},
 		},
 		async ({ projectId, deploymentId, queryParams }) => {
 			try {
@@ -12986,13 +13329,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createExperimentationItem",
-		"Create one or multiple experimentation items",
 		{
-			integrationConfigurationId:
-				createExperimentationItemPathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: createExperimentationItemPathParamsSchema.shape["resourceId"],
+			description: "Create one or multiple experimentation items",
+			inputSchema: {
+				integrationConfigurationId:
+					createExperimentationItemPathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: createExperimentationItemPathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId }) => {
 			try {
@@ -13006,14 +13351,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateExperimentationItem",
-		"Patch an existing experimentation item",
 		{
-			integrationConfigurationId:
-				updateExperimentationItemPathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: updateExperimentationItemPathParamsSchema.shape["resourceId"],
-			itemId: updateExperimentationItemPathParamsSchema.shape["itemId"],
+			description: "Patch an existing experimentation item",
+			inputSchema: {
+				integrationConfigurationId:
+					updateExperimentationItemPathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: updateExperimentationItemPathParamsSchema.shape["resourceId"],
+				itemId: updateExperimentationItemPathParamsSchema.shape["itemId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId, itemId }) => {
 			try {
@@ -13027,14 +13374,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteExperimentationItem",
-		"Delete an existing experimentation item",
 		{
-			integrationConfigurationId:
-				deleteExperimentationItemPathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: deleteExperimentationItemPathParamsSchema.shape["resourceId"],
-			itemId: deleteExperimentationItemPathParamsSchema.shape["itemId"],
+			description: "Delete an existing experimentation item",
+			inputSchema: {
+				integrationConfigurationId:
+					deleteExperimentationItemPathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: deleteExperimentationItemPathParamsSchema.shape["resourceId"],
+				itemId: deleteExperimentationItemPathParamsSchema.shape["itemId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId, itemId }) => {
 			try {
@@ -13048,13 +13397,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateExperimentationEdgeConfig",
-		"When the user enabled Edge Config syncing, then this endpoint can be used by the partner to push their configuration data into the relevant Edge Config.",
 		{
-			integrationConfigurationId:
-				updateExperimentationEdgeConfigPathParamsSchema.shape["integrationConfigurationId"],
-			resourceId: updateExperimentationEdgeConfigPathParamsSchema.shape["resourceId"],
+			description:
+				"When the user enabled Edge Config syncing, then this endpoint can be used by the partner to push their configuration data into the relevant Edge Config.",
+			inputSchema: {
+				integrationConfigurationId:
+					updateExperimentationEdgeConfigPathParamsSchema.shape["integrationConfigurationId"],
+				resourceId: updateExperimentationEdgeConfigPathParamsSchema.shape["resourceId"],
+			},
 		},
 		async ({ integrationConfigurationId, resourceId }) => {
 			try {
@@ -13068,12 +13420,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getProjectMembers",
-		"Lists all members of a project.",
 		{
-			idOrName: getProjectMembersPathParamsSchema.shape["idOrName"],
-			queryParams: getProjectMembersQueryParamsSchema,
+			description: "Lists all members of a project.",
+			inputSchema: {
+				idOrName: getProjectMembersPathParamsSchema.shape["idOrName"],
+				queryParams: getProjectMembersQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13084,12 +13438,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"addProjectMember",
-		"Adds a new member to the project.",
 		{
-			idOrName: addProjectMemberPathParamsSchema.shape["idOrName"],
-			queryParams: addProjectMemberQueryParamsSchema,
+			description: "Adds a new member to the project.",
+			inputSchema: {
+				idOrName: addProjectMemberPathParamsSchema.shape["idOrName"],
+				queryParams: addProjectMemberQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13100,13 +13456,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeProjectMember",
-		"Remove a member from a specific project",
 		{
-			idOrName: removeProjectMemberPathParamsSchema.shape["idOrName"],
-			uid: removeProjectMemberPathParamsSchema.shape["uid"],
-			queryParams: removeProjectMemberQueryParamsSchema,
+			description: "Remove a member from a specific project",
+			inputSchema: {
+				idOrName: removeProjectMemberPathParamsSchema.shape["idOrName"],
+				uid: removeProjectMemberPathParamsSchema.shape["uid"],
+				queryParams: removeProjectMemberQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, uid, queryParams }) => {
 			try {
@@ -13117,10 +13475,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getProjects",
-		"Allows to retrieve the list of projects of the authenticated user or team. The list will be paginated and the provided query parameters allow filtering the returned projects.",
-		{ queryParams: getProjectsQueryParamsSchema },
+		{
+			description:
+				"Allows to retrieve the list of projects of the authenticated user or team. The list will be paginated and the provided query parameters allow filtering the returned projects.",
+			inputSchema: { queryParams: getProjectsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getProjects({ queryParams, config });
@@ -13130,10 +13491,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createProject",
-		"Allows to create a new project with the provided configuration. It only requires the project `name` but more configuration can be provided to override the defaults.",
-		{ queryParams: createProjectQueryParamsSchema },
+		{
+			description:
+				"Allows to create a new project with the provided configuration. It only requires the project `name` but more configuration can be provided to override the defaults.",
+			inputSchema: { queryParams: createProjectQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createProject({ queryParams, config });
@@ -13143,12 +13507,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getProject",
-		"Get the information for a specific project by passing either the project `id` or `name` in the URL.",
 		{
-			idOrName: getProjectPathParamsSchema.shape["idOrName"],
-			queryParams: getProjectQueryParamsSchema,
+			description:
+				"Get the information for a specific project by passing either the project `id` or `name` in the URL.",
+			inputSchema: {
+				idOrName: getProjectPathParamsSchema.shape["idOrName"],
+				queryParams: getProjectQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13159,12 +13526,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateProject",
-		"Update the fields of a project using either its `name` or `id`.",
 		{
-			idOrName: updateProjectPathParamsSchema.shape["idOrName"],
-			queryParams: updateProjectQueryParamsSchema,
+			description: "Update the fields of a project using either its `name` or `id`.",
+			inputSchema: {
+				idOrName: updateProjectPathParamsSchema.shape["idOrName"],
+				queryParams: updateProjectQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13175,12 +13544,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteProject",
-		"Delete a specific project by passing either the project `id` or `name` in the URL.",
 		{
-			idOrName: deleteProjectPathParamsSchema.shape["idOrName"],
-			queryParams: deleteProjectQueryParamsSchema,
+			description:
+				"Delete a specific project by passing either the project `id` or `name` in the URL.",
+			inputSchema: {
+				idOrName: deleteProjectPathParamsSchema.shape["idOrName"],
+				queryParams: deleteProjectQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13191,12 +13563,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateStaticIps",
-		"Allows configuring Static IPs for a project",
 		{
-			idOrName: updateStaticIpsPathParamsSchema.shape["idOrName"],
-			queryParams: updateStaticIpsQueryParamsSchema,
+			description: "Allows configuring Static IPs for a project",
+			inputSchema: {
+				idOrName: updateStaticIpsPathParamsSchema.shape["idOrName"],
+				queryParams: updateStaticIpsQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13207,12 +13581,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createCustomEnvironment",
-		"Creates a custom environment for the current project. Cannot be named 'Production' or 'Preview'.",
 		{
-			idOrName: createCustomEnvironmentPathParamsSchema.shape["idOrName"],
-			queryParams: createCustomEnvironmentQueryParamsSchema,
+			description:
+				"Creates a custom environment for the current project. Cannot be named 'Production' or 'Preview'.",
+			inputSchema: {
+				idOrName: createCustomEnvironmentPathParamsSchema.shape["idOrName"],
+				queryParams: createCustomEnvironmentQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13223,12 +13600,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listCustomEnvironments",
-		"Retrieve custom environments for the project. Must not be named 'Production' or 'Preview'.",
 		{
-			idOrName: listCustomEnvironmentsPathParamsSchema.shape["idOrName"],
-			queryParams: listCustomEnvironmentsQueryParamsSchema,
+			description:
+				"Retrieve custom environments for the project. Must not be named 'Production' or 'Preview'.",
+			inputSchema: {
+				idOrName: listCustomEnvironmentsPathParamsSchema.shape["idOrName"],
+				queryParams: listCustomEnvironmentsQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13239,13 +13619,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getCustomEnvironment",
-		"Retrieve a custom environment for the project. Must not be named 'Production' or 'Preview'.",
 		{
-			idOrName: getCustomEnvironmentPathParamsSchema.shape["idOrName"],
-			environmentSlugOrId: getCustomEnvironmentPathParamsSchema.shape["environmentSlugOrId"],
-			queryParams: getCustomEnvironmentQueryParamsSchema,
+			description:
+				"Retrieve a custom environment for the project. Must not be named 'Production' or 'Preview'.",
+			inputSchema: {
+				idOrName: getCustomEnvironmentPathParamsSchema.shape["idOrName"],
+				environmentSlugOrId: getCustomEnvironmentPathParamsSchema.shape["environmentSlugOrId"],
+				queryParams: getCustomEnvironmentQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, environmentSlugOrId, queryParams }) => {
 			try {
@@ -13260,13 +13643,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateCustomEnvironment",
-		"Update a custom environment for the project. Must not be named 'Production' or 'Preview'.",
 		{
-			idOrName: updateCustomEnvironmentPathParamsSchema.shape["idOrName"],
-			environmentSlugOrId: updateCustomEnvironmentPathParamsSchema.shape["environmentSlugOrId"],
-			queryParams: updateCustomEnvironmentQueryParamsSchema,
+			description:
+				"Update a custom environment for the project. Must not be named 'Production' or 'Preview'.",
+			inputSchema: {
+				idOrName: updateCustomEnvironmentPathParamsSchema.shape["idOrName"],
+				environmentSlugOrId: updateCustomEnvironmentPathParamsSchema.shape["environmentSlugOrId"],
+				queryParams: updateCustomEnvironmentQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, environmentSlugOrId, queryParams }) => {
 			try {
@@ -13281,13 +13667,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeCustomEnvironment",
-		"Remove a custom environment for the project. Must not be named 'Production' or 'Preview'.",
 		{
-			idOrName: removeCustomEnvironmentPathParamsSchema.shape["idOrName"],
-			environmentSlugOrId: removeCustomEnvironmentPathParamsSchema.shape["environmentSlugOrId"],
-			queryParams: removeCustomEnvironmentQueryParamsSchema,
+			description:
+				"Remove a custom environment for the project. Must not be named 'Production' or 'Preview'.",
+			inputSchema: {
+				idOrName: removeCustomEnvironmentPathParamsSchema.shape["idOrName"],
+				environmentSlugOrId: removeCustomEnvironmentPathParamsSchema.shape["environmentSlugOrId"],
+				queryParams: removeCustomEnvironmentQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, environmentSlugOrId, queryParams }) => {
 			try {
@@ -13302,12 +13691,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getProjectDomains",
-		"Retrieve the domains associated with a given project by passing either the project `id` or `name` in the URL.",
 		{
-			idOrName: getProjectDomainsPathParamsSchema.shape["idOrName"],
-			queryParams: getProjectDomainsQueryParamsSchema,
+			description:
+				"Retrieve the domains associated with a given project by passing either the project `id` or `name` in the URL.",
+			inputSchema: {
+				idOrName: getProjectDomainsPathParamsSchema.shape["idOrName"],
+				queryParams: getProjectDomainsQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13318,13 +13710,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getProjectDomain",
-		"Get project domain by project id/name and domain name.",
 		{
-			idOrName: getProjectDomainPathParamsSchema.shape["idOrName"],
-			domain: getProjectDomainPathParamsSchema.shape["domain"],
-			queryParams: getProjectDomainQueryParamsSchema,
+			description: "Get project domain by project id/name and domain name.",
+			inputSchema: {
+				idOrName: getProjectDomainPathParamsSchema.shape["idOrName"],
+				domain: getProjectDomainPathParamsSchema.shape["domain"],
+				queryParams: getProjectDomainQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, domain, queryParams }) => {
 			try {
@@ -13335,13 +13729,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateProjectDomain",
-		"Update a project domain's configuration, including the name, git branch and redirect of the domain.",
 		{
-			idOrName: updateProjectDomainPathParamsSchema.shape["idOrName"],
-			domain: updateProjectDomainPathParamsSchema.shape["domain"],
-			queryParams: updateProjectDomainQueryParamsSchema,
+			description:
+				"Update a project domain's configuration, including the name, git branch and redirect of the domain.",
+			inputSchema: {
+				idOrName: updateProjectDomainPathParamsSchema.shape["idOrName"],
+				domain: updateProjectDomainPathParamsSchema.shape["domain"],
+				queryParams: updateProjectDomainQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, domain, queryParams }) => {
 			try {
@@ -13352,13 +13749,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeProjectDomain",
-		"Remove a domain from a project by passing the domain name and by specifying the project by either passing the project `id` or `name` in the URL.",
 		{
-			idOrName: removeProjectDomainPathParamsSchema.shape["idOrName"],
-			domain: removeProjectDomainPathParamsSchema.shape["domain"],
-			queryParams: removeProjectDomainQueryParamsSchema,
+			description:
+				"Remove a domain from a project by passing the domain name and by specifying the project by either passing the project `id` or `name` in the URL.",
+			inputSchema: {
+				idOrName: removeProjectDomainPathParamsSchema.shape["idOrName"],
+				domain: removeProjectDomainPathParamsSchema.shape["domain"],
+				queryParams: removeProjectDomainQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, domain, queryParams }) => {
 			try {
@@ -13369,12 +13769,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"addProjectDomain",
-		"Add a domain to the project by passing its domain name and by specifying the project by either passing the project `id` or `name` in the URL. If the domain is not yet verified to be used on this project, the request will return `verified = false`, and the domain will need to be verified according to the `verification` challenge via `POST /projects/:idOrName/domains/:domain/verify`. If the domain already exists on the project, the request will fail with a `400` status code.",
 		{
-			idOrName: addProjectDomainPathParamsSchema.shape["idOrName"],
-			queryParams: addProjectDomainQueryParamsSchema,
+			description:
+				"Add a domain to the project by passing its domain name and by specifying the project by either passing the project `id` or `name` in the URL. If the domain is not yet verified to be used on this project, the request will return `verified = false`, and the domain will need to be verified according to the `verification` challenge via `POST /projects/:idOrName/domains/:domain/verify`. If the domain already exists on the project, the request will fail with a `400` status code.",
+			inputSchema: {
+				idOrName: addProjectDomainPathParamsSchema.shape["idOrName"],
+				queryParams: addProjectDomainQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13385,13 +13788,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"moveProjectDomain",
-		"Move one project's domain to another project. Also allows the move of all redirects pointed to that domain in the same project.",
 		{
-			idOrName: moveProjectDomainPathParamsSchema.shape["idOrName"],
-			domain: moveProjectDomainPathParamsSchema.shape["domain"],
-			queryParams: moveProjectDomainQueryParamsSchema,
+			description:
+				"Move one project's domain to another project. Also allows the move of all redirects pointed to that domain in the same project.",
+			inputSchema: {
+				idOrName: moveProjectDomainPathParamsSchema.shape["idOrName"],
+				domain: moveProjectDomainPathParamsSchema.shape["domain"],
+				queryParams: moveProjectDomainQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, domain, queryParams }) => {
 			try {
@@ -13402,13 +13808,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"verifyProjectDomain",
-		"Attempts to verify a project domain with `verified = false` by checking the correctness of the project domain's `verification` challenge.",
 		{
-			idOrName: verifyProjectDomainPathParamsSchema.shape["idOrName"],
-			domain: verifyProjectDomainPathParamsSchema.shape["domain"],
-			queryParams: verifyProjectDomainQueryParamsSchema,
+			description:
+				"Attempts to verify a project domain with `verified = false` by checking the correctness of the project domain's `verification` challenge.",
+			inputSchema: {
+				idOrName: verifyProjectDomainPathParamsSchema.shape["idOrName"],
+				domain: verifyProjectDomainPathParamsSchema.shape["domain"],
+				queryParams: verifyProjectDomainQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, domain, queryParams }) => {
 			try {
@@ -13419,12 +13828,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"filterProjectEnvs",
-		"Retrieve the environment variables for a given project by passing either the project `id` or `name` in the URL.",
 		{
-			idOrName: filterProjectEnvsPathParamsSchema.shape["idOrName"],
-			queryParams: filterProjectEnvsQueryParamsSchema,
+			description:
+				"Retrieve the environment variables for a given project by passing either the project `id` or `name` in the URL.",
+			inputSchema: {
+				idOrName: filterProjectEnvsPathParamsSchema.shape["idOrName"],
+				queryParams: filterProjectEnvsQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13435,12 +13847,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createProjectEnv",
-		"Create one or more environment variables for a project by passing its `key`, `value`, `type` and `target` and by specifying the project by either passing the project `id` or `name` in the URL. If you include `upsert=true` as a query parameter, a new environment variable will not be created if it already exists but, the existing variable's value will be updated.",
 		{
-			idOrName: createProjectEnvPathParamsSchema.shape["idOrName"],
-			queryParams: createProjectEnvQueryParamsSchema,
+			description:
+				"Create one or more environment variables for a project by passing its `key`, `value`, `type` and `target` and by specifying the project by either passing the project `id` or `name` in the URL. If you include `upsert=true` as a query parameter, a new environment variable will not be created if it already exists but, the existing variable's value will be updated.",
+			inputSchema: {
+				idOrName: createProjectEnvPathParamsSchema.shape["idOrName"],
+				queryParams: createProjectEnvQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13451,13 +13866,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getProjectEnv",
-		"Retrieve the environment variable for a given project.",
 		{
-			idOrName: getProjectEnvPathParamsSchema.shape["idOrName"],
-			id: getProjectEnvPathParamsSchema.shape["id"],
-			queryParams: getProjectEnvQueryParamsSchema,
+			description: "Retrieve the environment variable for a given project.",
+			inputSchema: {
+				idOrName: getProjectEnvPathParamsSchema.shape["idOrName"],
+				id: getProjectEnvPathParamsSchema.shape["id"],
+				queryParams: getProjectEnvQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, id, queryParams }) => {
 			try {
@@ -13468,13 +13885,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeProjectEnv",
-		"Delete a specific environment variable for a given project by passing the environment variable identifier and either passing the project `id` or `name` in the URL.",
 		{
-			idOrName: removeProjectEnvPathParamsSchema.shape["idOrName"],
-			id: removeProjectEnvPathParamsSchema.shape["id"],
-			queryParams: removeProjectEnvQueryParamsSchema,
+			description:
+				"Delete a specific environment variable for a given project by passing the environment variable identifier and either passing the project `id` or `name` in the URL.",
+			inputSchema: {
+				idOrName: removeProjectEnvPathParamsSchema.shape["idOrName"],
+				id: removeProjectEnvPathParamsSchema.shape["id"],
+				queryParams: removeProjectEnvQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, id, queryParams }) => {
 			try {
@@ -13485,13 +13905,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"editProjectEnv",
-		"Edit a specific environment variable for a given project by passing the environment variable identifier and either passing the project `id` or `name` in the URL.",
 		{
-			idOrName: editProjectEnvPathParamsSchema.shape["idOrName"],
-			id: editProjectEnvPathParamsSchema.shape["id"],
-			queryParams: editProjectEnvQueryParamsSchema,
+			description:
+				"Edit a specific environment variable for a given project by passing the environment variable identifier and either passing the project `id` or `name` in the URL.",
+			inputSchema: {
+				idOrName: editProjectEnvPathParamsSchema.shape["idOrName"],
+				id: editProjectEnvPathParamsSchema.shape["id"],
+				queryParams: editProjectEnvQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, id, queryParams }) => {
 			try {
@@ -13502,12 +13925,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"batchRemoveProjectEnv",
-		"Delete multiple environment variables for a given project in a single batch operation.",
 		{
-			idOrName: batchRemoveProjectEnvPathParamsSchema.shape["idOrName"],
-			queryParams: batchRemoveProjectEnvQueryParamsSchema,
+			description:
+				"Delete multiple environment variables for a given project in a single batch operation.",
+			inputSchema: {
+				idOrName: batchRemoveProjectEnvPathParamsSchema.shape["idOrName"],
+				queryParams: batchRemoveProjectEnvQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13518,12 +13944,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"uploadProjectClientCert",
-		"Upload a client certificate for mTLS authentication to external origins.",
 		{
-			idOrName: uploadProjectClientCertPathParamsSchema.shape["idOrName"],
-			queryParams: uploadProjectClientCertQueryParamsSchema,
+			description: "Upload a client certificate for mTLS authentication to external origins.",
+			inputSchema: {
+				idOrName: uploadProjectClientCertPathParamsSchema.shape["idOrName"],
+				queryParams: uploadProjectClientCertQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13534,12 +13962,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getProjectClientCerts",
-		"Retrieve client certificates configured for a project's mTLS egress authentication.",
 		{
-			idOrName: getProjectClientCertsPathParamsSchema.shape["idOrName"],
-			queryParams: getProjectClientCertsQueryParamsSchema,
+			description:
+				"Retrieve client certificates configured for a project's mTLS egress authentication.",
+			inputSchema: {
+				idOrName: getProjectClientCertsPathParamsSchema.shape["idOrName"],
+				queryParams: getProjectClientCertsQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13550,13 +13981,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteProjectClientCert",
-		"Delete a client certificate for mTLS authentication to external origins.",
 		{
-			idOrName: deleteProjectClientCertPathParamsSchema.shape["idOrName"],
-			certId: deleteProjectClientCertPathParamsSchema.shape["certId"],
-			queryParams: deleteProjectClientCertQueryParamsSchema,
+			description: "Delete a client certificate for mTLS authentication to external origins.",
+			inputSchema: {
+				idOrName: deleteProjectClientCertPathParamsSchema.shape["idOrName"],
+				certId: deleteProjectClientCertPathParamsSchema.shape["certId"],
+				queryParams: deleteProjectClientCertQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, certId, queryParams }) => {
 			try {
@@ -13571,12 +14004,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getRollingReleaseBillingStatus",
-		"Get the Rolling Releases billing status for a project. The team level billing status is used to determine if the project can be configured for rolling releases.",
 		{
-			idOrName: getRollingReleaseBillingStatusPathParamsSchema.shape["idOrName"],
-			queryParams: getRollingReleaseBillingStatusQueryParamsSchema,
+			description:
+				"Get the Rolling Releases billing status for a project. The team level billing status is used to determine if the project can be configured for rolling releases.",
+			inputSchema: {
+				idOrName: getRollingReleaseBillingStatusPathParamsSchema.shape["idOrName"],
+				queryParams: getRollingReleaseBillingStatusQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13591,12 +14027,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getRollingReleaseConfig",
-		"Get the Rolling Releases configuration for a project. The project-level config is simply a template that will be used for any future rolling release, and not the configuration for any active rolling release.",
 		{
-			idOrName: getRollingReleaseConfigPathParamsSchema.shape["idOrName"],
-			queryParams: getRollingReleaseConfigQueryParamsSchema,
+			description:
+				"Get the Rolling Releases configuration for a project. The project-level config is simply a template that will be used for any future rolling release, and not the configuration for any active rolling release.",
+			inputSchema: {
+				idOrName: getRollingReleaseConfigPathParamsSchema.shape["idOrName"],
+				queryParams: getRollingReleaseConfigQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13607,12 +14046,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteRollingReleaseConfig",
-		"Disable Rolling Releases for a project means that future deployments will not undergo a rolling release. Changing the config never alters a rollout that's already in-flight—it only affects the next production deployment. If you want to also stop the current rollout, call this endpoint to disable the feature, and then call either the /complete or /abort endpoint.",
 		{
-			idOrName: deleteRollingReleaseConfigPathParamsSchema.shape["idOrName"],
-			queryParams: deleteRollingReleaseConfigQueryParamsSchema,
+			description:
+				"Disable Rolling Releases for a project means that future deployments will not undergo a rolling release. Changing the config never alters a rollout that's already in-flight—it only affects the next production deployment. If you want to also stop the current rollout, call this endpoint to disable the feature, and then call either the /complete or /abort endpoint.",
+			inputSchema: {
+				idOrName: deleteRollingReleaseConfigPathParamsSchema.shape["idOrName"],
+				queryParams: deleteRollingReleaseConfigQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13623,12 +14065,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateRollingReleaseConfig",
-		"Update (or disable) Rolling Releases for a project. Changing the config never alters a rollout that's already in-flight. It only affects the next production deployment. This also applies to disabling Rolling Releases. If you want to also stop the current rollout, call this endpoint to disable the feature, and then call either the /complete or /abort endpoint. Note: Enabling Rolling Releases automatically enables skew protection on the project with the default value if it wasn't configured already.",
 		{
-			idOrName: updateRollingReleaseConfigPathParamsSchema.shape["idOrName"],
-			queryParams: updateRollingReleaseConfigQueryParamsSchema,
+			description:
+				"Update (or disable) Rolling Releases for a project. Changing the config never alters a rollout that's already in-flight. It only affects the next production deployment. This also applies to disabling Rolling Releases. If you want to also stop the current rollout, call this endpoint to disable the feature, and then call either the /complete or /abort endpoint. Note: Enabling Rolling Releases automatically enables skew protection on the project with the default value if it wasn't configured already.",
+			inputSchema: {
+				idOrName: updateRollingReleaseConfigPathParamsSchema.shape["idOrName"],
+				queryParams: updateRollingReleaseConfigQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13639,12 +14084,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getRollingRelease",
-		"Return the Rolling Release for a project, regardless of whether the rollout is active, aborted, or completed. If the feature is enabled but no deployment has occurred yet, null will be returned.",
 		{
-			idOrName: getRollingReleasePathParamsSchema.shape["idOrName"],
-			queryParams: getRollingReleaseQueryParamsSchema,
+			description:
+				"Return the Rolling Release for a project, regardless of whether the rollout is active, aborted, or completed. If the feature is enabled but no deployment has occurred yet, null will be returned.",
+			inputSchema: {
+				idOrName: getRollingReleasePathParamsSchema.shape["idOrName"],
+				queryParams: getRollingReleaseQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13655,12 +14103,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"approveRollingReleaseStage",
-		"Advance a rollout to the next stage. This is only needed when rolling releases is configured to require manual approval.",
 		{
-			idOrName: approveRollingReleaseStagePathParamsSchema.shape["idOrName"],
-			queryParams: approveRollingReleaseStageQueryParamsSchema,
+			description:
+				"Advance a rollout to the next stage. This is only needed when rolling releases is configured to require manual approval.",
+			inputSchema: {
+				idOrName: approveRollingReleaseStagePathParamsSchema.shape["idOrName"],
+				queryParams: approveRollingReleaseStageQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13671,12 +14122,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"completeRollingRelease",
-		"Force-complete a Rolling Release. The canary deployment will begin serving 100% of the traffic.",
 		{
-			idOrName: completeRollingReleasePathParamsSchema.shape["idOrName"],
-			queryParams: completeRollingReleaseQueryParamsSchema,
+			description:
+				"Force-complete a Rolling Release. The canary deployment will begin serving 100% of the traffic.",
+			inputSchema: {
+				idOrName: completeRollingReleasePathParamsSchema.shape["idOrName"],
+				queryParams: completeRollingReleaseQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13687,12 +14141,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createProjectTransferRequest",
-		"Initiates a project transfer request from one team to another. <br/> Returns a `code` that remains valid for 24 hours and can be used to accept the transfer request by another team using the `PUT /projects/transfer-request/:code` endpoint. <br/> Users can also accept the project transfer request using the claim URL: `https://vercel.com/claim-deployment?code=<code>&returnUrl=<returnUrl>`. <br/> The `code` parameter specifies the project transfer request code generated using this endpoint. <br/> The `returnUrl` parameter redirects users to a specific page of the application if the claim URL is invalid or expired.",
 		{
-			idOrName: createProjectTransferRequestPathParamsSchema.shape["idOrName"],
-			queryParams: createProjectTransferRequestQueryParamsSchema,
+			description:
+				"Initiates a project transfer request from one team to another. <br/> Returns a `code` that remains valid for 24 hours and can be used to accept the transfer request by another team using the `PUT /projects/transfer-request/:code` endpoint. <br/> Users can also accept the project transfer request using the claim URL: `https://vercel.com/claim-deployment?code=<code>&returnUrl=<returnUrl>`. <br/> The `code` parameter specifies the project transfer request code generated using this endpoint. <br/> The `returnUrl` parameter redirects users to a specific page of the application if the claim URL is invalid or expired.",
+			inputSchema: {
+				idOrName: createProjectTransferRequestPathParamsSchema.shape["idOrName"],
+				queryParams: createProjectTransferRequestQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13707,12 +14164,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"acceptProjectTransferRequest",
-		"Accept a project transfer request initated by another team. <br/> The `code` is generated using the `POST /projects/:idOrName/transfer-request` endpoint.",
 		{
-			code: acceptProjectTransferRequestPathParamsSchema.shape["code"],
-			queryParams: acceptProjectTransferRequestQueryParamsSchema,
+			description:
+				"Accept a project transfer request initated by another team. <br/> The `code` is generated using the `POST /projects/:idOrName/transfer-request` endpoint.",
+			inputSchema: {
+				code: acceptProjectTransferRequestPathParamsSchema.shape["code"],
+				queryParams: acceptProjectTransferRequestQueryParamsSchema,
+			},
 		},
 		async ({ code, queryParams }) => {
 			try {
@@ -13723,12 +14183,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateProjectProtectionBypass",
-		"Update the deployment protection automation bypass for a project",
 		{
-			idOrName: updateProjectProtectionBypassPathParamsSchema.shape["idOrName"],
-			queryParams: updateProjectProtectionBypassQueryParamsSchema,
+			description: "Update the deployment protection automation bypass for a project",
+			inputSchema: {
+				idOrName: updateProjectProtectionBypassPathParamsSchema.shape["idOrName"],
+				queryParams: updateProjectProtectionBypassQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -13743,13 +14205,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"requestPromote",
-		"Allows users to promote a deployment to production. Note: This does NOT rebuild the deployment. If you need that, then call create-deployments endpoint.",
 		{
-			projectId: requestPromotePathParamsSchema.shape["projectId"],
-			deploymentId: requestPromotePathParamsSchema.shape["deploymentId"],
-			queryParams: requestPromoteQueryParamsSchema,
+			description:
+				"Allows users to promote a deployment to production. Note: This does NOT rebuild the deployment. If you need that, then call create-deployments endpoint.",
+			inputSchema: {
+				projectId: requestPromotePathParamsSchema.shape["projectId"],
+				deploymentId: requestPromotePathParamsSchema.shape["deploymentId"],
+				queryParams: requestPromoteQueryParamsSchema,
+			},
 		},
 		async ({ projectId, deploymentId, queryParams }) => {
 			try {
@@ -13764,12 +14229,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listPromoteAliases",
-		"Get a list of aliases related to the last promote request with their mapping status",
 		{
-			projectId: listPromoteAliasesPathParamsSchema.shape["projectId"],
-			queryParams: listPromoteAliasesQueryParamsSchema,
+			description:
+				"Get a list of aliases related to the last promote request with their mapping status",
+			inputSchema: {
+				projectId: listPromoteAliasesPathParamsSchema.shape["projectId"],
+				queryParams: listPromoteAliasesQueryParamsSchema,
+			},
 		},
 		async ({ projectId, queryParams }) => {
 			try {
@@ -13780,12 +14248,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"pauseProject",
-		"Pause a project by passing its project `id` in the URL. If the project does not exist given the id then the request will fail with 400 status code. If the project disables auto assigning custom production domains and blocks the active Production Deployment then the request will return with 200 status code.",
 		{
-			projectId: pauseProjectPathParamsSchema.shape["projectId"],
-			queryParams: pauseProjectQueryParamsSchema,
+			description:
+				"Pause a project by passing its project `id` in the URL. If the project does not exist given the id then the request will fail with 400 status code. If the project disables auto assigning custom production domains and blocks the active Production Deployment then the request will return with 200 status code.",
+			inputSchema: {
+				projectId: pauseProjectPathParamsSchema.shape["projectId"],
+				queryParams: pauseProjectQueryParamsSchema,
+			},
 		},
 		async ({ projectId, queryParams }) => {
 			try {
@@ -13796,12 +14267,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"unpauseProject",
-		"Unpause a project by passing its project `id` in the URL. If the project does not exist given the id then the request will fail with 400 status code. If the project enables auto assigning custom production domains and unblocks the active Production Deployment then the request will return with 200 status code.",
 		{
-			projectId: unpauseProjectPathParamsSchema.shape["projectId"],
-			queryParams: unpauseProjectQueryParamsSchema,
+			description:
+				"Unpause a project by passing its project `id` in the URL. If the project does not exist given the id then the request will fail with 400 status code. If the project enables auto assigning custom production domains and unblocks the active Production Deployment then the request will return with 200 status code.",
+			inputSchema: {
+				projectId: unpauseProjectPathParamsSchema.shape["projectId"],
+				queryParams: unpauseProjectQueryParamsSchema,
+			},
 		},
 		async ({ projectId, queryParams }) => {
 			try {
@@ -13812,10 +14286,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateAttackChallengeMode",
-		"Update the setting for determining if the project has Attack Challenge mode enabled.",
-		{ queryParams: updateAttackChallengeModeQueryParamsSchema },
+		{
+			description:
+				"Update the setting for determining if the project has Attack Challenge mode enabled.",
+			inputSchema: { queryParams: updateAttackChallengeModeQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await updateAttackChallengeMode({ queryParams, config });
@@ -13825,10 +14302,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"putFirewallConfig",
-		"Set the firewall configuration to provided rules and settings. Creates or overwrite the existing firewall configuration.",
-		{ queryParams: putFirewallConfigQueryParamsSchema },
+		{
+			description:
+				"Set the firewall configuration to provided rules and settings. Creates or overwrite the existing firewall configuration.",
+			inputSchema: { queryParams: putFirewallConfigQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await putFirewallConfig({ queryParams, config });
@@ -13838,10 +14318,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateFirewallConfig",
-		"Process updates to modify the existing firewall config for a project",
-		{ queryParams: updateFirewallConfigQueryParamsSchema },
+		{
+			description: "Process updates to modify the existing firewall config for a project",
+			inputSchema: { queryParams: updateFirewallConfigQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await updateFirewallConfig({ queryParams, config });
@@ -13851,12 +14333,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getFirewallConfig",
-		"Retrieve the specified firewall configuration for a project. The deployed configVersion will be `active`",
 		{
-			configVersion: getFirewallConfigPathParamsSchema.shape["configVersion"],
-			queryParams: getFirewallConfigQueryParamsSchema,
+			description:
+				"Retrieve the specified firewall configuration for a project. The deployed configVersion will be `active`",
+			inputSchema: {
+				configVersion: getFirewallConfigPathParamsSchema.shape["configVersion"],
+				queryParams: getFirewallConfigQueryParamsSchema,
+			},
 		},
 		async ({ configVersion, queryParams }) => {
 			try {
@@ -13867,10 +14352,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getActiveAttackStatus",
-		"Retrieve active attack data within the last N days (default: 1 day)",
-		{ queryParams: getActiveAttackStatusQueryParamsSchema },
+		{
+			description: "Retrieve active attack data within the last N days (default: 1 day)",
+			inputSchema: { queryParams: getActiveAttackStatusQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getActiveAttackStatus({ queryParams, config });
@@ -13880,10 +14367,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getBypassIp",
-		"Retrieve the system bypass rules configured for the specified project",
-		{ queryParams: getBypassIpQueryParamsSchema },
+		{
+			description: "Retrieve the system bypass rules configured for the specified project",
+			inputSchema: { queryParams: getBypassIpQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getBypassIp({ queryParams, config });
@@ -13893,10 +14382,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"addBypassIp",
-		"Create new system bypass rules",
-		{ queryParams: addBypassIpQueryParamsSchema },
+		{
+			description: "Create new system bypass rules",
+			inputSchema: { queryParams: addBypassIpQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await addBypassIp({ queryParams, config });
@@ -13906,10 +14397,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeBypassIp",
-		"Remove system bypass rules",
-		{ queryParams: removeBypassIpQueryParamsSchema },
+		{
+			description: "Remove system bypass rules",
+			inputSchema: { queryParams: removeBypassIpQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await removeBypassIp({ queryParams, config });
@@ -13919,10 +14412,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"gETV1SecurityFirewallEvents",
-		"Retrieve firewall actions for a project",
-		{ queryParams: GETV1SecurityFirewallEventsQueryParamsSchema },
+		{
+			description: "Retrieve firewall actions for a project",
+			inputSchema: { queryParams: GETV1SecurityFirewallEventsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await gETV1SecurityFirewallEvents({ queryParams, config });
@@ -13932,10 +14427,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createIntegrationStoreDirect",
-		"Creates an integration store for both FREE and PAID billing plans. This simplified endpoint automatically provisions real integration storage resources while handling billing complexity behind the scenes. It supports both free and paid billing plans with automatic authorization creation for paid resources. ## How it works 1. Validates the integration configuration and product 2. For free resources: Auto-discovers available free billing plans 3. For paid resources: Creates billing authorization inline using provided billingPlanId 4. Provisions real resources through the Vercel Marketplace 5. Returns the created store with connection details ## Workflow Before using this endpoint, discover available products and billing plans: 1. List your configurations: `GET /v1/integrations/configurations` 2. Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Get billing plans for a product: `GET /integrations/integration/{integrationId}/products/{productId}/plans` 4. Review the `metadataSchema` for each product to understand required metadata 5. Create storage with discovered product: `POST /v1/storage/stores/integration/direct` ## Usage Patterns - **Free resources**: Omit `billingPlanId` - endpoint will auto-discover free plans - **Paid resources**: Provide `billingPlanId` from billing plans discovery - **Prepayment plans**: Also provide `prepaymentAmountCents` for variable amount plans ## Limitations - **Admin access required**: Only integration configuration admins can create stores - **Storage limits apply**: Subject to your team's storage quotas - **Payment method required**: For paid plans, ensure valid payment method is configured ## Error Responses - `400 Bad Request`: Invalid input, no plans available, or billing issues - `403 Forbidden`: Insufficient permissions (non-admin users) - `404 Not Found`: Integration configuration or product not found - `429 Too Many Requests`: Rate limit exceeded",
-		{ queryParams: createIntegrationStoreDirectQueryParamsSchema },
+		{
+			description:
+				"Creates an integration store for both FREE and PAID billing plans. This simplified endpoint automatically provisions real integration storage resources while handling billing complexity behind the scenes. It supports both free and paid billing plans with automatic authorization creation for paid resources. ## How it works 1. Validates the integration configuration and product 2. For free resources: Auto-discovers available free billing plans 3. For paid resources: Creates billing authorization inline using provided billingPlanId 4. Provisions real resources through the Vercel Marketplace 5. Returns the created store with connection details ## Workflow Before using this endpoint, discover available products and billing plans: 1. List your configurations: `GET /v1/integrations/configurations` 2. Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Get billing plans for a product: `GET /integrations/integration/{integrationId}/products/{productId}/plans` 4. Review the `metadataSchema` for each product to understand required metadata 5. Create storage with discovered product: `POST /v1/storage/stores/integration/direct` ## Usage Patterns - **Free resources**: Omit `billingPlanId` - endpoint will auto-discover free plans - **Paid resources**: Provide `billingPlanId` from billing plans discovery - **Prepayment plans**: Also provide `prepaymentAmountCents` for variable amount plans ## Limitations - **Admin access required**: Only integration configuration admins can create stores - **Storage limits apply**: Subject to your team's storage quotas - **Payment method required**: For paid plans, ensure valid payment method is configured ## Error Responses - `400 Bad Request`: Invalid input, no plans available, or billing issues - `403 Forbidden`: Insufficient permissions (non-admin users) - `404 Not Found`: Integration configuration or product not found - `429 Too Many Requests`: Rate limit exceeded",
+			inputSchema: { queryParams: createIntegrationStoreDirectQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createIntegrationStoreDirect({ queryParams, config });
@@ -13945,12 +14443,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getTeamMembers",
-		"Get a paginated list of team members for the provided team.",
 		{
-			teamId: getTeamMembersPathParamsSchema.shape["teamId"],
-			queryParams: getTeamMembersQueryParamsSchema,
+			description: "Get a paginated list of team members for the provided team.",
+			inputSchema: {
+				teamId: getTeamMembersPathParamsSchema.shape["teamId"],
+				queryParams: getTeamMembersQueryParamsSchema,
+			},
 		},
 		async ({ teamId, queryParams }) => {
 			try {
@@ -13961,10 +14461,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"inviteUserToTeam",
-		"Invite a user to join the team specified in the URL. The authenticated user needs to be an `OWNER` in order to successfully invoke this endpoint. The user to be invited must be specified by email.",
-		{ teamId: inviteUserToTeamPathParamsSchema.shape["teamId"] },
+		{
+			description:
+				"Invite a user to join the team specified in the URL. The authenticated user needs to be an `OWNER` in order to successfully invoke this endpoint. The user to be invited must be specified by email.",
+			inputSchema: { teamId: inviteUserToTeamPathParamsSchema.shape["teamId"] },
+		},
 		async ({ teamId }) => {
 			try {
 				return await inviteUserToTeam({ pathParams: { teamId }, config });
@@ -13974,10 +14477,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"requestAccessToTeam",
-		"Request access to a team as a member. An owner has to approve the request. Only 10 users can request access to a team at the same time.",
-		{ teamId: requestAccessToTeamPathParamsSchema.shape["teamId"] },
+		{
+			description:
+				"Request access to a team as a member. An owner has to approve the request. Only 10 users can request access to a team at the same time.",
+			inputSchema: { teamId: requestAccessToTeamPathParamsSchema.shape["teamId"] },
+		},
 		async ({ teamId }) => {
 			try {
 				return await requestAccessToTeam({ pathParams: { teamId }, config });
@@ -13987,12 +14493,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getTeamAccessRequest",
-		"Check the status of a join request. It'll respond with a 404 if the request has been declined. If no `userId` path segment was provided, this endpoint will instead return the status of the authenticated user.",
 		{
-			userId: getTeamAccessRequestPathParamsSchema.shape["userId"],
-			teamId: getTeamAccessRequestPathParamsSchema.shape["teamId"],
+			description:
+				"Check the status of a join request. It'll respond with a 404 if the request has been declined. If no `userId` path segment was provided, this endpoint will instead return the status of the authenticated user.",
+			inputSchema: {
+				userId: getTeamAccessRequestPathParamsSchema.shape["userId"],
+				teamId: getTeamAccessRequestPathParamsSchema.shape["teamId"],
+			},
 		},
 		async ({ userId, teamId }) => {
 			try {
@@ -14003,10 +14512,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"joinTeam",
-		"Join a team with a provided invite code or team ID.",
-		{ teamId: joinTeamPathParamsSchema.shape["teamId"] },
+		{
+			description: "Join a team with a provided invite code or team ID.",
+			inputSchema: { teamId: joinTeamPathParamsSchema.shape["teamId"] },
+		},
 		async ({ teamId }) => {
 			try {
 				return await joinTeam({ pathParams: { teamId }, config });
@@ -14016,12 +14527,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"updateTeamMember",
-		"Update the membership of a Team Member on the Team specified by `teamId`, such as changing the _role_ of the member, or confirming a request to join the Team for an unconfirmed member. The authenticated user must be an `OWNER` of the Team.",
 		{
-			uid: updateTeamMemberPathParamsSchema.shape["uid"],
-			teamId: updateTeamMemberPathParamsSchema.shape["teamId"],
+			description:
+				"Update the membership of a Team Member on the Team specified by `teamId`, such as changing the _role_ of the member, or confirming a request to join the Team for an unconfirmed member. The authenticated user must be an `OWNER` of the Team.",
+			inputSchema: {
+				uid: updateTeamMemberPathParamsSchema.shape["uid"],
+				teamId: updateTeamMemberPathParamsSchema.shape["teamId"],
+			},
 		},
 		async ({ uid, teamId }) => {
 			try {
@@ -14032,13 +14546,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeTeamMember",
-		"Remove a Team Member from the Team, or dismiss a user that requested access, or leave a team.",
 		{
-			uid: removeTeamMemberPathParamsSchema.shape["uid"],
-			teamId: removeTeamMemberPathParamsSchema.shape["teamId"],
-			queryParams: removeTeamMemberQueryParamsSchema,
+			description:
+				"Remove a Team Member from the Team, or dismiss a user that requested access, or leave a team.",
+			inputSchema: {
+				uid: removeTeamMemberPathParamsSchema.shape["uid"],
+				teamId: removeTeamMemberPathParamsSchema.shape["teamId"],
+				queryParams: removeTeamMemberQueryParamsSchema,
+			},
 		},
 		async ({ uid, teamId, queryParams }) => {
 			try {
@@ -14049,10 +14566,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getTeam",
-		"Get information for the Team specified by the `teamId` parameter.",
-		{ teamId: getTeamPathParamsSchema.shape["teamId"], queryParams: getTeamQueryParamsSchema },
+		{
+			description: "Get information for the Team specified by the `teamId` parameter.",
+			inputSchema: {
+				teamId: getTeamPathParamsSchema.shape["teamId"],
+				queryParams: getTeamQueryParamsSchema,
+			},
+		},
 		async ({ teamId, queryParams }) => {
 			try {
 				return await getTeam({ pathParams: { teamId }, queryParams, config });
@@ -14062,10 +14584,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"patchTeam",
-		"Update the information of a Team specified by the `teamId` parameter. The request body should contain the information that will be updated on the Team.",
-		{ teamId: patchTeamPathParamsSchema.shape["teamId"], queryParams: patchTeamQueryParamsSchema },
+		{
+			description:
+				"Update the information of a Team specified by the `teamId` parameter. The request body should contain the information that will be updated on the Team.",
+			inputSchema: {
+				teamId: patchTeamPathParamsSchema.shape["teamId"],
+				queryParams: patchTeamQueryParamsSchema,
+			},
+		},
 		async ({ teamId, queryParams }) => {
 			try {
 				return await patchTeam({ pathParams: { teamId }, queryParams, config });
@@ -14075,10 +14603,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getTeams",
-		"Get a paginated list of all the Teams the authenticated User is a member of.",
-		{ queryParams: getTeamsQueryParamsSchema },
+		{
+			description: "Get a paginated list of all the Teams the authenticated User is a member of.",
+			inputSchema: { queryParams: getTeamsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getTeams({ queryParams, config });
@@ -14088,9 +14618,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createTeam",
-		"Create a new Team under your account. You need to send a POST request with the desired Team slug, and optionally the Team name.",
+		{
+			description:
+				"Create a new Team under your account. You need to send a POST request with the desired Team slug, and optionally the Team name.",
+		},
 		async () => {
 			try {
 				return await createTeam({ config });
@@ -14100,12 +14633,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"postTeamDsyncRoles",
-		"Update the Directory Sync role mappings for a Team. This endpoint allows updating the mapping between directory groups and team roles or access groups.",
 		{
-			teamId: postTeamDsyncRolesPathParamsSchema.shape["teamId"],
-			queryParams: postTeamDsyncRolesQueryParamsSchema,
+			description:
+				"Update the Directory Sync role mappings for a Team. This endpoint allows updating the mapping between directory groups and team roles or access groups.",
+			inputSchema: {
+				teamId: postTeamDsyncRolesPathParamsSchema.shape["teamId"],
+				queryParams: postTeamDsyncRolesQueryParamsSchema,
+			},
 		},
 		async ({ teamId, queryParams }) => {
 			try {
@@ -14116,12 +14652,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteTeam",
-		"Delete a team under your account. You need to send a `DELETE` request with the desired team `id`. An optional array of reasons for deletion may also be sent.",
 		{
-			teamId: deleteTeamPathParamsSchema.shape["teamId"],
-			queryParams: deleteTeamQueryParamsSchema,
+			description:
+				"Delete a team under your account. You need to send a `DELETE` request with the desired team `id`. An optional array of reasons for deletion may also be sent.",
+			inputSchema: {
+				teamId: deleteTeamPathParamsSchema.shape["teamId"],
+				queryParams: deleteTeamQueryParamsSchema,
+			},
 		},
 		async ({ teamId, queryParams }) => {
 			try {
@@ -14132,12 +14671,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteTeamInviteCode",
-		"Delete an active Team invite code.",
 		{
-			inviteId: deleteTeamInviteCodePathParamsSchema.shape["inviteId"],
-			teamId: deleteTeamInviteCodePathParamsSchema.shape["teamId"],
+			description: "Delete an active Team invite code.",
+			inputSchema: {
+				inviteId: deleteTeamInviteCodePathParamsSchema.shape["inviteId"],
+				teamId: deleteTeamInviteCodePathParamsSchema.shape["teamId"],
+			},
 		},
 		async ({ inviteId, teamId }) => {
 			try {
@@ -14148,10 +14689,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"uploadFile",
-		"Before you create a deployment you need to upload the required files for that deployment. To do it, you need to first upload each file to this endpoint. Once that's completed, you can create a new deployment with the uploaded files. The file content must be placed inside the body of the request. In the case of a successful response you'll receive a status code 200 with an empty body.",
-		{ queryParams: uploadFileQueryParamsSchema, headers: uploadFileHeaderParamsSchema },
+		{
+			description:
+				"Before you create a deployment you need to upload the required files for that deployment. To do it, you need to first upload each file to this endpoint. Once that's completed, you can create a new deployment with the uploaded files. The file content must be placed inside the body of the request. In the case of a successful response you'll receive a status code 200 with an empty body.",
+			inputSchema: {
+				queryParams: uploadFileQueryParamsSchema,
+				headers: uploadFileHeaderParamsSchema,
+			},
+		},
 		async ({ queryParams, headers }) => {
 			try {
 				return await uploadFile({ queryParams, headers, config });
@@ -14161,9 +14708,9 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listAuthTokens",
-		"Retrieve a list of the current User's authentication tokens.",
+		{ description: "Retrieve a list of the current User's authentication tokens." },
 		async () => {
 			try {
 				return await listAuthTokens({ config });
@@ -14173,10 +14720,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createAuthToken",
-		"Creates and returns a new authentication token for the currently authenticated User. The `bearerToken` property is only provided once, in the response body, so be sure to save it on the client for use with API requests.",
-		{ queryParams: createAuthTokenQueryParamsSchema },
+		{
+			description:
+				"Creates and returns a new authentication token for the currently authenticated User. The `bearerToken` property is only provided once, in the response body, so be sure to save it on the client for use with API requests.",
+			inputSchema: { queryParams: createAuthTokenQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createAuthToken({ queryParams, config });
@@ -14186,10 +14736,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getAuthToken",
-		"Retrieve metadata about an authentication token belonging to the currently authenticated User.",
-		{ tokenId: getAuthTokenPathParamsSchema.shape["tokenId"] },
+		{
+			description:
+				"Retrieve metadata about an authentication token belonging to the currently authenticated User.",
+			inputSchema: { tokenId: getAuthTokenPathParamsSchema.shape["tokenId"] },
+		},
 		async ({ tokenId }) => {
 			try {
 				return await getAuthToken({ pathParams: { tokenId }, config });
@@ -14199,10 +14752,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteAuthToken",
-		"Invalidate an authentication token, such that it will no longer be valid for future HTTP requests.",
-		{ tokenId: deleteAuthTokenPathParamsSchema.shape["tokenId"] },
+		{
+			description:
+				"Invalidate an authentication token, such that it will no longer be valid for future HTTP requests.",
+			inputSchema: { tokenId: deleteAuthTokenPathParamsSchema.shape["tokenId"] },
+		},
 		async ({ tokenId }) => {
 			try {
 				return await deleteAuthToken({ pathParams: { tokenId }, config });
@@ -14212,9 +14768,9 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getAuthUser",
-		"Retrieves information related to the currently authenticated User.",
+		{ description: "Retrieves information related to the currently authenticated User." },
 		async () => {
 			try {
 				return await getAuthUser({ config });
@@ -14224,9 +14780,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"requestDelete",
-		"Initiates the deletion process for the currently authenticated User, by sending a deletion confirmation email. The email contains a link that the user needs to visit in order to proceed with the deletion process.",
+		{
+			description:
+				"Initiates the deletion process for the currently authenticated User, by sending a deletion confirmation email. The email contains a link that the user needs to visit in order to proceed with the deletion process.",
+		},
 		async () => {
 			try {
 				return await requestDelete({ config });
@@ -14236,10 +14795,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createWebhook",
-		"Creates a webhook",
-		{ queryParams: createWebhookQueryParamsSchema },
+		{
+			description: "Creates a webhook",
+			inputSchema: { queryParams: createWebhookQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await createWebhook({ queryParams, config });
@@ -14249,10 +14810,12 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getWebhooks",
-		"Get a list of webhooks",
-		{ queryParams: getWebhooksQueryParamsSchema },
+		{
+			description: "Get a list of webhooks",
+			inputSchema: { queryParams: getWebhooksQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getWebhooks({ queryParams, config });
@@ -14262,10 +14825,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getWebhook",
-		"Get a webhook",
-		{ id: getWebhookPathParamsSchema.shape["id"], queryParams: getWebhookQueryParamsSchema },
+		{
+			description: "Get a webhook",
+			inputSchema: {
+				id: getWebhookPathParamsSchema.shape["id"],
+				queryParams: getWebhookQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await getWebhook({ pathParams: { id }, queryParams, config });
@@ -14275,10 +14843,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteWebhook",
-		"Deletes a webhook",
-		{ id: deleteWebhookPathParamsSchema.shape["id"], queryParams: deleteWebhookQueryParamsSchema },
+		{
+			description: "Deletes a webhook",
+			inputSchema: {
+				id: deleteWebhookPathParamsSchema.shape["id"],
+				queryParams: deleteWebhookQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await deleteWebhook({ pathParams: { id }, queryParams, config });
@@ -14288,12 +14861,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listDeploymentAliases",
-		"Retrieves all Aliases for the Deployment with the given ID. The authenticated user or team must own the deployment.",
 		{
-			id: listDeploymentAliasesPathParamsSchema.shape["id"],
-			queryParams: listDeploymentAliasesQueryParamsSchema,
+			description:
+				"Retrieves all Aliases for the Deployment with the given ID. The authenticated user or team must own the deployment.",
+			inputSchema: {
+				id: listDeploymentAliasesPathParamsSchema.shape["id"],
+				queryParams: listDeploymentAliasesQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -14304,10 +14880,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"assignAlias",
-		"Creates a new alias for the deployment with the given deployment ID. The authenticated user or team must own this deployment. If the desired alias is already assigned to another deployment, then it will be removed from the old deployment and assigned to the new one.",
-		{ id: assignAliasPathParamsSchema.shape["id"], queryParams: assignAliasQueryParamsSchema },
+		{
+			description:
+				"Creates a new alias for the deployment with the given deployment ID. The authenticated user or team must own this deployment. If the desired alias is already assigned to another deployment, then it will be removed from the old deployment and assigned to the new one.",
+			inputSchema: {
+				id: assignAliasPathParamsSchema.shape["id"],
+				queryParams: assignAliasQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await assignAlias({ pathParams: { id }, queryParams, config });
@@ -14317,10 +14899,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listAliases",
-		"Retrieves a list of aliases for the authenticated User or Team. When `domain` is provided, only aliases for that domain will be returned. When `projectId` is provided, it will only return the given project aliases.",
-		{ queryParams: listAliasesQueryParamsSchema },
+		{
+			description:
+				"Retrieves a list of aliases for the authenticated User or Team. When `domain` is provided, only aliases for that domain will be returned. When `projectId` is provided, it will only return the given project aliases.",
+			inputSchema: { queryParams: listAliasesQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await listAliases({ queryParams, config });
@@ -14330,12 +14915,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getAlias",
-		"Retrieves an Alias for the given host name or alias ID.",
 		{
-			idOrAlias: getAliasPathParamsSchema.shape["idOrAlias"],
-			queryParams: getAliasQueryParamsSchema,
+			description: "Retrieves an Alias for the given host name or alias ID.",
+			inputSchema: {
+				idOrAlias: getAliasPathParamsSchema.shape["idOrAlias"],
+				queryParams: getAliasQueryParamsSchema,
+			},
 		},
 		async ({ idOrAlias, queryParams }) => {
 			try {
@@ -14346,12 +14933,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteAlias",
-		"Delete an Alias with the specified ID.",
 		{
-			aliasId: deleteAliasPathParamsSchema.shape["aliasId"],
-			queryParams: deleteAliasQueryParamsSchema,
+			description: "Delete an Alias with the specified ID.",
+			inputSchema: {
+				aliasId: deleteAliasPathParamsSchema.shape["aliasId"],
+				queryParams: deleteAliasQueryParamsSchema,
+			},
 		},
 		async ({ aliasId, queryParams }) => {
 			try {
@@ -14362,12 +14951,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"patchUrlProtectionBypass",
-		"Update the protection bypass for the alias or deployment URL (used for user access & comment access for deployments). Used as shareable links and user scoped access for Vercel Authentication and also to allow external (logged in) people to comment on previews for Preview Comments (next-live-mode).",
 		{
-			id: patchUrlProtectionBypassPathParamsSchema.shape["id"],
-			queryParams: patchUrlProtectionBypassQueryParamsSchema,
+			description:
+				"Update the protection bypass for the alias or deployment URL (used for user access & comment access for deployments). Used as shareable links and user scoped access for Vercel Authentication and also to allow external (logged in) people to comment on previews for Preview Comments (next-live-mode).",
+			inputSchema: {
+				id: patchUrlProtectionBypassPathParamsSchema.shape["id"],
+				queryParams: patchUrlProtectionBypassQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -14378,7 +14970,7 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool("listCerts", "Make a GET request to /certs", async () => {
+	server.registerTool("listCerts", { description: "Make a GET request to /certs" }, async () => {
 		try {
 			return await listCerts({ config });
 		} catch (error) {
@@ -14386,10 +14978,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		}
 	});
 
-	server.tool(
+	server.registerTool(
 		"getCertById",
-		"Get cert by id",
-		{ id: getCertByIdPathParamsSchema.shape["id"], queryParams: getCertByIdQueryParamsSchema },
+		{
+			description: "Get cert by id",
+			inputSchema: {
+				id: getCertByIdPathParamsSchema.shape["id"],
+				queryParams: getCertByIdQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await getCertById({ pathParams: { id }, queryParams, config });
@@ -14399,10 +14996,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"removeCert",
-		"Remove cert",
-		{ id: removeCertPathParamsSchema.shape["id"], queryParams: removeCertQueryParamsSchema },
+		{
+			description: "Remove cert",
+			inputSchema: {
+				id: removeCertPathParamsSchema.shape["id"],
+				queryParams: removeCertQueryParamsSchema,
+			},
+		},
 		async ({ id, queryParams }) => {
 			try {
 				return await removeCert({ pathParams: { id }, queryParams, config });
@@ -14412,10 +15014,9 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"issueCert",
-		"Issue a new cert",
-		{ queryParams: issueCertQueryParamsSchema },
+		{ description: "Issue a new cert", inputSchema: { queryParams: issueCertQueryParamsSchema } },
 		async ({ queryParams }) => {
 			try {
 				return await issueCert({ queryParams, config });
@@ -14425,10 +15026,9 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"uploadCert",
-		"Upload a cert",
-		{ queryParams: uploadCertQueryParamsSchema },
+		{ description: "Upload a cert", inputSchema: { queryParams: uploadCertQueryParamsSchema } },
 		async ({ queryParams }) => {
 			try {
 				return await uploadCert({ queryParams, config });
@@ -14438,12 +15038,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"listDeploymentFiles",
-		"Allows to retrieve the file structure of the source code of a deployment by supplying the deployment unique identifier. If the deployment was created with the Vercel CLI or the API directly with the `files` key, it will have a file tree that can be retrievable.",
 		{
-			id: listDeploymentFilesPathParamsSchema.shape["id"],
-			queryParams: listDeploymentFilesQueryParamsSchema,
+			description:
+				"Allows to retrieve the file structure of the source code of a deployment by supplying the deployment unique identifier. If the deployment was created with the Vercel CLI or the API directly with the `files` key, it will have a file tree that can be retrievable.",
+			inputSchema: {
+				id: listDeploymentFilesPathParamsSchema.shape["id"],
+				queryParams: listDeploymentFilesQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -14454,13 +15057,16 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDeploymentFileContents",
-		"Allows to retrieve the content of a file by supplying the file identifier and the deployment unique identifier. The response body will contain a JSON response containing the contents of the file encoded as base64.",
 		{
-			id: getDeploymentFileContentsPathParamsSchema.shape["id"],
-			fileId: getDeploymentFileContentsPathParamsSchema.shape["fileId"],
-			queryParams: getDeploymentFileContentsQueryParamsSchema,
+			description:
+				"Allows to retrieve the content of a file by supplying the file identifier and the deployment unique identifier. The response body will contain a JSON response containing the contents of the file encoded as base64.",
+			inputSchema: {
+				id: getDeploymentFileContentsPathParamsSchema.shape["id"],
+				fileId: getDeploymentFileContentsPathParamsSchema.shape["fileId"],
+				queryParams: getDeploymentFileContentsQueryParamsSchema,
+			},
 		},
 		async ({ id, fileId, queryParams }) => {
 			try {
@@ -14471,10 +15077,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getDeployments",
-		"List deployments under the authenticated user or team. If a deployment hasn't finished uploading (is incomplete), the `url` property will have a value of `null`.",
-		{ queryParams: getDeploymentsQueryParamsSchema },
+		{
+			description:
+				"List deployments under the authenticated user or team. If a deployment hasn't finished uploading (is incomplete), the `url` property will have a value of `null`.",
+			inputSchema: { queryParams: getDeploymentsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getDeployments({ queryParams, config });
@@ -14484,12 +15093,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteDeployment",
-		"This API allows you to delete a deployment, either by supplying its `id` in the URL or the `url` of the deployment as a query parameter. You can obtain the ID, for example, by listing all deployments.",
 		{
-			id: deleteDeploymentPathParamsSchema.shape["id"],
-			queryParams: deleteDeploymentQueryParamsSchema,
+			description:
+				"This API allows you to delete a deployment, either by supplying its `id` in the URL or the `url` of the deployment as a query parameter. You can obtain the ID, for example, by listing all deployments.",
+			inputSchema: {
+				id: deleteDeploymentPathParamsSchema.shape["id"],
+				queryParams: deleteDeploymentQueryParamsSchema,
+			},
 		},
 		async ({ id, queryParams }) => {
 			try {
@@ -14500,10 +15112,13 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getSecrets",
-		"Retrieves the active Vercel secrets for the authenticated user or team. By default it returns 20 secrets. The rest can be retrieved using the pagination options. The body will contain an entry for each secret.",
-		{ queryParams: getSecretsQueryParamsSchema },
+		{
+			description:
+				"Retrieves the active Vercel secrets for the authenticated user or team. By default it returns 20 secrets. The rest can be retrieved using the pagination options. The body will contain an entry for each secret.",
+			inputSchema: { queryParams: getSecretsQueryParamsSchema },
+		},
 		async ({ queryParams }) => {
 			try {
 				return await getSecrets({ queryParams, config });
@@ -14513,12 +15128,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"createSecret",
-		"Allows to create a new secret.",
 		{
-			name: createSecretPathParamsSchema.shape["name"],
-			queryParams: createSecretQueryParamsSchema,
+			description: "Allows to create a new secret.",
+			inputSchema: {
+				name: createSecretPathParamsSchema.shape["name"],
+				queryParams: createSecretQueryParamsSchema,
+			},
 		},
 		async ({ name, queryParams }) => {
 			try {
@@ -14529,12 +15146,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"renameSecret",
-		"Enables to edit the name of a secret. The name has to be unique to the user or team’s secrets.",
 		{
-			name: renameSecretPathParamsSchema.shape["name"],
-			queryParams: renameSecretQueryParamsSchema,
+			description:
+				"Enables to edit the name of a secret. The name has to be unique to the user or team’s secrets.",
+			inputSchema: {
+				name: renameSecretPathParamsSchema.shape["name"],
+				queryParams: renameSecretQueryParamsSchema,
+			},
 		},
 		async ({ name, queryParams }) => {
 			try {
@@ -14545,12 +15165,15 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"getSecret",
-		"Retrieves the information for a specific secret by passing either the secret id or name in the URL.",
 		{
-			idOrName: getSecretPathParamsSchema.shape["idOrName"],
-			queryParams: getSecretQueryParamsSchema,
+			description:
+				"Retrieves the information for a specific secret by passing either the secret id or name in the URL.",
+			inputSchema: {
+				idOrName: getSecretPathParamsSchema.shape["idOrName"],
+				queryParams: getSecretQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
@@ -14561,12 +15184,14 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	server.tool(
+	server.registerTool(
 		"deleteSecret",
-		"This deletes the user or team’s secret defined in the URL.",
 		{
-			idOrName: deleteSecretPathParamsSchema.shape["idOrName"],
-			queryParams: deleteSecretQueryParamsSchema,
+			description: "This deletes the user or team’s secret defined in the URL.",
+			inputSchema: {
+				idOrName: deleteSecretPathParamsSchema.shape["idOrName"],
+				queryParams: deleteSecretQueryParamsSchema,
+			},
 		},
 		async ({ idOrName, queryParams }) => {
 			try {
