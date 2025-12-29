@@ -26,6 +26,7 @@
 						"group": "Packages",
 						"icon": "box",
 						"pages": [
+							"docs/packages/toolsmesh",
 							"docs/packages/ai-gateway-proxy",
 							"docs/packages/vscode-extension-vercel-ai",
 							"docs/packages/rollup-plugin-import-cdn",

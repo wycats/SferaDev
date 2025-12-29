@@ -55,6 +55,7 @@ catalog:
   geist: 1.5.1
   gray-matter: 4.0.3
   is-tree-shakable: 0.4.2
+  just-bash: 1.0.1
   knip: 5.78.0
   lefthook: 2.0.13
   lucide-react: 0.562.0

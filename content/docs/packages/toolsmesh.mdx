@@ -1,0 +1,499 @@
+---
+title: "toolsmesh"
+description: "Virtual filesystem wrapper for AI SDK tools"
+icon: "folder-tree"
+---
+
+A middleware that converts tools into a discoverable virtual filesystem for AI models. Instead of loading all tool schemas into context, models explore and discover tools on-demand.
+
+## Features
+
+- **Virtual Filesystem** - Tools represented as TypeScript files with full type information
+- **Bash Interface** - `ls`, `cat`, `grep`, `find` for natural tool discovery
+- **TypeScript Execution** - Run code that chains multiple tools with validation
+- **AI SDK v6 Compatible** - Works with `wrapLanguageModel` middleware pattern
+
+## How It Works
+
+Traditional approach loads all tool schemas upfront, consuming thousands of tokens. Toolsmesh instead:
+
+1. Creates a virtual filesystem where each tool is a TypeScript file
+2. Replaces tools with two mesh tools: `mesh_bash` and `mesh_exec`
+3. Injects a system prompt teaching the model to discover and use tools
+
+The model explores using familiar bash commands:
+
+```bash
+ls /tools              # List available tools
+grep -r "email" /tools # Search by functionality
+cat /tools/sendEmail.ts # Read full interface
+```
+
+Then executes TypeScript code that calls the actual tools:
+
+```typescript
+const user = await createUser({ name: "Alice", email: "alice@example.com" });
+await sendEmail({ to: user.email, subject: "Welcome!", body: "Hello!" });
+```
+
+## Usage
+
+### With AI SDK Middleware
+
+```typescript
+import { wrapLanguageModel } from "ai";
+import { createToolsmeshMiddleware } from "toolsmesh";
+import { z } from "zod";
+
+const tools = {
+  createUser: {
+    description: "Create a new user account",
+    parameters: z.object({
+      name: z.string(),
+      email: z.string().email(),
+    }),
+    execute: async ({ name, email }) => {
+      return { id: crypto.randomUUID(), name, email };
+    },
+  },
+  sendEmail: {
+    description: "Send an email to a user",
+    parameters: z.object({
+      to: z.string().email(),
+      subject: z.string(),
+      body: z.string(),
+    }),
+    execute: async ({ to, subject, body }) => {
+      return { sent: true, to };
+    },
+  },
+};
+
+const middleware = createToolsmeshMiddleware({ tools });
+
+const model = wrapLanguageModel({
+  model: yourBaseModel,
+  middleware,
+});
+```
+
+### Manual Integration
+
+For more control over the integration:
+
+```typescript
+import { createToolsmesh } from "toolsmesh";
+
+const mesh = createToolsmesh({ tools });
+
+// Access the system prompt
+console.log(mesh.systemPrompt);
+
+// Use tools directly
+const result = await mesh.tools.mesh_bash.execute({
+  command: 'grep -r "user" /tools',
+});
+```
+
+## Mesh Tools
+
+When using toolsmesh, your original tools are replaced with two mesh tools:
+
+### mesh_bash
+
+Execute bash commands against the virtual filesystem containing tool definitions.
+
+**Supported commands:**
+
+| Command | Example | Description |
+|---------|---------|-------------|
+| `ls` | `ls -la /tools` | List files with details |
+| `cat` | `cat /tools/myTool.ts` | Read file contents |
+| `grep` | `grep -r "pattern" /tools` | Search file contents |
+| `find` | `find /tools -name "*User*"` | Find files by name |
+| `head` | `head -20 /tools/myTool.ts` | Show first N lines |
+| `tail` | `tail -10 /tools/myTool.ts` | Show last N lines |
+| `tree` | `tree` | Show directory structure |
+| `pwd` | `pwd` | Print working directory |
+| `wc` | `wc /tools/myTool.ts` | Count lines/words/chars |
+
+### mesh_exec
+
+Execute TypeScript code that calls tools from the mesh. Tools are available as typed async functions.
+
+```typescript
+// Single tool call
+const user = await createUser({
+  name: "John",
+  email: "john@example.com"
+});
+
+// Chain multiple tools
+const data = await fetchData({ source: "api" });
+const processed = await processData({ input: data });
+return processed;
+```
+
+## Configuration
+
+```typescript
+createToolsmeshMiddleware({
+  // Required: Your tool definitions
+  tools: myTools,
+
+  // Optional: Namespace for the filesystem (default: "tools")
+  namespace: "api",
+
+  // Optional: Include JSON schemas in tool files (default: true)
+  includeSchemas: true,
+
+  // Optional: Custom system prompt prefix
+  systemPromptPrefix: "You are a helpful assistant.",
+
+  // Optional: Custom system prompt suffix
+  systemPromptSuffix: "Always validate user input.",
+});
+```
+
+## Compaction
+
+Long-running agent conversations accumulate tool results that consume context window space. Toolsmesh provides compaction utilities that leverage the virtual filesystem to offload large results while keeping them accessible.
+
+The key insight: since models already have `mesh_bash` to read from the filesystem, we can move tool results there and replace them with lightweight references. The model can retrieve any result later if needed.
+
+### Strategies
+
+| Strategy | Description | Use Case |
+|----------|-------------|----------|
+| `write-to-filesystem` | Store results in virtual filesystem with references | When results may be needed later |
+| `drop-results` | Remove results entirely with placeholder | When results are only needed immediately |
+
+### Basic Usage
+
+```typescript
+import { compact, createCompactor, createToolsmesh } from "toolsmesh";
+
+const mesh = createToolsmesh({ tools });
+
+// Compact messages after each turn
+const { messages: compacted, bytesSaved } = compact(
+  messages,
+  mesh.filesystem,
+  {
+    strategy: "write-to-filesystem",
+    minSize: 500, // Only compact results > 500 chars
+  }
+);
+
+console.log(`Saved ${bytesSaved} bytes`);
+```
+
+### With AI SDK prepareStep
+
+```typescript
+const compactor = createCompactor(filesystem, {
+  strategy: "write-to-filesystem",
+  boundary: { type: "keep-last", count: 3 },
+});
+
+// Use in your agent loop
+const result = await agent.run({
+  prepareStep: async ({ messages }) => {
+    const { messages: compacted } = compactor(messages);
+    return { messages: compacted };
+  },
+});
+```
+
+### Boundary Options
+
+Control which messages get compacted:
+
+```typescript
+// Compact all tool results
+boundary: "all"
+
+// Keep first N messages uncompacted (e.g., system prompt)
+boundary: { type: "keep-first", count: 2 }
+
+// Keep last N messages uncompacted (recent context)
+boundary: { type: "keep-last", count: 5 }
+
+// Compact only after specific index
+boundary: { type: "after-index", index: 3 }
+```
+
+### Retrieving Compacted Results
+
+When using `write-to-filesystem`, results are stored in the virtual filesystem and can be retrieved using `mesh_bash`:
+
+```bash
+# List compacted results
+ls /tools/compact/default/results/
+
+# Read a specific result
+cat /tools/compact/default/results/fetchData_abc123_1234567890.json
+```
+
+### Analyzing Potential Savings
+
+```typescript
+import { analyzeCompaction } from "toolsmesh";
+
+const analysis = analyzeCompaction(messages, { minSize: 500 });
+
+console.log(`Total tool results: ${analysis.totalToolResults}`);
+console.log(`Compactable: ${analysis.compactableResults}`);
+console.log(`Estimated savings: ${analysis.estimatedSavings} bytes`);
+```
+
+### Session Cleanup
+
+Long-running agents accumulate compacted results. Clean them up when sessions end:
+
+```typescript
+import { cleanupSession, cleanupAllSessions, listSessions } from "toolsmesh";
+
+// List all active sessions
+const sessions = listSessions(filesystem);
+// ["default", "user-123", "agent-456"]
+
+// Clean up a specific session
+const { deletedCount } = cleanupSession(filesystem, "user-123");
+console.log(`Deleted ${deletedCount} files`);
+
+// Clean up the default session
+cleanupSession(filesystem);
+
+// Clean up all sessions (use with caution)
+cleanupAllSessions(filesystem);
+```
+
+## Virtual Filesystem Structure
+
+Tools are organized in a simple structure:
+
+```
+/tools/
+├── index.ts        # Lists all available tools
+├── README.md       # Usage instructions
+├── createUser.ts   # Tool definition with TypeScript interface
+├── sendEmail.ts    # Another tool definition
+└── ...
+```
+
+Each tool file contains:
+
+```typescript
+// Tool: createUser
+// Description: Create a new user account
+
+export interface CreateUserParams {
+  name: string;     // Full name of the user
+  email: string;    // Email address
+  role?: "admin" | "user" | "guest"; // User role
+}
+
+// Function signature:
+declare function createUser(params: CreateUserParams): Promise<unknown>;
+
+// Usage example:
+// const result = await createUser({
+//   // ... parameters
+// });
+```
+
+## API Reference
+
+### `createToolsmeshMiddleware(options)`
+
+Creates an AI SDK v6 compatible middleware that transforms tools into a virtual filesystem.
+
+**Parameters:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `tools` | `ToolRegistry` | required | Tool definitions to expose |
+| `namespace` | `string` | `"tools"` | Root directory name |
+| `includeSchemas` | `boolean` | `true` | Include JSON schemas in files |
+| `systemPromptPrefix` | `string` | - | Prepend to system prompt |
+| `systemPromptSuffix` | `string` | - | Append to system prompt |
+
+**Returns:** `LanguageModelV3Middleware`
+
+### `createToolsmesh(options)`
+
+Creates a toolsmesh without middleware integration. Useful for testing or custom integrations.
+
+**Returns:**
+```typescript
+{
+  filesystem: VirtualFilesystem;
+  tools: {
+    mesh_bash: MeshTool;
+    mesh_exec: MeshTool;
+  };
+  systemPrompt: string;
+  compactPrompt: string;
+}
+```
+
+### `extractTools(aiSdkTools)`
+
+Converts AI SDK's CoreTool format to the internal ToolRegistry format.
+
+```typescript
+import { tool } from "ai";
+import { extractTools } from "toolsmesh";
+
+const aiTools = {
+  myTool: tool({
+    description: "My tool",
+    parameters: z.object({ value: z.string() }),
+    execute: async (params) => params.value,
+  }),
+};
+
+const registry = extractTools(aiTools);
+```
+
+### `createMeshTools(tools, options?)`
+
+Creates mesh tools without the middleware wrapper.
+
+```typescript
+import { createMeshTools } from "toolsmesh";
+
+const { filesystem, meshTools } = createMeshTools(tools);
+// meshTools = [mesh_bash, mesh_exec]
+```
+
+### `compact(messages, filesystem, options?)`
+
+Compacts tool results in a message array to reduce context size.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `strategy` | `"write-to-filesystem"` \| `"drop-results"` | `"write-to-filesystem"` | How to handle large results |
+| `boundary` | `CompactionBoundary` | `"all"` | Which messages to compact |
+| `sessionId` | `string` | `"default"` | Session ID for file organization |
+| `minSize` | `number` | `500` | Minimum size to trigger compaction |
+| `excludeTools` | `string[]` | `["mesh_bash", "mesh_exec"]` | Tools to never compact |
+
+**Returns:** `{ messages, compactedCount, bytesSaved, storedPaths }`
+
+### `createCompactor(filesystem, options?)`
+
+Creates a reusable compactor function for use in agent loops.
+
+### `analyzeCompaction(messages, options?)`
+
+Analyzes potential compaction savings without modifying messages.
+
+**Returns:** `{ totalToolResults, compactableResults, estimatedSavings, largestResult }`
+
+### `cleanupSession(filesystem, sessionId?)`
+
+Cleans up compacted results for a specific session.
+
+**Parameters:**
+- `filesystem`: The virtual filesystem
+- `sessionId`: Session ID to clean (default: `"default"`)
+
+**Returns:** `{ deletedCount, deletedPaths }`
+
+### `cleanupAllSessions(filesystem)`
+
+Cleans up all compacted results across all sessions.
+
+**Returns:** `{ deletedCount, deletedPaths }`
+
+### `listSessions(filesystem)`
+
+Lists all active sessions with compacted results.
+
+**Returns:** `string[]` - Sorted array of session IDs
+
+## Types
+
+```typescript
+import type {
+  // Core types
+  ToolDefinition,
+  ToolRegistry,
+  ToolsmeshOptions,
+  MeshTool,
+  VirtualFilesystem,
+  VirtualFile,
+  SandboxConfig,
+  SandboxExecutionResult,
+  // Compaction types
+  CompactionStrategy,
+  CompactionBoundary,
+  CompactOptions,
+  CompactionResult,
+  CompactableMessage,
+} from "toolsmesh";
+```
+
+## Sandbox Configuration
+
+Toolsmesh uses [@vercel/sandbox](https://vercel.com/docs/vercel-sandbox) for secure code execution in isolated Linux VMs. When `@vercel/sandbox` is installed, all AI-generated code runs in true isolation.
+
+### Production Setup (Recommended)
+
+```bash
+npm install @vercel/sandbox
+```
+
+```typescript
+const middleware = createToolsmeshMiddleware({
+  tools: myTools,
+  // Vercel sandbox is used automatically when available
+});
+```
+
+### Local Development
+
+For local development without Vercel sandbox, you can enable unsafe local execution:
+
+```typescript
+const middleware = createToolsmeshMiddleware({
+  tools: myTools,
+  sandbox: {
+    // WARNING: Only use for local development with trusted models
+    dangerouslyAllowLocalExecution: true,
+  },
+});
+```
+
+### Sandbox Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `useVercelSandbox` | `boolean` | `true` | Use @vercel/sandbox when available |
+| `dangerouslyAllowLocalExecution` | `boolean` | `false` | Allow local execution without sandbox |
+| `timeout` | `number` | `30000` | Execution timeout in milliseconds |
+
+### Security Model
+
+When using Vercel sandbox:
+- Code runs in isolated Firecracker MicroVMs
+- No access to host filesystem or network (unless configured)
+- Automatic cleanup after execution
+
+When using local execution (`dangerouslyAllowLocalExecution: true`):
+- **Not secure** - code has access to `globalThis`
+- Only use with trusted AI models in development
+- Tool parameters are still validated against Zod schemas
+
+## When to Use
+
+Toolsmesh is ideal when you have:
+
+- **Many tools** (10+) where loading all schemas wastes context
+- **Diverse tools** where models benefit from searching by functionality
+- **Complex workflows** requiring multiple tool calls in sequence
+- **Token constraints** requiring efficient context usage
+
+For simpler cases with few tools, direct tool calling may be more appropriate.
