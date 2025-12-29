@@ -89,8 +89,6 @@ export type {
 	GeneratedToolInterface,
 	MeshTool,
 	SandboxConfig,
-	SandboxContext,
-	SandboxExecutionResult,
 	ToolDefinition,
 	ToolRegistry,
 	ToolsmeshOptions,

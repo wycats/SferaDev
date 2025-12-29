@@ -41,22 +41,6 @@ export type VirtualFilesystem = {
 };
 
 /**
- * Result of executing code in the sandbox.
- */
-export type SandboxExecutionResult = {
-	/** Whether execution succeeded */
-	success: boolean;
-	/** Return value if successful */
-	result?: unknown;
-	/** Error message if failed */
-	error?: string;
-	/** stdout output */
-	stdout: string;
-	/** stderr output */
-	stderr: string;
-};
-
-/**
  * Configuration for sandbox execution.
  */
 export type SandboxConfig = {
@@ -110,20 +94,6 @@ export type MeshTool = {
 	description: string;
 	parameters: ZodType;
 	execute: (params: unknown) => Promise<string>;
-};
-
-/**
- * Context passed to the sandbox executor.
- */
-export type SandboxContext = {
-	/** The virtual filesystem */
-	filesystem: VirtualFilesystem;
-	/** The tool registry for execution */
-	tools: ToolRegistry;
-	/** Output buffer for stdout */
-	stdout: string[];
-	/** Output buffer for stderr */
-	stderr: string[];
 };
 
 /**
