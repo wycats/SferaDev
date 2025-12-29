@@ -1,5 +1,9 @@
-### Hi there, this is Alexis! 👋
+### Hi there, I'm Alexis! 👋
 
-- 🖥 I'm currently working at [xata.io](https://xata.io) solving database problems at scale!
-- 📂 I maintain several open source packages on [npm](https://www.npmjs.com/~sferadev).
-- 📫 You can reach me by email or social networks!
+Staff Software Engineer at [Xata](https://xata.io), building serverless databases and developer tools.
+
+I work with TypeScript and Go to create type-safe APIs, SDKs, and developer experiences. Passionate about open source and making tools that developers enjoy using.
+
+- 🔧 Building database infrastructure and developer tooling
+- 📦 Maintaining [open source packages](https://www.npmjs.com/~sferadev)
+- 🌐 [sferadev.com](https://sferadev.com)

@@ -33,14 +33,26 @@
 			"ignoreDependencies": ["@types/react", "@types/react-dom", "react", "react-dom"]
 		},
 		"packages/vercel-api-js": {
-			"entry": ["src/index.ts", "src/mcp.ts"],
+			"entry": [
+				"src/index.ts",
+				"src/mcp.ts",
+				"src/types.ts",
+				"src/schemas.ts",
+				"src/components.ts"
+			],
 			"project": ["src/**/*.ts"],
 			"ignore": ["src/generated/**"],
 			"ignoreDependencies": ["@kubb/core", "@sferadev/openapi-utils"],
 			"includeEntryExports": false
 		},
 		"packages/v0-api": {
-			"entry": ["src/index.ts", "src/mcp.ts"],
+			"entry": [
+				"src/index.ts",
+				"src/mcp.ts",
+				"src/types.ts",
+				"src/schemas.ts",
+				"src/components.ts"
+			],
 			"project": ["src/**/*.ts"],
 			"ignore": ["src/generated/**"],
 			"ignoreDependencies": [

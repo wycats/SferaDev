@@ -58,6 +58,7 @@ export const baseConfig: Omit<UserConfig, "input"> = {
 			output: {
 				path: "./schemas.ts",
 				barrelType: false,
+				extension: { ".ts": "" },
 			},
 			dateType: "string",
 			unknownType: "unknown",
@@ -68,6 +69,7 @@ export const baseConfig: Omit<UserConfig, "input"> = {
 			output: {
 				path: "./mcp.ts",
 				barrelType: false,
+				extension: { ".ts": "" },
 			},
 			client: { importPath: "../utils/fetcher" },
 			generators: [toolsGenerator, serverGenerator] as any[], // Workaround for generator mismatches

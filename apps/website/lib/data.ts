@@ -59,9 +59,9 @@ export const personalInfo = {
 	email: "alexis@sferadev.com",
 	github: "https://github.com/SferaDev",
 	description:
-		"I build type-safe systems and full-stack apps with TypeScript and Go, creating tools that developers enjoy using.",
+		"Staff Software Engineer building serverless databases and developer tools. I specialize in TypeScript and Go, creating type-safe APIs and SDKs.",
 	bio: [
-		"Software engineer focused on building type-safe systems and full-stack apps with TypeScript and Go. Experienced with serverless architectures, API development, and creating tools that developers enjoy to use.",
-		"Always tinkering with new tech and never afraid to dive into something unfamiliar.",
+		"I'm a Staff Software Engineer at Xata, where I lead development of serverless database infrastructure and developer tooling. My work focuses on building type-safe systems with TypeScript and Go, designing APIs that are intuitive to use, and creating SDKs that provide great developer experiences.",
+		"I'm passionate about open source and contribute to projects like Keycloak. I maintain several npm packages and enjoy building tools that make developers' lives easier. From Android ROM development at Paranoid Android to database infrastructure, I've always been drawn to systems that require both technical depth and attention to user experience.",
 	],
 };

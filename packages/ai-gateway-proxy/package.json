@@ -28,7 +28,7 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"tsc": "tsc --noEmit",
-		"check:tree-shake": "is-tree-shakable",
+		"is-tree-shakable": "is-tree-shakable",
 		"clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
 	},
 	"dependencies": {
@@ -43,7 +43,6 @@
 		"ai": "catalog:",
 		"bunchee": "catalog:",
 		"dotenv": "catalog:",
-		"is-tree-shakable": "catalog:",
 		"typescript": "catalog:",
 		"vitest": "catalog:"
 	},

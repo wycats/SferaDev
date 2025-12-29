@@ -10959,7 +10959,6 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) {
 	const server = serverLike as McpServer;
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"readAccessGroup",
 		"Allows to read an access group",
@@ -10976,7 +10975,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateAccessGroup",
 		"Allows to update an access group metadata",
@@ -10993,7 +10991,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteAccessGroup",
 		"Allows to delete an access group",
@@ -11010,7 +11007,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listAccessGroupMembers",
 		"List members of an access group",
@@ -11027,7 +11023,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listAccessGroups",
 		"List access groups",
@@ -11041,7 +11036,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createAccessGroup",
 		"Allows to create an access group",
@@ -11055,7 +11049,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listAccessGroupProjects",
 		"List projects of an access group",
@@ -11072,7 +11065,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createAccessGroupProject",
 		"Allows creation of an access group project",
@@ -11093,7 +11085,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"readAccessGroupProject",
 		"Allows reading an access group project",
@@ -11115,7 +11106,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateAccessGroupProject",
 		"Allows update of an access group project",
@@ -11137,7 +11127,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteAccessGroupProject",
 		"Allows deletion of an access group project",
@@ -11159,7 +11148,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"recordEvents",
 		"Records an artifacts cache usage event. The body of this request is an array of cache usage events. The supported event types are `HIT` and `MISS`. The source is either `LOCAL` the cache event was on the users filesystem cache or `REMOTE` if the cache event is for a remote cache. When the event is a `HIT` the request also accepts a number `duration` which is the time taken to generate the artifact in the cache.",
@@ -11173,7 +11161,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"status",
 		"Check the status of Remote Caching for this principal. Returns a JSON-encoded status indicating if Remote Caching is enabled, disabled, or disabled due to usage limits.",
@@ -11187,7 +11174,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"uploadArtifact",
 		"Uploads a cache artifact identified by the `hash` specified on the path. The cache artifact can then be downloaded with the provided `hash`.",
@@ -11205,7 +11191,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"downloadArtifact",
 		"Downloads a cache artifact indentified by its `hash` specified on the request path. The artifact is downloaded as an octet-stream. The client should verify the content-length header and response body.",
@@ -11223,7 +11208,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"artifactQuery",
 		"Query information about an array of artifacts.",
@@ -11237,7 +11221,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"stageRedirects",
 		"Stages new redirects for a project and returns the new version.",
@@ -11251,7 +11234,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getRedirects",
 		"Get the version history for a project's bulk redirects",
@@ -11265,7 +11247,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteRedirects",
 		"Deletes the provided redirects from the latest version of the projects' bulk redirects. Stages a new change with the new redirects and returns the alias for the new version in the response.",
@@ -11279,7 +11260,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"editRedirect",
 		"Edits a single redirect identified by its source path. Stages a new change with the modified redirect and returns the alias for the new version in the response.",
@@ -11293,7 +11273,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"restoreRedirects",
 		"Restores the provided redirects in the staging version to the value in the production version. If no production version exists, removes the redirects from staging.",
@@ -11307,7 +11286,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getVersions",
 		"Get the version history for a project's bulk redirects",
@@ -11321,7 +11299,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateVersion",
 		"Update a version by promoting staging to production or restoring a previous production version",
@@ -11335,7 +11312,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createCheck",
 		"Creates a new check. This endpoint must be called with an OAuth2 or it will produce a 400 error.",
@@ -11352,7 +11328,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getAllChecks",
 		"List all of the checks created for a deployment.",
@@ -11369,7 +11344,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getCheck",
 		"Return a detailed response for a single check.",
@@ -11387,7 +11361,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateCheck",
 		"Update an existing check. This endpoint must be called with an OAuth2 or it will produce a 400 error.",
@@ -11405,7 +11378,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"rerequestCheck",
 		"Rerequest a selected check that has failed.",
@@ -11423,7 +11395,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"purgeAllDataCache",
 		"Make a DELETE request to /data-cache/purge-all",
@@ -11437,7 +11408,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateDataCacheBillingSettings",
 		"Make a PATCH request to /data-cache/billing-settings",
@@ -11450,7 +11420,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateProjectDataCache",
 		"Update the data cache feature on a project.",
@@ -11467,7 +11436,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDeploymentEvents",
 		"Get the build logs of a deployment by deployment ID and build ID. It can work as an infinite stream of logs or as a JSON endpoint depending on the input parameters.",
@@ -11484,7 +11452,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateIntegrationDeploymentAction",
 		"Updates the deployment integration action for the specified integration installation",
@@ -11507,7 +11474,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDeployment",
 		"Retrieves information for a deployment either by supplying its ID (`id` property) or Hostname (`url` property). Additional details will be included when the authenticated user or team is an owner of the deployment.",
@@ -11524,7 +11490,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createDeployment",
 		"Create a new deployment with all the required and intended data. If the deployment is not a git deployment, all files must be provided with the request, either referenced or inlined. Additionally, a deployment id can be specified to redeploy a previous deployment.",
@@ -11538,7 +11503,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"cancelDeployment",
 		"This endpoint allows you to cancel a deployment which is currently building, by supplying its `id` in the URL.",
@@ -11555,7 +11519,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"checkDomainPrice",
 		"This endpoint is deprecated and replaced with the endpoint [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain). Check the price to purchase a domain and how long a single purchase period is.",
@@ -11569,7 +11532,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"checkDomainStatus",
 		"This endpoint is deprecated and replaced with the endpoint [Get availability for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-availability-for-a-domain). Check if a domain name is available for purchase.",
@@ -11583,7 +11545,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getRecords",
 		"Retrieves a list of DNS records created for a domain name. By default it returns 20 records if no limit is provided. The rest can be retrieved using the pagination options.",
@@ -11600,7 +11561,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createRecord",
 		"Creates a DNS record for a domain.",
@@ -11617,7 +11577,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateRecord",
 		"Updates an existing DNS record for a domain name.",
@@ -11634,7 +11593,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeRecord",
 		"Removes an existing DNS record from a domain name.",
@@ -11652,7 +11610,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getSupportedTlds",
 		"Get a list of TLDs supported by Vercel",
@@ -11666,7 +11623,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getTldPrice",
 		"Get price data for a specific TLD. This only reflects base prices for the given TLD. Premium domains may have different prices. Use the [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain) endpoint to get the price data for a specific domain.",
@@ -11680,7 +11636,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDomainAvailability",
 		"Get availability for a specific domain. If the domain is available, it can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.",
@@ -11697,7 +11652,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDomainPrice",
 		"Get price data for a specific domain",
@@ -11714,7 +11668,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getBulkAvailability",
 		"Get availability for multiple domains. If the domains are available, they can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.",
@@ -11728,7 +11681,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDomainAuthCode",
 		"Get the auth code for a domain. This is required to transfer a domain from Vercel to another registrar.",
@@ -11745,7 +11697,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"buySingleDomain",
 		"Buy a domain",
@@ -11762,7 +11713,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"buyDomains",
 		"Buy multiple domains at once",
@@ -11776,7 +11726,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"transferInDomain",
 		"Transfer a domain in from another registrar",
@@ -11793,7 +11742,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDomainTransferIn",
 		"Get the transfer status for a domain",
@@ -11810,7 +11758,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"renewDomain",
 		"Renew a domain",
@@ -11827,7 +11774,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateDomainAutoRenew",
 		"Update the auto-renew setting for a domain",
@@ -11844,7 +11790,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateDomainNameservers",
 		"Update the nameservers for a domain. Pass an empty array to use Vercel's default nameservers.",
@@ -11861,7 +11806,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getContactInfoSchema",
 		"Some TLDs require additional contact information. Use this endpoint to get the schema for the tld-specific contact information for a domain.",
@@ -11878,7 +11822,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getOrder",
 		"Get information about a domain order by its ID",
@@ -11892,7 +11835,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDomainConfig",
 		"Get a Domain's configuration.",
@@ -11909,7 +11851,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDomain",
 		"Get information for a single domain in an account or team.",
@@ -11923,7 +11864,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDomains",
 		"Retrieves a list of domains registered for the authenticated user or team. By default it returns the last 20 domains if no limit is provided.",
@@ -11937,7 +11877,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createOrTransferDomain",
 		"This endpoint is used for adding a new apex domain name with Vercel for the authenticating user. Note: This endpoint is no longer used for initiating domain transfers from external registrars to Vercel. For this, please use the endpoint [Transfer-in a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/transfer-in-a-domain).",
@@ -11951,7 +11890,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"patchDomain",
 		"Update or move apex domain. Note: This endpoint is no longer used for updating auto-renew or nameservers. For this, please use the endpoints [Update auto-renew for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-auto-renew-for-a-domain) and [Update nameservers for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-nameservers-for-a-domain).",
@@ -11968,7 +11906,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteDomain",
 		"Delete a previously registered domain name from Vercel. Deleting a domain will automatically remove any associated aliases.",
@@ -11985,7 +11922,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getConfigurableLogDrain",
 		"Retrieves a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be accessed.",
@@ -12002,7 +11938,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteConfigurableLogDrain",
 		"Deletes a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be deleted.",
@@ -12019,7 +11954,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getAllLogDrains",
 		"Retrieves a list of all the Log Drains owned by the account. This endpoint must be called with an account AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated account can be accessed.",
@@ -12033,7 +11967,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createConfigurableLogDrain",
 		"Creates a configurable log drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed)",
@@ -12047,7 +11980,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createDrain",
 		"Create a new Drain with the provided configuration.",
@@ -12061,7 +11993,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDrains",
 		"Allows to retrieve the list of Drains of the authenticated team.",
@@ -12075,7 +12006,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteDrain",
 		"Delete a specific Drain by passing the drain id in the URL.",
@@ -12089,7 +12019,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDrain",
 		"Get the information for a specific Drain by passing the drain id in the URL.",
@@ -12103,7 +12032,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateDrain",
 		"Update the configuration of an existing drain.",
@@ -12117,7 +12045,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"testDrain",
 		"Validate the delivery configuration of a Drain using sample events.",
@@ -12131,7 +12058,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"invalidateByTags",
 		"Marks a cache tag as stale, causing cache entries associated with that tag to be revalidated in the background on the next request.",
@@ -12145,7 +12071,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"dangerouslyDeleteByTags",
 		"Marks a cache tag as deleted, causing cache entries associated with that tag to be revalidated in the foreground on the next request. Use this method with caution because one tag can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.",
@@ -12159,7 +12084,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"invalidateBySrcImages",
 		"Marks a source image as stale, causing its corresponding transformed images to be revalidated in the background on the next request.",
@@ -12173,7 +12097,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"dangerouslyDeleteBySrcImages",
 		"Marks a source image as deleted, causing cache entries associated with that source image to be revalidated in the foreground on the next request. Use this method with caution because one source image can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.",
@@ -12187,7 +12110,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigs",
 		"Returns all Edge Configs.",
@@ -12201,7 +12123,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createEdgeConfig",
 		"Creates an Edge Config.",
@@ -12215,7 +12136,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfig",
 		"Returns an Edge Config.",
@@ -12232,7 +12152,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateEdgeConfig",
 		"Updates an Edge Config.",
@@ -12249,7 +12168,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteEdgeConfig",
 		"Delete an Edge Config by id.",
@@ -12266,7 +12184,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigItems",
 		"Returns all items of an Edge Config.",
@@ -12283,7 +12200,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"patchEdgeConfigItems",
 		"Update multiple Edge Config Items in batch.",
@@ -12300,7 +12216,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigSchema",
 		"Returns the schema of an Edge Config.",
@@ -12317,7 +12232,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"patchEdgeConfigSchema",
 		"Update an Edge Config's schema.",
@@ -12334,7 +12248,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteEdgeConfigSchema",
 		"Deletes the schema of existing Edge Config.",
@@ -12351,7 +12264,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigItem",
 		"Returns a specific Edge Config Item.",
@@ -12373,7 +12285,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigTokens",
 		"Returns all tokens of an Edge Config.",
@@ -12390,7 +12301,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteEdgeConfigTokens",
 		"Deletes one or more tokens of an existing Edge Config.",
@@ -12407,7 +12317,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigToken",
 		"Return meta data about an Edge Config token.",
@@ -12429,7 +12338,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createEdgeConfigToken",
 		"Adds a token to an existing Edge Config.",
@@ -12446,7 +12354,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigBackup",
 		"Retrieves a specific version of an Edge Config from backup storage.",
@@ -12469,7 +12376,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getEdgeConfigBackups",
 		"Returns backups of an Edge Config.",
@@ -12486,7 +12392,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createSharedEnvVariable",
 		"Creates shared environment variable(s) for a team.",
@@ -12500,7 +12405,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listSharedEnvVariable",
 		"Lists all Shared Environment Variables for a team, taking into account optional filters.",
@@ -12514,7 +12418,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateSharedEnvVariable",
 		"Updates a given Shared Environment Variable for a Team.",
@@ -12528,7 +12431,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteSharedEnvVariable",
 		"Deletes one or many Shared Environment Variables for a given team.",
@@ -12542,7 +12444,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getSharedEnvVar",
 		"Retrieve the decrypted value of a Shared Environment Variable by id.",
@@ -12559,7 +12460,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"unlinkSharedEnvVariable",
 		"Disconnects a shared environment variable for a given project",
@@ -12581,7 +12481,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listUserEvents",
 		'Retrieves a list of "events" generated by the User on Vercel. Events are generated when the User performs a particular action, such as logging in, creating a deployment, and joining a Team (just to name a few). When the `teamId` parameter is supplied, then the events that are returned will be in relation to the Team that was specified.',
@@ -12595,7 +12494,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"gitNamespaces",
 		"Lists git namespaces for a supported provider. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider is not provided, it will try to obtain it from the user that authenticated the request.",
@@ -12609,7 +12507,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"searchRepo",
 		"Lists git repositories linked to a namespace `id` for a supported provider. A specific namespace `id` can be obtained via the `git-namespaces`  endpoint. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider or namespace is not provided, it will try to obtain it from the user that authenticated the request.",
@@ -12623,7 +12520,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getBillingPlans",
 		"Get a list of billing plans for an integration and product.",
@@ -12645,7 +12541,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"connectIntegrationResourceToProject",
 		"Connects an integration resource to a Vercel project. This endpoint establishes a connection between a provisioned integration resource (from storage APIs like `POST /v1/storage/stores/integration/direct`) and a specific Vercel project.",
@@ -12668,7 +12563,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateInstallation",
 		"This endpoint updates an integration installation.",
@@ -12685,7 +12579,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getAccountInfo",
 		"Fetches the best account or user’s contact info",
@@ -12702,7 +12595,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getMember",
 		'Returns the member role and other information for a given member ID ("user_id" claim in the SSO OIDC token).',
@@ -12719,7 +12611,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createEvent",
 		"Partner notifies Vercel of any changes made to an Installation or a Resource. Vercel is expected to use `list-resources` and other read APIs to get the new state.<br/> <br/> `resource.updated` event should be dispatched when any state of a resource linked to Vercel is modified by the partner.<br/> `installation.updated` event should be dispatched when an installation's billing plan is changed via the provider instead of Vercel.<br/> <br/> Resource update use cases: <br/> <br/> - The user renames a database in the partner’s application. The partner should dispatch a `resource.updated` event to notify Vercel to update the resource in Vercel’s datastores.<br/> - A resource has been suspended due to a lack of use. The partner should dispatch a `resource.updated` event to notify Vercel to update the resource's status in Vercel's datastores.<br/>",
@@ -12733,7 +12624,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getIntegrationResources",
 		"Get all resources for a given installation ID.",
@@ -12753,7 +12643,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getIntegrationResource",
 		"Get a resource by its partner ID.",
@@ -12774,7 +12663,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteIntegrationResource",
 		"Delete a resource owned by the selected installation ID.",
@@ -12795,7 +12683,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"importResource",
 		"This endpoint imports (upserts) a resource to Vercel's installation. This may be needed if resources can be independently created on the partner's side and need to be synchronized to Vercel.",
@@ -12816,7 +12703,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateResource",
 		"This endpoint updates an existing resource in the installation. All parameters are optional, allowing partial updates.",
@@ -12837,7 +12723,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"submitBillingData",
 		"Sends the billing and usage data. The partner should do this at least once a day and ideally once per hour. <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request.",
@@ -12854,7 +12739,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"submitInvoice",
 		"This endpoint allows the partner to submit an invoice to Vercel. The invoice is created in Vercel's billing system and sent to the customer. Depending on the type of billing plan, the invoice can be sent at a time of signup, at the start of the billing period, or at the end of the billing period.<br/> <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request. <br/> There are several limitations to the invoice submission:<br/> <br/> 1. A resource can only be billed once per the billing period and the billing plan.<br/> 2. The billing plan used to bill the resource must have been active for this resource during the billing period.<br/> 3. The billing plan used must be a subscription plan.<br/> 4. The interim usage data must be sent hourly for all types of subscriptions. See [Send subscription billing and usage data](#send-subscription-billing-and-usage-data) API on how to send interim billing and usage data.<br/>",
@@ -12870,7 +12754,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getInvoice",
 		"Get Invoice details and status for a given invoice ID.<br/> <br/> See Billing Events with Webhooks documentation on how to receive invoice events. This endpoint is used to retrieve the invoice details.",
@@ -12887,7 +12770,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateInvoice",
 		"This endpoint allows the partner to request a refund for an invoice to Vercel. The invoice is created using the [Submit Invoice API](#submit-invoice-api).",
@@ -12907,7 +12789,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"submitPrepaymentBalances",
 		"Sends the prepayment balances. The partner should do this at least once a day and ideally once per hour. <br/> Use the `credentials.access_token` we provided in the [Upsert Installation](#upsert-installation) body to authorize this request.",
@@ -12927,7 +12808,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateResourceSecrets",
 		"This endpoint is deprecated and replaced with the endpoint [Update Resource Secrets](#update-resource-secrets). <br/> This endpoint updates the secrets of a resource. If a resource has projects connected, the connected secrets are updated with the new secrets. The old secrets may still be used by existing connected projects because they are not automatically redeployed. Redeployment is a manual action and must be completed by the user. All new project connections will use the new secrets.<br/> <br/> Use cases for this endpoint:<br/> <br/> - Resetting the credentials of a database in the partner. If the user requests the credentials to be updated in the partner’s application, the partner post the new set of secrets to Vercel, the user should redeploy their application and the expire the old credentials.<br/>",
@@ -12950,7 +12830,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateResourceSecretsById",
 		"This endpoint updates the secrets of a resource. If a resource has projects connected, the connected secrets are updated with the new secrets. The old secrets may still be used by existing connected projects because they are not automatically redeployed. Redeployment is a manual action and must be completed by the user. All new project connections will use the new secrets.<br/> <br/> Use cases for this endpoint:<br/> <br/> - Resetting the credentials of a database in the partner. If the user requests the credentials to be updated in the partner’s application, the partner post the new set of secrets to Vercel, the user should redeploy their application and the expire the old credentials.<br/>",
@@ -12971,7 +12850,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getConfigurations",
 		"Allows to retrieve all configurations for an authenticated integration. When the `project` view is used, configurations generated for the authorization flow will be filtered out of the results.",
@@ -12985,7 +12863,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getConfiguration",
 		"Allows to retrieve a the configuration with the provided id in case it exists. The authenticated user or team must be the owner of the config in order to access it.",
@@ -13002,7 +12879,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteConfiguration",
 		"Allows to remove the configuration with the `id` provided in the parameters. The configuration and all of its resources will be removed. This includes Webhooks, LogDrains and Project Env variables.",
@@ -13019,7 +12895,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getConfigurationProducts",
 		"Lists all products available for an integration configuration. Use this endpoint to discover what integration products are available for your integration configuration. The returned product IDs or slugs can then be used with storage provisioning endpoints like `POST /v1/storage/stores/integration/direct`. ## Workflow 1. Get your integration configurations: `GET /v1/integrations/configurations` 2. **Use this endpoint**: Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Create storage resource: `POST /v1/storage/stores/integration/direct` ## Response Returns an array of products with their IDs, slugs, names, supported protocols, and metadata requirements. Each product represents a different type of resource you can provision. The `metadataSchema` field contains a JSON Schema that defines: - **Required metadata**: Fields that must be provided during storage creation - **Optional metadata**: Fields that can be provided but are not mandatory - **Field validation**: Data types, allowed values, and constraints Use this schema to validate metadata before calling the storage creation endpoint.",
@@ -13036,7 +12911,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"exchangeSsoToken",
 		"During the autorization process, Vercel sends the user to the provider [redirectLoginUrl](https://vercel.com/docs/integrations/create-integration/submit-integration#redirect-login-url), that includes the OAuth authorization `code` parameter. The provider then calls the SSO Token Exchange endpoint with the sent code and receives the OIDC token. They log the user in based on this token and redirects the user back to the Vercel account using deep-link parameters included the redirectLoginUrl. Providers should not persist the returned `id_token` in a database since the token will expire. See [**Authentication with SSO**](https://vercel.com/docs/integrations/create-integration/marketplace-api#authentication-with-sso) for more details.",
@@ -13049,7 +12923,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getIntegrationLogDrains",
 		"Retrieves a list of all Integration log drains that are defined for the authenticated user or team. When using an OAuth2 token, the list is limited to log drains created by the authenticated integration.",
@@ -13063,7 +12936,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createLogDrain",
 		"Creates an Integration log drain. This endpoint must be called with an OAuth2 client (integration), since log drains are tied to integrations. If it is called with a different token type it will produce a 400 error.",
@@ -13077,7 +12949,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteIntegrationLogDrain",
 		"Deletes the Integration log drain with the provided `id`. When using an OAuth2 Token, the log drain can be deleted only if the integration owns it.",
@@ -13094,7 +12965,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getRuntimeLogs",
 		"Returns a stream of logs for a given deployment.",
@@ -13116,7 +12986,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createExperimentationItem",
 		"Create one or multiple experimentation items",
@@ -13137,7 +13006,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateExperimentationItem",
 		"Patch an existing experimentation item",
@@ -13159,7 +13027,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteExperimentationItem",
 		"Delete an existing experimentation item",
@@ -13181,7 +13048,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateExperimentationEdgeConfig",
 		"When the user enabled Edge Config syncing, then this endpoint can be used by the partner to push their configuration data into the relevant Edge Config.",
@@ -13202,7 +13068,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getProjectMembers",
 		"Lists all members of a project.",
@@ -13219,7 +13084,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"addProjectMember",
 		"Adds a new member to the project.",
@@ -13236,7 +13100,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeProjectMember",
 		"Remove a member from a specific project",
@@ -13254,7 +13117,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getProjects",
 		"Allows to retrieve the list of projects of the authenticated user or team. The list will be paginated and the provided query parameters allow filtering the returned projects.",
@@ -13268,7 +13130,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createProject",
 		"Allows to create a new project with the provided configuration. It only requires the project `name` but more configuration can be provided to override the defaults.",
@@ -13282,7 +13143,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getProject",
 		"Get the information for a specific project by passing either the project `id` or `name` in the URL.",
@@ -13299,7 +13159,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateProject",
 		"Update the fields of a project using either its `name` or `id`.",
@@ -13316,7 +13175,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteProject",
 		"Delete a specific project by passing either the project `id` or `name` in the URL.",
@@ -13333,7 +13191,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateStaticIps",
 		"Allows configuring Static IPs for a project",
@@ -13350,7 +13207,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createCustomEnvironment",
 		"Creates a custom environment for the current project. Cannot be named 'Production' or 'Preview'.",
@@ -13367,7 +13223,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listCustomEnvironments",
 		"Retrieve custom environments for the project. Must not be named 'Production' or 'Preview'.",
@@ -13384,7 +13239,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getCustomEnvironment",
 		"Retrieve a custom environment for the project. Must not be named 'Production' or 'Preview'.",
@@ -13406,7 +13260,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateCustomEnvironment",
 		"Update a custom environment for the project. Must not be named 'Production' or 'Preview'.",
@@ -13428,7 +13281,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeCustomEnvironment",
 		"Remove a custom environment for the project. Must not be named 'Production' or 'Preview'.",
@@ -13450,7 +13302,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getProjectDomains",
 		"Retrieve the domains associated with a given project by passing either the project `id` or `name` in the URL.",
@@ -13467,7 +13318,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getProjectDomain",
 		"Get project domain by project id/name and domain name.",
@@ -13485,7 +13335,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateProjectDomain",
 		"Update a project domain's configuration, including the name, git branch and redirect of the domain.",
@@ -13503,7 +13352,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeProjectDomain",
 		"Remove a domain from a project by passing the domain name and by specifying the project by either passing the project `id` or `name` in the URL.",
@@ -13521,7 +13369,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"addProjectDomain",
 		"Add a domain to the project by passing its domain name and by specifying the project by either passing the project `id` or `name` in the URL. If the domain is not yet verified to be used on this project, the request will return `verified = false`, and the domain will need to be verified according to the `verification` challenge via `POST /projects/:idOrName/domains/:domain/verify`. If the domain already exists on the project, the request will fail with a `400` status code.",
@@ -13538,7 +13385,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"moveProjectDomain",
 		"Move one project's domain to another project. Also allows the move of all redirects pointed to that domain in the same project.",
@@ -13556,7 +13402,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"verifyProjectDomain",
 		"Attempts to verify a project domain with `verified = false` by checking the correctness of the project domain's `verification` challenge.",
@@ -13574,7 +13419,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"filterProjectEnvs",
 		"Retrieve the environment variables for a given project by passing either the project `id` or `name` in the URL.",
@@ -13591,7 +13435,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createProjectEnv",
 		"Create one or more environment variables for a project by passing its `key`, `value`, `type` and `target` and by specifying the project by either passing the project `id` or `name` in the URL. If you include `upsert=true` as a query parameter, a new environment variable will not be created if it already exists but, the existing variable's value will be updated.",
@@ -13608,7 +13451,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getProjectEnv",
 		"Retrieve the environment variable for a given project.",
@@ -13626,7 +13468,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeProjectEnv",
 		"Delete a specific environment variable for a given project by passing the environment variable identifier and either passing the project `id` or `name` in the URL.",
@@ -13644,7 +13485,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"editProjectEnv",
 		"Edit a specific environment variable for a given project by passing the environment variable identifier and either passing the project `id` or `name` in the URL.",
@@ -13662,7 +13502,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"batchRemoveProjectEnv",
 		"Delete multiple environment variables for a given project in a single batch operation.",
@@ -13679,7 +13518,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"uploadProjectClientCert",
 		"Upload a client certificate for mTLS authentication to external origins.",
@@ -13696,7 +13534,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getProjectClientCerts",
 		"Retrieve client certificates configured for a project's mTLS egress authentication.",
@@ -13713,7 +13550,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteProjectClientCert",
 		"Delete a client certificate for mTLS authentication to external origins.",
@@ -13735,7 +13571,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getRollingReleaseBillingStatus",
 		"Get the Rolling Releases billing status for a project. The team level billing status is used to determine if the project can be configured for rolling releases.",
@@ -13756,7 +13591,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getRollingReleaseConfig",
 		"Get the Rolling Releases configuration for a project. The project-level config is simply a template that will be used for any future rolling release, and not the configuration for any active rolling release.",
@@ -13773,7 +13607,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteRollingReleaseConfig",
 		"Disable Rolling Releases for a project means that future deployments will not undergo a rolling release. Changing the config never alters a rollout that's already in-flight—it only affects the next production deployment. If you want to also stop the current rollout, call this endpoint to disable the feature, and then call either the /complete or /abort endpoint.",
@@ -13790,7 +13623,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateRollingReleaseConfig",
 		"Update (or disable) Rolling Releases for a project. Changing the config never alters a rollout that's already in-flight. It only affects the next production deployment. This also applies to disabling Rolling Releases. If you want to also stop the current rollout, call this endpoint to disable the feature, and then call either the /complete or /abort endpoint. Note: Enabling Rolling Releases automatically enables skew protection on the project with the default value if it wasn't configured already.",
@@ -13807,7 +13639,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getRollingRelease",
 		"Return the Rolling Release for a project, regardless of whether the rollout is active, aborted, or completed. If the feature is enabled but no deployment has occurred yet, null will be returned.",
@@ -13824,7 +13655,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"approveRollingReleaseStage",
 		"Advance a rollout to the next stage. This is only needed when rolling releases is configured to require manual approval.",
@@ -13841,7 +13671,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"completeRollingRelease",
 		"Force-complete a Rolling Release. The canary deployment will begin serving 100% of the traffic.",
@@ -13858,7 +13687,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createProjectTransferRequest",
 		"Initiates a project transfer request from one team to another. <br/> Returns a `code` that remains valid for 24 hours and can be used to accept the transfer request by another team using the `PUT /projects/transfer-request/:code` endpoint. <br/> Users can also accept the project transfer request using the claim URL: `https://vercel.com/claim-deployment?code=<code>&returnUrl=<returnUrl>`. <br/> The `code` parameter specifies the project transfer request code generated using this endpoint. <br/> The `returnUrl` parameter redirects users to a specific page of the application if the claim URL is invalid or expired.",
@@ -13879,7 +13707,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"acceptProjectTransferRequest",
 		"Accept a project transfer request initated by another team. <br/> The `code` is generated using the `POST /projects/:idOrName/transfer-request` endpoint.",
@@ -13896,7 +13723,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateProjectProtectionBypass",
 		"Update the deployment protection automation bypass for a project",
@@ -13917,7 +13743,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"requestPromote",
 		"Allows users to promote a deployment to production. Note: This does NOT rebuild the deployment. If you need that, then call create-deployments endpoint.",
@@ -13939,7 +13764,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listPromoteAliases",
 		"Get a list of aliases related to the last promote request with their mapping status",
@@ -13956,7 +13780,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"pauseProject",
 		"Pause a project by passing its project `id` in the URL. If the project does not exist given the id then the request will fail with 400 status code. If the project disables auto assigning custom production domains and blocks the active Production Deployment then the request will return with 200 status code.",
@@ -13973,7 +13796,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"unpauseProject",
 		"Unpause a project by passing its project `id` in the URL. If the project does not exist given the id then the request will fail with 400 status code. If the project enables auto assigning custom production domains and unblocks the active Production Deployment then the request will return with 200 status code.",
@@ -13990,7 +13812,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateAttackChallengeMode",
 		"Update the setting for determining if the project has Attack Challenge mode enabled.",
@@ -14004,7 +13825,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"putFirewallConfig",
 		"Set the firewall configuration to provided rules and settings. Creates or overwrite the existing firewall configuration.",
@@ -14018,7 +13838,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateFirewallConfig",
 		"Process updates to modify the existing firewall config for a project",
@@ -14032,7 +13851,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getFirewallConfig",
 		"Retrieve the specified firewall configuration for a project. The deployed configVersion will be `active`",
@@ -14049,7 +13867,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getActiveAttackStatus",
 		"Retrieve active attack data within the last N days (default: 1 day)",
@@ -14063,7 +13880,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getBypassIp",
 		"Retrieve the system bypass rules configured for the specified project",
@@ -14077,7 +13893,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"addBypassIp",
 		"Create new system bypass rules",
@@ -14091,7 +13906,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeBypassIp",
 		"Remove system bypass rules",
@@ -14105,7 +13919,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"gETV1SecurityFirewallEvents",
 		"Retrieve firewall actions for a project",
@@ -14119,7 +13932,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createIntegrationStoreDirect",
 		"Creates an integration store for both FREE and PAID billing plans. This simplified endpoint automatically provisions real integration storage resources while handling billing complexity behind the scenes. It supports both free and paid billing plans with automatic authorization creation for paid resources. ## How it works 1. Validates the integration configuration and product 2. For free resources: Auto-discovers available free billing plans 3. For paid resources: Creates billing authorization inline using provided billingPlanId 4. Provisions real resources through the Vercel Marketplace 5. Returns the created store with connection details ## Workflow Before using this endpoint, discover available products and billing plans: 1. List your configurations: `GET /v1/integrations/configurations` 2. Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Get billing plans for a product: `GET /integrations/integration/{integrationId}/products/{productId}/plans` 4. Review the `metadataSchema` for each product to understand required metadata 5. Create storage with discovered product: `POST /v1/storage/stores/integration/direct` ## Usage Patterns - **Free resources**: Omit `billingPlanId` - endpoint will auto-discover free plans - **Paid resources**: Provide `billingPlanId` from billing plans discovery - **Prepayment plans**: Also provide `prepaymentAmountCents` for variable amount plans ## Limitations - **Admin access required**: Only integration configuration admins can create stores - **Storage limits apply**: Subject to your team's storage quotas - **Payment method required**: For paid plans, ensure valid payment method is configured ## Error Responses - `400 Bad Request`: Invalid input, no plans available, or billing issues - `403 Forbidden`: Insufficient permissions (non-admin users) - `404 Not Found`: Integration configuration or product not found - `429 Too Many Requests`: Rate limit exceeded",
@@ -14133,7 +13945,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getTeamMembers",
 		"Get a paginated list of team members for the provided team.",
@@ -14150,7 +13961,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"inviteUserToTeam",
 		"Invite a user to join the team specified in the URL. The authenticated user needs to be an `OWNER` in order to successfully invoke this endpoint. The user to be invited must be specified by email.",
@@ -14164,7 +13974,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"requestAccessToTeam",
 		"Request access to a team as a member. An owner has to approve the request. Only 10 users can request access to a team at the same time.",
@@ -14178,7 +13987,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getTeamAccessRequest",
 		"Check the status of a join request. It'll respond with a 404 if the request has been declined. If no `userId` path segment was provided, this endpoint will instead return the status of the authenticated user.",
@@ -14195,7 +14003,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"joinTeam",
 		"Join a team with a provided invite code or team ID.",
@@ -14209,7 +14016,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"updateTeamMember",
 		"Update the membership of a Team Member on the Team specified by `teamId`, such as changing the _role_ of the member, or confirming a request to join the Team for an unconfirmed member. The authenticated user must be an `OWNER` of the Team.",
@@ -14226,7 +14032,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeTeamMember",
 		"Remove a Team Member from the Team, or dismiss a user that requested access, or leave a team.",
@@ -14244,7 +14049,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getTeam",
 		"Get information for the Team specified by the `teamId` parameter.",
@@ -14258,7 +14062,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"patchTeam",
 		"Update the information of a Team specified by the `teamId` parameter. The request body should contain the information that will be updated on the Team.",
@@ -14272,7 +14075,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getTeams",
 		"Get a paginated list of all the Teams the authenticated User is a member of.",
@@ -14286,7 +14088,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createTeam",
 		"Create a new Team under your account. You need to send a POST request with the desired Team slug, and optionally the Team name.",
@@ -14299,7 +14100,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"postTeamDsyncRoles",
 		"Update the Directory Sync role mappings for a Team. This endpoint allows updating the mapping between directory groups and team roles or access groups.",
@@ -14316,7 +14116,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteTeam",
 		"Delete a team under your account. You need to send a `DELETE` request with the desired team `id`. An optional array of reasons for deletion may also be sent.",
@@ -14333,7 +14132,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteTeamInviteCode",
 		"Delete an active Team invite code.",
@@ -14350,7 +14148,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"uploadFile",
 		"Before you create a deployment you need to upload the required files for that deployment. To do it, you need to first upload each file to this endpoint. Once that's completed, you can create a new deployment with the uploaded files. The file content must be placed inside the body of the request. In the case of a successful response you'll receive a status code 200 with an empty body.",
@@ -14364,7 +14161,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listAuthTokens",
 		"Retrieve a list of the current User's authentication tokens.",
@@ -14377,7 +14173,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createAuthToken",
 		"Creates and returns a new authentication token for the currently authenticated User. The `bearerToken` property is only provided once, in the response body, so be sure to save it on the client for use with API requests.",
@@ -14391,7 +14186,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getAuthToken",
 		"Retrieve metadata about an authentication token belonging to the currently authenticated User.",
@@ -14405,7 +14199,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteAuthToken",
 		"Invalidate an authentication token, such that it will no longer be valid for future HTTP requests.",
@@ -14419,7 +14212,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getAuthUser",
 		"Retrieves information related to the currently authenticated User.",
@@ -14432,7 +14224,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"requestDelete",
 		"Initiates the deletion process for the currently authenticated User, by sending a deletion confirmation email. The email contains a link that the user needs to visit in order to proceed with the deletion process.",
@@ -14445,7 +14236,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createWebhook",
 		"Creates a webhook",
@@ -14459,7 +14249,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getWebhooks",
 		"Get a list of webhooks",
@@ -14473,7 +14262,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getWebhook",
 		"Get a webhook",
@@ -14487,7 +14275,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteWebhook",
 		"Deletes a webhook",
@@ -14501,7 +14288,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listDeploymentAliases",
 		"Retrieves all Aliases for the Deployment with the given ID. The authenticated user or team must own the deployment.",
@@ -14518,7 +14304,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"assignAlias",
 		"Creates a new alias for the deployment with the given deployment ID. The authenticated user or team must own this deployment. If the desired alias is already assigned to another deployment, then it will be removed from the old deployment and assigned to the new one.",
@@ -14532,7 +14317,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listAliases",
 		"Retrieves a list of aliases for the authenticated User or Team. When `domain` is provided, only aliases for that domain will be returned. When `projectId` is provided, it will only return the given project aliases.",
@@ -14546,7 +14330,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getAlias",
 		"Retrieves an Alias for the given host name or alias ID.",
@@ -14563,7 +14346,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteAlias",
 		"Delete an Alias with the specified ID.",
@@ -14580,7 +14362,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"patchUrlProtectionBypass",
 		"Update the protection bypass for the alias or deployment URL (used for user access & comment access for deployments). Used as shareable links and user scoped access for Vercel Authentication and also to allow external (logged in) people to comment on previews for Preview Comments (next-live-mode).",
@@ -14597,7 +14378,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool("listCerts", "Make a GET request to /certs", async () => {
 		try {
 			return await listCerts({ config });
@@ -14606,7 +14386,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		}
 	});
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getCertById",
 		"Get cert by id",
@@ -14620,7 +14399,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"removeCert",
 		"Remove cert",
@@ -14634,7 +14412,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"issueCert",
 		"Issue a new cert",
@@ -14648,7 +14425,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"uploadCert",
 		"Upload a cert",
@@ -14662,7 +14438,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"listDeploymentFiles",
 		"Allows to retrieve the file structure of the source code of a deployment by supplying the deployment unique identifier. If the deployment was created with the Vercel CLI or the API directly with the `files` key, it will have a file tree that can be retrievable.",
@@ -14679,7 +14454,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDeploymentFileContents",
 		"Allows to retrieve the content of a file by supplying the file identifier and the deployment unique identifier. The response body will contain a JSON response containing the contents of the file encoded as base64.",
@@ -14697,7 +14471,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getDeployments",
 		"List deployments under the authenticated user or team. If a deployment hasn't finished uploading (is incomplete), the `url` property will have a value of `null`.",
@@ -14711,7 +14484,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteDeployment",
 		"This API allows you to delete a deployment, either by supplying its `id` in the URL or the `url` of the deployment as a query parameter. You can obtain the ID, for example, by listing all deployments.",
@@ -14728,7 +14500,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getSecrets",
 		"Retrieves the active Vercel secrets for the authenticated user or team. By default it returns 20 secrets. The rest can be retrieved using the pagination options. The body will contain an entry for each secret.",
@@ -14742,7 +14513,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"createSecret",
 		"Allows to create a new secret.",
@@ -14759,7 +14529,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"renameSecret",
 		"Enables to edit the name of a secret. The name has to be unique to the user or team’s secrets.",
@@ -14776,7 +14545,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"getSecret",
 		"Retrieves the information for a specific secret by passing either the secret id or name in the URL.",
@@ -14793,7 +14561,6 @@ export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) 
 		},
 	);
 
-	// @ts-expect-error: Type instantiation is excessively deep and possibly infinite
 	server.tool(
 		"deleteSecret",
 		"This deletes the user or team’s secret defined in the URL.",

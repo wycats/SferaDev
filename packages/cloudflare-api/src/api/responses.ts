@@ -47,8 +47,6 @@ export type ApiShieldEditRuleSuccess = Schemas.ApiShieldApiResponseSingle & {
 
 export type ApiShieldGenericFailure = Schemas.ApiShieldApiResponseCommonFailure;
 
-export type ApiShieldGenericFailure = Schemas.ApiShieldApiResponseCommonFailure;
-
 export type ApiShieldGetConfigSuccess = Schemas.ApiShieldApiResponseCommon & {
 	result: Schemas.ApiShieldTokenConfiguration;
 };

@@ -18,7 +18,7 @@ import {
 	projectsGetByChatIdPathParamsSchema,
 	rateLimitsFindQueryParamsSchema,
 	userGetBillingQueryParamsSchema,
-} from "./schemas.ts";
+} from "./schemas";
 import type {
 	ChatsCreate401,
 	ChatsCreate403,

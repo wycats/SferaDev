@@ -216,8 +216,6 @@ export type RealtimekitEndDate = string;
  */
 export type RealtimekitEndTime = string;
 
-export type RealtimekitMeetingId = string;
-
 /**
  * @pattern ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$
  */

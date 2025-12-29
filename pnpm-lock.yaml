@@ -262,6 +262,9 @@ importers:
       ai:
         specifier: 'catalog:'
         version: 6.0.3(zod@4.2.1)
+      is-tree-shakable:
+        specifier: 'catalog:'
+        version: 0.4.2
       knip:
         specifier: 'catalog:'
         version: 5.78.0(@types/node@25.0.3)(typescript@5.9.3)
@@ -523,9 +526,6 @@ importers:
       dotenv:
         specifier: 'catalog:'
         version: 17.2.3
-      is-tree-shakable:
-        specifier: 'catalog:'
-        version: 0.4.2
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -791,9 +791,6 @@ importers:
       bunchee:
         specifier: 'catalog:'
         version: 6.8.2(typescript@5.9.3)
-      is-tree-shakable:
-        specifier: 'catalog:'
-        version: 0.4.2
       rollup:
         specifier: 'catalog:'
         version: 4.54.0
