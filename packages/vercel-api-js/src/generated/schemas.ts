@@ -30,15 +30,428 @@ export const flagJSONValueSchema = z
 export const paginationSchema = z
 	.object({
 		count: z.number().describe("Amount of items in the current page."),
-		next: z.number().describe("Timestamp that must be used to request the next page.").nullable(),
-		prev: z
-			.number()
-			.describe("Timestamp that must be used to request the previous page.")
-			.nullable(),
+		next: z.nullable(z.number().describe("Timestamp that must be used to request the next page.")),
+		prev: z.nullable(
+			z.number().describe("Timestamp that must be used to request the previous page."),
+		),
 	})
 	.describe(
 		"This object contains information related to the pagination of the current request, including the necessary parameters to get the next or previous page of data.",
 	);
+
+/**
+ * @description The request did not match the expected schema
+ */
+export const httpApiDecodeErrorSchema = z
+	.object({
+		issues: z.array(z.unknown()),
+		message: z.string(),
+	})
+	.describe("The request did not match the expected schema");
+
+/**
+ * @description Represents an error encountered while parsing a value to match the schema
+ */
+export const issueSchema = z
+	.object({
+		path: z.array(z.unknown()).describe("The path to the property where the issue occurred"),
+		message: z.string().describe("A descriptive message explaining the issue"),
+	})
+	.describe("Represents an error encountered while parsing a value to match the schema");
+
+export const propertyKeySchema = z.union([
+	z.string(),
+	z.number(),
+	z.object({
+		tag: z.optional(z.enum(["symbol"])),
+		key: z.string(),
+	}),
+]);
+
+export const tooManyRequestsSchema = z.object({
+	status: z.literal(429),
+	code: z.enum(["too_many_requests"]),
+	message: z.string(),
+	retryAfter: z.object({
+		value: z.number(),
+		str: z.string(),
+	}),
+	limit: z.object({
+		total: z.number(),
+		remaining: z.number(),
+		reset: z.number(),
+	}),
+});
+
+export const unauthorizedSchema = z.object({
+	status: z.literal(401),
+	code: z.enum(["unauthorized"]),
+	message: z.string(),
+});
+
+export const notAuthorizedForScopeSchema = z.object({
+	status: z.literal(403),
+	code: z.enum(["not_authorized_for_scope"]),
+	message: z.string(),
+});
+
+export const internalServerErrorSchema = z.object({
+	status: z.literal(500),
+	code: z.enum(["internal_server_error"]),
+	message: z.string(),
+});
+
+/**
+ * @description The TLD is not currently supported.
+ */
+export const tldNotSupportedSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["tld_not_supported"]),
+		message: z.string(),
+	})
+	.describe("The TLD is not currently supported.");
+
+/**
+ * @description A valid domain name
+ */
+export const domainNameSchema = z.string().describe("A valid domain name");
+
+export const notFoundSchema = z.object({
+	status: z.literal(404),
+	code: z.enum(["not_found"]),
+	message: z.string(),
+});
+
+/**
+ * @description The domain name (excluding the TLD) is too short.
+ */
+export const domainTooShortSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["domain_too_short"]),
+		message: z.string(),
+	})
+	.describe("The domain name (excluding the TLD) is too short.");
+
+export const badRequestSchema = z.object({
+	status: z.literal(400),
+	code: z.enum(["bad_request"]),
+	message: z.string(),
+});
+
+/**
+ * @description The domain is not registered with Vercel.
+ */
+export const domainNotRegisteredSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["domain_not_registered"]),
+		message: z.string(),
+	})
+	.describe("The domain is not registered with Vercel.");
+
+export const forbiddenSchema = z.object({
+	status: z.literal(403),
+	code: z.enum(["forbidden"]),
+	message: z.string(),
+});
+
+/**
+ * @description The domain was not found in our system.
+ */
+export const domainNotFoundSchema = z
+	.object({
+		status: z.literal(404),
+		code: z.enum(["domain_not_found"]),
+		message: z.string(),
+	})
+	.describe("The domain was not found in our system.");
+
+/**
+ * @description The domain cannot be transfered out until the specified date.
+ */
+export const domainCannotBeTransferedOutUntilSchema = z
+	.object({
+		status: z.literal(409),
+		code: z.enum(["domain_cannot_be_transfered_out_until"]),
+		message: z.string(),
+	})
+	.describe("The domain cannot be transfered out until the specified date.");
+
+/**
+ * @description a non empty string
+ */
+export const nonEmptyTrimmedStringSchema = z
+	.string()
+	.min(1)
+	.regex(/^\S[\s\S]*\S$|^\S$|^$/)
+	.describe("a non empty string");
+
+/**
+ * @description A valid RFC 5322 email address
+ */
+export const emailAddressSchema = z.string().min(1).describe("A valid RFC 5322 email address");
+
+/**
+ * @description A valid E.164 phone number
+ */
+export const e164PhoneNumberSchema = z
+	.string()
+	.min(1)
+	.regex(/^(?=(?:\D*\d){8,15}$)\+[1-9]\d{0,2}\.?\d+$/)
+	.describe("A valid E.164 phone number");
+
+/**
+ * @description A valid ISO 3166-1 alpha-2 country code
+ */
+export const countryCodeSchema = z
+	.string()
+	.min(1)
+	.regex(/^[A-Z]{2}$/)
+	.describe("A valid ISO 3166-1 alpha-2 country code");
+
+/**
+ * @description A valid order ID
+ */
+export const orderIdSchema = z.string().describe("A valid order ID");
+
+/**
+ * @description The domain is not available.
+ */
+export const domainNotAvailableSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["domain_not_available"]),
+		message: z.string(),
+	})
+	.describe("The domain is not available.");
+
+/**
+ * @description The expected price passed does not match the actual price.
+ */
+export const expectedPriceMismatchSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["expected_price_mismatch"]),
+		message: z.string(),
+	})
+	.describe("The expected price passed does not match the actual price.");
+
+/**
+ * @description Additional contact information is required for the TLD.
+ */
+export const additionalContactInfoRequiredSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["additional_contact_info_required"]),
+		message: z.string(),
+	})
+	.describe("Additional contact information is required for the TLD.");
+
+/**
+ * @description Additional contact information provided for the TLD is invalid.
+ */
+export const invalidAdditionalContactInfoSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["invalid_additional_contact_info"]),
+		message: z.string(),
+	})
+	.describe("Additional contact information provided for the TLD is invalid.");
+
+/**
+ * @description The total price of the order is too high.
+ */
+export const orderTooExpensiveSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["order_too_expensive"]),
+		message: z.string(),
+	})
+	.describe("The total price of the order is too high.");
+
+/**
+ * @description Duplicate domains were provided.
+ */
+export const duplicateDomainsSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["duplicate_domains"]),
+		message: z.string(),
+	})
+	.describe("Duplicate domains were provided.");
+
+/**
+ * @description The number of domains in the order is too high.
+ */
+export const tooManyDomainsSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["too_many_domains"]),
+		message: z.string(),
+	})
+	.describe("The number of domains in the order is too high.");
+
+/**
+ * @description The operation cannot be completed because DNSSEC is enabled for the domain.
+ */
+export const dNSSECEnabledSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["dnssec_enabled"]),
+		message: z.string(),
+	})
+	.describe("The operation cannot be completed because DNSSEC is enabled for the domain.");
+
+/**
+ * @description The domain is already owned by another team or user.
+ */
+export const domainAlreadyOwnedSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["domain_already_owned"]),
+		message: z.string(),
+	})
+	.describe("The domain is already owned by another team or user.");
+
+/**
+ * @description The domain is not renewable.
+ */
+export const domainNotRenewableSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["domain_not_renewable"]),
+		message: z.string(),
+	})
+	.describe("The domain is not renewable.");
+
+/**
+ * @description The domain is already renewing.
+ */
+export const domainAlreadyRenewingSchema = z
+	.object({
+		status: z.literal(400),
+		code: z.enum(["domain_already_renewing"]),
+		message: z.string(),
+	})
+	.describe("The domain is already renewing.");
+
+/**
+ * @description A valid nameserver
+ */
+export const nameserverSchema = z.string().describe("A valid nameserver");
+
+/**
+ * @description Schema definition for registrant fields.
+ */
+export const registrantFieldSchema = z
+	.union([
+		z.object({
+			description: z.string(),
+			required: z.boolean(),
+			label: z.optional(z.string()),
+			validation: z.optional(
+				z.union([
+					z.enum(["valid_email", "valid_countries"]),
+					z.string().regex(/^regex:[\s\S]*?$/),
+					z.string().regex(/^min_length:[\s\S]*?$/),
+				]),
+			),
+			requiredWhen: z.optional(
+				z.union([
+					z.string(),
+					z.object({
+						valueIn: z.optional(z.array(z.string())),
+					}),
+				]),
+			),
+			type: z.enum(["string"]),
+			options: z.optional(
+				z.array(
+					z.object({
+						value: z.string(),
+						label: z.string(),
+						fields: z.optional(z.object({})),
+					}),
+				),
+			),
+			fields: z.optional(z.object({})),
+		}),
+		z.object({
+			description: z.string(),
+			required: z.boolean(),
+			label: z.optional(z.string()),
+			validation: z.optional(
+				z.union([
+					z.enum(["valid_email", "valid_countries"]),
+					z.string().regex(/^regex:[\s\S]*?$/),
+					z.string().regex(/^min_length:[\s\S]*?$/),
+				]),
+			),
+			requiredWhen: z.optional(
+				z.union([
+					z.string(),
+					z.object({
+						valueIn: z.optional(z.array(z.string())),
+					}),
+				]),
+			),
+			type: z.enum(["enum"]),
+			options: z.array(
+				z.object({
+					value: z.string(),
+					label: z.string(),
+					fields: z.optional(z.object({})),
+				}),
+			),
+			fields: z.optional(z.object({})),
+		}),
+		z.object({
+			description: z.string(),
+			required: z.boolean(),
+			label: z.optional(z.string()),
+			validation: z.optional(
+				z.union([
+					z.enum(["valid_email", "valid_countries"]),
+					z.string().regex(/^regex:[\s\S]*?$/),
+					z.string().regex(/^min_length:[\s\S]*?$/),
+				]),
+			),
+			requiredWhen: z.optional(
+				z.union([
+					z.string(),
+					z.object({
+						valueIn: z.optional(z.array(z.string())),
+					}),
+				]),
+			),
+			type: z.enum(["acknowledgement"]),
+			value: z.optional(z.string()),
+		}),
+		z.object({
+			description: z.string(),
+			required: z.boolean(),
+			label: z.optional(z.string()),
+			validation: z.optional(
+				z.union([
+					z.enum(["valid_email", "valid_countries"]),
+					z.string().regex(/^regex:[\s\S]*?$/),
+					z.string().regex(/^min_length:[\s\S]*?$/),
+				]),
+			),
+			requiredWhen: z.optional(
+				z.union([
+					z.string(),
+					z.object({
+						valueIn: z.optional(z.array(z.string())),
+					}),
+				]),
+			),
+			type: z.enum(["notice"]),
+		}),
+	])
+	.describe("Schema definition for registrant fields.");
 
 export const edgeConfigItemValueSchema = z
 	.union([
@@ -57,7 +470,7 @@ export const edgeConfigItemSchema = z
 	.object({
 		key: z.string(),
 		value: z.unknown(),
-		description: z.string().optional(),
+		description: z.optional(z.string()),
 		edgeConfigId: z.string(),
 		createdAt: z.number(),
 		updatedAt: z.number(),
@@ -92,6 +505,7 @@ export const userEventSchema = z
 					.object({
 						type: z
 							.enum([
+								"app",
 								"author",
 								"bitbucket_login",
 								"bold",
@@ -130,23 +544,24 @@ export const userEventSchema = z
 				'A list of "entities" within the event `text`. Useful for enhancing the displayed text with additional styling and links.',
 			),
 		createdAt: z.number().describe("Timestamp (in milliseconds) of when the event was generated."),
-		user: z
-			.object({
-				username: z.string(),
-				avatar: z.string(),
-				email: z.string(),
-				slug: z.string().optional(),
-				uid: z.string(),
-			})
-			.describe("Metadata for {@link userId}.")
-			.optional(),
-		principal: z
-			.union([
-				z.object({
-					type: z.enum(["user"]).optional(),
+		user: z.optional(
+			z
+				.object({
+					username: z.string(),
 					avatar: z.string(),
 					email: z.string(),
-					slug: z.string().optional(),
+					slug: z.optional(z.string()),
+					uid: z.string(),
+				})
+				.describe("Metadata for {@link userId}."),
+		),
+		principal: z.optional(
+			z.union([
+				z.object({
+					type: z.optional(z.enum(["user"])),
+					avatar: z.string(),
+					email: z.string(),
+					slug: z.optional(z.string()),
 					uid: z.string(),
 					username: z.string(),
 				}),
@@ -155,28 +570,29 @@ export const userEventSchema = z
 					clientId: z.string(),
 					name: z.string(),
 				}),
-			])
-			.optional(),
-		via: z
-			.array(
-				z.union([
-					z.object({
-						type: z.enum(["user"]).optional(),
-						avatar: z.string(),
-						email: z.string(),
-						slug: z.string().optional(),
-						uid: z.string(),
-						username: z.string(),
-					}),
-					z.object({
-						type: z.enum(["app"]),
-						clientId: z.string(),
-						name: z.string(),
-					}),
-				]),
-			)
-			.describe("Metadata for {@link viaIds}.")
-			.optional(),
+			]),
+		),
+		via: z.optional(
+			z
+				.array(
+					z.union([
+						z.object({
+							type: z.optional(z.enum(["user"])),
+							avatar: z.string(),
+							email: z.string(),
+							slug: z.optional(z.string()),
+							uid: z.string(),
+							username: z.string(),
+						}),
+						z.object({
+							type: z.enum(["app"]),
+							clientId: z.string(),
+							name: z.string(),
+						}),
+					]),
+				)
+				.describe("Metadata for {@link viaIds}."),
+		),
 		userId: z
 			.string()
 			.describe(
@@ -187,20 +603,35 @@ export const userEventSchema = z
 			.describe(
 				"The ID of the principal who generated the event. The principal is typically a user, but it could also be an app, an integration, etc. The principal may have delegated its authority to an acting party, and so {@link viaIds} should be checked as well.",
 			),
-		viaIds: z
-			.array(z.string())
-			.describe(
-				'If the principal delegated its authority (for example, a user delegating to an app), then this array contains the ID of the current actor. For example, if `principalId` is "user123" and `viaIds` is `["app456"]`, we can say the event was triggered by - "app456 on behalf of user123", or - "user123 via app4556". Both are equivalent. Arbitrarily long chains of delegation can be represented. For example, if `principalId` is "user123" and `viaIds` is `["service1", "service2"]`, we can say the event was triggered by "user123 via service1 via service2".',
-			)
-			.optional(),
-		payload: z
-			.union([
+		viaIds: z.optional(
+			z
+				.array(z.string())
+				.describe(
+					'If the principal delegated its authority (for example, a user delegating to an app), then this array contains the ID of the current actor. For example, if `principalId` is "user123" and `viaIds` is `["app456"]`, we can say the event was triggered by - "app456 on behalf of user123", or - "user123 via app4556". Both are equivalent. Arbitrarily long chains of delegation can be represented. For example, if `principalId` is "user123" and `viaIds` is `["service1", "service2"]`, we can say the event was triggered by "user123 via service1 via service2".',
+				),
+		),
+		payload: z.optional(
+			z.union([
 				z.object({}),
 				z.object({
-					action: z.enum(["created", "updated", "deleted", "archived", "unarchived"]),
+					action: z.enum(["deleted", "created", "updated", "archived", "unarchived"]),
 					id: z.string(),
 					slug: z.string(),
 					projectId: z.string(),
+					projectName: z.optional(z.string()),
+				}),
+				z.object({
+					action: z.enum(["added", "deleted", "rotated"]),
+					label: z.optional(z.string()),
+					projectName: z.optional(z.string()),
+					projectId: z.optional(z.string()),
+					environment: z.string(),
+				}),
+				z.object({
+					action: z.enum(["read"]),
+					projectName: z.optional(z.string()),
+					projectId: z.optional(z.string()),
+					environment: z.array(z.string()),
 				}),
 				z.object({
 					accessGroup: z.object({
@@ -218,13 +649,13 @@ export const userEventSchema = z
 				z.object({
 					accessGroup: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
 					user: z.object({
 						id: z.string(),
-						username: z.string().optional(),
+						username: z.optional(z.string()),
 					}),
-					directoryType: z.string().optional(),
+					directoryType: z.optional(z.string()),
 				}),
 				z.object({
 					accessGroup: z.object({
@@ -233,13 +664,13 @@ export const userEventSchema = z
 					}),
 					project: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
-					nextRole: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]).nullable().nullish(),
-					previousRole: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]).optional(),
+					nextRole: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]).nullish(),
+					previousRole: z.optional(z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"])),
 				}),
 				z.object({
-					alias: z.string().optional(),
+					alias: z.optional(z.string()),
 					deployment: z
 						.object({
 							id: z.string(),
@@ -247,37 +678,36 @@ export const userEventSchema = z
 							url: z.string(),
 							meta: z.object({}).catchall(z.string()),
 						})
-						.nullable()
 						.nullish(),
-					ruleCount: z.number().optional(),
-					deploymentUrl: z.string().optional(),
-					aliasId: z.string().optional(),
-					deploymentId: z.string().nullable().nullish(),
-					oldDeploymentId: z.string().nullable().nullish(),
-					redirect: z.string().optional(),
-					redirectStatusCode: z.number().nullable().nullish(),
-					target: z.string().nullable().nullish(),
-					system: z.boolean().optional(),
-					aliasUpdatedAt: z.number().optional(),
+					ruleCount: z.optional(z.number()),
+					deploymentUrl: z.optional(z.string()),
+					aliasId: z.optional(z.string()),
+					deploymentId: z.string().nullish(),
+					oldDeploymentId: z.string().nullish(),
+					redirect: z.optional(z.string()),
+					redirectStatusCode: z.number().nullish(),
+					target: z.string().nullish(),
+					system: z.optional(z.boolean()),
+					aliasUpdatedAt: z.optional(z.number()),
 				}),
 				z.object({
-					aliasId: z.string().optional(),
-					alias: z.string().optional(),
-					projectName: z.string().optional(),
+					aliasId: z.optional(z.string()),
+					alias: z.optional(z.string()),
+					projectName: z.optional(z.string()),
 				}),
 				z.object({
-					alias: z.string().optional(),
+					alias: z.optional(z.string()),
 				}),
 				z.object({
-					alias: z.string().optional(),
-					userId: z.string().optional(),
-					username: z.string().optional(),
+					alias: z.optional(z.string()),
+					userId: z.optional(z.string()),
+					username: z.optional(z.string()),
 				}),
 				z.object({
-					alias: z.string().optional(),
-					aliasId: z.string().optional(),
-					userId: z.string().optional(),
-					username: z.string().optional(),
+					alias: z.optional(z.string()),
+					aliasId: z.optional(z.string()),
+					userId: z.optional(z.string()),
+					username: z.optional(z.string()),
 				}),
 				z.object({
 					projectName: z.string(),
@@ -285,33 +715,33 @@ export const userEventSchema = z
 					action: z.enum(["created", "removed"]),
 				}),
 				z.object({
-					alias: z.string().optional(),
-					email: z.string().optional(),
-					username: z.string().optional(),
+					alias: z.optional(z.string()),
+					email: z.optional(z.string()),
+					username: z.optional(z.string()),
 				}),
 				z.object({
-					alias: z.string().optional(),
-					email: z.string().optional(),
+					alias: z.optional(z.string()),
+					email: z.optional(z.string()),
 				}),
 				z.object({
-					name: z.string().optional(),
+					name: z.optional(z.string()),
 					alias: z.string(),
-					oldTeam: z
-						.object({
+					oldTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
-					newTeam: z
-						.object({
+						}),
+					),
+					newTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
+						}),
+					),
 				}),
 				z.object({
-					name: z.string().optional(),
+					name: z.optional(z.string()),
 					alias: z.string(),
 					aliasId: z.string(),
-					deploymentId: z.string().nullable(),
+					deploymentId: z.nullable(z.string()),
 				}),
 				z.object({
 					alias: z.string(),
@@ -322,31 +752,46 @@ export const userEventSchema = z
 					autoExposeSystemEnvs: z.boolean(),
 				}),
 				z.object({
-					avatar: z.string().optional(),
+					avatar: z.optional(z.string()),
 				}),
 				z.object({
-					cn: z.string().optional(),
-					cns: z.array(z.string()).optional(),
+					project: z.object({
+						id: z.string(),
+						name: z.string(),
+					}),
+					bulkRedirectsLimit: z.number(),
+					prevBulkRedirectsLimit: z.number(),
+				}),
+				z.object({
+					project: z.object({
+						id: z.string(),
+						name: z.string(),
+					}),
+					versionId: z.string(),
+				}),
+				z.object({
+					cn: z.optional(z.string()),
+					cns: z.optional(z.array(z.string())),
 					custom: z.boolean(),
-					id: z.string().optional(),
+					id: z.optional(z.string()),
 				}),
 				z.object({
-					cn: z.string().optional(),
-					cns: z.array(z.string()).optional(),
-					id: z.string().optional(),
+					cn: z.optional(z.string()),
+					cns: z.optional(z.array(z.string())),
+					id: z.optional(z.string()),
 				}),
 				z.object({
 					id: z.string(),
-					oldTeam: z
-						.object({
+					oldTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
-					newTeam: z
-						.object({
+						}),
+					),
+					newTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
+						}),
+					),
 				}),
 				z.object({
 					src: z.string(),
@@ -354,15 +799,27 @@ export const userEventSchema = z
 				}),
 				z.object({
 					id: z.string(),
-					cn: z.string().optional(),
-					cns: z.array(z.string()).optional(),
+					cn: z.optional(z.string()),
+					cns: z.optional(z.array(z.string())),
 				}),
 				z.object({
-					cn: z.string().optional(),
-					cns: z.array(z.string()).optional(),
+					cn: z.optional(z.string()),
+					cns: z.optional(z.array(z.string())),
 				}),
 				z.object({
-					reason: z.string().optional(),
+					projectId: z.optional(z.string()),
+					projectName: z.optional(z.string()),
+					target: z.optional(z.array(z.string())),
+					updated: z.optional(z.boolean()),
+				}),
+				z.object({
+					projectId: z.optional(z.string()),
+					projectName: z.optional(z.string()),
+					certId: z.optional(z.string()),
+					origin: z.optional(z.string()),
+				}),
+				z.object({
+					reason: z.optional(z.string()),
 					suffix: z.string(),
 				}),
 				z.object({
@@ -373,48 +830,9 @@ export const userEventSchema = z
 					suffix: z.string(),
 				}),
 				z.object({
-					team: z.object({
-						id: z.string(),
-						name: z.string(),
-					}),
 					configuration: z.object({
 						id: z.string(),
-						name: z.string().optional(),
-					}),
-					project: z.object({
-						id: z.string(),
-						name: z.string().optional(),
-					}),
-					buildsEnabled: z.boolean().optional(),
-				}),
-				z.object({
-					team: z.object({
-						id: z.string(),
 						name: z.string(),
-					}),
-					configuration: z.object({
-						id: z.string(),
-						name: z.string().optional(),
-					}),
-					project: z.object({
-						id: z.string(),
-						name: z.string().optional(),
-					}),
-					buildsEnabled: z.boolean().optional(),
-					passive: z.boolean().optional(),
-				}),
-				z.object({
-					team: z.object({
-						id: z.string(),
-						name: z.string(),
-					}),
-					configuration: z.object({
-						id: z.string(),
-						name: z.string().optional(),
-					}),
-					project: z.object({
-						id: z.string(),
-						name: z.string().optional(),
 					}),
 				}),
 				z.object({
@@ -424,7 +842,52 @@ export const userEventSchema = z
 					}),
 					configuration: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
+					}),
+					project: z.object({
+						id: z.string(),
+						name: z.optional(z.string()),
+					}),
+					buildsEnabled: z.optional(z.boolean()),
+				}),
+				z.object({
+					team: z.object({
+						id: z.string(),
+						name: z.string(),
+					}),
+					configuration: z.object({
+						id: z.string(),
+						name: z.optional(z.string()),
+					}),
+					project: z.object({
+						id: z.string(),
+						name: z.optional(z.string()),
+					}),
+					buildsEnabled: z.optional(z.boolean()),
+					passive: z.optional(z.boolean()),
+				}),
+				z.object({
+					team: z.object({
+						id: z.string(),
+						name: z.string(),
+					}),
+					configuration: z.object({
+						id: z.string(),
+						name: z.optional(z.string()),
+					}),
+					project: z.object({
+						id: z.string(),
+						name: z.optional(z.string()),
+					}),
+				}),
+				z.object({
+					team: z.object({
+						id: z.string(),
+						name: z.string(),
+					}),
+					configuration: z.object({
+						id: z.string(),
+						name: z.optional(z.string()),
 					}),
 					newName: z.string(),
 				}),
@@ -434,12 +897,12 @@ export const userEventSchema = z
 				z.object({
 					gitlabLogin: z.string(),
 					gitlabEmail: z.string(),
-					gitlabName: z.string().optional(),
+					gitlabName: z.optional(z.string()),
 				}),
 				z.object({
 					bitbucketEmail: z.string(),
 					bitbucketLogin: z.string(),
-					bitbucketName: z.string().optional(),
+					bitbucketName: z.optional(z.string()),
 				}),
 				z.object({
 					project: z.object({
@@ -456,9 +919,9 @@ export const userEventSchema = z
 					}),
 				}),
 				z.object({
-					name: z.string().optional(),
-					alias: z.array(z.string()).optional(),
-					target: z.string().nullable().nullish(),
+					name: z.optional(z.string()),
+					alias: z.optional(z.array(z.string())),
+					target: z.string().nullish(),
 					deployment: z
 						.object({
 							id: z.string(),
@@ -466,29 +929,28 @@ export const userEventSchema = z
 							url: z.string(),
 							meta: z.object({}).catchall(z.string()),
 						})
-						.nullable()
 						.nullish(),
 					url: z.string(),
-					forced: z.boolean().optional(),
-					deploymentId: z.string().optional(),
-					plan: z.string().optional(),
-					project: z.string().optional(),
-					projectId: z.string().optional(),
-					regions: z.array(z.string()).optional(),
-					type: z.string().optional(),
+					forced: z.optional(z.boolean()),
+					deploymentId: z.optional(z.string()),
+					plan: z.optional(z.string()),
+					project: z.optional(z.string()),
+					projectId: z.optional(z.string()),
+					regions: z.optional(z.array(z.string())),
+					type: z.optional(z.string()),
 				}),
 				z.object({
 					url: z.string(),
-					oldTeam: z
-						.object({
+					oldTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
-					newTeam: z
-						.object({
+						}),
+					),
+					newTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
+						}),
+					),
 				}),
 				z.object({
 					deployment: z.object({
@@ -506,11 +968,7 @@ export const userEventSchema = z
 					name: z.string(),
 					domain: z.string(),
 					type: z.string(),
-					mxPriority: z.number().optional(),
-				}),
-				z.object({
-					id: z.string(),
-					domain: z.string(),
+					mxPriority: z.optional(z.number()),
 				}),
 				z.object({
 					id: z.string(),
@@ -525,7 +983,7 @@ export const userEventSchema = z
 				z.object({
 					name: z.string(),
 					price: z.number(),
-					currency: z.string().optional(),
+					currency: z.optional(z.string()),
 				}),
 				z.object({
 					name: z.string(),
@@ -539,16 +997,16 @@ export const userEventSchema = z
 				}),
 				z.object({
 					name: z.string(),
-					oldTeam: z
-						.object({
+					oldTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
-					newTeam: z
-						.object({
+						}),
+					),
+					newTeam: z.optional(
+						z.object({
 							name: z.string(),
-						})
-						.optional(),
+						}),
+					),
 				}),
 				z.object({
 					domainId: z.string(),
@@ -556,13 +1014,13 @@ export const userEventSchema = z
 				}),
 				z.object({
 					name: z.string(),
-					fromId: z.string().nullable(),
-					fromName: z.string().nullable(),
+					fromId: z.nullable(z.string()),
+					fromName: z.nullable(z.string()),
 				}),
 				z.object({
 					name: z.string(),
-					destinationId: z.string().nullable(),
-					destinationName: z.string().nullable(),
+					destinationId: z.nullable(z.string()),
+					destinationName: z.nullable(z.string()),
 				}),
 				z.object({
 					name: z.string(),
@@ -570,296 +1028,293 @@ export const userEventSchema = z
 					destinationName: z.string(),
 				}),
 				z.object({
-					renew: z.boolean().optional(),
+					renew: z.optional(z.boolean()),
 					domain: z.string(),
 				}),
 				z.object({
 					name: z.string(),
-					price: z.number().optional(),
-					currency: z.string().optional(),
+					price: z.optional(z.number()),
+					currency: z.optional(z.string()),
 				}),
 				z.object({
 					sha: z.string(),
 					gitUserPlatform: z.string(),
 					projectName: z.string(),
+					gitCommitterName: z.string(),
+					source: z.string(),
 				}),
 				z.object({
 					email: z.string(),
 					name: z.string(),
 				}),
 				z.object({
-					key: z.string().optional(),
-					projectId: z.string().optional(),
-					projectName: z.string().optional(),
-					target: z.union([z.array(z.string()), z.string()]).optional(),
-					id: z.string().optional(),
-					gitBranch: z.string().optional(),
-					edgeConfigId: z.string().nullable().nullish(),
-					edgeConfigTokenId: z.string().nullable().nullish(),
-					source: z.string().optional(),
+					key: z.optional(z.string()),
+					projectId: z.optional(z.string()),
+					projectName: z.optional(z.string()),
+					target: z.optional(z.union([z.array(z.string()), z.string()])),
+					id: z.optional(z.string()),
+					gitBranch: z.optional(z.string()),
+					edgeConfigId: z.string().nullish(),
+					edgeConfigTokenId: z.string().nullish(),
+					source: z.optional(z.string()),
 				}),
 				z.object({
-					created: z.date().describe("The date when the Shared Env Var was created.").optional(),
-					key: z.string().describe("The name of the Shared Env Var.").optional(),
+					created: z.optional(
+						z.string().datetime().describe("The date when the Shared Env Var was created."),
+					),
+					key: z.optional(z.string().describe("The name of the Shared Env Var.")),
 					ownerId: z
 						.string()
 						.describe(
 							"The unique identifier of the owner (team) the Shared Env Var was created for.",
 						)
-						.nullable()
 						.nullish(),
-					id: z.string().describe("The unique identifier of the Shared Env Var.").optional(),
+					id: z.optional(z.string().describe("The unique identifier of the Shared Env Var.")),
 					createdBy: z
 						.string()
 						.describe("The unique identifier of the user who created the Shared Env Var.")
-						.nullable()
 						.nullish(),
 					deletedBy: z
 						.string()
 						.describe("The unique identifier of the user who deleted the Shared Env Var.")
-						.nullable()
 						.nullish(),
 					updatedBy: z
 						.string()
 						.describe("The unique identifier of the user who last updated the Shared Env Var.")
-						.nullable()
 						.nullish(),
-					createdAt: z
-						.number()
-						.describe("Timestamp for when the Shared Env Var was created.")
-						.optional(),
-					deletedAt: z
-						.number()
-						.describe("Timestamp for when the Shared Env Var was (soft) deleted.")
-						.optional(),
-					updatedAt: z
-						.number()
-						.describe("Timestamp for when the Shared Env Var was last updated.")
-						.optional(),
-					value: z.string().describe("The value of the Shared Env Var.").optional(),
-					projectId: z
-						.array(z.string())
-						.describe(
-							"The unique identifiers of the projects which the Shared Env Var is linked to.",
-						)
-						.optional(),
-					type: z
-						.enum(["system", "encrypted", "plain", "sensitive"])
-						.describe("The type of this cosmos doc instance, if blank, assume secret.")
-						.optional(),
-					target: z
-						.array(
-							z
-								.enum(["production", "preview", "development"])
-								.describe("environments this env variable targets"),
-						)
-						.describe("environments this env variable targets")
-						.optional(),
-					applyToAllCustomEnvironments: z
-						.boolean()
-						.describe("whether or not this env varible applies to custom environments")
-						.optional(),
-					decrypted: z
-						.boolean()
-						.describe("whether or not this env variable is decrypted")
-						.optional(),
-					comment: z
-						.string()
-						.describe("A user provided comment that describes what this Shared Env Var is for.")
-						.optional(),
-					lastEditedByDisplayName: z
-						.string()
-						.describe("The last editor full name or username.")
-						.optional(),
-					projectNames: z.array(z.string()).optional(),
+					createdAt: z.optional(
+						z.number().describe("Timestamp for when the Shared Env Var was created."),
+					),
+					deletedAt: z.optional(
+						z.number().describe("Timestamp for when the Shared Env Var was (soft) deleted."),
+					),
+					updatedAt: z.optional(
+						z.number().describe("Timestamp for when the Shared Env Var was last updated."),
+					),
+					value: z.optional(z.string().describe("The value of the Shared Env Var.")),
+					projectId: z.optional(
+						z
+							.array(z.string())
+							.describe(
+								"The unique identifiers of the projects which the Shared Env Var is linked to.",
+							),
+					),
+					type: z.optional(
+						z
+							.enum(["system", "encrypted", "plain", "sensitive"])
+							.describe("The type of this cosmos doc instance, if blank, assume secret."),
+					),
+					target: z.optional(
+						z
+							.array(
+								z
+									.enum(["production", "preview", "development"])
+									.describe("environments this env variable targets"),
+							)
+							.describe("environments this env variable targets"),
+					),
+					applyToAllCustomEnvironments: z.optional(
+						z.boolean().describe("whether or not this env varible applies to custom environments"),
+					),
+					decrypted: z.optional(
+						z.boolean().describe("whether or not this env variable is decrypted"),
+					),
+					comment: z.optional(
+						z
+							.string()
+							.describe("A user provided comment that describes what this Shared Env Var is for."),
+					),
+					lastEditedByDisplayName: z.optional(
+						z.string().describe("The last editor full name or username."),
+					),
+					projectNames: z.optional(z.array(z.string())),
 				}),
 				z.object({
-					oldEnvVar: z
-						.object({
-							created: z
-								.date()
-								.describe("The date when the Shared Env Var was created.")
-								.optional(),
-							key: z.string().describe("The name of the Shared Env Var.").optional(),
+					oldEnvVar: z.optional(
+						z.object({
+							created: z.optional(
+								z.string().datetime().describe("The date when the Shared Env Var was created."),
+							),
+							key: z.optional(z.string().describe("The name of the Shared Env Var.")),
 							ownerId: z
 								.string()
 								.describe(
 									"The unique identifier of the owner (team) the Shared Env Var was created for.",
 								)
-								.nullable()
 								.nullish(),
-							id: z.string().describe("The unique identifier of the Shared Env Var.").optional(),
+							id: z.optional(z.string().describe("The unique identifier of the Shared Env Var.")),
 							createdBy: z
 								.string()
 								.describe("The unique identifier of the user who created the Shared Env Var.")
-								.nullable()
 								.nullish(),
 							deletedBy: z
 								.string()
 								.describe("The unique identifier of the user who deleted the Shared Env Var.")
-								.nullable()
 								.nullish(),
 							updatedBy: z
 								.string()
 								.describe("The unique identifier of the user who last updated the Shared Env Var.")
-								.nullable()
 								.nullish(),
-							createdAt: z
-								.number()
-								.describe("Timestamp for when the Shared Env Var was created.")
-								.optional(),
-							deletedAt: z
-								.number()
-								.describe("Timestamp for when the Shared Env Var was (soft) deleted.")
-								.optional(),
-							updatedAt: z
-								.number()
-								.describe("Timestamp for when the Shared Env Var was last updated.")
-								.optional(),
-							value: z.string().describe("The value of the Shared Env Var.").optional(),
-							projectId: z
-								.array(z.string())
-								.describe(
-									"The unique identifiers of the projects which the Shared Env Var is linked to.",
-								)
-								.optional(),
-							type: z
-								.enum(["system", "encrypted", "plain", "sensitive"])
-								.describe("The type of this cosmos doc instance, if blank, assume secret.")
-								.optional(),
-							target: z
-								.array(
-									z
-										.enum(["production", "preview", "development"])
-										.describe("environments this env variable targets"),
-								)
-								.describe("environments this env variable targets")
-								.optional(),
-							applyToAllCustomEnvironments: z
-								.boolean()
-								.describe("whether or not this env varible applies to custom environments")
-								.optional(),
-							decrypted: z
-								.boolean()
-								.describe("whether or not this env variable is decrypted")
-								.optional(),
-							comment: z
-								.string()
-								.describe("A user provided comment that describes what this Shared Env Var is for.")
-								.optional(),
-							lastEditedByDisplayName: z
-								.string()
-								.describe("The last editor full name or username.")
-								.optional(),
-						})
-						.optional(),
-					newEnvVar: z
-						.object({
-							created: z
-								.date()
-								.describe("The date when the Shared Env Var was created.")
-								.optional(),
-							key: z.string().describe("The name of the Shared Env Var.").optional(),
+							createdAt: z.optional(
+								z.number().describe("Timestamp for when the Shared Env Var was created."),
+							),
+							deletedAt: z.optional(
+								z.number().describe("Timestamp for when the Shared Env Var was (soft) deleted."),
+							),
+							updatedAt: z.optional(
+								z.number().describe("Timestamp for when the Shared Env Var was last updated."),
+							),
+							value: z.optional(z.string().describe("The value of the Shared Env Var.")),
+							projectId: z.optional(
+								z
+									.array(z.string())
+									.describe(
+										"The unique identifiers of the projects which the Shared Env Var is linked to.",
+									),
+							),
+							type: z.optional(
+								z
+									.enum(["system", "encrypted", "plain", "sensitive"])
+									.describe("The type of this cosmos doc instance, if blank, assume secret."),
+							),
+							target: z.optional(
+								z
+									.array(
+										z
+											.enum(["production", "preview", "development"])
+											.describe("environments this env variable targets"),
+									)
+									.describe("environments this env variable targets"),
+							),
+							applyToAllCustomEnvironments: z.optional(
+								z
+									.boolean()
+									.describe("whether or not this env varible applies to custom environments"),
+							),
+							decrypted: z.optional(
+								z.boolean().describe("whether or not this env variable is decrypted"),
+							),
+							comment: z.optional(
+								z
+									.string()
+									.describe(
+										"A user provided comment that describes what this Shared Env Var is for.",
+									),
+							),
+							lastEditedByDisplayName: z.optional(
+								z.string().describe("The last editor full name or username."),
+							),
+						}),
+					),
+					newEnvVar: z.optional(
+						z.object({
+							created: z.optional(
+								z.string().datetime().describe("The date when the Shared Env Var was created."),
+							),
+							key: z.optional(z.string().describe("The name of the Shared Env Var.")),
 							ownerId: z
 								.string()
 								.describe(
 									"The unique identifier of the owner (team) the Shared Env Var was created for.",
 								)
-								.nullable()
 								.nullish(),
-							id: z.string().describe("The unique identifier of the Shared Env Var.").optional(),
+							id: z.optional(z.string().describe("The unique identifier of the Shared Env Var.")),
 							createdBy: z
 								.string()
 								.describe("The unique identifier of the user who created the Shared Env Var.")
-								.nullable()
 								.nullish(),
 							deletedBy: z
 								.string()
 								.describe("The unique identifier of the user who deleted the Shared Env Var.")
-								.nullable()
 								.nullish(),
 							updatedBy: z
 								.string()
 								.describe("The unique identifier of the user who last updated the Shared Env Var.")
-								.nullable()
 								.nullish(),
-							createdAt: z
-								.number()
-								.describe("Timestamp for when the Shared Env Var was created.")
-								.optional(),
-							deletedAt: z
-								.number()
-								.describe("Timestamp for when the Shared Env Var was (soft) deleted.")
-								.optional(),
-							updatedAt: z
-								.number()
-								.describe("Timestamp for when the Shared Env Var was last updated.")
-								.optional(),
-							value: z.string().describe("The value of the Shared Env Var.").optional(),
-							projectId: z
-								.array(z.string())
-								.describe(
-									"The unique identifiers of the projects which the Shared Env Var is linked to.",
-								)
-								.optional(),
-							type: z
-								.enum(["system", "encrypted", "plain", "sensitive"])
-								.describe("The type of this cosmos doc instance, if blank, assume secret.")
-								.optional(),
-							target: z
-								.array(
-									z
-										.enum(["production", "preview", "development"])
-										.describe("environments this env variable targets"),
-								)
-								.describe("environments this env variable targets")
-								.optional(),
-							applyToAllCustomEnvironments: z
-								.boolean()
-								.describe("whether or not this env varible applies to custom environments")
-								.optional(),
-							decrypted: z
-								.boolean()
-								.describe("whether or not this env variable is decrypted")
-								.optional(),
-							comment: z
-								.string()
-								.describe("A user provided comment that describes what this Shared Env Var is for.")
-								.optional(),
-							lastEditedByDisplayName: z
-								.string()
-								.describe("The last editor full name or username.")
-								.optional(),
-						})
-						.optional(),
-					updateDiff: z
-						.object({
+							createdAt: z.optional(
+								z.number().describe("Timestamp for when the Shared Env Var was created."),
+							),
+							deletedAt: z.optional(
+								z.number().describe("Timestamp for when the Shared Env Var was (soft) deleted."),
+							),
+							updatedAt: z.optional(
+								z.number().describe("Timestamp for when the Shared Env Var was last updated."),
+							),
+							value: z.optional(z.string().describe("The value of the Shared Env Var.")),
+							projectId: z.optional(
+								z
+									.array(z.string())
+									.describe(
+										"The unique identifiers of the projects which the Shared Env Var is linked to.",
+									),
+							),
+							type: z.optional(
+								z
+									.enum(["system", "encrypted", "plain", "sensitive"])
+									.describe("The type of this cosmos doc instance, if blank, assume secret."),
+							),
+							target: z.optional(
+								z
+									.array(
+										z
+											.enum(["production", "preview", "development"])
+											.describe("environments this env variable targets"),
+									)
+									.describe("environments this env variable targets"),
+							),
+							applyToAllCustomEnvironments: z.optional(
+								z
+									.boolean()
+									.describe("whether or not this env varible applies to custom environments"),
+							),
+							decrypted: z.optional(
+								z.boolean().describe("whether or not this env variable is decrypted"),
+							),
+							comment: z.optional(
+								z
+									.string()
+									.describe(
+										"A user provided comment that describes what this Shared Env Var is for.",
+									),
+							),
+							lastEditedByDisplayName: z.optional(
+								z.string().describe("The last editor full name or username."),
+							),
+						}),
+					),
+					updateDiff: z.optional(
+						z.object({
 							id: z.string(),
-							key: z.string().optional(),
-							newKey: z.string().optional(),
-							oldTarget: z.array(z.enum(["production", "preview", "development"])).optional(),
-							newTarget: z.array(z.enum(["production", "preview", "development"])).optional(),
-							oldType: z.string().optional(),
-							newType: z.string().optional(),
-							oldProjects: z
-								.array(
+							key: z.optional(z.string()),
+							newKey: z.optional(z.string()),
+							oldTarget: z.optional(z.array(z.enum(["production", "preview", "development"]))),
+							newTarget: z.optional(z.array(z.enum(["production", "preview", "development"]))),
+							oldType: z.optional(z.string()),
+							newType: z.optional(z.string()),
+							oldProjects: z.optional(
+								z.array(
 									z.object({
-										projectName: z.string().optional(),
+										projectName: z.optional(z.string()),
 										projectId: z.string(),
 									}),
-								)
-								.optional(),
-							newProjects: z
-								.array(
+								),
+							),
+							newProjects: z.optional(
+								z.array(
 									z.object({
-										projectName: z.string().optional(),
+										projectName: z.optional(z.string()),
 										projectId: z.string(),
 									}),
-								)
-								.optional(),
+								),
+							),
 							changedValue: z.boolean(),
-						})
-						.optional(),
+						}),
+					),
+				}),
+				z.object({
+					enabled: z.boolean(),
+					updatedAt: z.number(),
+					firstEnabledAt: z.optional(z.number()),
 				}),
 				z.object({
 					projectId: z.string(),
@@ -877,7 +1332,7 @@ export const userEventSchema = z
 					projectId: z.string(),
 					rulesetName: z.string(),
 					active: z.boolean(),
-					action: z.enum(["log", "challenge", "deny"]).optional(),
+					action: z.optional(z.enum(["log", "challenge", "deny"])),
 				}),
 				z.object({
 					projectId: z.string(),
@@ -885,9 +1340,16 @@ export const userEventSchema = z
 					ruleGroups: z.object({}).catchall(
 						z.object({
 							active: z.boolean(),
-							action: z.enum(["log", "challenge", "deny"]).optional(),
+							action: z.optional(z.enum(["log", "challenge", "deny"])),
 						}),
 					),
+				}),
+				z.object({
+					projectId: z.string(),
+					prevAttackModeEnabled: z.optional(z.boolean()),
+					prevAttackModeActiveUntil: z.number().nullish(),
+					attackModeEnabled: z.boolean(),
+					attackModeActiveUntil: z.number().nullish(),
 				}),
 				z.object({
 					integrationId: z.string(),
@@ -899,89 +1361,110 @@ export const userEventSchema = z
 					integrationId: z.string(),
 					configurationId: z.string(),
 					integrationSlug: z.string(),
-					integrationName: z.string().optional(),
-					newOwner: z
-						.object({
-							abuse: z
-								.object({
-									blockHistory: z
-										.array(
-											z
-												.object({
-													action: z.enum(["hard-blocked", "soft-blocked", "unblocked"]),
-													createdAt: z.number(),
-													caseId: z.string().optional(),
-													reason: z.string(),
-													actor: z.string().optional(),
-													statusCode: z.number().optional(),
-													comment: z.string().optional(),
-												})
-												.describe("Since June 2023"),
-										)
-										.describe("Since June 2023")
-										.optional(),
-									gitAuthHistory: z
-										.array(z.string())
-										.describe(
-											"Since March 2022. Helps abuse checks by tracking git auths. Format: `<platform>:<detail>:<value>`",
-										)
-										.optional(),
-									history: z
-										.array(
-											z
-												.object({
-													scanner: z.string(),
-													reason: z.string(),
-													by: z.string(),
-													byId: z.string(),
-													at: z.number(),
-												})
-												.describe(
-													"(scanner history). Since November 2021. First element is newest.",
-												),
-										)
-										.describe("(scanner history). Since November 2021. First element is newest.")
-										.optional(),
-									gitLineageBlocks: z
-										.number()
-										.describe(
-											"Since September 2023. How often did this owner trigger an actual git lineage deploy block?",
-										)
-										.optional(),
-									gitLineageBlocksDry: z
-										.number()
-										.describe(
-											"Since September 2023. How often did this owner trigger a git lineage deploy block dry run?",
-										)
-										.optional(),
-									scanner: z
-										.string()
-										.describe("Since November 2021. Guides the abuse scanner in build container.")
-										.optional(),
-									updatedAt: z.number().describe("Since November 2021").optional(),
-									creationUserAgent: z.string().optional(),
-									creationIp: z.string().optional(),
-									removedPhoneNumbers: z.string().optional(),
-								})
-								.optional(),
-							acceptanceState: z.string().optional(),
-							acceptedAt: z.number().optional(),
-							avatar: z.string().optional(),
+					integrationName: z.optional(z.string()),
+					newOwner: z.nullable(
+						z.object({
+							abuse: z.optional(
+								z.object({
+									blockHistory: z.optional(
+										z
+											.array(
+												z
+													.object({
+														action: z.enum([
+															"blocked",
+															"hard-blocked",
+															"soft-blocked",
+															"unblocked",
+														]),
+														createdAt: z.number(),
+														caseId: z.optional(z.string()),
+														reason: z.string(),
+														actor: z.optional(z.string()),
+														statusCode: z.optional(z.number()),
+														comment: z.optional(z.string()),
+													})
+													.describe("Since June 2023"),
+											)
+											.describe("Since June 2023"),
+									),
+									gitAuthHistory: z.optional(
+										z
+											.array(z.string())
+											.describe(
+												"Since March 2022. Helps abuse checks by tracking git auths. Format: `<platform>:<detail>:<value>`",
+											),
+									),
+									history: z.optional(
+										z
+											.array(
+												z
+													.object({
+														scanner: z.string(),
+														reason: z.string(),
+														by: z.string(),
+														byId: z.string(),
+														at: z.number(),
+													})
+													.describe(
+														"(scanner history). Since November 2021. First element is newest.",
+													),
+											)
+											.describe("(scanner history). Since November 2021. First element is newest."),
+									),
+									gitLineageBlocks: z.optional(
+										z
+											.number()
+											.describe(
+												"Since September 2023. How often did this owner trigger an actual git lineage deploy block?",
+											),
+									),
+									gitLineageBlocksDry: z.optional(
+										z
+											.number()
+											.describe(
+												"Since September 2023. How often did this owner trigger a git lineage deploy block dry run?",
+											),
+									),
+									scanner: z.optional(
+										z
+											.string()
+											.describe(
+												"Since November 2021. Guides the abuse scanner in build container.",
+											),
+									),
+									scheduledUnblockAt: z.optional(
+										z
+											.string()
+											.describe(
+												'Since December 2025. UTC timestamp string of when an auto-unblock is scheduled. Format: "Wed, 03 Dec 2025 20:32:13 GMT"',
+											),
+									),
+									updatedAt: z.number().describe("Since November 2021"),
+									creationUserAgent: z.optional(z.string()),
+									creationIp: z.optional(z.string()),
+									removedPhoneNumbers: z.optional(z.string()),
+								}),
+							),
+							acceptanceState: z.optional(z.string()),
+							acceptedAt: z.optional(z.number()),
+							avatar: z.optional(z.string()),
 							billing: z.object({
 								plan: z.enum(["pro", "enterprise", "hobby"]),
 							}),
-							blocked: z.number().nullable(),
-							blockReason: z.string().optional(),
-							created: z.number().optional(),
+							blocked: z.nullable(z.number()),
+							blockReason: z.optional(z.string()),
+							created: z.optional(z.number()),
 							createdAt: z.number(),
-							credentials: z
-								.array(
+							credentials: z.optional(
+								z.array(
 									z.union([
 										z.object({
 											type: z.enum([
 												"gitlab",
 												"bitbucket",
 												"google",
+												"apple",
 												"github-oauth",
 												"github-oauth-limited",
 											]),
@@ -993,20 +1476,20 @@ export const userEventSchema = z
 											id: z.string(),
 										}),
 									]),
-								)
-								.optional(),
-							customerId: z.string().nullable().nullish(),
-							orbCustomerId: z.string().nullable().nullish(),
-							dataCache: z
-								.object({
-									excessBillingEnabled: z.boolean().optional(),
-								})
-								.optional(),
-							deletedAt: z.number().nullable().nullish(),
+								),
+							),
+							customerId: z.string().nullish(),
+							orbCustomerId: z.string().nullish(),
+							dataCache: z.optional(
+								z.object({
+									excessBillingEnabled: z.optional(z.boolean()),
+								}),
+							),
+							deletedAt: z.number().nullish(),
 							deploymentSecret: z.string(),
-							dismissedTeams: z.array(z.string()).optional(),
-							dismissedToasts: z
-								.array(
+							dismissedTeams: z.optional(z.array(z.string())),
+							dismissedToasts: z.optional(
+								z.array(
 									z.object({
 										name: z.string(),
 										dismissals: z.array(
@@ -1016,143 +1499,162 @@ export const userEventSchema = z
 											}),
 										),
 									}),
-								)
-								.optional(),
-							favoriteProjectsAndSpaces: z
-								.array(
+								),
+							),
+							favoriteProjectsAndSpaces: z.optional(
+								z.array(
 									z.object({
 										teamId: z.string(),
 										projectId: z.string(),
 									}),
-								)
-								.optional(),
+								),
+							),
 							email: z.string(),
 							id: z.string(),
-							importFlowGitNamespace: z.union([z.string(), z.number()]).nullable().nullish(),
-							importFlowGitNamespaceId: z.union([z.string(), z.number()]).nullable().nullish(),
+							importFlowGitNamespace: z.union([z.string(), z.number()]).nullish(),
+							importFlowGitNamespaceId: z.union([z.string(), z.number()]).nullish(),
 							importFlowGitProvider: z
 								.enum(["github", "gitlab", "bitbucket", "github-limited", "github-custom-host"])
-								.nullable()
 								.nullish(),
-							preferredScopesAndGitNamespaces: z
-								.array(
+							preferredScopesAndGitNamespaces: z.optional(
+								z.array(
 									z.object({
 										scopeId: z.string(),
-										gitNamespaceId: z.union([z.string(), z.number()]).nullable(),
+										gitNamespaceId: z.nullable(z.union([z.string(), z.number()])),
 									}),
-								)
-								.optional(),
-							isDomainReseller: z.boolean().optional(),
-							isZeitPub: z.boolean().optional(),
-							maxActiveSlots: z.number().optional(),
-							name: z.string().optional(),
-							phoneNumber: z.string().optional(),
-							platformVersion: z.number().nullable(),
-							preventAutoBlocking: z.union([z.boolean(), z.number()]).optional(),
-							projectDomainsLimit: z
-								.number()
-								.describe("Overrides our DEFAULT project domains limit per account or per project.")
-								.optional(),
-							remoteCaching: z
-								.object({
-									enabled: z.boolean().optional(),
-								})
-								.describe("Represents configuration for remote caching")
-								.optional(),
-							removedAliasesAt: z.number().optional(),
-							removedBillingSubscriptionAt: z.number().optional(),
-							removedConfigurationsAt: z.number().optional(),
-							removedDeploymentsAt: z.number().optional(),
-							removedDomiansAt: z.number().optional(),
-							removedEventsAt: z.number().optional(),
-							removedProjectsAt: z.number().optional(),
-							removedSecretsAt: z.number().optional(),
-							removedSharedEnvVarsAt: z.number().optional(),
-							removedEdgeConfigsAt: z.number().optional(),
-							resourceConfig: z
-								.object({
-									nodeType: z.string().optional(),
-									concurrentBuilds: z.number().optional(),
-									elasticConcurrencyEnabled: z.boolean().optional(),
-									buildEntitlements: z
-										.object({
-											enhancedBuilds: z.boolean().optional(),
-										})
-										.optional(),
-									awsAccountType: z.string().optional(),
-									awsAccountIds: z.array(z.string()).optional(),
-									cfZoneName: z.string().optional(),
-									imageOptimizationType: z.string().optional(),
-									edgeConfigs: z.number().optional(),
-									edgeConfigSize: z.number().optional(),
-									edgeFunctionMaxSizeBytes: z.number().optional(),
-									edgeFunctionExecutionTimeoutMs: z.number().optional(),
-									serverlessFunctionMaxMemorySize: z.number().optional(),
-									kvDatabases: z.number().optional(),
-									postgresDatabases: z.number().optional(),
-									blobStores: z.number().optional(),
-									integrationStores: z.number().optional(),
-									cronJobs: z.number().optional(),
-									cronJobsPerProject: z.number().optional(),
-									microfrontendGroupsPerTeam: z.number().optional(),
-									microfrontendProjectsPerGroup: z.number().optional(),
-									flagsExplorerOverridesThreshold: z.number().optional(),
-									flagsExplorerUnlimitedOverrides: z.boolean().optional(),
-									customEnvironmentsPerProject: z.number().optional(),
-									buildMachine: z
-										.object({
-											purchaseType: z.enum(["enhanced", "turbo"]).optional(),
-											isDefaultBuildMachine: z.boolean().optional(),
-											cores: z.number().optional(),
-											memory: z.number().optional(),
-										})
-										.optional(),
-								})
-								.optional(),
-							resourceLimits: z
-								.object({})
-								.catchall(
-									z.object({
-										max: z.number(),
-										duration: z.number(),
-									}),
-								)
-								.describe("User | Team resource limits")
-								.optional(),
-							activeDashboardViews: z
-								.array(
+								),
+							),
+							isDomainReseller: z.optional(z.boolean()),
+							isZeitPub: z.optional(z.boolean()),
+							maxActiveSlots: z.optional(z.number()),
+							name: z.optional(z.string()),
+							phoneNumber: z.optional(z.string()),
+							platformVersion: z.nullable(z.number()),
+							preventAutoBlocking: z.optional(z.union([z.boolean(), z.number()])),
+							projectDomainsLimit: z.optional(
+								z
+									.number()
+									.describe(
+										"Overrides our DEFAULT project domains limit per account or per project.",
+									),
+							),
+							remoteCaching: z.optional(
+								z
+									.object({
+										enabled: z.optional(z.boolean()),
+									})
+									.describe("Represents configuration for remote caching"),
+							),
+							removedAliasesAt: z.optional(z.number()),
+							removedBillingSubscriptionAt: z.optional(z.number()),
+							removedConfigurationsAt: z.optional(z.number()),
+							removedDeploymentsAt: z.optional(z.number()),
+							removedDomiansAt: z.optional(z.number()),
+							removedEventsAt: z.optional(z.number()),
+							removedProjectsAt: z.optional(z.number()),
+							removedSecretsAt: z.optional(z.number()),
+							removedSharedEnvVarsAt: z.optional(z.number()),
+							removedEdgeConfigsAt: z.optional(z.number()),
+							resourceConfig: z.optional(
+								z.object({
+									nodeType: z.optional(z.string()),
+									concurrentBuilds: z.optional(z.number()),
+									elasticConcurrencyEnabled: z.optional(z.boolean()),
+									buildEntitlements: z.optional(
+										z.object({
+											enhancedBuilds: z.optional(z.boolean()),
+										}),
+									),
+									buildQueue: z.optional(
+										z.object({
+											configuration: z.optional(
+												z.enum(["SKIP_NAMESPACE_QUEUE", "WAIT_FOR_NAMESPACE_QUEUE"]),
+											),
+										}),
+									),
+									awsAccountType: z.optional(z.string()),
+									awsAccountIds: z.optional(z.array(z.string())),
+									cfZoneName: z.optional(z.string()),
+									imageOptimizationType: z.optional(z.string()),
+									edgeConfigs: z.optional(z.number()),
+									edgeConfigSize: z.optional(z.number()),
+									edgeFunctionMaxSizeBytes: z.optional(z.number()),
+									edgeFunctionExecutionTimeoutMs: z.optional(z.number()),
+									serverlessFunctionMaxMemorySize: z.optional(z.number()),
+									kvDatabases: z.optional(z.number()),
+									postgresDatabases: z.optional(z.number()),
+									blobStores: z.optional(z.number()),
+									integrationStores: z.optional(z.number()),
+									cronJobs: z.optional(z.number()),
+									cronJobsPerProject: z.optional(z.number()),
+									microfrontendGroupsPerTeam: z.optional(z.number()),
+									microfrontendProjectsPerGroup: z.optional(z.number()),
+									flagsExplorerOverridesThreshold: z.optional(z.number()),
+									flagsExplorerUnlimitedOverrides: z.optional(z.boolean()),
+									customEnvironmentsPerProject: z.optional(z.number()),
+									buildMachine: z.optional(
+										z.object({
+											purchaseType: z.optional(z.enum(["enhanced", "turbo"])),
+											isDefaultBuildMachine: z.optional(z.boolean()),
+											cores: z.optional(z.number()),
+											memory: z.optional(z.number()),
+										}),
+									),
+									security: z.optional(
+										z.object({
+											customRules: z.optional(z.number()),
+											ipBlocks: z.optional(z.number()),
+											ipBypass: z.optional(z.number()),
+											rateLimit: z.optional(z.number()),
+										}),
+									),
+									bulkRedirectsFreeLimitOverride: z.optional(z.number()),
+								}),
+							),
+							resourceLimits: z.optional(
+								z
+									.object({})
+									.catchall(
+										z.object({
+											max: z.number(),
+											duration: z.number(),
+										}),
+									)
+									.describe("User | Team resource limits"),
+							),
+							activeDashboardViews: z.optional(
+								z.array(
 									z.object({
 										scopeId: z.string(),
-										viewPreference: z.enum(["cards", "list"]).nullable().nullish(),
-										favoritesViewPreference: z.enum(["open", "closed"]).nullable().nullish(),
-										recentsViewPreference: z.enum(["open", "closed"]).nullable().nullish(),
+										viewPreference: z.enum(["list", "cards"]).nullish(),
+										favoritesViewPreference: z.enum(["open", "closed"]).nullish(),
+										recentsViewPreference: z.enum(["open", "closed"]).nullish(),
 									}),
-								)
-								.optional(),
-							secondaryEmails: z
-								.array(
+								),
+							),
+							secondaryEmails: z.optional(
+								z.array(
 									z.object({
 										email: z.string(),
 										verified: z.boolean(),
 									}),
-								)
-								.optional(),
-							emailNotifications: z
-								.object({
-									rules: z
-										.object({})
-										.catchall(
+								),
+							),
+							emailDomains: z.optional(z.array(z.string())),
+							emailNotifications: z.optional(
+								z.object({
+									rules: z.optional(
+										z.object({}).catchall(
 											z.object({
 												email: z.string(),
 											}),
-										)
-										.optional(),
-								})
-								.optional(),
-							siftScore: z.number().optional(),
-							siftScores: z
-								.object({})
-								.catchall(
+										),
+									),
+								}),
+							),
+							siftScore: z.optional(z.number()),
+							siftScores: z.optional(
+								z.object({}).catchall(
 									z.object({
 										score: z.number(),
 										reasons: z.array(
@@ -1162,14 +1664,14 @@ export const userEventSchema = z
 											}),
 										),
 									}),
-								)
-								.optional(),
-							siftRoute: z
-								.object({
+								),
+							),
+							siftRoute: z.optional(
+								z.object({
 									name: z.enum(["string"]),
-								})
-								.optional(),
-							sfdcId: z.string().optional(),
+								}),
+							),
+							sfdcId: z.optional(z.string()),
 							softBlock: z
 								.object({
 									blockedAt: z.number(),
@@ -1181,8 +1683,8 @@ export const userEventSchema = z
 										"FAIR_USE_LIMITS_EXCEEDED",
 										"BLOCKED_FOR_PLATFORM_ABUSE",
 									]),
-									blockedDueToOverageType: z
-										.enum([
+									blockedDueToOverageType: z.optional(
+										z.enum([
 											"analyticsUsage",
 											"artifacts",
 											"bandwidth",
@@ -1222,687 +1724,712 @@ export const userEventSchema = z
 											"wafOwaspRequests",
 											"wafRateLimitRequest",
 											"webAnalyticsEvent",
-										])
-										.optional(),
+										]),
+									),
 								})
-								.nullable()
 								.nullish(),
 							stagingPrefix: z.string(),
 							sysToken: z.string(),
-							teams: z
-								.array(
-									z.object({
-										created: z.number().optional(),
-										createdAt: z.number().optional(),
-										teamId: z.string(),
-										role: z
-											.enum([
+							teams: z.optional(
+								z
+									.array(
+										z.object({
+											created: z.number(),
+											createdAt: z.number(),
+											teamId: z.string(),
+											role: z.enum([
 												"OWNER",
 												"MEMBER",
 												"DEVELOPER",
 												"SECURITY",
 												"BILLING",
 												"VIEWER",
+												"VIEWER_FOR_PLUS",
 												"CONTRIBUTOR",
-											])
-											.optional(),
-										confirmed: z.boolean().optional(),
-										confirmedAt: z.number().optional(),
-										accessRequestedAt: z.number().optional(),
-										teamRoles: z
-											.array(
-												z.enum([
-													"OWNER",
-													"MEMBER",
-													"DEVELOPER",
-													"SECURITY",
-													"BILLING",
-													"VIEWER",
-													"CONTRIBUTOR",
-												]),
-											)
-											.optional(),
-										teamPermissions: z
-											.array(
-												z.enum([
-													"CreateProject",
-													"FullProductionDeployment",
-													"UsageViewer",
-													"EnvVariableManager",
-													"EnvironmentManager",
-												]),
-											)
-											.optional(),
-										joinedFrom: z
-											.object({
-												origin: z.enum([
-													"teams",
-													"saml",
-													"link",
-													"github",
-													"gitlab",
-													"bitbucket",
-													"mail",
-													"import",
-													"dsync",
-													"feedback",
-													"organization-teams",
-												]),
-												commitId: z.string().optional(),
-												repoId: z.string().optional(),
-												repoPath: z.string().optional(),
-												gitUserId: z.union([z.string(), z.number()]).optional(),
-												gitUserLogin: z.string().optional(),
-												ssoUserId: z.string().optional(),
-												ssoConnectedAt: z.number().optional(),
-												idpUserId: z.string().optional(),
-												dsyncUserId: z.string().optional(),
-												dsyncConnectedAt: z.number().optional(),
-											})
-											.optional(),
-									}),
-								)
-								.describe(
-									"A helper that allows to describe a relationship attribute. It receives the shape of a relationship plus the foreignKey name to make it mandatory in the resulting type.",
-								)
-								.optional(),
-							trialTeamIds: z
-								.array(z.string())
-								.describe(
-									"Introduced 2022-04-12 An array of teamIds (for trial teams created after 2022-04-01), created by the user in question. Used in determining whether the team has a trial available in utils/api-teams/user-has-trial-available.ts.",
-								)
-								.optional(),
-							maxTrials: z
-								.number()
-								.describe(
-									"Introduced 2022-04-19 Number of maximum trials to allocate to a user. When undefined, defaults to MAX_TRIALS in utils/api-teams/user-has-trial-available.ts. This is set to trialTeamIds + 1 by services/api-backoffice/src/handlers/add-additional-trial.ts.",
-								)
-								.optional(),
-							trialTeamId: z
-								.string()
-								.describe(
-									"Deprecated on 2022-04-12 in favor of trialTeamIds and using utils/api-teams/user-has-trial-available.ts.",
-								)
-								.optional(),
+											]),
+											confirmed: z.boolean(),
+											confirmedAt: z.number(),
+											accessRequestedAt: z.optional(z.number()),
+											teamRoles: z.optional(
+												z.array(
+													z.enum([
+														"OWNER",
+														"MEMBER",
+														"DEVELOPER",
+														"SECURITY",
+														"BILLING",
+														"VIEWER",
+														"VIEWER_FOR_PLUS",
+														"CONTRIBUTOR",
+													]),
+												),
+											),
+											teamPermissions: z.optional(
+												z.array(
+													z.enum([
+														"IntegrationManager",
+														"CreateProject",
+														"FullProductionDeployment",
+														"UsageViewer",
+														"EnvVariableManager",
+														"EnvironmentManager",
+														"V0Builder",
+														"V0Chatter",
+														"V0Viewer",
+													]),
+												),
+											),
+											joinedFrom: z.optional(
+												z.object({
+													origin: z.enum([
+														"teams",
+														"saml",
+														"link",
+														"github",
+														"gitlab",
+														"bitbucket",
+														"mail",
+														"import",
+														"dsync",
+														"feedback",
+														"organization-teams",
+													]),
+													commitId: z.optional(z.string()),
+													repoId: z.optional(z.string()),
+													repoPath: z.optional(z.string()),
+													gitUserId: z.optional(z.union([z.string(), z.number()])),
+													gitUserLogin: z.optional(z.string()),
+													ssoUserId: z.optional(z.string()),
+													ssoConnectedAt: z.optional(z.number()),
+													idpUserId: z.optional(z.string()),
+													dsyncUserId: z.optional(z.string()),
+													dsyncConnectedAt: z.optional(z.number()),
+												}),
+											),
+										}),
+									)
+									.describe(
+										"A helper that allows to describe a relationship attribute. It receives the shape of a relationship plus the foreignKey name to make it mandatory in the resulting type.",
+									),
+							),
+							trialTeamIds: z.optional(
+								z
+									.array(z.string())
+									.describe(
+										"Introduced 2022-04-12 An array of teamIds (for trial teams created after 2022-04-01), created by the user in question. Used in determining whether the team has a trial available in utils/api-teams/user-has-trial-available.ts.",
+									),
+							),
+							maxTrials: z.optional(
+								z
+									.number()
+									.describe(
+										"Introduced 2022-04-19 Number of maximum trials to allocate to a user. When undefined, defaults to MAX_TRIALS in utils/api-teams/user-has-trial-available.ts. This is set to trialTeamIds + 1 by services/api-backoffice/src/handlers/add-additional-trial.ts.",
+									),
+							),
+							trialTeamId: z.optional(
+								z
+									.string()
+									.describe(
+										"Deprecated on 2022-04-12 in favor of trialTeamIds and using utils/api-teams/user-has-trial-available.ts.",
+									),
+							),
 							type: z.enum(["user"]),
 							usageAlerts: z
 								.object({
-									warningAt: z.number().nullable().nullish(),
-									blockingAt: z.number().nullable().nullish(),
+									warningAt: z.number().nullish(),
+									blockingAt: z.number().nullish(),
 								})
 								.describe("Contains the timestamps when a user was notified about their usage")
-								.nullable()
 								.nullish(),
-							overageUsageAlerts: z
-								.object({
-									analyticsUsage: z
-										.object({
+							overageUsageAlerts: z.optional(
+								z.object({
+									analyticsUsage: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									artifacts: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									artifacts: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									bandwidth: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									bandwidth: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									blobTotalAdvancedRequests: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									blobTotalAdvancedRequests: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									blobTotalAvgSizeInBytes: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									blobTotalAvgSizeInBytes: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									blobTotalGetResponseObjectSizeInBytes: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									blobTotalGetResponseObjectSizeInBytes: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									blobTotalSimpleRequests: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									blobTotalSimpleRequests: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									connectDataTransfer: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									connectDataTransfer: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									dataCacheRead: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									dataCacheRead: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									dataCacheWrite: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									dataCacheWrite: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									edgeConfigRead: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									edgeConfigRead: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									edgeConfigWrite: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									edgeConfigWrite: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									edgeFunctionExecutionUnits: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									edgeFunctionExecutionUnits: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									edgeMiddlewareInvocations: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									edgeMiddlewareInvocations: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									edgeRequestAdditionalCpuDuration: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									edgeRequestAdditionalCpuDuration: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									edgeRequest: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									edgeRequest: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									elasticConcurrencyBuildSlots: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									elasticConcurrencyBuildSlots: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									fastDataTransfer: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									fastDataTransfer: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									fastOriginTransfer: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									fastOriginTransfer: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									fluidCpuDuration: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									fluidCpuDuration: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									fluidDuration: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									fluidDuration: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									functionDuration: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									functionDuration: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									functionInvocation: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									functionInvocation: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									imageOptimizationCacheRead: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									imageOptimizationCacheRead: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									imageOptimizationCacheWrite: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									imageOptimizationCacheWrite: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									imageOptimizationTransformation: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									imageOptimizationTransformation: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									logDrainsVolume: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									logDrainsVolume: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									monitoringMetric: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									monitoringMetric: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									blobDataTransfer: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									blobDataTransfer: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									observabilityEvent: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									observabilityEvent: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									onDemandConcurrencyMinutes: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									onDemandConcurrencyMinutes: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									runtimeCacheRead: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									runtimeCacheRead: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									runtimeCacheWrite: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									runtimeCacheWrite: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									serverlessFunctionExecution: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									serverlessFunctionExecution: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									sourceImages: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									sourceImages: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									wafOwaspExcessBytes: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									wafOwaspExcessBytes: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									wafOwaspRequests: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									wafOwaspRequests: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									wafRateLimitRequest: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									wafRateLimitRequest: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-									webAnalyticsEvent: z
-										.object({
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+									webAnalyticsEvent: z.optional(
+										z.object({
 											currentThreshold: z.number(),
-											warningAt: z.number().nullable().nullish(),
-											blockedAt: z.number().nullable().nullish(),
-										})
-										.optional(),
-								})
-								.optional(),
-							overageMetadata: z
-								.object({
-									firstTimeOnDemandNotificationSentAt: z
-										.number()
-										.describe("Tracks if the first time on-demand overage email has been sent.")
-										.optional(),
-									dailyOverageSummaryEmailSentAt: z
-										.number()
-										.describe("Tracks the last time we sent a daily summary email.")
-										.optional(),
-									weeklyOverageSummaryEmailSentAt: z
-										.number()
-										.describe("Tracks the last time we sent a weekly summary email.")
-										.optional(),
-									overageSummaryExpiresAt: z
-										.number()
-										.describe(
-											"Tracks when the overage summary email will stop auto-sending. We currently lock the user into email for a month after the last on-demand usage.",
-										)
-										.optional(),
-									increasedOnDemandEmailSentAt: z
-										.number()
-										.describe("Tracks the last time we sent a increased on-demand email.")
-										.optional(),
-									increasedOnDemandEmailAttemptedAt: z
-										.number()
-										.describe(
-											"Tracks the last time we attempted to send an increased on-demand email. This check is to limit the number of attempts per day.",
-										)
-										.optional(),
-								})
-								.describe("Contains the timestamps for usage summary emails.")
-								.optional(),
+											warningAt: z.number().nullish(),
+											blockedAt: z.number().nullish(),
+										}),
+									),
+								}),
+							),
+							overageMetadata: z.optional(
+								z
+									.object({
+										firstTimeOnDemandNotificationSentAt: z.optional(
+											z
+												.number()
+												.describe(
+													"Tracks if the first time on-demand overage email has been sent.",
+												),
+										),
+										dailyOverageSummaryEmailSentAt: z.optional(
+											z.number().describe("Tracks the last time we sent a daily summary email."),
+										),
+										weeklyOverageSummaryEmailSentAt: z.optional(
+											z.number().describe("Tracks the last time we sent a weekly summary email."),
+										),
+										overageSummaryExpiresAt: z.optional(
+											z
+												.number()
+												.describe(
+													"Tracks when the overage summary email will stop auto-sending. We currently lock the user into email for a month after the last on-demand usage.",
+												),
+										),
+										increasedOnDemandEmailSentAt: z.optional(
+											z
+												.number()
+												.describe("Tracks the last time we sent a increased on-demand email."),
+										),
+										increasedOnDemandEmailAttemptedAt: z.optional(
+											z
+												.number()
+												.describe(
+													"Tracks the last time we attempted to send an increased on-demand email. This check is to limit the number of attempts per day.",
+												),
+										),
+									})
+									.describe("Contains the timestamps for usage summary emails."),
+							),
 							username: z.string(),
 							updatedAt: z.number(),
-							enablePreviewFeedback: z
-								.enum(["default", "on", "off", "on-force", "off-force", "default-force"])
-								.describe("Whether the Vercel Toolbar is enabled for preview deployments.")
-								.optional(),
-							featureBlocks: z
-								.object({
-									webAnalytics: z
-										.object({
-											updatedAt: z.number().optional(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]).optional(),
-											graceEmailSentAt: z.number().optional(),
-										})
-										.optional(),
-									monitoring: z
-										.object({
-											updatedAt: z.number().optional(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]).optional(),
-											blockType: z.enum(["soft", "hard"]),
-										})
-										.describe(
-											"A soft block indicates a temporary pause in data collection (ex limit exceeded for the current cycle) A hard block indicates a stoppage in data collection that requires manual intervention (ex upgrading a pro trial)",
-										)
-										.optional(),
-									observabilityPlus: z
-										.object({
-											updatedAt: z.number().optional(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]).optional(),
-											blockType: z.enum(["soft", "hard"]),
-										})
-										.optional(),
-									dataCache: z
-										.object({
-											updatedAt: z.number(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]),
-										})
-										.optional(),
-									imageOptimizationTransformation: z
-										.object({
-											updatedAt: z.number(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]),
-										})
-										.optional(),
-									sourceImages: z
-										.object({
-											updatedAt: z.number(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]),
-										})
-										.optional(),
-									blob: z
-										.object({
-											updatedAt: z.number().optional(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]).optional(),
-											overageReason: z.enum([
-												"analyticsUsage",
-												"artifacts",
-												"bandwidth",
-												"blobTotalAdvancedRequests",
-												"blobTotalAvgSizeInBytes",
-												"blobTotalGetResponseObjectSizeInBytes",
-												"blobTotalSimpleRequests",
-												"connectDataTransfer",
-												"dataCacheRead",
-												"dataCacheWrite",
-												"edgeConfigRead",
-												"edgeConfigWrite",
-												"edgeFunctionExecutionUnits",
-												"edgeMiddlewareInvocations",
-												"edgeRequestAdditionalCpuDuration",
-												"edgeRequest",
-												"elasticConcurrencyBuildSlots",
-												"fastDataTransfer",
-												"fastOriginTransfer",
-												"fluidCpuDuration",
-												"fluidDuration",
-												"functionDuration",
-												"functionInvocation",
-												"imageOptimizationCacheRead",
-												"imageOptimizationCacheWrite",
-												"imageOptimizationTransformation",
-												"logDrainsVolume",
-												"monitoringMetric",
-												"blobDataTransfer",
-												"observabilityEvent",
-												"onDemandConcurrencyMinutes",
-												"runtimeCacheRead",
-												"runtimeCacheWrite",
-												"serverlessFunctionExecution",
-												"sourceImages",
-												"wafOwaspExcessBytes",
-												"wafOwaspRequests",
-												"wafRateLimitRequest",
-												"webAnalyticsEvent",
-											]),
-										})
-										.optional(),
-									postgres: z
-										.object({
-											updatedAt: z.number().optional(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]).optional(),
-											overageReason: z.enum([
-												"analyticsUsage",
-												"artifacts",
-												"bandwidth",
-												"blobTotalAdvancedRequests",
-												"blobTotalAvgSizeInBytes",
-												"blobTotalGetResponseObjectSizeInBytes",
-												"blobTotalSimpleRequests",
-												"connectDataTransfer",
-												"dataCacheRead",
-												"dataCacheWrite",
-												"edgeConfigRead",
-												"edgeConfigWrite",
-												"edgeFunctionExecutionUnits",
-												"edgeMiddlewareInvocations",
-												"edgeRequestAdditionalCpuDuration",
-												"edgeRequest",
-												"elasticConcurrencyBuildSlots",
-												"fastDataTransfer",
-												"fastOriginTransfer",
-												"fluidCpuDuration",
-												"fluidDuration",
-												"functionDuration",
-												"functionInvocation",
-												"imageOptimizationCacheRead",
-												"imageOptimizationCacheWrite",
-												"imageOptimizationTransformation",
-												"logDrainsVolume",
-												"monitoringMetric",
-												"blobDataTransfer",
-												"observabilityEvent",
-												"onDemandConcurrencyMinutes",
-												"runtimeCacheRead",
-												"runtimeCacheWrite",
-												"serverlessFunctionExecution",
-												"sourceImages",
-												"wafOwaspExcessBytes",
-												"wafOwaspRequests",
-												"wafRateLimitRequest",
-												"webAnalyticsEvent",
-											]),
-										})
-										.optional(),
-									redis: z
-										.object({
-											updatedAt: z.number().optional(),
-											blockedFrom: z.number().optional(),
-											blockedUntil: z.number().optional(),
-											blockReason: z.enum(["admin_override", "limits_exceeded"]).optional(),
-											overageReason: z.enum([
-												"analyticsUsage",
-												"artifacts",
-												"bandwidth",
-												"blobTotalAdvancedRequests",
-												"blobTotalAvgSizeInBytes",
-												"blobTotalGetResponseObjectSizeInBytes",
-												"blobTotalSimpleRequests",
-												"connectDataTransfer",
-												"dataCacheRead",
-												"dataCacheWrite",
-												"edgeConfigRead",
-												"edgeConfigWrite",
-												"edgeFunctionExecutionUnits",
-												"edgeMiddlewareInvocations",
-												"edgeRequestAdditionalCpuDuration",
-												"edgeRequest",
-												"elasticConcurrencyBuildSlots",
-												"fastDataTransfer",
-												"fastOriginTransfer",
-												"fluidCpuDuration",
-												"fluidDuration",
-												"functionDuration",
-												"functionInvocation",
-												"imageOptimizationCacheRead",
-												"imageOptimizationCacheWrite",
-												"imageOptimizationTransformation",
-												"logDrainsVolume",
-												"monitoringMetric",
-												"blobDataTransfer",
-												"observabilityEvent",
-												"onDemandConcurrencyMinutes",
-												"runtimeCacheRead",
-												"runtimeCacheWrite",
-												"serverlessFunctionExecution",
-												"sourceImages",
-												"wafOwaspExcessBytes",
-												"wafOwaspRequests",
-												"wafRateLimitRequest",
-												"webAnalyticsEvent",
-											]),
-										})
-										.optional(),
-								})
-								.describe(
-									"Information about which features are blocked for a user. Blocks can be either soft (the user can still access the feature, but with a warning, e.g. prompting an upgrade) or hard (the user cannot access the feature at all).",
-								)
-								.optional(),
-							defaultTeamId: z.string().optional(),
+							enablePreviewFeedback: z.optional(
+								z
+									.enum(["default", "on", "off", "on-force", "off-force", "default-force"])
+									.describe("Whether the Vercel Toolbar is enabled for preview deployments."),
+							),
+							featureBlocks: z.optional(
+								z
+									.object({
+										webAnalytics: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+												graceEmailSentAt: z.optional(z.number()),
+											}),
+										),
+										monitoring: z.optional(
+											z
+												.object({
+													updatedAt: z.number(),
+													blockedFrom: z.optional(z.number()),
+													blockedUntil: z.optional(z.number()),
+													blockReason: z.enum(["admin_override", "limits_exceeded"]),
+													blockType: z.enum(["soft", "hard"]),
+												})
+												.describe(
+													"A soft block indicates a temporary pause in data collection (ex limit exceeded for the current cycle) A hard block indicates a stoppage in data collection that requires manual intervention (ex upgrading a pro trial)",
+												),
+										),
+										observabilityPlus: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+												blockType: z.enum(["soft", "hard"]),
+											}),
+										),
+										dataCache: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+											}),
+										),
+										imageOptimizationTransformation: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+											}),
+										),
+										sourceImages: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+											}),
+										),
+										blob: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+												overageReason: z.enum([
+													"analyticsUsage",
+													"artifacts",
+													"bandwidth",
+													"blobTotalAdvancedRequests",
+													"blobTotalAvgSizeInBytes",
+													"blobTotalGetResponseObjectSizeInBytes",
+													"blobTotalSimpleRequests",
+													"connectDataTransfer",
+													"dataCacheRead",
+													"dataCacheWrite",
+													"edgeConfigRead",
+													"edgeConfigWrite",
+													"edgeFunctionExecutionUnits",
+													"edgeMiddlewareInvocations",
+													"edgeRequestAdditionalCpuDuration",
+													"edgeRequest",
+													"elasticConcurrencyBuildSlots",
+													"fastDataTransfer",
+													"fastOriginTransfer",
+													"fluidCpuDuration",
+													"fluidDuration",
+													"functionDuration",
+													"functionInvocation",
+													"imageOptimizationCacheRead",
+													"imageOptimizationCacheWrite",
+													"imageOptimizationTransformation",
+													"logDrainsVolume",
+													"monitoringMetric",
+													"blobDataTransfer",
+													"observabilityEvent",
+													"onDemandConcurrencyMinutes",
+													"runtimeCacheRead",
+													"runtimeCacheWrite",
+													"serverlessFunctionExecution",
+													"sourceImages",
+													"wafOwaspExcessBytes",
+													"wafOwaspRequests",
+													"wafRateLimitRequest",
+													"webAnalyticsEvent",
+												]),
+											}),
+										),
+										postgres: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+												overageReason: z.enum([
+													"analyticsUsage",
+													"artifacts",
+													"bandwidth",
+													"blobTotalAdvancedRequests",
+													"blobTotalAvgSizeInBytes",
+													"blobTotalGetResponseObjectSizeInBytes",
+													"blobTotalSimpleRequests",
+													"connectDataTransfer",
+													"dataCacheRead",
+													"dataCacheWrite",
+													"edgeConfigRead",
+													"edgeConfigWrite",
+													"edgeFunctionExecutionUnits",
+													"edgeMiddlewareInvocations",
+													"edgeRequestAdditionalCpuDuration",
+													"edgeRequest",
+													"elasticConcurrencyBuildSlots",
+													"fastDataTransfer",
+													"fastOriginTransfer",
+													"fluidCpuDuration",
+													"fluidDuration",
+													"functionDuration",
+													"functionInvocation",
+													"imageOptimizationCacheRead",
+													"imageOptimizationCacheWrite",
+													"imageOptimizationTransformation",
+													"logDrainsVolume",
+													"monitoringMetric",
+													"blobDataTransfer",
+													"observabilityEvent",
+													"onDemandConcurrencyMinutes",
+													"runtimeCacheRead",
+													"runtimeCacheWrite",
+													"serverlessFunctionExecution",
+													"sourceImages",
+													"wafOwaspExcessBytes",
+													"wafOwaspRequests",
+													"wafRateLimitRequest",
+													"webAnalyticsEvent",
+												]),
+											}),
+										),
+										redis: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+												overageReason: z.enum([
+													"analyticsUsage",
+													"artifacts",
+													"bandwidth",
+													"blobTotalAdvancedRequests",
+													"blobTotalAvgSizeInBytes",
+													"blobTotalGetResponseObjectSizeInBytes",
+													"blobTotalSimpleRequests",
+													"connectDataTransfer",
+													"dataCacheRead",
+													"dataCacheWrite",
+													"edgeConfigRead",
+													"edgeConfigWrite",
+													"edgeFunctionExecutionUnits",
+													"edgeMiddlewareInvocations",
+													"edgeRequestAdditionalCpuDuration",
+													"edgeRequest",
+													"elasticConcurrencyBuildSlots",
+													"fastDataTransfer",
+													"fastOriginTransfer",
+													"fluidCpuDuration",
+													"fluidDuration",
+													"functionDuration",
+													"functionInvocation",
+													"imageOptimizationCacheRead",
+													"imageOptimizationCacheWrite",
+													"imageOptimizationTransformation",
+													"logDrainsVolume",
+													"monitoringMetric",
+													"blobDataTransfer",
+													"observabilityEvent",
+													"onDemandConcurrencyMinutes",
+													"runtimeCacheRead",
+													"runtimeCacheWrite",
+													"serverlessFunctionExecution",
+													"sourceImages",
+													"wafOwaspExcessBytes",
+													"wafOwaspRequests",
+													"wafRateLimitRequest",
+													"webAnalyticsEvent",
+												]),
+											}),
+										),
+										microfrontendsRequest: z.optional(
+											z.object({
+												updatedAt: z.number(),
+												blockedFrom: z.optional(z.number()),
+												blockedUntil: z.optional(z.number()),
+												blockReason: z.enum(["admin_override", "limits_exceeded"]),
+											}),
+										),
+									})
+									.describe(
+										"Information about which features are blocked for a user. Blocks can be either soft (the user can still access the feature, but with a warning, e.g. prompting an upgrade) or hard (the user cannot access the feature at all).",
+									),
+							),
+							defaultTeamId: z.optional(z.string()),
 							version: z.enum(["northstar"]),
-							northstarMigration: z
-								.object({
-									teamId: z.string().describe("The ID of the team we created for this user."),
-									projects: z.number().describe("The number of projects migrated for this user."),
-									stores: z.number().describe("The number of stores migrated for this user."),
-									integrationConfigurations: z
-										.number()
-										.describe("The number of integration configurations migrated for this user."),
-									integrationClients: z
-										.number()
-										.describe("The number of integration clients migrated for this user."),
-									startTime: z
-										.number()
-										.describe("The migration start time timestamp for this user."),
-									endTime: z.number().describe("The migration end time timestamp for this user."),
-								})
-								.describe(
-									"An archive of information about the Northstar migration, derived from the old (deprecated) property, `northstarMigrationEvents`.",
-								)
-								.optional(),
-							opportunityId: z
-								.string()
-								.describe(
-									"The salesforce opportunity ID that this user is linked to. This is used to automatically associate a team of the user's choosing with the opportunity.",
-								)
-								.optional(),
-							mfaConfiguration: z
-								.object({
-									enabled: z.boolean(),
-									enabledAt: z.number().optional(),
-									recoveryCodes: z.array(z.string()),
-									totp: z
-										.object({
-											secret: z.string(),
-											createdAt: z.number(),
-										})
-										.optional(),
-								})
-								.describe(
-									"MFA configuration. When enabled, the user will be required to provide a second factor of authentication when logging in.",
-								)
-								.optional(),
-						})
-						.nullable(),
+							northstarMigration: z.optional(
+								z
+									.object({
+										teamId: z.string().describe("The ID of the team we created for this user."),
+										projects: z.number().describe("The number of projects migrated for this user."),
+										stores: z.number().describe("The number of stores migrated for this user."),
+										integrationConfigurations: z
+											.number()
+											.describe("The number of integration configurations migrated for this user."),
+										integrationClients: z
+											.number()
+											.describe("The number of integration clients migrated for this user."),
+										startTime: z
+											.number()
+											.describe("The migration start time timestamp for this user."),
+										endTime: z.number().describe("The migration end time timestamp for this user."),
+									})
+									.describe(
+										"An archive of information about the Northstar migration, derived from the old (deprecated) property, `northstarMigrationEvents`.",
+									),
+							),
+							opportunityId: z.optional(
+								z
+									.string()
+									.describe(
+										"The salesforce opportunity ID that this user is linked to. This is used to automatically associate a team of the user's choosing with the opportunity.",
+									),
+							),
+							mfaConfiguration: z.optional(
+								z
+									.object({
+										enabled: z.boolean(),
+										enabledAt: z.optional(z.number()),
+										recoveryCodes: z.array(z.string()),
+										totp: z.optional(
+											z.object({
+												secret: z.string(),
+												createdAt: z.number(),
+											}),
+										),
+									})
+									.describe(
+										"MFA configuration. When enabled, the user will be required to provide a second factor of authentication when logging in.",
+									),
+							),
+						}),
+					),
 				}),
 				z.object({
 					configurations: z.array(
@@ -1910,7 +2437,7 @@ export const userEventSchema = z
 							integrationId: z.string(),
 							configurationId: z.string(),
 							integrationSlug: z.string(),
-							integrationName: z.string().optional(),
+							integrationName: z.optional(z.string()),
 						}),
 					),
 					ownerId: z.string(),
@@ -1922,7 +2449,7 @@ export const userEventSchema = z
 					integrationName: z.string(),
 					ownerId: z.string(),
 					billingPlanId: z.string(),
-					billingPlanName: z.string().optional(),
+					billingPlanName: z.optional(z.string()),
 				}),
 				z.object({
 					integrationId: z.string(),
@@ -1930,14 +2457,14 @@ export const userEventSchema = z
 					integrationSlug: z.string(),
 					integrationName: z.string(),
 					ownerId: z.string(),
-					projectIds: z.array(z.string()).optional(),
+					projectIds: z.optional(z.array(z.string())),
 				}),
 				z.object({
 					projectId: z.string(),
 					fromDeploymentId: z.string(),
 					toDeploymentId: z.string(),
 					projectName: z.string(),
-					reason: z.string().optional(),
+					reason: z.optional(z.string()),
 				}),
 				z.object({
 					integrationId: z.string(),
@@ -1945,83 +2472,20 @@ export const userEventSchema = z
 					integrationSlug: z.string(),
 					integrationName: z.string(),
 					ownerId: z.string(),
-					projectIds: z.array(z.string()).optional(),
+					projectIds: z.optional(z.array(z.string())),
 					confirmedScopes: z.array(z.string()),
 				}),
 				z.object({
-					userAgent: z
-						.object({
-							browser: z.object({
-								name: z.enum(["iphone", "ipad", "ipod", "chrome", "firefox", "mozilla", "unknown"]),
-							}),
-							ua: z.string(),
-							program: z.string(),
-							os: z.object({
-								name: z.enum([
-									"unknown",
-									"darwin",
-									"win32",
-									"win",
-									"windows",
-									"linux",
-									"freebsd",
-									"sunos",
-									"mac",
-									"ios",
-									"android",
-									"Mac OS",
-									"OS X",
-								]),
-							}),
-						})
-						.optional(),
-					geolocation: z
-						.object({
-							city: z
-								.object({
-									names: z.object({
-										en: z.string(),
-									}),
-								})
-								.optional(),
-							country: z.object({
-								names: z.object({
-									en: z.string(),
-								}),
-							}),
-							mostSpecificSubdivision: z
-								.object({
-									names: z.object({
-										en: z.string(),
-									}),
-								})
-								.optional(),
-							regionName: z.string().optional(),
-						})
-						.nullable()
-						.nullish(),
-					viaGithub: z.boolean(),
-					viaGitlab: z.boolean(),
-					viaBitbucket: z.boolean(),
-					viaGoogle: z.boolean(),
-					viaSamlSso: z.boolean(),
-					viaPasskey: z.boolean(),
-					ssoType: z.string().optional(),
-					env: z.string().optional(),
-					os: z.string().optional(),
-					username: z.string().optional(),
-				}),
-				z.object({
-					logDrainUrl: z.string().nullable(),
-					integrationName: z.string().optional(),
+					logDrainUrl: z.nullable(z.string()),
+					integrationName: z.optional(z.string()),
 				}),
 				z.object({
 					logDrainUrl: z.string(),
-					integrationName: z.string().optional(),
+					integrationName: z.optional(z.string()),
 				}),
 				z.object({
-					drainUrl: z.string().nullable(),
-					integrationName: z.string().optional(),
+					drainUrl: z.nullable(z.string()),
+					integrationName: z.optional(z.string()),
 				}),
 				z.object({
 					projectId: z.string(),
@@ -2033,9 +2497,8 @@ export const userEventSchema = z
 				}),
 				z.object({
 					plan: z.string(),
-					removedUsers: z
-						.object({})
-						.catchall(
+					removedUsers: z.optional(
+						z.object({}).catchall(
 							z.object({
 								role: z.enum([
 									"OWNER",
@@ -2044,12 +2507,13 @@ export const userEventSchema = z
 									"SECURITY",
 									"BILLING",
 									"VIEWER",
+									"VIEWER_FOR_PLUS",
 									"CONTRIBUTOR",
 								]),
 								confirmed: z.boolean(),
-								confirmedAt: z.number().optional(),
-								joinedFrom: z
-									.object({
+								confirmedAt: z.optional(z.number()),
+								joinedFrom: z.optional(
+									z.object({
 										origin: z.enum([
 											"teams",
 											"saml",
@@ -2063,67 +2527,76 @@ export const userEventSchema = z
 											"feedback",
 											"organization-teams",
 										]),
-										commitId: z.string().optional(),
-										repoId: z.string().optional(),
-										repoPath: z.string().optional(),
-										gitUserId: z.union([z.string(), z.number()]).optional(),
-										gitUserLogin: z.string().optional(),
-										ssoUserId: z.string().optional(),
-										ssoConnectedAt: z.number().optional(),
-										idpUserId: z.string().optional(),
-										dsyncUserId: z.string().optional(),
-										dsyncConnectedAt: z.number().optional(),
-									})
-									.optional(),
+										commitId: z.optional(z.string()),
+										repoId: z.optional(z.string()),
+										repoPath: z.optional(z.string()),
+										gitUserId: z.optional(z.union([z.string(), z.number()])),
+										gitUserLogin: z.optional(z.string()),
+										ssoUserId: z.optional(z.string()),
+										ssoConnectedAt: z.optional(z.number()),
+										idpUserId: z.optional(z.string()),
+										dsyncUserId: z.optional(z.string()),
+										dsyncConnectedAt: z.optional(z.number()),
+									}),
+								),
 							}),
-						)
-						.optional(),
-					priorPlan: z.string().optional(),
-					isDowngrade: z.boolean().optional(),
-					userAgent: z.string().optional(),
-					isReactivate: z.boolean().optional(),
-					isTrialUpgrade: z.boolean().optional(),
+						),
+					),
+					prevPlan: z.optional(z.string()),
+					priorPlan: z.optional(z.string()),
+					isDowngrade: z.optional(z.boolean()),
+					userAgent: z.optional(z.string()),
+					isReactivate: z.optional(z.boolean()),
+					isTrialUpgrade: z.optional(z.boolean()),
+					automated: z.optional(z.boolean()),
+					reason: z.optional(z.string()),
+					timestamp: z.optional(z.number()),
+					removedMemberCount: z.optional(z.number()),
 				}),
 				z.object({
-					projectName: z.string().optional(),
+					projectName: z.string(),
+					branch: z.string(),
+				}),
+				z.object({
+					projectName: z.optional(z.string()),
 					projectId: z.string(),
-					projectAnalytics: z
-						.object({
+					projectAnalytics: z.nullable(
+						z.object({
 							id: z.string(),
-							canceledAt: z.number().nullable().nullish(),
+							canceledAt: z.number().nullish(),
 							disabledAt: z.number(),
 							enabledAt: z.number(),
-							paidAt: z.number().optional(),
-							sampleRatePercent: z.number().nullable().nullish(),
-							spendLimitInDollars: z.number().nullable().nullish(),
-						})
-						.nullable(),
-					prevProjectAnalytics: z
-						.object({
+							paidAt: z.optional(z.number()),
+							sampleRatePercent: z.number().nullish(),
+							spendLimitInDollars: z.number().nullish(),
+						}),
+					),
+					prevProjectAnalytics: z.nullable(
+						z.object({
 							id: z.string(),
-							canceledAt: z.number().nullable().nullish(),
+							canceledAt: z.number().nullish(),
 							disabledAt: z.number(),
 							enabledAt: z.number(),
-							paidAt: z.number().optional(),
-							sampleRatePercent: z.number().nullable().nullish(),
-							spendLimitInDollars: z.number().nullable().nullish(),
-						})
-						.nullable(),
+							paidAt: z.optional(z.number()),
+							sampleRatePercent: z.number().nullish(),
+							spendLimitInDollars: z.number().nullish(),
+						}),
+					),
 				}),
 				z.object({
-					projectName: z.string().optional(),
+					projectName: z.optional(z.string()),
 					projectId: z.string(),
-					projectAnalytics: z.object({}).catchall(z.unknown()).optional(),
-					prevProjectAnalytics: z.object({}).catchall(z.unknown()).nullable().nullish(),
+					projectAnalytics: z.optional(z.object({}).catchall(z.unknown())),
+					prevProjectAnalytics: z.object({}).catchall(z.unknown()).nullish(),
 				}),
 				z.object({
-					projectName: z.string().optional(),
+					projectName: z.optional(z.string()),
 					projectId: z.string(),
 				}),
 				z.object({
 					projectName: z.string(),
-					ssoProtection: z
-						.union([
+					ssoProtection: z.nullable(
+						z.union([
 							z.object({
 								deploymentType: z.enum([
 									"all",
@@ -2131,6 +2604,14 @@ export const userEventSchema = z
 									"prod_deployment_urls_and_all_previews",
 									"all_except_custom_domains",
 								]),
+								cve55182MigrationAppliedFrom: z
+									.enum([
+										"all",
+										"preview",
+										"prod_deployment_urls_and_all_previews",
+										"all_except_custom_domains",
+									])
+									.nullish(),
 							}),
 							z.enum([
 								"all",
@@ -2138,10 +2619,10 @@ export const userEventSchema = z
 								"prod_deployment_urls_and_all_previews",
 								"all_except_custom_domains",
 							]),
-						])
-						.nullable(),
-					oldSsoProtection: z
-						.union([
+						]),
+					),
+					oldSsoProtection: z.nullable(
+						z.union([
 							z.object({
 								deploymentType: z.enum([
 									"all",
@@ -2149,6 +2630,14 @@ export const userEventSchema = z
 									"prod_deployment_urls_and_all_previews",
 									"all_except_custom_domains",
 								]),
+								cve55182MigrationAppliedFrom: z
+									.enum([
+										"all",
+										"preview",
+										"prod_deployment_urls_and_all_previews",
+										"all_except_custom_domains",
+									])
+									.nullish(),
 							}),
 							z.enum([
 								"all",
@@ -2156,13 +2645,13 @@ export const userEventSchema = z
 								"prod_deployment_urls_and_all_previews",
 								"all_except_custom_domains",
 							]),
-						])
-						.nullable(),
+						]),
+					),
 				}),
 				z.object({
 					projectName: z.string(),
-					passwordProtection: z
-						.union([
+					passwordProtection: z.nullable(
+						z.union([
 							z.object({
 								deploymentType: z.enum([
 									"all",
@@ -2177,10 +2666,10 @@ export const userEventSchema = z
 								"prod_deployment_urls_and_all_previews",
 								"all_except_custom_domains",
 							]),
-						])
-						.nullable(),
-					oldPasswordProtection: z
-						.union([
+						]),
+					),
+					oldPasswordProtection: z.nullable(
+						z.union([
 							z.object({
 								deploymentType: z.enum([
 									"all",
@@ -2195,8 +2684,8 @@ export const userEventSchema = z
 								"prod_deployment_urls_and_all_previews",
 								"all_except_custom_domains",
 							]),
-						])
-						.nullable(),
+						]),
+					),
 				}),
 				z.object({
 					projectName: z.string(),
@@ -2208,7 +2697,6 @@ export const userEventSchema = z
 							"all_except_custom_domains",
 							"production",
 						])
-						.nullable()
 						.nullish(),
 					oldTrustedIps: z
 						.enum([
@@ -2218,10 +2706,9 @@ export const userEventSchema = z
 							"all_except_custom_domains",
 							"production",
 						])
-						.nullable()
 						.nullish(),
-					addedAddresses: z.array(z.string()).nullable().nullish(),
-					removedAddresses: z.array(z.string()).nullable().nullish(),
+					addedAddresses: z.array(z.string()).nullish(),
+					removedAddresses: z.array(z.string()).nullish(),
 				}),
 				z.object({
 					projectName: z.string(),
@@ -2233,7 +2720,6 @@ export const userEventSchema = z
 								}),
 							),
 						})
-						.nullable()
 						.nullish(),
 					oldOptionsAllowlist: z
 						.object({
@@ -2243,12 +2729,13 @@ export const userEventSchema = z
 								}),
 							),
 						})
-						.nullable()
 						.nullish(),
 				}),
 				z.object({
 					projectName: z.string(),
-					action: z.enum(["enabled", "disabled", "regenerated"]),
+					action: z.enum(["enabled", "disabled", "regenerated", "updated"]),
+					isEnvVar: z.optional(z.boolean()),
+					note: z.optional(z.string()),
 				}),
 				z.object({
 					name: z.string(),
@@ -2261,58 +2748,103 @@ export const userEventSchema = z
 					}),
 					project: z.object({
 						id: z.string(),
-						name: z.string().optional(),
-						oldConnectConfigurations: z
-							.array(
+						name: z.optional(z.string()),
+						oldConnectConfigurations: z.nullable(
+							z.array(
 								z.object({
 									envId: z.union([z.string(), z.enum(["preview", "production"])]),
 									connectConfigurationId: z.string(),
-									dc: z.string().optional(),
+									dc: z.optional(z.string()),
 									passive: z.boolean(),
 									buildsEnabled: z.boolean(),
-									aws: z
-										.object({
+									aws: z.optional(
+										z.object({
 											subnetIds: z.array(z.string()),
 											securityGroupId: z.string(),
-										})
-										.optional(),
+										}),
+									),
 									createdAt: z.number(),
 									updatedAt: z.number(),
 								}),
-							)
-							.nullable(),
-						newConnectConfigurations: z
-							.array(
+							),
+						),
+						newConnectConfigurations: z.nullable(
+							z.array(
 								z.object({
 									envId: z.union([z.string(), z.enum(["preview", "production"])]),
 									connectConfigurationId: z.string(),
-									dc: z.string().optional(),
+									dc: z.optional(z.string()),
 									passive: z.boolean(),
 									buildsEnabled: z.boolean(),
-									aws: z
-										.object({
+									aws: z.optional(
+										z.object({
 											subnetIds: z.array(z.string()),
 											securityGroupId: z.string(),
-										})
-										.optional(),
+										}),
+									),
 									createdAt: z.number(),
 									updatedAt: z.number(),
 								}),
-							)
-							.nullable(),
+							),
+						),
 					}),
 				}),
 				z.object({
 					projectId: z.string(),
+					reasonCode: z.optional(z.enum(["BUDGET_REACHED", "PUBLIC_API", "BACKOFFICE"])),
+				}),
+				z.object({
+					projectId: z.string(),
+					reasonCode: z.optional(z.enum(["PUBLIC_API", "BACKOFFICE"])),
+				}),
+				z.object({
+					source: z.string(),
+					projectId: z.string(),
+				}),
+				z.object({
+					next: z.object({
+						project: z.object({
+							id: z.string(),
+							staticIps: z.object({
+								builds: z.optional(z.boolean()),
+								enabled: z.boolean(),
+								regions: z.optional(z.array(z.string())),
+							}),
+						}),
+					}),
+					previous: z.object({
+						project: z.object({
+							id: z.string(),
+							staticIps: z.object({
+								builds: z.optional(z.boolean()),
+								enabled: z.boolean(),
+								regions: z.optional(z.array(z.string())),
+							}),
+						}),
+					}),
 				}),
 				z.object({
 					projectId: z.string(),
 					projectName: z.string(),
+					buildMachineType: z.optional(z.string()),
+					oldBuildMachineType: z.optional(z.string()),
 				}),
 				z.object({
-					projectId: z.string().optional(),
-					projectName: z.string().optional(),
-					newTargetPercentage: z.number().optional(),
+					projectId: z.string(),
+					projectName: z.string(),
+					elasticConcurrencyEnabled: z.boolean(),
+					oldElasticConcurrencyEnabled: z.boolean(),
+				}),
+				z.object({
+					projectId: z.string(),
+					projectName: z.string(),
+					targetDeploymentId: z.optional(z.string()),
+				}),
+				z.object({
+					projectId: z.string(),
+					projectName: z.string(),
+					targetDeploymentId: z.optional(z.string()),
+					newTargetPercentage: z.optional(z.number()),
 				}),
 				z.object({
 					gitProvider: z.string(),
@@ -2333,23 +2865,23 @@ export const userEventSchema = z
 				z.object({
 					team: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
-					previousRule: z
-						.object({
+					previousRule: z.optional(
+						z.object({
 							email: z.string(),
-						})
-						.optional(),
-					nextRule: z
-						.object({
+						}),
+					),
+					nextRule: z.optional(
+						z.object({
 							email: z.string(),
-						})
-						.optional(),
+						}),
+					),
 				}),
 				z.object({
 					team: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
 					previousRule: z.object({
 						email: z.string(),
@@ -2367,7 +2899,7 @@ export const userEventSchema = z
 				z.object({
 					oldName: z.string(),
 					newName: z.string(),
-					uid: z.string().optional(),
+					uid: z.optional(z.string()),
 				}),
 				z.object({
 					bio: z.string(),
@@ -2384,74 +2916,38 @@ export const userEventSchema = z
 					url: z.string(),
 				}),
 				z.object({
-					webhookUrl: z.string().optional(),
-				}),
-				z.object({
-					budget: z
-						.object({
-							type: z.enum(["fixed"]).describe("The budget type"),
-							fixedBudget: z.number().describe("Budget amount"),
-							previousSpend: z
-								.array(z.number())
-								.describe("Array of the last 3 months of spend data"),
-							notifiedAt: z
-								.array(z.number())
-								.describe("Array of 50, 75, 100 to keep track of notifications sent out"),
-							webhookId: z
-								.string()
-								.describe("Webhook id that corresponds to a webhook in Cosmos webhook collection")
-								.optional(),
-							webhookNotified: z
-								.boolean()
-								.describe("Keep track if the webhook has been called for the month")
-								.optional(),
-							createdAt: z.number().describe("Date time when budget is created"),
-							updatedAt: z.number().describe("Date time when budget is updated last").optional(),
-							isActive: z.boolean().describe("Is the budget currently active for a customer"),
-							pauseProjects: z
-								.boolean()
-								.describe("Should all projects be paused if budget is exceeded")
-								.optional(),
-							pricingPlan: z
-								.enum(["legacy", "unbundled"])
-								.describe("The acive pricing plan the team is billed with")
-								.optional(),
-							teamId: z.string().describe("Partition key"),
-							id: z.string().describe("Sort key that needs to be unique per teamId"),
-						})
-						.describe("Represents a budget for tracking and notifying teams on their spending."),
-				}),
-				z.object({
 					budget: z.object({
 						budgetItem: z
 							.object({
 								type: z.enum(["fixed"]).describe("The budget type"),
-								fixedBudget: z.number().describe("Budget amount"),
+								fixedBudget: z.number().describe("Budget amount (USD / dollars)"),
 								previousSpend: z
 									.array(z.number())
 									.describe("Array of the last 3 months of spend data"),
 								notifiedAt: z
 									.array(z.number())
 									.describe("Array of 50, 75, 100 to keep track of notifications sent out"),
-								webhookId: z
-									.string()
-									.describe("Webhook id that corresponds to a webhook in Cosmos webhook collection")
-									.optional(),
-								webhookNotified: z
-									.boolean()
-									.describe("Keep track if the webhook has been called for the month")
-									.optional(),
+								webhookId: z.optional(
+									z
+										.string()
+										.describe(
+											"Webhook id that corresponds to a webhook in Cosmos webhook collection",
+										),
+								),
+								webhookNotified: z.optional(
+									z.boolean().describe("Keep track if the webhook has been called for the month"),
+								),
 								createdAt: z.number().describe("Date time when budget is created"),
-								updatedAt: z.number().describe("Date time when budget is updated last").optional(),
+								updatedAt: z.optional(z.number().describe("Date time when budget is updated last")),
 								isActive: z.boolean().describe("Is the budget currently active for a customer"),
-								pauseProjects: z
-									.boolean()
-									.describe("Should all projects be paused if budget is exceeded")
-									.optional(),
-								pricingPlan: z
-									.enum(["legacy", "unbundled"])
-									.describe("The acive pricing plan the team is billed with")
-									.optional(),
+								pauseProjects: z.optional(
+									z.boolean().describe("Should all projects be paused if budget is exceeded"),
+								),
+								pricingPlan: z.optional(
+									z
+										.enum(["plus", "legacy", "unbundled"])
+										.describe("The acive pricing plan the team is billed with"),
+								),
 								teamId: z.string().describe("Partition key"),
 								id: z.string().describe("Sort key that needs to be unique per teamId"),
 							})
@@ -2459,11 +2955,89 @@ export const userEventSchema = z
 					}),
 				}),
 				z.object({
+					budget: z
+						.object({
+							type: z.enum(["fixed"]).describe("The budget type"),
+							fixedBudget: z.number().describe("Budget amount (USD / dollars)"),
+							previousSpend: z
+								.array(z.number())
+								.describe("Array of the last 3 months of spend data"),
+							notifiedAt: z
+								.array(z.number())
+								.describe("Array of 50, 75, 100 to keep track of notifications sent out"),
+							webhookId: z.optional(
+								z
+									.string()
+									.describe(
+										"Webhook id that corresponds to a webhook in Cosmos webhook collection",
+									),
+							),
+							webhookNotified: z.optional(
+								z.boolean().describe("Keep track if the webhook has been called for the month"),
+							),
+							createdAt: z.number().describe("Date time when budget is created"),
+							updatedAt: z.optional(z.number().describe("Date time when budget is updated last")),
+							isActive: z.boolean().describe("Is the budget currently active for a customer"),
+							pauseProjects: z.optional(
+								z.boolean().describe("Should all projects be paused if budget is exceeded"),
+							),
+							pricingPlan: z.optional(
+								z
+									.enum(["plus", "legacy", "unbundled"])
+									.describe("The acive pricing plan the team is billed with"),
+							),
+							teamId: z.string().describe("Partition key"),
+							id: z.string().describe("Sort key that needs to be unique per teamId"),
+						})
+						.describe("Represents a budget for tracking and notifying teams on their spending."),
+				}),
+				z.object({
+					budget: z
+						.object({
+							type: z.enum(["fixed"]).describe("The budget type"),
+							fixedBudget: z.number().describe("Budget amount (USD / dollars)"),
+							previousSpend: z
+								.array(z.number())
+								.describe("Array of the last 3 months of spend data"),
+							notifiedAt: z
+								.array(z.number())
+								.describe("Array of 50, 75, 100 to keep track of notifications sent out"),
+							webhookId: z.optional(
+								z
+									.string()
+									.describe(
+										"Webhook id that corresponds to a webhook in Cosmos webhook collection",
+									),
+							),
+							webhookNotified: z.optional(
+								z.boolean().describe("Keep track if the webhook has been called for the month"),
+							),
+							createdAt: z.number().describe("Date time when budget is created"),
+							updatedAt: z.optional(z.number().describe("Date time when budget is updated last")),
+							isActive: z.boolean().describe("Is the budget currently active for a customer"),
+							pauseProjects: z.optional(
+								z.boolean().describe("Should all projects be paused if budget is exceeded"),
+							),
+							pricingPlan: z.optional(
+								z
+									.enum(["plus", "legacy", "unbundled"])
+									.describe("The acive pricing plan the team is billed with"),
+							),
+							teamId: z.string().describe("Partition key"),
+							id: z.string().describe("Sort key that needs to be unique per teamId"),
+						})
+						.describe("Represents a budget for tracking and notifying teams on their spending."),
+					webhookUrl: z.optional(z.string()),
+				}),
+				z.object({
+					webhookUrl: z.optional(z.string()),
+				}),
+				z.object({
 					id: z.string(),
-					name: z.string().optional(),
-					computeUnitsMax: z.number().optional(),
-					computeUnitsMin: z.number().optional(),
-					suspendTimeoutSeconds: z.number().optional(),
+					name: z.optional(z.string()),
+					computeUnitsMax: z.optional(z.number()),
+					computeUnitsMin: z.optional(z.number()),
+					suspendTimeoutSeconds: z.optional(z.number()),
 					type: z.enum(["redis", "postgres", "edge-config", "blob", "integration"]),
 				}),
 				z.object({
@@ -2474,7 +3048,7 @@ export const userEventSchema = z
 						name: z.string(),
 						id: z.string(),
 					}),
-					ownerId: z.string().optional(),
+					ownerId: z.optional(z.string()),
 				}),
 				z.object({
 					slug: z.string(),
@@ -2483,58 +3057,98 @@ export const userEventSchema = z
 					slug: z.string(),
 					teamId: z.string(),
 					by: z.string(),
-					reasons: z
-						.array(
+					byUid: z.optional(z.string()),
+					reasons: z.optional(
+						z.array(
 							z.object({
 								slug: z.string(),
 								description: z.string(),
 							}),
-						)
-						.optional(),
+						),
+					),
+					removedUsers: z.optional(
+						z.object({}).catchall(
+							z.object({
+								role: z.enum([
+									"OWNER",
+									"MEMBER",
+									"DEVELOPER",
+									"SECURITY",
+									"BILLING",
+									"VIEWER",
+									"VIEWER_FOR_PLUS",
+									"CONTRIBUTOR",
+								]),
+								confirmed: z.boolean(),
+								confirmedAt: z.optional(z.number()),
+							}),
+						),
+					),
+					removedMemberCount: z.optional(z.number()),
+					timestamp: z.optional(z.number()),
 				}),
 				z.object({
-					directoryType: z.string().optional(),
-					ssoType: z.string().optional(),
-					invitedUser: z
-						.object({
+					directoryType: z.optional(z.string()),
+					ssoType: z.optional(z.string()),
+					invitedUser: z.optional(
+						z.object({
 							username: z.string(),
 							email: z.string(),
-						})
-						.optional(),
-					invitedEmail: z.string().optional(),
-					invitationRole: z.string().optional(),
-					entitlements: z.array(z.string()).optional(),
-					invitedUid: z.string().optional(),
+						}),
+					),
+					invitedEmail: z.optional(z.string()),
+					invitationRole: z.optional(z.string()),
+					entitlements: z.optional(z.array(z.string())),
+					invitedUid: z.optional(z.string()),
 				}),
 				z.object({
-					deletedUser: z
-						.object({
+					deletedUser: z.optional(
+						z.object({
 							username: z.string(),
 							email: z.string(),
-						})
-						.optional(),
-					deletedUid: z.string().optional(),
-					githubUsername: z.string().nullable().nullish(),
-					gitlabUsername: z.string().nullable().nullish(),
-					bitbucketUsername: z.string().nullable().nullish(),
-					directoryType: z.string().optional(),
+						}),
+					),
+					deletedUid: z.optional(z.string()),
+					githubUsername: z.string().nullish(),
+					gitlabUsername: z.string().nullish(),
+					bitbucketUsername: z.string().nullish(),
+					directoryType: z.optional(z.string()),
+					role: z.optional(
+						z.enum([
+							"OWNER",
+							"MEMBER",
+							"DEVELOPER",
+							"SECURITY",
+							"BILLING",
+							"VIEWER",
+							"VIEWER_FOR_PLUS",
+							"CONTRIBUTOR",
+						]),
+					),
+					reason: z.optional(z.string()),
+					previousPlan: z.optional(z.enum(["pro", "enterprise", "hobby"])),
+					newPlan: z.optional(z.enum(["pro", "enterprise", "hobby"])),
+					automated: z.optional(z.boolean()),
 				}),
 				z.object({
-					role: z.string().optional(),
+					role: z.optional(z.string()),
 					uid: z.string(),
-					origin: z.string().optional(),
+					origin: z.optional(z.string()),
+					teamRoles: z.optional(z.array(z.string())),
+					teamPermissions: z.optional(z.array(z.string())),
+					entitlements: z.optional(z.array(z.string())),
 				}),
 				z.object({
-					directoryType: z.string().optional(),
-					updatedUser: z
-						.object({
+					directoryType: z.optional(z.string()),
+					updatedUser: z.optional(
+						z.object({
 							username: z.string(),
 							email: z.string(),
-						})
-						.optional(),
-					role: z.string().optional(),
+						}),
+					),
+					role: z.optional(z.string()),
 					previousRole: z.string(),
-					updatedUid: z.string().optional(),
+					updatedUid: z.optional(z.string()),
 				}),
 				z.object({
 					entitlement: z.string(),
@@ -2549,24 +3163,25 @@ export const userEventSchema = z
 						id: z.string(),
 						username: z.string(),
 					}),
-					previousCanceledAt: z.string().optional(),
+					previousCanceledAt: z.optional(z.string()),
 				}),
 				z.object({
 					enforced: z.boolean(),
 				}),
 				z.object({
-					name: z.string().optional(),
+					name: z.optional(z.string()),
 				}),
 				z.object({
-					slug: z.string().optional(),
+					slug: z.optional(z.string()),
 				}),
 				z.object({
-					remoteCaching: z
-						.object({
-							enabled: z.boolean().optional(),
-						})
-						.describe("Represents configuration for remote caching")
-						.optional(),
+					remoteCaching: z.optional(
+						z
+							.object({
+								enabled: z.optional(z.boolean()),
+							})
+							.describe("Represents configuration for remote caching"),
+					),
 				}),
 				z.object({
 					previous: z.object({
@@ -2593,43 +3208,43 @@ export const userEventSchema = z
 					username: z.string(),
 				}),
 				z.object({
-					price: z.number().optional(),
-					currency: z.string().optional(),
-					enabled: z.boolean().optional(),
+					price: z.optional(z.number()),
+					currency: z.optional(z.string()),
+					enabled: z.optional(z.boolean()),
 				}),
 				z.object({
-					previewDeploymentSuffix: z.string().nullable().nullish(),
-					previousPreviewDeploymentSuffix: z.string().nullable().nullish(),
+					previewDeploymentSuffix: z.string().nullish(),
+					previousPreviewDeploymentSuffix: z.string().nullish(),
 				}),
 				z.object({
-					price: z.number().optional(),
-					currency: z.string().optional(),
-				}),
-				z.object({
-					teamName: z.string(),
-					username: z.string().optional(),
-					gitUsername: z.string().optional(),
-					githubUsername: z.string().nullable().nullish(),
-					gitlabUsername: z.string().nullable().nullish(),
-					bitbucketUsername: z.string().nullable().nullish(),
-					updatedUid: z.string().optional(),
-					teamId: z.string().optional(),
+					price: z.optional(z.number()),
+					currency: z.optional(z.string()),
 				}),
 				z.object({
 					teamName: z.string(),
-					username: z.string().optional(),
-					gitUsername: z.string().nullable().nullish(),
-					githubUsername: z.string().nullable().nullish(),
-					gitlabUsername: z.string().nullable().nullish(),
-					bitbucketUsername: z.string().nullable().nullish(),
+					username: z.optional(z.string()),
+					gitUsername: z.optional(z.string()),
+					githubUsername: z.string().nullish(),
+					gitlabUsername: z.string().nullish(),
+					bitbucketUsername: z.string().nullish(),
+					updatedUid: z.optional(z.string()),
+					teamId: z.optional(z.string()),
+				}),
+				z.object({
+					teamName: z.string(),
+					username: z.optional(z.string()),
+					gitUsername: z.string().nullish(),
+					githubUsername: z.string().nullish(),
+					gitlabUsername: z.string().nullish(),
+					bitbucketUsername: z.string().nullish(),
 				}),
 				z.object({
 					requestedTeamName: z.string(),
-					requestedUserName: z.string().optional(),
-					gitUsername: z.string().optional(),
-					githubUsername: z.string().optional(),
-					gitlabUsername: z.string().optional(),
-					bitbucketUsername: z.string().optional(),
+					requestedUserName: z.optional(z.string()),
+					gitUsername: z.optional(z.string()),
+					githubUsername: z.optional(z.string()),
+					gitlabUsername: z.optional(z.string()),
+					bitbucketUsername: z.optional(z.string()),
 				}),
 				z.object({
 					projectId: z.string(),
@@ -2637,49 +3252,49 @@ export const userEventSchema = z
 					originAccountName: z.string(),
 					destinationAccountName: z.string(),
 					destinationAccountId: z.string(),
-					transferId: z.string().optional(),
+					transferId: z.optional(z.string()),
 				}),
 				z.object({
 					projectName: z.string(),
-					destinationAccountName: z.string().nullable(),
-					transferId: z.string().optional(),
+					destinationAccountName: z.nullable(z.string()),
+					transferId: z.optional(z.string()),
 				}),
 				z.object({
 					previousProjectName: z.string(),
 					newProjectName: z.string(),
 					destinationAccountName: z.string(),
-					transferId: z.string().optional(),
+					transferId: z.optional(z.string()),
 				}),
 				z.object({
 					previousProjectName: z.string(),
 					newProjectName: z.string(),
 					originAccountName: z.string(),
-					transferId: z.string().optional(),
+					transferId: z.optional(z.string()),
 				}),
 				z.object({
 					project: z.object({
 						name: z.string(),
-						id: z.string().optional(),
+						id: z.optional(z.string()),
 					}),
-					projectMembership: z
-						.object({
-							role: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]).optional(),
-							uid: z.string().optional(),
-							createdAt: z.number().optional(),
-							username: z.string().optional(),
-						})
-						.nullable(),
+					projectMembership: z.nullable(
+						z.object({
+							role: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]),
+							uid: z.string(),
+							createdAt: z.number(),
+							username: z.optional(z.string()),
+						}),
+					),
 				}),
 				z.object({
 					project: z.object({
 						name: z.string(),
-						id: z.string().optional(),
+						id: z.optional(z.string()),
 					}),
 					removedMembership: z.object({
-						role: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]).optional(),
-						uid: z.string().optional(),
-						createdAt: z.number().optional(),
-						username: z.string().optional(),
+						role: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]),
+						uid: z.string(),
+						createdAt: z.number(),
+						username: z.optional(z.string()),
 					}),
 				}),
 				z.object({
@@ -2688,11 +3303,11 @@ export const userEventSchema = z
 						name: z.string(),
 					}),
 					projectMembership: z.object({
-						role: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]).optional(),
-						uid: z.string().optional(),
-						createdAt: z.number().optional(),
-						username: z.string().optional(),
-						previousRole: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]).optional(),
+						role: z.optional(z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"])),
+						uid: z.optional(z.string()),
+						createdAt: z.optional(z.number()),
+						username: z.optional(z.string()),
+						previousRole: z.optional(z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"])),
 					}),
 				}),
 				z.object({
@@ -2700,9 +3315,18 @@ export const userEventSchema = z
 						name: z.string(),
 						role: z.enum(["ADMIN", "PROJECT_DEVELOPER", "PROJECT_VIEWER"]),
 						invitedUserName: z.string(),
-						id: z.string().optional(),
-						invitedUserId: z.string().optional(),
+						id: z.optional(z.string()),
+						invitedUserId: z.optional(z.string()),
 					}),
+				}),
+				z.object({
+					projectName: z.string(),
+					tags: z.array(z.string()),
+					target: z.optional(z.string()),
+				}),
+				z.object({
+					projectName: z.string(),
+					srcImages: z.array(z.string()),
 				}),
 				z.object({
 					edgeConfigId: z.string(),
@@ -2730,13 +3354,13 @@ export const userEventSchema = z
 				}),
 				z.object({
 					id: z.string(),
-					slug: z.string().optional(),
-					name: z.string().optional(),
-					fallbackEnvironment: z.string().optional(),
+					slug: z.optional(z.string()),
+					name: z.optional(z.string()),
+					fallbackEnvironment: z.optional(z.string()),
 					prev: z.object({
 						name: z.string(),
 						slug: z.string(),
-						fallbackEnvironment: z.string().optional(),
+						fallbackEnvironment: z.string(),
 					}),
 				}),
 				z.object({
@@ -2754,9 +3378,10 @@ export const userEventSchema = z
 					project: z.object({
 						id: z.string(),
 						name: z.string(),
-						microfrontends: z
-							.union([
+						microfrontends: z.optional(
+							z.union([
 								z.object({
+									isDefaultApp: z.boolean(),
 									updatedAt: z
 										.number()
 										.describe("Timestamp when the microfrontends settings were last updated."),
@@ -2770,24 +3395,64 @@ export const userEventSchema = z
 									enabled: z
 										.boolean()
 										.describe("Whether microfrontends are enabled for this project."),
-									isDefaultApp: z
+									defaultRoute: z.optional(
+										z
+											.string()
+											.describe(
+												"A path that is used to take screenshots and as the default path in preview links when a domain for this microfrontend is shown in the UI. Includes the leading slash, e.g. `/docs`",
+											),
+									),
+									freeProjectForLegacyLimits: z.optional(
+										z
+											.boolean()
+											.describe(
+												"Whether the project was part of the legacy limits for hobby and pro-trial before billing was added. This field is only set when the team is upgraded to a paid plan and we are backfilling the subscription status. We cap the subscription to 2 projects and set this field for the 3rd project. When this field is set, the project is not charged for and we do not call any billing APIs for this project.",
+											),
+									),
+								}),
+								z.object({
+									isDefaultApp: z.optional(z.boolean()),
+									routeObservabilityToThisProject: z.optional(
+										z
+											.boolean()
+											.describe(
+												"Whether observability data should be routed to this microfrontend project or a root project.",
+											),
+									),
+									doNotRouteWithMicrofrontendsRouting: z.optional(
+										z
+											.boolean()
+											.describe(
+												"Whether to add microfrontends routing to aliases. This means domains in this project will route as a microfrontend.",
+											),
+									),
+									updatedAt: z
+										.number()
+										.describe("Timestamp when the microfrontends settings were last updated."),
+									groupIds: z
+										.array(z.union([z.string(), z.string()]))
+										.min(2)
+										.max(2)
+										.describe(
+											"The group IDs of microfrontends that this project belongs to. Each microfrontend project must belong to a microfrontends group that is the set of microfrontends that are used together.",
+										),
+									enabled: z
 										.boolean()
-										.describe(
-											"Whether this project is the default application for the microfrontends group. The default application is the one that is used as the top level shell for the microfrontends group and hosts the other microfrontends.",
-										)
-										.optional(),
-									defaultRoute: z
-										.string()
-										.describe(
-											"A path that is used to take screenshots and as the default path in preview links when a domain for this microfrontend is shown in the UI. Includes the leading slash, e.g. `/docs`",
-										)
-										.optional(),
-									routeObservabilityToThisProject: z
-										.boolean()
-										.describe(
-											"Whether observability data should be routed to this microfrontend project or a root project.",
-										)
-										.optional(),
+										.describe("Whether microfrontends are enabled for this project."),
+									defaultRoute: z.optional(
+										z
+											.string()
+											.describe(
+												"A path that is used to take screenshots and as the default path in preview links when a domain for this microfrontend is shown in the UI. Includes the leading slash, e.g. `/docs`",
+											),
+									),
+									freeProjectForLegacyLimits: z.optional(
+										z
+											.boolean()
+											.describe(
+												"Whether the project was part of the legacy limits for hobby and pro-trial before billing was added. This field is only set when the team is upgraded to a paid plan and we are backfilling the subscription status. We cap the subscription to 2 projects and set this field for the 3rd project. When this field is set, the project is not charged for and we do not call any billing APIs for this project.",
+											),
+									),
 								}),
 								z.object({
 									updatedAt: z.number(),
@@ -2796,15 +3461,17 @@ export const userEventSchema = z
 										.min(2)
 										.max(2),
 									enabled: z.boolean(),
+									freeProjectForLegacyLimits: z.optional(z.boolean()),
 								}),
-							])
-							.optional(),
+							]),
+						),
 					}),
 					prev: z.object({
 						project: z.object({
-							microfrontends: z
-								.union([
+							microfrontends: z.optional(
+								z.union([
 									z.object({
+										isDefaultApp: z.boolean(),
 										updatedAt: z
 											.number()
 											.describe("Timestamp when the microfrontends settings were last updated."),
@@ -2818,24 +3485,64 @@ export const userEventSchema = z
 										enabled: z
 											.boolean()
 											.describe("Whether microfrontends are enabled for this project."),
-										isDefaultApp: z
+										defaultRoute: z.optional(
+											z
+												.string()
+												.describe(
+													"A path that is used to take screenshots and as the default path in preview links when a domain for this microfrontend is shown in the UI. Includes the leading slash, e.g. `/docs`",
+												),
+										),
+										freeProjectForLegacyLimits: z.optional(
+											z
+												.boolean()
+												.describe(
+													"Whether the project was part of the legacy limits for hobby and pro-trial before billing was added. This field is only set when the team is upgraded to a paid plan and we are backfilling the subscription status. We cap the subscription to 2 projects and set this field for the 3rd project. When this field is set, the project is not charged for and we do not call any billing APIs for this project.",
+												),
+										),
+									}),
+									z.object({
+										isDefaultApp: z.optional(z.boolean()),
+										routeObservabilityToThisProject: z.optional(
+											z
+												.boolean()
+												.describe(
+													"Whether observability data should be routed to this microfrontend project or a root project.",
+												),
+										),
+										doNotRouteWithMicrofrontendsRouting: z.optional(
+											z
+												.boolean()
+												.describe(
+													"Whether to add microfrontends routing to aliases. This means domains in this project will route as a microfrontend.",
+												),
+										),
+										updatedAt: z
+											.number()
+											.describe("Timestamp when the microfrontends settings were last updated."),
+										groupIds: z
+											.array(z.union([z.string(), z.string()]))
+											.min(2)
+											.max(2)
+											.describe(
+												"The group IDs of microfrontends that this project belongs to. Each microfrontend project must belong to a microfrontends group that is the set of microfrontends that are used together.",
+											),
+										enabled: z
 											.boolean()
-											.describe(
-												"Whether this project is the default application for the microfrontends group. The default application is the one that is used as the top level shell for the microfrontends group and hosts the other microfrontends.",
-											)
-											.optional(),
-										defaultRoute: z
-											.string()
-											.describe(
-												"A path that is used to take screenshots and as the default path in preview links when a domain for this microfrontend is shown in the UI. Includes the leading slash, e.g. `/docs`",
-											)
-											.optional(),
-										routeObservabilityToThisProject: z
-											.boolean()
-											.describe(
-												"Whether observability data should be routed to this microfrontend project or a root project.",
-											)
-											.optional(),
+											.describe("Whether microfrontends are enabled for this project."),
+										defaultRoute: z.optional(
+											z
+												.string()
+												.describe(
+													"A path that is used to take screenshots and as the default path in preview links when a domain for this microfrontend is shown in the UI. Includes the leading slash, e.g. `/docs`",
+												),
+										),
+										freeProjectForLegacyLimits: z.optional(
+											z
+												.boolean()
+												.describe(
+													"Whether the project was part of the legacy limits for hobby and pro-trial before billing was added. This field is only set when the team is upgraded to a paid plan and we are backfilling the subscription status. We cap the subscription to 2 projects and set this field for the 3rd project. When this field is set, the project is not charged for and we do not call any billing APIs for this project.",
+												),
+										),
 									}),
 									z.object({
 										updatedAt: z.number(),
@@ -2844,9 +3551,10 @@ export const userEventSchema = z
 											.min(2)
 											.max(2),
 										enabled: z.boolean(),
+										freeProjectForLegacyLimits: z.optional(z.boolean()),
 									}),
-								])
-								.optional(),
+								]),
+							),
 						}),
 					}),
 					group: z.object({
@@ -2858,24 +3566,23 @@ export const userEventSchema = z
 				z.object({
 					projectId: z.string(),
 					projectName: z.string(),
-					projectWebAnalytics: z
-						.object({
+					projectWebAnalytics: z.optional(
+						z.object({
 							id: z.string(),
-							disabledAt: z.number().optional(),
-							canceledAt: z.number().optional(),
-							enabledAt: z.number().optional(),
-							hasData: z.boolean().optional(),
-						})
-						.optional(),
+							disabledAt: z.optional(z.number()),
+							canceledAt: z.optional(z.number()),
+							enabledAt: z.optional(z.number()),
+							hasData: z.optional(z.boolean()),
+						}),
+					),
 					prevProjectWebAnalytics: z
 						.object({
 							id: z.string(),
-							disabledAt: z.number().optional(),
-							canceledAt: z.number().optional(),
-							enabledAt: z.number().optional(),
-							hasData: z.boolean().optional(),
+							disabledAt: z.optional(z.number()),
+							canceledAt: z.optional(z.number()),
+							enabledAt: z.optional(z.number()),
+							hasData: z.optional(z.boolean()),
 						})
-						.nullable()
 						.nullish(),
 				}),
 				z.object({
@@ -2887,14 +3594,151 @@ export const userEventSchema = z
 				}),
 				z.object({
 					appName: z.string(),
-					scopes: z.array(z.string()),
+					appId: z.optional(z.string()),
+					scopes: z.array(z.enum(["openid", "email", "profile", "offline_access"])),
+					permissions: z.optional(
+						z.array(
+							z.enum([
+								"*",
+								"read:user",
+								"read-write:user",
+								"read:domain",
+								"read-write:domain",
+								"read:team",
+								"read-write:team",
+								"read:billing",
+								"read-write:ai-gateway-api-key",
+								"read:project",
+								"read-write:project",
+								"read:deployment",
+								"read-write:deployment",
+							]),
+						),
+					),
+					acceptedPermissionSets: z.optional(
+						z.object({
+							userPermissionSet: z.optional(z.array(z.enum(["read:user"]))),
+						}),
+					),
 				}),
 				z.object({
 					appName: z.string(),
-					nextScopes: z.array(z.string()),
+					appId: z.optional(z.string()),
+					nextScopes: z.array(z.enum(["openid", "email", "profile", "offline_access"])),
+					nextPermissions: z.optional(
+						z.array(
+							z.enum([
+								"*",
+								"read:user",
+								"read-write:user",
+								"read:domain",
+								"read-write:domain",
+								"read:team",
+								"read-write:team",
+								"read:billing",
+								"read-write:ai-gateway-api-key",
+								"read:project",
+								"read-write:project",
+								"read:deployment",
+								"read-write:deployment",
+							]),
+						),
+					),
+					nextAcceptedPermissionSets: z.optional(
+						z.object({
+							userPermissionSet: z.optional(z.array(z.enum(["read:user"]))),
+						}),
+					),
 				}),
 				z.object({
 					appName: z.string(),
+					appId: z.optional(z.string()),
+				}),
+				z.object({
+					appName: z.string(),
+					appId: z.optional(z.string()),
+					secretLastFourChars: z.optional(z.string()),
+				}),
+				z.object({
+					appName: z.string(),
+					appId: z.optional(z.string()),
+					resources: z.optional(
+						z.object({
+							projectIds: z.object({
+								type: z.enum(["list"]),
+								required: z.boolean(),
+								items: z.object({
+									type: z.enum(["string"]),
+								}),
+							}),
+						}),
+					),
+				}),
+				z.object({
+					appName: z.string(),
+					appId: z.optional(z.string()),
+					installationId: z.optional(z.string()),
+					before: z.optional(
+						z.object({
+							resources: z.optional(
+								z.object({
+									projectIds: z.object({
+										type: z.enum(["list"]),
+										required: z.boolean(),
+										items: z.object({
+											type: z.enum(["string"]),
+										}),
+									}),
+								}),
+							),
+						}),
+					),
+					after: z.optional(
+						z.object({
+							resources: z.optional(
+								z.object({
+									projectIds: z.object({
+										type: z.enum(["list"]),
+										required: z.boolean(),
+										items: z.object({
+											type: z.enum(["string"]),
+										}),
+									}),
+								}),
+							),
+						}),
+					),
+				}),
+				z.object({
+					appName: z
+						.string()
+						.describe(
+							"The App's name at the moment this even was published (it may have changed since then).",
+						),
+					appId: z.optional(
+						z
+							.string()
+							.describe("The App's ID. Note that not all historical events have this field."),
+					),
+					app: z.optional(
+						z
+							.object({
+								id: z.string().describe("The App's ID."),
+								name: z
+									.string()
+									.describe(
+										"The App's name at the moment this even was published (it may have changed since then).",
+									),
+							})
+							.describe("Note that not all historical events have this field."),
+					),
+					issuedBefore: z.optional(
+						z
+							.number()
+							.describe(
+								"UNIX timestamp in seconds. Tokens issued before this timestamp will be revoked. Note that not all historical events have this field.",
+							),
+					),
 				}),
 				z.object({
 					team: z.object({
@@ -2903,7 +3747,7 @@ export const userEventSchema = z
 					}),
 					configuration: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
 					peering: z.object({
 						id: z.string(),
@@ -2919,11 +3763,11 @@ export const userEventSchema = z
 					}),
 					configuration: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
 					peering: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
 				}),
 				z.object({
@@ -2933,28 +3777,28 @@ export const userEventSchema = z
 					}),
 					configuration: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
 					peering: z.object({
 						id: z.string(),
-						name: z.string().optional(),
+						name: z.optional(z.string()),
 					}),
-					newName: z.string().optional(),
+					newName: z.optional(z.string()),
 				}),
 				z.object({
-					grantType: z.enum([
-						"authorization_code",
-						"refresh_token",
-						"urn:ietf:params:oauth:grant-type:device_code",
-						"client_credentials",
-					]),
-					appName: z.string(),
+					grantType: z.enum(["authorization_code", "urn:ietf:params:oauth:grant-type:device_code"]),
+					appName: z
+						.string()
+						.describe(
+							"the app's name at the time the event was published (it could have changed since then)",
+						),
 					atTTL: z.number().describe("access_token TTL"),
-					rtTTL: z.number().describe("refresh_token TTL").optional(),
+					rtTTL: z.optional(z.number().describe("refresh_token TTL")),
 					scope: z.string(),
 					authMethod: z.enum([
 						"email",
 						"saml",
+						"app",
 						"github",
 						"gitlab",
 						"bitbucket",
@@ -2964,23 +3808,124 @@ export const userEventSchema = z
 						"sms",
 						"invite",
 						"google",
+						"apple",
 					]),
+					app: z.optional(
+						z
+							.object({
+								clientId: z.string(),
+								name: z
+									.string()
+									.describe(
+										"the app's name at the time the event was published (it could have changed since then)",
+									),
+								clientAuthenticationUsed: z.object({
+									method: z.enum([
+										"none",
+										"client_secret_basic",
+										"client_secret_post",
+										"client_secret_jwt",
+										"private_key_jwt",
+										"oidc_token",
+									]),
+									secretId: z.optional(z.string()),
+								}),
+							})
+							.describe(
+								"optional since entries prior to 2025-10-13 do not contain app information",
+							),
+					),
+					includesRefreshToken: z.optional(
+						z
+							.boolean()
+							.describe("optional since entries prior to 2025-10-13 do not contain this field"),
+					),
+					publicId: z.optional(
+						z
+							.string()
+							.describe("optional since entries prior to 2025-10-13 do not contain this field"),
+					),
+					sessionId: z.optional(
+						z
+							.string()
+							.describe("optional since entries prior to 2025-10-13 do not contain this field"),
+					),
 				}),
-			])
-			.optional(),
+			]),
+		),
 	})
 	.describe("Array of events generated by the User.");
+
+/**
+ * @description The member was successfully added to the team.
+ */
+export const invitedTeamMemberSchema = z
+	.object({
+		uid: z.string().describe("The ID of the invited user"),
+		username: z.string().describe("The username of the invited user"),
+		email: z.string().describe("The email of the invited user."),
+		role: z
+			.enum([
+				"BILLING",
+				"CONTRIBUTOR",
+				"DEVELOPER",
+				"MEMBER",
+				"OWNER",
+				"SECURITY",
+				"VIEWER",
+				"VIEWER_FOR_PLUS",
+			])
+			.describe("The role used for the invitation"),
+		teamRoles: z.optional(
+			z
+				.array(
+					z
+						.enum([
+							"BILLING",
+							"CONTRIBUTOR",
+							"DEVELOPER",
+							"MEMBER",
+							"OWNER",
+							"SECURITY",
+							"VIEWER",
+							"VIEWER_FOR_PLUS",
+						])
+						.describe("The team roles of the user"),
+				)
+				.describe("The team roles of the user"),
+		),
+		teamPermissions: z.optional(
+			z
+				.array(
+					z
+						.enum([
+							"CreateProject",
+							"EnvVariableManager",
+							"EnvironmentManager",
+							"FullProductionDeployment",
+							"IntegrationManager",
+							"UsageViewer",
+							"V0Builder",
+							"V0Chatter",
+							"V0Viewer",
+						])
+						.describe("The team permissions of the user"),
+				)
+				.describe("The team permissions of the user"),
+		),
+	})
+	.describe("The member was successfully added to the team.");
 
 /**
  * @description Data representing a Team.
  */
 export const teamSchema = z
 	.object({
-		connect: z
-			.object({
-				enabled: z.boolean().optional(),
-			})
-			.optional(),
+		connect: z.optional(
+			z.object({
+				enabled: z.optional(z.boolean()),
+			}),
+		),
 		creatorId: z.string().describe("The ID of the user who created the Team."),
 		updatedAt: z
 			.number()
@@ -2990,202 +3935,291 @@ export const teamSchema = z
 			.describe(
 				"Hostname that'll be matched with emails on sign-up to automatically join the Team.",
 			)
-			.nullable()
 			.nullish(),
-		saml: z
-			.object({
-				connection: z
-					.object({
-						type: z.string().describe('The Identity Provider "type", for example Okta.'),
-						status: z.string().describe("Current status of the connection."),
-						state: z.string().describe("Current state of the connection."),
-						connectedAt: z
-							.number()
-							.describe("Timestamp (in milliseconds) of when the configuration was connected."),
-						lastReceivedWebhookEvent: z
-							.number()
-							.describe(
-								"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
-							)
-							.optional(),
-					})
-					.describe("Information for the SAML Single Sign-On configuration.")
-					.optional(),
-				directory: z
-					.object({
-						type: z.string().describe('The Identity Provider "type", for example Okta.'),
-						state: z.string().describe("Current state of the connection."),
-						connectedAt: z
-							.number()
-							.describe("Timestamp (in milliseconds) of when the configuration was connected."),
-						lastReceivedWebhookEvent: z
-							.number()
-							.describe(
-								"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
-							)
-							.optional(),
-					})
-					.describe("Information for the Directory Sync configuration.")
-					.optional(),
-				enforced: z
-					.boolean()
-					.describe(
-						"When `true`, interactions with the Team **must** be done with an authentication token that has been authenticated with the Team's SAML Single Sign-On provider.",
+		saml: z.optional(
+			z
+				.object({
+					connection: z.optional(
+						z
+							.object({
+								type: z.string().describe('The Identity Provider "type", for example Okta.'),
+								status: z.string().describe("Current status of the connection."),
+								state: z.string().describe("Current state of the connection."),
+								connectedAt: z
+									.number()
+									.describe("Timestamp (in milliseconds) of when the configuration was connected."),
+								lastReceivedWebhookEvent: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
+										),
+								),
+								lastSyncedAt: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last directory sync was performed.",
+										),
+								),
+							})
+							.describe("Information for the SAML Single Sign-On configuration."),
 					),
-				roles: z
-					.object({})
-					.catchall(
-						z.union([
-							z.object({
-								accessGroupId: z.string(),
-							}),
+					directory: z.optional(
+						z
+							.object({
+								type: z.string().describe('The Identity Provider "type", for example Okta.'),
+								state: z.string().describe("Current state of the connection."),
+								connectedAt: z
+									.number()
+									.describe("Timestamp (in milliseconds) of when the configuration was connected."),
+								lastReceivedWebhookEvent: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
+										),
+								),
+								lastSyncedAt: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last directory sync was performed.",
+										),
+								),
+							})
+							.describe("Information for the Directory Sync configuration."),
+					),
+					enforced: z
+						.boolean()
+						.describe(
+							"When `true`, interactions with the Team **must** be done with an authentication token that has been authenticated with the Team's SAML Single Sign-On provider.",
+						),
+					defaultRedirectUri: z.optional(
+						z
+							.enum(["v0.app", "v0.dev", "vercel.com"])
+							.describe("The default redirect URI to use after successful SAML authentication."),
+					),
+					roles: z.optional(
+						z
+							.object({})
+							.catchall(
+								z.union([
+									z.object({
+										accessGroupId: z.string(),
+									}),
+									z.enum([
+										"OWNER",
+										"MEMBER",
+										"DEVELOPER",
+										"SECURITY",
+										"BILLING",
+										"VIEWER",
+										"VIEWER_FOR_PLUS",
+										"CONTRIBUTOR",
+									]),
+								]),
+							)
+							.describe(
+								'When "Directory Sync" is configured, this object contains a mapping of which Directory Group (by ID) should be assigned to which Vercel Team "role".',
+							),
+					),
+				})
+				.describe(
+					'When "Single Sign-On (SAML)" is configured, this object contains information regarding the configuration of the Identity Provider (IdP).',
+				),
+		),
+		inviteCode: z.optional(
+			z.string().describe("Code that can be used to join this Team. Only visible to Team owners."),
+		),
+		description: z.nullable(z.string().describe("A short description of the Team.")),
+		defaultRoles: z.optional(
+			z
+				.object({
+					teamRoles: z.optional(
+						z.array(
 							z.enum([
-								"OWNER",
-								"MEMBER",
-								"DEVELOPER",
-								"SECURITY",
 								"BILLING",
-								"VIEWER",
 								"CONTRIBUTOR",
+								"DEVELOPER",
+								"MEMBER",
+								"OWNER",
+								"SECURITY",
+								"VIEWER",
+								"VIEWER_FOR_PLUS",
 							]),
-						]),
-					)
-					.describe(
-						'When "Directory Sync" is configured, this object contains a mapping of which Directory Group (by ID) should be assigned to which Vercel Team "role".',
-					)
-					.optional(),
-			})
-			.describe(
-				'When "Single Sign-On (SAML)" is configured, this object contains information regarding the configuration of the Identity Provider (IdP).',
-			)
-			.optional(),
-		inviteCode: z
-			.string()
-			.describe("Code that can be used to join this Team. Only visible to Team owners.")
-			.optional(),
-		description: z.string().describe("A short description of the Team.").nullable(),
+						),
+					),
+					teamPermissions: z.optional(
+						z.array(
+							z.enum([
+								"CreateProject",
+								"EnvVariableManager",
+								"EnvironmentManager",
+								"FullProductionDeployment",
+								"IntegrationManager",
+								"UsageViewer",
+								"V0Builder",
+								"V0Chatter",
+								"V0Viewer",
+							]),
+						),
+					),
+				})
+				.describe("Default roles for the team."),
+		),
 		stagingPrefix: z.string().describe("The prefix that is prepended to automatic aliases."),
-		resourceConfig: z
-			.object({
-				concurrentBuilds: z
-					.number()
-					.describe("The total amount of concurrent builds that can be used.")
-					.optional(),
-				elasticConcurrencyEnabled: z
-					.boolean()
-					.describe(
-						"Whether every build for this team / user has elastic concurrency enabled automatically.",
-					)
-					.optional(),
-				edgeConfigSize: z
-					.number()
-					.describe(
-						"The maximum size in kilobytes of an Edge Config. Only specified if a custom limit is set.",
-					)
-					.optional(),
-				edgeConfigs: z
-					.number()
-					.describe("The maximum number of edge configs an account can create.")
-					.optional(),
-				kvDatabases: z
-					.number()
-					.describe("The maximum number of kv databases an account can create.")
-					.optional(),
-				blobStores: z
-					.number()
-					.describe("The maximum number of blob stores an account can create.")
-					.optional(),
-				postgresDatabases: z
-					.number()
-					.describe("The maximum number of postgres databases an account can create.")
-					.optional(),
-				buildEntitlements: z
-					.object({
-						enhancedBuilds: z.boolean().optional(),
-					})
-					.optional(),
-			})
-			.optional(),
+		resourceConfig: z.optional(
+			z.object({
+				concurrentBuilds: z.optional(
+					z.number().describe("The total amount of concurrent builds that can be used."),
+				),
+				elasticConcurrencyEnabled: z.optional(
+					z
+						.boolean()
+						.describe(
+							"Whether every build for this team / user has elastic concurrency enabled automatically.",
+						),
+				),
+				edgeConfigSize: z.optional(
+					z
+						.number()
+						.describe(
+							"The maximum size in kilobytes of an Edge Config. Only specified if a custom limit is set.",
+						),
+				),
+				edgeConfigs: z.optional(
+					z.number().describe("The maximum number of edge configs an account can create."),
+				),
+				kvDatabases: z.optional(
+					z.number().describe("The maximum number of kv databases an account can create."),
+				),
+				blobStores: z.optional(
+					z.number().describe("The maximum number of blob stores an account can create."),
+				),
+				postgresDatabases: z.optional(
+					z.number().describe("The maximum number of postgres databases an account can create."),
+				),
+				buildEntitlements: z.optional(
+					z.object({
+						enhancedBuilds: z.optional(z.boolean()),
+					}),
+				),
+			}),
+		),
 		previewDeploymentSuffix: z
 			.string()
 			.describe("The hostname that is current set as preview deployment suffix.")
-			.nullable()
 			.nullish(),
-		remoteCaching: z
-			.object({
-				enabled: z.boolean().optional(),
-			})
-			.describe("Is remote caching enabled for this team")
-			.optional(),
-		defaultDeploymentProtection: z
-			.object({
-				passwordProtection: z
-					.object({
-						deploymentType: z.string(),
-					})
-					.optional(),
-				ssoProtection: z
-					.object({
-						deploymentType: z.string(),
-					})
-					.optional(),
-			})
-			.describe("Default deployment protection for this team")
-			.optional(),
+		platform: z.optional(z.boolean().describe("Whether the team is a platform team.")),
+		disableHardAutoBlocks: z.optional(z.union([z.boolean(), z.number()])),
+		remoteCaching: z.optional(
+			z
+				.object({
+					enabled: z.optional(z.boolean()),
+				})
+				.describe("Is remote caching enabled for this team"),
+		),
+		defaultDeploymentProtection: z.optional(
+			z
+				.object({
+					passwordProtection: z
+						.object({
+							deploymentType: z.string(),
+						})
+						.nullish(),
+					ssoProtection: z
+						.object({
+							deploymentType: z.string(),
+						})
+						.nullish(),
+				})
+				.describe(
+					"Default deployment protection for this team null indicates protection is disabled",
+				),
+		),
+		defaultExpirationSettings: z.optional(
+			z
+				.object({
+					expirationDays: z.optional(
+						z
+							.number()
+							.describe(
+								"Number of days to keep non-production deployments (mostly preview deployments) before soft deletion.",
+							),
+					),
+					expirationDaysProduction: z.optional(
+						z
+							.number()
+							.describe("Number of days to keep production deployments before soft deletion."),
+					),
+					expirationDaysCanceled: z.optional(
+						z
+							.number()
+							.describe("Number of days to keep canceled deployments before soft deletion."),
+					),
+					expirationDaysErrored: z.optional(
+						z.number().describe("Number of days to keep errored deployments before soft deletion."),
+					),
+					deploymentsToKeep: z.optional(
+						z
+							.number()
+							.describe(
+								"Minimum number of production deployments to keep for this project, even if they are over the production expiration limit.",
+							),
+					),
+				})
+				.describe("Default deployment expiration settings for this team"),
+		),
 		enablePreviewFeedback: z
 			.enum(["default", "default-force", "off", "off-force", "on", "on-force"])
 			.describe("Whether toolbar is enabled on preview deployments")
-			.nullable()
 			.nullish(),
 		enableProductionFeedback: z
 			.enum(["default", "default-force", "off", "off-force", "on", "on-force"])
 			.describe("Whether toolbar is enabled on production deployments")
-			.nullable()
 			.nullish(),
 		sensitiveEnvironmentVariablePolicy: z
 			.enum(["default", "off", "on"])
 			.describe("Sensitive environment variable policy for this team")
-			.nullable()
 			.nullish(),
 		hideIpAddresses: z
 			.boolean()
 			.describe("Indicates if IP addresses should be accessible in observability (o11y) tooling")
-			.nullable()
 			.nullish(),
 		hideIpAddressesInLogDrains: z
 			.boolean()
 			.describe("Indicates if IP addresses should be accessible in log drains")
-			.nullable()
 			.nullish(),
-		ipBuckets: z
-			.array(
+		ipBuckets: z.optional(
+			z.array(
 				z.object({
 					bucket: z.string(),
-					supportUntil: z.number().optional(),
+					supportUntil: z.optional(z.number()),
 				}),
-			)
-			.optional(),
+			),
+		),
 		id: z.string().describe("The Team's unique identifier."),
 		slug: z.string().describe("The Team's slug, which is unique across the Vercel platform."),
-		name: z
-			.string()
-			.describe("Name associated with the Team account, or `null` if none has been provided.")
-			.nullable(),
-		avatar: z.string().describe("The ID of the file used as avatar for this Team.").nullable(),
+		name: z.nullable(
+			z
+				.string()
+				.describe("Name associated with the Team account, or `null` if none has been provided."),
+		),
+		avatar: z.nullable(z.string().describe("The ID of the file used as avatar for this Team.")),
 		membership: z
 			.object({
-				uid: z.string().optional(),
-				entitlements: z
-					.array(
+				uid: z.optional(z.string()),
+				entitlements: z.optional(
+					z.array(
 						z.object({
 							entitlement: z.string(),
 						}),
-					)
-					.optional(),
-				teamId: z.string().optional(),
+					),
+				),
+				teamId: z.optional(z.string()),
 				confirmed: z.boolean(),
-				confirmedAt: z.number(),
-				accessRequestedAt: z.number().optional(),
+				accessRequestedAt: z.optional(z.number()),
 				role: z.enum([
 					"BILLING",
 					"CONTRIBUTOR",
@@ -3194,9 +4228,10 @@ export const teamSchema = z
 					"OWNER",
 					"SECURITY",
 					"VIEWER",
+					"VIEWER_FOR_PLUS",
 				]),
-				teamRoles: z
-					.array(
+				teamRoles: z.optional(
+					z.array(
 						z.enum([
 							"BILLING",
 							"CONTRIBUTOR",
@@ -3205,24 +4240,29 @@ export const teamSchema = z
 							"OWNER",
 							"SECURITY",
 							"VIEWER",
+							"VIEWER_FOR_PLUS",
 						]),
-					)
-					.optional(),
-				teamPermissions: z
-					.array(
+					),
+				),
+				teamPermissions: z.optional(
+					z.array(
 						z.enum([
 							"CreateProject",
 							"EnvVariableManager",
 							"EnvironmentManager",
 							"FullProductionDeployment",
+							"IntegrationManager",
 							"UsageViewer",
+							"V0Builder",
+							"V0Chatter",
+							"V0Viewer",
 						]),
-					)
-					.optional(),
+					),
+				),
 				createdAt: z.number(),
 				created: z.number(),
-				joinedFrom: z
-					.object({
+				joinedFrom: z.optional(
+					z.object({
 						origin: z.enum([
 							"bitbucket",
 							"dsync",
@@ -3236,18 +4276,18 @@ export const teamSchema = z
 							"saml",
 							"teams",
 						]),
-						commitId: z.string().optional(),
-						repoId: z.string().optional(),
-						repoPath: z.string().optional(),
-						gitUserId: z.union([z.string(), z.number()]).optional(),
-						gitUserLogin: z.string().optional(),
-						ssoUserId: z.string().optional(),
-						ssoConnectedAt: z.number().optional(),
-						idpUserId: z.string().optional(),
-						dsyncUserId: z.string().optional(),
-						dsyncConnectedAt: z.number().optional(),
-					})
-					.optional(),
+						commitId: z.optional(z.string()),
+						repoId: z.optional(z.string()),
+						repoPath: z.optional(z.string()),
+						gitUserId: z.optional(z.union([z.string(), z.number()])),
+						gitUserLogin: z.optional(z.string()),
+						ssoUserId: z.optional(z.string()),
+						ssoConnectedAt: z.optional(z.number()),
+						idpUserId: z.optional(z.string()),
+						dsyncUserId: z.optional(z.string()),
+						dsyncConnectedAt: z.optional(z.number()),
+					}),
+				),
 			})
 			.describe("The membership of the authenticated User in relation to the Team."),
 		createdAt: z.number().describe("UNIX timestamp (in milliseconds) when the Team was created."),
@@ -3265,72 +4305,91 @@ export const teamLimitedSchema = z
 				"Property indicating that this Team data contains only limited information, due to the authentication token missing privileges to read the full Team data or due to team having MFA enforced and the user not having MFA enabled. Re-login with the Team's configured SAML Single Sign-On provider in order to upgrade the authentication token with the necessary privileges.",
 			),
 		limitedBy: z.array(z.enum(["mfa", "scope"])),
-		saml: z
-			.object({
-				connection: z
-					.object({
-						type: z.string().describe('The Identity Provider "type", for example Okta.'),
-						status: z.string().describe("Current status of the connection."),
-						state: z.string().describe("Current state of the connection."),
-						connectedAt: z
-							.number()
-							.describe("Timestamp (in milliseconds) of when the configuration was connected."),
-						lastReceivedWebhookEvent: z
-							.number()
-							.describe(
-								"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
-							)
-							.optional(),
-					})
-					.describe("Information for the SAML Single Sign-On configuration.")
-					.optional(),
-				directory: z
-					.object({
-						type: z.string().describe('The Identity Provider "type", for example Okta.'),
-						state: z.string().describe("Current state of the connection."),
-						connectedAt: z
-							.number()
-							.describe("Timestamp (in milliseconds) of when the configuration was connected."),
-						lastReceivedWebhookEvent: z
-							.number()
-							.describe(
-								"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
-							)
-							.optional(),
-					})
-					.describe("Information for the Directory Sync configuration.")
-					.optional(),
-				enforced: z
-					.boolean()
-					.describe(
-						"When `true`, interactions with the Team **must** be done with an authentication token that has been authenticated with the Team's SAML Single Sign-On provider.",
+		saml: z.optional(
+			z
+				.object({
+					connection: z.optional(
+						z
+							.object({
+								type: z.string().describe('The Identity Provider "type", for example Okta.'),
+								status: z.string().describe("Current status of the connection."),
+								state: z.string().describe("Current state of the connection."),
+								connectedAt: z
+									.number()
+									.describe("Timestamp (in milliseconds) of when the configuration was connected."),
+								lastReceivedWebhookEvent: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
+										),
+								),
+								lastSyncedAt: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last directory sync was performed.",
+										),
+								),
+							})
+							.describe("Information for the SAML Single Sign-On configuration."),
 					),
-			})
-			.describe(
-				'When "Single Sign-On (SAML)" is configured, this object contains information that allows the client-side to identify whether or not this Team has SAML enforced.',
-			)
-			.optional(),
+					directory: z.optional(
+						z
+							.object({
+								type: z.string().describe('The Identity Provider "type", for example Okta.'),
+								state: z.string().describe("Current state of the connection."),
+								connectedAt: z
+									.number()
+									.describe("Timestamp (in milliseconds) of when the configuration was connected."),
+								lastReceivedWebhookEvent: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last webhook event was received from WorkOS.",
+										),
+								),
+								lastSyncedAt: z.optional(
+									z
+										.number()
+										.describe(
+											"Timestamp (in milliseconds) of when the last directory sync was performed.",
+										),
+								),
+							})
+							.describe("Information for the Directory Sync configuration."),
+					),
+					enforced: z
+						.boolean()
+						.describe(
+							"When `true`, interactions with the Team **must** be done with an authentication token that has been authenticated with the Team's SAML Single Sign-On provider.",
+						),
+				})
+				.describe(
+					'When "Single Sign-On (SAML)" is configured, this object contains information that allows the client-side to identify whether or not this Team has SAML enforced.',
+				),
+		),
 		id: z.string().describe("The Team's unique identifier."),
 		slug: z.string().describe("The Team's slug, which is unique across the Vercel platform."),
-		name: z
-			.string()
-			.describe("Name associated with the Team account, or `null` if none has been provided.")
-			.nullable(),
-		avatar: z.string().describe("The ID of the file used as avatar for this Team.").nullable(),
+		name: z.nullable(
+			z
+				.string()
+				.describe("Name associated with the Team account, or `null` if none has been provided."),
+		),
+		avatar: z.nullable(z.string().describe("The ID of the file used as avatar for this Team.")),
 		membership: z
 			.object({
-				uid: z.string().optional(),
-				entitlements: z
-					.array(
+				uid: z.optional(z.string()),
+				entitlements: z.optional(
+					z.array(
 						z.object({
 							entitlement: z.string(),
 						}),
-					)
-					.optional(),
-				teamId: z.string().optional(),
+					),
+				),
+				teamId: z.optional(z.string()),
 				confirmed: z.boolean(),
-				confirmedAt: z.number(),
-				accessRequestedAt: z.number().optional(),
+				accessRequestedAt: z.optional(z.number()),
 				role: z.enum([
 					"BILLING",
 					"CONTRIBUTOR",
@@ -3339,9 +4398,10 @@ export const teamLimitedSchema = z
 					"OWNER",
 					"SECURITY",
 					"VIEWER",
+					"VIEWER_FOR_PLUS",
 				]),
-				teamRoles: z
-					.array(
+				teamRoles: z.optional(
+					z.array(
 						z.enum([
 							"BILLING",
 							"CONTRIBUTOR",
@@ -3350,24 +4410,29 @@ export const teamLimitedSchema = z
 							"OWNER",
 							"SECURITY",
 							"VIEWER",
+							"VIEWER_FOR_PLUS",
 						]),
-					)
-					.optional(),
-				teamPermissions: z
-					.array(
+					),
+				),
+				teamPermissions: z.optional(
+					z.array(
 						z.enum([
 							"CreateProject",
 							"EnvVariableManager",
 							"EnvironmentManager",
 							"FullProductionDeployment",
+							"IntegrationManager",
 							"UsageViewer",
+							"V0Builder",
+							"V0Chatter",
+							"V0Viewer",
 						]),
-					)
-					.optional(),
+					),
+				),
 				createdAt: z.number(),
 				created: z.number(),
-				joinedFrom: z
-					.object({
+				joinedFrom: z.optional(
+					z.object({
 						origin: z.enum([
 							"bitbucket",
 							"dsync",
@@ -3381,18 +4446,18 @@ export const teamLimitedSchema = z
 							"saml",
 							"teams",
 						]),
-						commitId: z.string().optional(),
-						repoId: z.string().optional(),
-						repoPath: z.string().optional(),
-						gitUserId: z.union([z.string(), z.number()]).optional(),
-						gitUserLogin: z.string().optional(),
-						ssoUserId: z.string().optional(),
-						ssoConnectedAt: z.number().optional(),
-						idpUserId: z.string().optional(),
-						dsyncUserId: z.string().optional(),
-						dsyncConnectedAt: z.number().optional(),
-					})
-					.optional(),
+						commitId: z.optional(z.string()),
+						repoId: z.optional(z.string()),
+						repoPath: z.optional(z.string()),
+						gitUserId: z.optional(z.union([z.string(), z.number()])),
+						gitUserLogin: z.optional(z.string()),
+						ssoUserId: z.optional(z.string()),
+						ssoConnectedAt: z.optional(z.number()),
+						idpUserId: z.optional(z.string()),
+						dsyncUserId: z.optional(z.string()),
+						dsyncConnectedAt: z.optional(z.number()),
+					}),
+				),
 			})
 			.describe("The membership of the authenticated User in relation to the Team."),
 		createdAt: z.number().describe("UNIX timestamp (in milliseconds) when the Team was created."),
@@ -3409,63 +4474,71 @@ export const authTokenSchema = z
 		id: z.string().describe("The unique identifier of the token."),
 		name: z.string().describe("The human-readable name of the token."),
 		type: z.string().describe("The type of the token."),
-		origin: z.string().describe("The origin of how the token was created.").optional(),
-		scopes: z
-			.array(
-				z.union([
-					z.object({
-						type: z.enum(["user"]),
-						sudo: z
-							.object({
-								origin: z
-									.enum(["totp", "webauthn", "recovery-code"])
-									.describe("Possible multi-factor origins"),
-								expiresAt: z.number(),
-							})
-							.optional(),
-						origin: z.enum([
-							"saml",
-							"github",
-							"gitlab",
-							"bitbucket",
-							"email",
-							"manual",
-							"passkey",
-							"otp",
-							"sms",
-							"invite",
-							"google",
-						]),
-						createdAt: z.number(),
-						expiresAt: z.number().optional(),
-					}),
-					z.object({
-						type: z.enum(["team"]),
-						teamId: z.string(),
-						origin: z.enum([
-							"saml",
-							"github",
-							"gitlab",
-							"bitbucket",
-							"email",
-							"manual",
-							"passkey",
-							"otp",
-							"sms",
-							"invite",
-							"google",
-						]),
-						createdAt: z.number(),
-						expiresAt: z.number().optional(),
-					}),
-				]),
-			)
-			.describe("The access scopes granted to the token.")
-			.optional(),
-		expiresAt: z
-			.number()
-			.describe("Timestamp (in milliseconds) of when the token expires.")
-			.optional(),
+		origin: z.optional(z.string().describe("The origin of how the token was created.")),
+		scopes: z.optional(
+			z
+				.array(
+					z.union([
+						z.object({
+							type: z.enum(["user"]),
+							sudo: z.optional(
+								z.object({
+									origin: z
+										.enum(["totp", "webauthn", "recovery-code"])
+										.describe("Possible multi-factor origins"),
+									expiresAt: z.number(),
+								}),
+							),
+							origin: z.optional(
+								z.enum([
+									"saml",
+									"github",
+									"gitlab",
+									"bitbucket",
+									"email",
+									"manual",
+									"passkey",
+									"otp",
+									"sms",
+									"invite",
+									"google",
+									"apple",
+									"app",
+								]),
+							),
+							createdAt: z.number(),
+							expiresAt: z.optional(z.number()),
+						}),
+						z.object({
+							type: z.enum(["team"]),
+							teamId: z.string(),
+							origin: z.optional(
+								z.enum([
+									"saml",
+									"github",
+									"gitlab",
+									"bitbucket",
+									"email",
+									"manual",
+									"passkey",
+									"otp",
+									"sms",
+									"invite",
+									"google",
+									"apple",
+									"app",
+								]),
+							),
+							createdAt: z.number(),
+							expiresAt: z.optional(z.number()),
+						}),
+					]),
+				)
+				.describe("The access scopes granted to the token."),
+		),
+		expiresAt: z.optional(
+			z.number().describe("Timestamp (in milliseconds) of when the token expires."),
+		),
 		activeAt: z
 			.number()
 			.describe("Timestamp (in milliseconds) of when the token was most recently used."),
@@ -3481,253 +4554,343 @@ export const authUserSchema = z
 		createdAt: z
 			.number()
 			.describe("UNIX timestamp (in milliseconds) when the User account was created."),
-		softBlock: z
-			.object({
-				blockedAt: z.number(),
-				reason: z.enum([
-					"BLOCKED_FOR_PLATFORM_ABUSE",
-					"ENTERPRISE_TRIAL_ENDED",
-					"FAIR_USE_LIMITS_EXCEEDED",
-					"SUBSCRIPTION_CANCELED",
-					"SUBSCRIPTION_EXPIRED",
-					"UNPAID_INVOICE",
-				]),
-				blockedDueToOverageType: z
-					.enum([
-						"analyticsUsage",
-						"artifacts",
-						"bandwidth",
-						"blobDataTransfer",
-						"blobTotalAdvancedRequests",
-						"blobTotalAvgSizeInBytes",
-						"blobTotalGetResponseObjectSizeInBytes",
-						"blobTotalSimpleRequests",
-						"connectDataTransfer",
-						"dataCacheRead",
-						"dataCacheWrite",
-						"edgeConfigRead",
-						"edgeConfigWrite",
-						"edgeFunctionExecutionUnits",
-						"edgeMiddlewareInvocations",
-						"edgeRequest",
-						"edgeRequestAdditionalCpuDuration",
-						"elasticConcurrencyBuildSlots",
-						"fastDataTransfer",
-						"fastOriginTransfer",
-						"fluidCpuDuration",
-						"fluidDuration",
-						"functionDuration",
-						"functionInvocation",
-						"imageOptimizationCacheRead",
-						"imageOptimizationCacheWrite",
-						"imageOptimizationTransformation",
-						"logDrainsVolume",
-						"monitoringMetric",
-						"observabilityEvent",
-						"onDemandConcurrencyMinutes",
-						"runtimeCacheRead",
-						"runtimeCacheWrite",
-						"serverlessFunctionExecution",
-						"sourceImages",
-						"wafOwaspExcessBytes",
-						"wafOwaspRequests",
-						"wafRateLimitRequest",
-						"webAnalyticsEvent",
-					])
-					.optional(),
-			})
-			.describe(
-				'When the User account has been "soft blocked", this property will contain the date when the restriction was enacted, and the identifier for why.',
-			)
-			.nullable(),
-		billing: z
-			.object({})
-			.describe("An object containing billing infomation associated with the User account.")
-			.nullable(),
+		softBlock: z.nullable(
+			z
+				.object({
+					blockedAt: z.number(),
+					reason: z.enum([
+						"BLOCKED_FOR_PLATFORM_ABUSE",
+						"ENTERPRISE_TRIAL_ENDED",
+						"FAIR_USE_LIMITS_EXCEEDED",
+						"SUBSCRIPTION_CANCELED",
+						"SUBSCRIPTION_EXPIRED",
+						"UNPAID_INVOICE",
+					]),
+					blockedDueToOverageType: z.optional(
+						z.enum([
+							"analyticsUsage",
+							"artifacts",
+							"bandwidth",
+							"blobDataTransfer",
+							"blobTotalAdvancedRequests",
+							"blobTotalAvgSizeInBytes",
+							"blobTotalGetResponseObjectSizeInBytes",
+							"blobTotalSimpleRequests",
+							"connectDataTransfer",
+							"dataCacheRead",
+							"dataCacheWrite",
+							"edgeConfigRead",
+							"edgeConfigWrite",
+							"edgeFunctionExecutionUnits",
+							"edgeMiddlewareInvocations",
+							"edgeRequest",
+							"edgeRequestAdditionalCpuDuration",
+							"elasticConcurrencyBuildSlots",
+							"fastDataTransfer",
+							"fastOriginTransfer",
+							"fluidCpuDuration",
+							"fluidDuration",
+							"functionDuration",
+							"functionInvocation",
+							"imageOptimizationCacheRead",
+							"imageOptimizationCacheWrite",
+							"imageOptimizationTransformation",
+							"logDrainsVolume",
+							"monitoringMetric",
+							"observabilityEvent",
+							"onDemandConcurrencyMinutes",
+							"runtimeCacheRead",
+							"runtimeCacheWrite",
+							"serverlessFunctionExecution",
+							"sourceImages",
+							"wafOwaspExcessBytes",
+							"wafOwaspRequests",
+							"wafRateLimitRequest",
+							"webAnalyticsEvent",
+						]),
+					),
+				})
+				.describe(
+					'When the User account has been "soft blocked", this property will contain the date when the restriction was enacted, and the identifier for why.',
+				),
+		),
+		billing: z.nullable(
+			z
+				.object({})
+				.describe("An object containing billing infomation associated with the User account."),
+		),
 		resourceConfig: z
 			.object({
-				nodeType: z
-					.string()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				concurrentBuilds: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				elasticConcurrencyEnabled: z
-					.boolean()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				buildEntitlements: z
-					.object({
-						enhancedBuilds: z
-							.boolean()
-							.describe(
-								"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-							)
-							.optional(),
-					})
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				awsAccountType: z
-					.string()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				awsAccountIds: z
-					.array(z.string())
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				cfZoneName: z
-					.string()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				imageOptimizationType: z
-					.string()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				edgeConfigs: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				edgeConfigSize: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				edgeFunctionMaxSizeBytes: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				edgeFunctionExecutionTimeoutMs: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				serverlessFunctionMaxMemorySize: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				kvDatabases: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				postgresDatabases: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				blobStores: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				integrationStores: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				cronJobs: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				cronJobsPerProject: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				microfrontendGroupsPerTeam: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				microfrontendProjectsPerGroup: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				flagsExplorerOverridesThreshold: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				flagsExplorerUnlimitedOverrides: z
-					.boolean()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				customEnvironmentsPerProject: z
-					.number()
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
-				buildMachine: z
-					.object({
-						purchaseType: z
-							.enum(["enhanced", "turbo"])
-							.describe(
-								"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-							)
-							.optional(),
-						isDefaultBuildMachine: z
-							.boolean()
-							.describe(
-								"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-							)
-							.optional(),
-						cores: z
-							.number()
-							.describe(
-								"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-							)
-							.optional(),
-						memory: z
-							.number()
-							.describe(
-								"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-							)
-							.optional(),
-					})
-					.describe(
-						"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
-					)
-					.optional(),
+				nodeType: z.optional(
+					z
+						.string()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				concurrentBuilds: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				elasticConcurrencyEnabled: z.optional(
+					z
+						.boolean()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				buildEntitlements: z.optional(
+					z
+						.object({
+							enhancedBuilds: z.optional(
+								z
+									.boolean()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+						})
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				buildQueue: z.optional(
+					z
+						.object({
+							configuration: z.optional(
+								z
+									.enum(["SKIP_NAMESPACE_QUEUE", "WAIT_FOR_NAMESPACE_QUEUE"])
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+						})
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				awsAccountType: z.optional(
+					z
+						.string()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				awsAccountIds: z.optional(
+					z
+						.array(z.string())
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				cfZoneName: z.optional(
+					z
+						.string()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				imageOptimizationType: z.optional(
+					z
+						.string()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				edgeConfigs: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				edgeConfigSize: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				edgeFunctionMaxSizeBytes: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				edgeFunctionExecutionTimeoutMs: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				serverlessFunctionMaxMemorySize: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				kvDatabases: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				postgresDatabases: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				blobStores: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				integrationStores: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				cronJobs: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				cronJobsPerProject: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				microfrontendGroupsPerTeam: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				microfrontendProjectsPerGroup: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				flagsExplorerOverridesThreshold: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				flagsExplorerUnlimitedOverrides: z.optional(
+					z
+						.boolean()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				customEnvironmentsPerProject: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				buildMachine: z.optional(
+					z
+						.object({
+							purchaseType: z.optional(
+								z
+									.enum(["enhanced", "turbo"])
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+							isDefaultBuildMachine: z.optional(
+								z
+									.boolean()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+							cores: z.optional(
+								z
+									.number()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+							memory: z.optional(
+								z
+									.number()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+						})
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				security: z.optional(
+					z
+						.object({
+							customRules: z.optional(
+								z
+									.number()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+							ipBlocks: z.optional(
+								z
+									.number()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+							ipBypass: z.optional(
+								z
+									.number()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+							rateLimit: z.optional(
+								z
+									.number()
+									.describe(
+										"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+									),
+							),
+						})
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
+				bulkRedirectsFreeLimitOverride: z.optional(
+					z
+						.number()
+						.describe(
+							"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
+						),
+				),
 			})
 			.describe(
 				"An object containing infomation related to the amount of platform resources may be allocated to the User account.",
@@ -3737,103 +4900,112 @@ export const authUserSchema = z
 			.describe(
 				'Prefix that will be used in the URL of "Preview" deployments created by the User account.',
 			),
-		activeDashboardViews: z
-			.array(
-				z
-					.object({
-						scopeId: z.string(),
-						viewPreference: z.enum(["cards", "list"]).nullable().nullish(),
-						favoritesViewPreference: z.enum(["closed", "open"]).nullable().nullish(),
-						recentsViewPreference: z.enum(["closed", "open"]).nullable().nullish(),
-					})
-					.describe("set of dashboard view preferences (cards or list) per scopeId"),
-			)
-			.describe("set of dashboard view preferences (cards or list) per scopeId")
-			.optional(),
-		importFlowGitNamespace: z.union([z.string(), z.number()]).nullable().nullish(),
-		importFlowGitNamespaceId: z.union([z.string(), z.number()]).nullable().nullish(),
+		activeDashboardViews: z.optional(
+			z
+				.array(
+					z
+						.object({
+							scopeId: z.string(),
+							viewPreference: z.enum(["cards", "list"]).nullish(),
+							favoritesViewPreference: z.enum(["closed", "open"]).nullish(),
+							recentsViewPreference: z.enum(["closed", "open"]).nullish(),
+						})
+						.describe("set of dashboard view preferences (cards or list) per scopeId"),
+				)
+				.describe("set of dashboard view preferences (cards or list) per scopeId"),
+		),
+		importFlowGitNamespace: z.union([z.string(), z.number()]).nullish(),
+		importFlowGitNamespaceId: z.union([z.string(), z.number()]).nullish(),
 		importFlowGitProvider: z
 			.enum(["bitbucket", "github", "github-custom-host", "github-limited", "gitlab"])
-			.nullable()
 			.nullish(),
-		preferredScopesAndGitNamespaces: z
-			.array(
+		preferredScopesAndGitNamespaces: z.optional(
+			z.array(
 				z.object({
 					scopeId: z.string(),
-					gitNamespaceId: z.union([z.string(), z.number()]).nullable(),
+					gitNamespaceId: z.nullable(z.union([z.string(), z.number()])),
 				}),
-			)
-			.optional(),
-		dismissedToasts: z
-			.array(
-				z
-					.object({
-						name: z.string(),
-						dismissals: z.array(
-							z.object({
-								scopeId: z.string(),
-								createdAt: z.number(),
-							}),
+			),
+		),
+		dismissedToasts: z.optional(
+			z
+				.array(
+					z
+						.object({
+							name: z.string(),
+							dismissals: z.array(
+								z.object({
+									scopeId: z.string(),
+									createdAt: z.number(),
+								}),
+							),
+						})
+						.describe("A record of when, under a certain scopeId, a toast was dismissed"),
+				)
+				.describe("A record of when, under a certain scopeId, a toast was dismissed"),
+		),
+		favoriteProjectsAndSpaces: z.optional(
+			z
+				.array(
+					z
+						.object({
+							teamId: z.string(),
+							projectId: z.string(),
+						})
+						.describe(
+							"A list of projects and spaces across teams that a user has marked as a favorite.",
 						),
-					})
-					.describe("A record of when, under a certain scopeId, a toast was dismissed"),
-			)
-			.describe("A record of when, under a certain scopeId, a toast was dismissed")
-			.optional(),
-		favoriteProjectsAndSpaces: z
-			.array(
-				z
-					.object({
-						teamId: z.string(),
-						projectId: z.string(),
-					})
-					.describe(
-						"A list of projects and spaces across teams that a user has marked as a favorite.",
-					),
-			)
-			.describe("A list of projects and spaces across teams that a user has marked as a favorite.")
-			.optional(),
+				)
+				.describe(
+					"A list of projects and spaces across teams that a user has marked as a favorite.",
+				),
+		),
 		hasTrialAvailable: z
 			.boolean()
 			.describe("Whether the user has a trial available for a paid plan subscription."),
-		remoteCaching: z
-			.object({
-				enabled: z.boolean().optional(),
-			})
-			.describe("remote caching settings")
-			.optional(),
-		dataCache: z
-			.object({
-				excessBillingEnabled: z.boolean().optional(),
-			})
-			.describe("data cache settings")
-			.optional(),
-		featureBlocks: z
-			.object({
-				webAnalytics: z
-					.object({
-						blockedFrom: z.number().optional(),
-						blockedUntil: z.number().optional(),
-						isCurrentlyBlocked: z.boolean(),
-					})
-					.optional(),
-			})
-			.describe("Feature blocks for the user")
-			.optional(),
+		remoteCaching: z.optional(
+			z
+				.object({
+					enabled: z.optional(z.boolean()),
+				})
+				.describe("remote caching settings"),
+		),
+		dataCache: z.optional(
+			z
+				.object({
+					excessBillingEnabled: z.optional(z.boolean()),
+				})
+				.describe("data cache settings"),
+		),
+		featureBlocks: z.optional(
+			z
+				.object({
+					webAnalytics: z.optional(
+						z.object({
+							blockedFrom: z.optional(z.number()),
+							blockedUntil: z.optional(z.number()),
+							isCurrentlyBlocked: z.boolean(),
+						}),
+					),
+				})
+				.describe("Feature blocks for the user"),
+		),
 		id: z.string().describe("The User's unique identifier."),
 		email: z.string().describe("Email address associated with the User account."),
-		name: z
-			.string()
-			.describe("Name associated with the User account, or `null` if none has been provided.")
-			.nullable(),
+		name: z.nullable(
+			z
+				.string()
+				.describe("Name associated with the User account, or `null` if none has been provided."),
+		),
 		username: z.string().describe("Unique username associated with the User account."),
-		avatar: z
-			.string()
-			.describe(
-				"SHA1 hash of the avatar for the User account. Can be used in conjuction with the ... endpoint to retrieve the avatar image.",
-			)
-			.nullable(),
-		defaultTeamId: z.string().describe("The user's default team.").nullable(),
+		avatar: z.nullable(
+			z
+				.string()
+				.describe(
+					"SHA1 hash of the avatar for the User account. Can be used in conjuction with the ... endpoint to retrieve the avatar image.",
+				),
+		),
+		defaultTeamId: z.nullable(z.string().describe("The user's default team.")),
 	})
 	.describe("Data for the currently authenticated User.");
 
@@ -3849,18 +5021,20 @@ export const authUserLimitedSchema = z
 			),
 		id: z.string().describe("The User's unique identifier."),
 		email: z.string().describe("Email address associated with the User account."),
-		name: z
-			.string()
-			.describe("Name associated with the User account, or `null` if none has been provided.")
-			.nullable(),
+		name: z.nullable(
+			z
+				.string()
+				.describe("Name associated with the User account, or `null` if none has been provided."),
+		),
 		username: z.string().describe("Unique username associated with the User account."),
-		avatar: z
-			.string()
-			.describe(
-				"SHA1 hash of the avatar for the User account. Can be used in conjuction with the ... endpoint to retrieve the avatar image.",
-			)
-			.nullable(),
-		defaultTeamId: z.string().describe("The user's default team.").nullable(),
+		avatar: z.nullable(
+			z
+				.string()
+				.describe(
+					"SHA1 hash of the avatar for the User account. Can be used in conjuction with the ... endpoint to retrieve the avatar image.",
+				),
+		),
+		defaultTeamId: z.nullable(z.string().describe("The user's default team.")),
 	})
 	.describe(
 		"A limited form of data for the currently authenticated User, due to the authentication token missing privileges to read the full User data.",
@@ -3875,20 +5049,20 @@ export const fileTreeSchema = z
 		type: z
 			.enum(["directory", "file", "invalid", "lambda", "middleware", "symlink"])
 			.describe("String indicating the type of file tree entry."),
-		uid: z
-			.string()
-			.describe("The unique identifier of the file (only valid for the `file` type)")
-			.optional(),
-		children: z
-			.array(z.unknown())
-			.describe("The list of children files of the directory (only valid for the `directory` type)")
-			.optional(),
-		contentType: z
-			.string()
-			.describe("The content-type of the file (only valid for the `file` type)")
-			.optional(),
+		uid: z.optional(
+			z.string().describe("The unique identifier of the file (only valid for the `file` type)"),
+		),
+		children: z.optional(
+			z
+				.array(z.unknown())
+				.describe(
+					"The list of children files of the directory (only valid for the `directory` type)",
+				),
+		),
+		contentType: z.optional(
+			z.string().describe("The content-type of the file (only valid for the `file` type)"),
+		),
 		mode: z.number().describe('The file "mode" indicating file type and permissions.'),
-		symlink: z.string().describe("Not currently used. See `file-list-to-tree.ts`.").optional(),
 	})
 	.describe("A deployment file tree entry");
 
@@ -3898,11 +5072,10 @@ export const readAccessGroupPathParamsSchema = z.object({
 
 export const readAccessGroupQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -3913,6 +5086,9 @@ export const readAccessGroup200Schema = z.unknown();
  */
 export const readAccessGroup400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const readAccessGroup401Schema = z.unknown();
 
 /**
@@ -3928,11 +5104,10 @@ export const updateAccessGroupPathParamsSchema = z.object({
 
 export const updateAccessGroupQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -3943,6 +5118,9 @@ export const updateAccessGroup200Schema = z.unknown();
  */
 export const updateAccessGroup400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateAccessGroup401Schema = z.unknown();
 
 /**
@@ -3958,11 +5136,10 @@ export const deleteAccessGroupPathParamsSchema = z.object({
 
 export const deleteAccessGroupQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -3973,6 +5150,9 @@ export const deleteAccessGroup200Schema = z.unknown();
  */
 export const deleteAccessGroup400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteAccessGroup401Schema = z.unknown();
 
 /**
@@ -3988,26 +5168,24 @@ export const listAccessGroupMembersPathParamsSchema = z.object({
 
 export const listAccessGroupMembersQueryParamsSchema = z
 	.object({
-		limit: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(100)
-			.describe("Limit how many access group members should be returned.")
-			.optional(),
-		next: z
-			.string()
-			.describe("Continuation cursor to retrieve the next page of results.")
-			.optional(),
-		search: z
-			.string()
-			.describe("Search project members by their name, username, and email.")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		limit: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(1)
+				.max(100)
+				.describe("Limit how many access group members should be returned."),
+		),
+		next: z.optional(
+			z.string().describe("Continuation cursor to retrieve the next page of results."),
+		),
+		search: z.optional(
+			z.string().describe("Search project members by their name, username, and email."),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4018,6 +5196,9 @@ export const listAccessGroupMembers200Schema = z.unknown();
  */
 export const listAccessGroupMembers400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listAccessGroupMembers401Schema = z.unknown();
 
 /**
@@ -4031,38 +5212,39 @@ export const listAccessGroupMembersQueryResponseSchema = z.lazy(
 
 export const listAccessGroupsQueryParamsSchema = z
 	.object({
-		projectId: z.string().describe("Filter access groups by project.").optional(),
-		search: z.string().describe("Search for access groups by name.").optional(),
-		membersLimit: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(100)
-			.describe("Number of members to include in the response.")
-			.optional(),
-		projectsLimit: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(100)
-			.describe("Number of projects to include in the response.")
-			.optional(),
-		limit: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(100)
-			.describe("Limit how many access group should be returned.")
-			.optional(),
-		next: z
-			.string()
-			.describe("Continuation cursor to retrieve the next page of results.")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		projectId: z.optional(z.string().describe("Filter access groups by project.")),
+		search: z.optional(z.string().describe("Search for access groups by name.")),
+		membersLimit: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(1)
+				.max(100)
+				.describe("Number of members to include in the response."),
+		),
+		projectsLimit: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(1)
+				.max(100)
+				.describe("Number of projects to include in the response."),
+		),
+		limit: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(1)
+				.max(100)
+				.describe("Limit how many access group should be returned."),
+		),
+		next: z.optional(
+			z.string().describe("Continuation cursor to retrieve the next page of results."),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4073,6 +5255,9 @@ export const listAccessGroups200Schema = z.unknown();
  */
 export const listAccessGroups400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listAccessGroups401Schema = z.unknown();
 
 /**
@@ -4084,11 +5269,10 @@ export const listAccessGroupsQueryResponseSchema = z.lazy(() => listAccessGroups
 
 export const createAccessGroupQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4099,6 +5283,9 @@ export const createAccessGroup200Schema = z.unknown();
  */
 export const createAccessGroup400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createAccessGroup401Schema = z.unknown();
 
 /**
@@ -4114,22 +5301,21 @@ export const listAccessGroupProjectsPathParamsSchema = z.object({
 
 export const listAccessGroupProjectsQueryParamsSchema = z
 	.object({
-		limit: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(100)
-			.describe("Limit how many access group projects should be returned.")
-			.optional(),
-		next: z
-			.string()
-			.describe("Continuation cursor to retrieve the next page of results.")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		limit: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(1)
+				.max(100)
+				.describe("Limit how many access group projects should be returned."),
+		),
+		next: z.optional(
+			z.string().describe("Continuation cursor to retrieve the next page of results."),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4140,6 +5326,9 @@ export const listAccessGroupProjects200Schema = z.unknown();
  */
 export const listAccessGroupProjects400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listAccessGroupProjects401Schema = z.unknown();
 
 /**
@@ -4157,11 +5346,10 @@ export const createAccessGroupProjectPathParamsSchema = z.object({
 
 export const createAccessGroupProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4172,6 +5360,9 @@ export const createAccessGroupProject200Schema = z.unknown();
  */
 export const createAccessGroupProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createAccessGroupProject401Schema = z.unknown();
 
 /**
@@ -4190,11 +5381,10 @@ export const readAccessGroupProjectPathParamsSchema = z.object({
 
 export const readAccessGroupProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4205,6 +5395,9 @@ export const readAccessGroupProject200Schema = z.unknown();
  */
 export const readAccessGroupProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const readAccessGroupProject401Schema = z.unknown();
 
 /**
@@ -4223,11 +5416,10 @@ export const updateAccessGroupProjectPathParamsSchema = z.object({
 
 export const updateAccessGroupProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4238,6 +5430,9 @@ export const updateAccessGroupProject200Schema = z.unknown();
  */
 export const updateAccessGroupProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateAccessGroupProject401Schema = z.unknown();
 
 /**
@@ -4256,11 +5451,10 @@ export const deleteAccessGroupProjectPathParamsSchema = z.object({
 
 export const deleteAccessGroupProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4271,6 +5465,9 @@ export const deleteAccessGroupProject200Schema = z.unknown();
  */
 export const deleteAccessGroupProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteAccessGroupProject401Schema = z.unknown();
 
 /**
@@ -4284,30 +5481,31 @@ export const deleteAccessGroupProjectMutationResponseSchema = z.lazy(
 
 export const recordEventsQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
 export const recordEventsHeaderParamsSchema = z
 	.object({
-		"x-artifact-client-ci": z
-			.string()
-			.max(50)
-			.describe(
-				"The continuous integration or delivery environment where this artifact is downloaded.",
-			)
-			.optional(),
-		"x-artifact-client-interactive": z.coerce
-			.number()
-			.int()
-			.min(0)
-			.max(1)
-			.describe("1 if the client is an interactive shell. Otherwise 0")
-			.optional(),
+		"x-artifact-client-ci": z.optional(
+			z
+				.string()
+				.max(50)
+				.describe(
+					"The continuous integration or delivery environment where this artifact is downloaded.",
+				),
+		),
+		"x-artifact-client-interactive": z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(0)
+				.max(1)
+				.describe("1 if the client is an interactive shell. Otherwise 0"),
+		),
 	})
 	.optional();
 
@@ -4321,6 +5519,9 @@ export const recordEvents200Schema = z.unknown();
  */
 export const recordEvents400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const recordEvents401Schema = z.unknown();
 
 /**
@@ -4337,11 +5538,10 @@ export const recordEventsMutationResponseSchema = z.lazy(() => recordEvents200Sc
 
 export const statusQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4349,6 +5549,9 @@ export const status200Schema = z.unknown();
 
 export const status400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const status401Schema = z.unknown();
 
 /**
@@ -4369,41 +5572,42 @@ export const uploadArtifactPathParamsSchema = z.object({
 
 export const uploadArtifactQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
 export const uploadArtifactHeaderParamsSchema = z.object({
 	"Content-Length": z.coerce.number().describe("The artifact size in bytes"),
-	"x-artifact-duration": z.coerce
-		.number()
-		.describe("The time taken to generate the uploaded artifact in milliseconds.")
-		.optional(),
-	"x-artifact-client-ci": z
-		.string()
-		.max(50)
-		.describe(
-			"The continuous integration or delivery environment where this artifact was generated.",
-		)
-		.optional(),
-	"x-artifact-client-interactive": z.coerce
-		.number()
-		.int()
-		.min(0)
-		.max(1)
-		.describe("1 if the client is an interactive shell. Otherwise 0")
-		.optional(),
-	"x-artifact-tag": z
-		.string()
-		.max(600)
-		.describe(
-			"The base64 encoded tag for this artifact. The value is sent back to clients when the artifact is downloaded as the header `x-artifact-tag`",
-		)
-		.optional(),
+	"x-artifact-duration": z.optional(
+		z.coerce.number().describe("The time taken to generate the uploaded artifact in milliseconds."),
+	),
+	"x-artifact-client-ci": z.optional(
+		z
+			.string()
+			.max(50)
+			.describe(
+				"The continuous integration or delivery environment where this artifact was generated.",
+			),
+	),
+	"x-artifact-client-interactive": z.optional(
+		z.coerce
+			.number()
+			.int()
+			.min(0)
+			.max(1)
+			.describe("1 if the client is an interactive shell. Otherwise 0"),
+	),
+	"x-artifact-tag": z.optional(
+		z
+			.string()
+			.max(600)
+			.describe(
+				"The base64 encoded tag for this artifact. The value is sent back to clients when the artifact is downloaded as the header `x-artifact-tag`",
+			),
+	),
 });
 
 /**
@@ -4416,6 +5620,9 @@ export const uploadArtifact202Schema = z.unknown();
  */
 export const uploadArtifact400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const uploadArtifact401Schema = z.unknown();
 
 /**
@@ -4436,30 +5643,31 @@ export const downloadArtifactPathParamsSchema = z.object({
 
 export const downloadArtifactQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
 export const downloadArtifactHeaderParamsSchema = z
 	.object({
-		"x-artifact-client-ci": z
-			.string()
-			.max(50)
-			.describe(
-				"The continuous integration or delivery environment where this artifact is downloaded.",
-			)
-			.optional(),
-		"x-artifact-client-interactive": z.coerce
-			.number()
-			.int()
-			.min(0)
-			.max(1)
-			.describe("1 if the client is an interactive shell. Otherwise 0")
-			.optional(),
+		"x-artifact-client-ci": z.optional(
+			z
+				.string()
+				.max(50)
+				.describe(
+					"The continuous integration or delivery environment where this artifact is downloaded.",
+				),
+		),
+		"x-artifact-client-interactive": z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(0)
+				.max(1)
+				.describe("1 if the client is an interactive shell. Otherwise 0"),
+		),
 	})
 	.optional();
 
@@ -4473,6 +5681,9 @@ export const downloadArtifact200Schema = z.unknown();
  */
 export const downloadArtifact400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const downloadArtifact401Schema = z.unknown();
 
 /**
@@ -4494,11 +5705,10 @@ export const downloadArtifactQueryResponseSchema = z.lazy(() => downloadArtifact
 
 export const artifactQueryQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4509,6 +5719,9 @@ export const artifactQuery200Schema = z.unknown();
  */
 export const artifactQuery400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const artifactQuery401Schema = z.unknown();
 
 /**
@@ -4523,17 +5736,235 @@ export const artifactQuery403Schema = z.unknown();
 
 export const artifactQueryMutationResponseSchema = z.lazy(() => artifactQuery200Schema);
 
+export const stageRedirectsQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const stageRedirects200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const stageRedirects400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const stageRedirects401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const stageRedirects403Schema = z.unknown();
+
+export const stageRedirects500Schema = z.unknown();
+
+export const stageRedirectsMutationResponseSchema = z.lazy(() => stageRedirects200Schema);
+
+export const getRedirectsQueryParamsSchema = z.object({
+	projectId: z.string(),
+	versionId: z.optional(z.string()),
+	q: z.optional(z.string()),
+	diff: z.optional(z.union([z.boolean(), z.enum(["only"])])),
+	page: z.optional(z.coerce.number().int().min(1)),
+	per_page: z.optional(z.coerce.number().int().min(10).max(250)),
+	sort_by: z.optional(z.enum(["source", "destination", "statusCode"])),
+	sort_order: z.optional(z.enum(["asc", "desc"])),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const getRedirects200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getRedirects400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getRedirects401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getRedirects403Schema = z.unknown();
+
+export const getRedirects404Schema = z.unknown();
+
+export const getRedirectsQueryResponseSchema = z.lazy(() => getRedirects200Schema);
+
+export const deleteRedirectsQueryParamsSchema = z.object({
+	projectId: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const deleteRedirects200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const deleteRedirects400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const deleteRedirects401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const deleteRedirects403Schema = z.unknown();
+
+export const deleteRedirects404Schema = z.unknown();
+
+export const deleteRedirects500Schema = z.unknown();
+
+export const deleteRedirectsMutationResponseSchema = z.lazy(() => deleteRedirects200Schema);
+
+export const editRedirectQueryParamsSchema = z.object({
+	projectId: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const editRedirect200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const editRedirect400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const editRedirect401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const editRedirect403Schema = z.unknown();
+
+export const editRedirect404Schema = z.unknown();
+
+export const editRedirect500Schema = z.unknown();
+
+export const editRedirectMutationResponseSchema = z.lazy(() => editRedirect200Schema);
+
+export const restoreRedirectsQueryParamsSchema = z.object({
+	projectId: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const restoreRedirects200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const restoreRedirects400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const restoreRedirects401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const restoreRedirects403Schema = z.unknown();
+
+export const restoreRedirects404Schema = z.unknown();
+
+export const restoreRedirects500Schema = z.unknown();
+
+export const restoreRedirectsMutationResponseSchema = z.lazy(() => restoreRedirects200Schema);
+
+export const getVersionsQueryParamsSchema = z.object({
+	projectId: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const getVersions200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getVersions400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getVersions401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getVersions403Schema = z.unknown();
+
+export const getVersions500Schema = z.unknown();
+
+export const getVersionsQueryResponseSchema = z.lazy(() => getVersions200Schema);
+
+export const updateVersionQueryParamsSchema = z.object({
+	projectId: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const updateVersion200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const updateVersion400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const updateVersion401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const updateVersion403Schema = z.unknown();
+
+export const updateVersion404Schema = z.unknown();
+
+export const updateVersion500Schema = z.unknown();
+
+export const updateVersionMutationResponseSchema = z.lazy(() => updateVersion200Schema);
+
 export const createCheckPathParamsSchema = z.object({
 	deploymentId: z.string().describe("The deployment to create the check for."),
 });
 
 export const createCheckQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4544,6 +5975,9 @@ export const createCheck200Schema = z.unknown();
  */
 export const createCheck400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createCheck401Schema = z.unknown();
 
 /**
@@ -4564,11 +5998,10 @@ export const getAllChecksPathParamsSchema = z.object({
 
 export const getAllChecksQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4579,6 +6012,9 @@ export const getAllChecks200Schema = z.unknown();
  */
 export const getAllChecks400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getAllChecks401Schema = z.unknown();
 
 /**
@@ -4600,11 +6036,10 @@ export const getCheckPathParamsSchema = z.object({
 
 export const getCheckQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4615,6 +6050,9 @@ export const getCheck200Schema = z.unknown();
  */
 export const getCheck400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getCheck401Schema = z.unknown();
 
 /**
@@ -4636,11 +6074,10 @@ export const updateCheckPathParamsSchema = z.object({
 
 export const updateCheckQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4651,6 +6088,9 @@ export const updateCheck200Schema = z.unknown();
  */
 export const updateCheck400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateCheck401Schema = z.unknown();
 
 /**
@@ -4677,11 +6117,11 @@ export const rerequestCheckPathParamsSchema = z.object({
 
 export const rerequestCheckQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		autoUpdate: z.optional(z.boolean().describe("Mark the check as running")),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4692,6 +6132,9 @@ export const rerequestCheck200Schema = z.unknown();
  */
 export const rerequestCheck400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const rerequestCheck401Schema = z.unknown();
 
 /**
@@ -4717,6 +6160,9 @@ export const purgeAllDataCache200Schema = z.unknown();
  */
 export const purgeAllDataCache400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const purgeAllDataCache401Schema = z.unknown();
 
 /**
@@ -4735,6 +6181,9 @@ export const updateDataCacheBillingSettings200Schema = z.unknown();
  */
 export const updateDataCacheBillingSettings400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateDataCacheBillingSettings401Schema = z.unknown();
 
 /**
@@ -4754,11 +6203,10 @@ export const updateProjectDataCachePathParamsSchema = z.object({
 
 export const updateProjectDataCacheQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4769,6 +6217,9 @@ export const updateProjectDataCache200Schema = z.unknown();
  */
 export const updateProjectDataCache400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateProjectDataCache401Schema = z.unknown();
 
 /**
@@ -4791,34 +6242,34 @@ export const getDeploymentEventsQueryParamsSchema = z.object({
 		.enum(["backward", "forward"])
 		.default("forward")
 		.describe("Order of the returned events based on the timestamp."),
-	follow: z
-		.union([z.literal(0), z.literal(1)])
-		.describe("When enabled, this endpoint will return live events as they happen.")
-		.optional(),
-	limit: z.coerce
-		.number()
-		.describe("Maximum number of events to return. Provide `-1` to return all available logs.")
-		.optional(),
-	name: z.string().describe("Deployment build ID.").optional(),
-	since: z.coerce
-		.number()
-		.describe("Timestamp for when build logs should be pulled from.")
-		.optional(),
-	until: z.coerce
-		.number()
-		.describe("Timestamp for when the build logs should be pulled up until.")
-		.optional(),
-	statusCode: z
-		.union([z.string(), z.coerce.number()])
-		.describe("HTTP status code range to filter events by.")
-		.optional(),
-	delimiter: z.union([z.literal(0), z.literal(1)]).optional(),
-	builds: z.union([z.literal(0), z.literal(1)]).optional(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	follow: z.optional(
+		z
+			.union([z.literal(0), z.literal(1)])
+			.describe("When enabled, this endpoint will return live events as they happen."),
+	),
+	limit: z.optional(
+		z.coerce
+			.number()
+			.describe("Maximum number of events to return. Provide `-1` to return all available logs."),
+	),
+	name: z.optional(z.string().describe("Deployment build ID.")),
+	since: z.optional(
+		z.coerce.number().describe("Timestamp for when build logs should be pulled from."),
+	),
+	until: z.optional(
+		z.coerce.number().describe("Timestamp for when the build logs should be pulled up until."),
+	),
+	statusCode: z.optional(
+		z
+			.union([z.string(), z.coerce.number()])
+			.describe("HTTP status code range to filter events by."),
+	),
+	delimiter: z.optional(z.union([z.literal(0), z.literal(1)])),
+	builds: z.optional(z.union([z.literal(0), z.literal(1)])),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 export const getDeploymentEvents200Schema = z.unknown();
@@ -4828,6 +6279,9 @@ export const getDeploymentEvents200Schema = z.unknown();
  */
 export const getDeploymentEvents400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getDeploymentEvents401Schema = z.unknown();
 
 /**
@@ -4853,6 +6307,9 @@ export const updateIntegrationDeploymentAction202Schema = z.unknown();
  */
 export const updateIntegrationDeploymentAction400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateIntegrationDeploymentAction401Schema = z.unknown();
 
 /**
@@ -4870,12 +6327,11 @@ export const getDeploymentPathParamsSchema = z.object({
 
 export const getDeploymentQueryParamsSchema = z
 	.object({
-		withGitRepoInfo: z.string().describe("Whether to add in gitRepo information.").optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		withGitRepoInfo: z.optional(z.string().describe("Whether to add in gitRepo information.")),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4903,21 +6359,22 @@ export const getDeploymentQueryResponseSchema = z.lazy(() => getDeployment200Sch
 
 export const createDeploymentQueryParamsSchema = z
 	.object({
-		forceNew: z
-			.enum(["0", "1"])
-			.describe("Forces a new deployment even if there is a previous similar deployment")
-			.optional(),
-		skipAutoDetectionConfirmation: z
-			.enum(["0", "1"])
-			.describe(
-				"Allows to skip framework detection so the API would not fail to ask for confirmation",
-			)
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		forceNew: z.optional(
+			z
+				.enum(["0", "1"])
+				.describe("Forces a new deployment even if there is a previous similar deployment"),
+		),
+		skipAutoDetectionConfirmation: z.optional(
+			z
+				.enum(["0", "1"])
+				.describe(
+					"Allows to skip framework detection so the API would not fail to ask for confirmation",
+				),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4931,6 +6388,9 @@ export const createDeployment200Schema = z.unknown();
  */
 export const createDeployment400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createDeployment401Schema = z.unknown();
 
 /**
@@ -4960,11 +6420,10 @@ export const cancelDeploymentPathParamsSchema = z.object({
 
 export const cancelDeploymentQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -4975,6 +6434,9 @@ export const cancelDeployment200Schema = z.unknown();
  */
 export const cancelDeployment400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const cancelDeployment401Schema = z.unknown();
 
 /**
@@ -4986,52 +6448,17 @@ export const cancelDeployment404Schema = z.unknown();
 
 export const cancelDeploymentMutationResponseSchema = z.lazy(() => cancelDeployment200Schema);
 
-export const buyDomainQueryParamsSchema = z
-	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
-	})
-	.optional();
-
-export const buyDomain201Schema = z.unknown();
-
-export const buyDomain202Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request body is invalid.
- */
-export const buyDomain400Schema = z.unknown();
-
-export const buyDomain401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const buyDomain403Schema = z.unknown();
-
-export const buyDomain409Schema = z.unknown();
-
-export const buyDomain429Schema = z.unknown();
-
-export const buyDomainMutationResponseSchema = z.union([
-	z.lazy(() => buyDomain201Schema),
-	z.lazy(() => buyDomain202Schema),
-]);
-
 export const checkDomainPriceQueryParamsSchema = z.object({
 	name: z.string().describe("The name of the domain for which the price needs to be checked."),
-	type: z
-		.enum(["new", "renewal", "transfer", "redemption"])
-		.describe("In which status of the domain the price needs to be checked.")
-		.optional(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	type: z.optional(
+		z
+			.enum(["new", "renewal", "transfer", "redemption"])
+			.describe("In which status of the domain the price needs to be checked."),
+	),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 /**
@@ -5044,6 +6471,9 @@ export const checkDomainPrice200Schema = z.unknown();
  */
 export const checkDomainPrice400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const checkDomainPrice401Schema = z.unknown();
 
 /**
@@ -5051,15 +6481,18 @@ export const checkDomainPrice401Schema = z.unknown();
  */
 export const checkDomainPrice403Schema = z.unknown();
 
+export const checkDomainPrice404Schema = z.unknown();
+
+export const checkDomainPrice500Schema = z.unknown();
+
 export const checkDomainPriceQueryResponseSchema = z.lazy(() => checkDomainPrice200Schema);
 
 export const checkDomainStatusQueryParamsSchema = z.object({
 	name: z.string().describe("The name of the domain for which we would like to check the status."),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 /**
@@ -5072,6 +6505,9 @@ export const checkDomainStatus200Schema = z.unknown();
  */
 export const checkDomainStatus400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const checkDomainStatus401Schema = z.unknown();
 
 /**
@@ -5091,14 +6527,13 @@ export const getRecordsPathParamsSchema = z.object({
 
 export const getRecordsQueryParamsSchema = z
 	.object({
-		limit: z.string().describe("Maximum number of records to list from a request.").optional(),
-		since: z.string().describe("Get records created after this JavaScript timestamp.").optional(),
-		until: z.string().describe("Get records created before this JavaScript timestamp.").optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		limit: z.optional(z.string().describe("Maximum number of records to list from a request.")),
+		since: z.optional(z.string().describe("Get records created after this JavaScript timestamp.")),
+		until: z.optional(z.string().describe("Get records created before this JavaScript timestamp.")),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5112,6 +6547,9 @@ export const getRecords200Schema = z.unknown();
  */
 export const getRecords400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getRecords401Schema = z.unknown();
 
 /**
@@ -5129,11 +6567,10 @@ export const createRecordPathParamsSchema = z.object({
 
 export const createRecordQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5147,6 +6584,9 @@ export const createRecord200Schema = z.unknown();
  */
 export const createRecord400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createRecord401Schema = z.unknown();
 
 /**
@@ -5171,11 +6611,10 @@ export const updateRecordPathParamsSchema = z.object({
 
 export const updateRecordQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5186,6 +6625,9 @@ export const updateRecord200Schema = z.unknown();
  */
 export const updateRecord400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateRecord401Schema = z.unknown();
 
 /**
@@ -5211,11 +6653,10 @@ export const removeRecordPathParamsSchema = z.object({
 
 export const removeRecordQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5229,6 +6670,9 @@ export const removeRecord200Schema = z.unknown();
  */
 export const removeRecord400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeRecord401Schema = z.unknown();
 
 /**
@@ -5240,32 +6684,683 @@ export const removeRecord404Schema = z.unknown();
 
 export const removeRecordMutationResponseSchema = z.lazy(() => removeRecord200Schema);
 
-export const getDomainTransferPathParamsSchema = z.object({
-	domain: z.string(),
-});
-
-export const getDomainTransferQueryParamsSchema = z
+export const getSupportedTldsQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(z.string()),
 	})
 	.optional();
 
-export const getDomainTransfer200Schema = z.unknown();
-
-export const getDomainTransfer400Schema = z.unknown();
-
-export const getDomainTransfer401Schema = z.unknown();
+/**
+ * @description A list of the TLDs supported by Vercel.
+ */
+export const getSupportedTlds200Schema = z.unknown();
 
 /**
- * @description You do not have permission to access this resource.
+ * @description There was something wrong with the request
  */
-export const getDomainTransfer403Schema = z.unknown();
+export const getSupportedTlds400Schema = z.unknown();
 
-export const getDomainTransferQueryResponseSchema = z.lazy(() => getDomainTransfer200Schema);
+/**
+ * @description Unauthorized
+ */
+export const getSupportedTlds401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getSupportedTlds403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getSupportedTlds429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getSupportedTlds500Schema = z.unknown();
+
+export const getSupportedTldsQueryResponseSchema = z.lazy(() => getSupportedTlds200Schema);
+
+export const getTldPricePathParamsSchema = z.object({
+	tld: z.string(),
+});
+
+export const getTldPriceQueryParamsSchema = z
+	.object({
+		years: z.optional(
+			z
+				.string()
+				.describe(
+					"The number of years to get the price for. If not provided, the minimum number of years for the TLD will be used.",
+				),
+		),
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getTldPrice200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getTldPrice400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getTldPrice401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getTldPrice403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getTldPrice429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getTldPrice500Schema = z.unknown();
+
+export const getTldPriceQueryResponseSchema = z.lazy(() => getTldPrice200Schema);
+
+export const getDomainAvailabilityPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const getDomainAvailabilityQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getDomainAvailability200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getDomainAvailability400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getDomainAvailability401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getDomainAvailability403Schema = z.unknown();
+
+/**
+ * @description NotFound
+ */
+export const getDomainAvailability404Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getDomainAvailability429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getDomainAvailability500Schema = z.unknown();
+
+export const getDomainAvailabilityQueryResponseSchema = z.lazy(
+	() => getDomainAvailability200Schema,
+);
+
+export const getDomainPricePathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const getDomainPriceQueryParamsSchema = z
+	.object({
+		years: z.optional(
+			z
+				.string()
+				.describe(
+					"The number of years to get the price for. If not provided, the minimum number of years for the TLD will be used.",
+				),
+		),
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getDomainPrice200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getDomainPrice400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getDomainPrice401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getDomainPrice403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getDomainPrice429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getDomainPrice500Schema = z.unknown();
+
+export const getDomainPriceQueryResponseSchema = z.lazy(() => getDomainPrice200Schema);
+
+export const getBulkAvailabilityQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getBulkAvailability200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getBulkAvailability400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getBulkAvailability401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getBulkAvailability403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getBulkAvailability429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getBulkAvailability500Schema = z.unknown();
+
+export const getBulkAvailabilityMutationResponseSchema = z.lazy(() => getBulkAvailability200Schema);
+
+export const getDomainAuthCodePathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const getDomainAuthCodeQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getDomainAuthCode200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getDomainAuthCode400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getDomainAuthCode401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getDomainAuthCode403Schema = z.unknown();
+
+/**
+ * @description The domain was not found in our system.
+ */
+export const getDomainAuthCode404Schema = z.unknown();
+
+/**
+ * @description The domain cannot be transfered out until the specified date.
+ */
+export const getDomainAuthCode409Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getDomainAuthCode429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getDomainAuthCode500Schema = z.unknown();
+
+export const getDomainAuthCodeQueryResponseSchema = z.lazy(() => getDomainAuthCode200Schema);
+
+export const buySingleDomainPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const buySingleDomainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const buySingleDomain200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const buySingleDomain400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const buySingleDomain401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const buySingleDomain403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const buySingleDomain429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const buySingleDomain500Schema = z.unknown();
+
+export const buySingleDomainMutationResponseSchema = z.lazy(() => buySingleDomain200Schema);
+
+export const buyDomainsQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const buyDomains200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const buyDomains400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const buyDomains401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const buyDomains403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const buyDomains429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const buyDomains500Schema = z.unknown();
+
+export const buyDomainsMutationResponseSchema = z.lazy(() => buyDomains200Schema);
+
+export const transferInDomainPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const transferInDomainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const transferInDomain200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const transferInDomain400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const transferInDomain401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const transferInDomain403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const transferInDomain429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const transferInDomain500Schema = z.unknown();
+
+export const transferInDomainMutationResponseSchema = z.lazy(() => transferInDomain200Schema);
+
+export const getDomainTransferInPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const getDomainTransferInQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getDomainTransferIn200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getDomainTransferIn400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getDomainTransferIn401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getDomainTransferIn403Schema = z.unknown();
+
+/**
+ * @description NotFound
+ */
+export const getDomainTransferIn404Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getDomainTransferIn429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getDomainTransferIn500Schema = z.unknown();
+
+export const getDomainTransferInQueryResponseSchema = z.lazy(() => getDomainTransferIn200Schema);
+
+export const renewDomainPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const renewDomainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const renewDomain200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const renewDomain400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const renewDomain401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const renewDomain403Schema = z.unknown();
+
+/**
+ * @description The domain was not found in our system.
+ */
+export const renewDomain404Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const renewDomain429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const renewDomain500Schema = z.unknown();
+
+export const renewDomainMutationResponseSchema = z.lazy(() => renewDomain200Schema);
+
+export const updateDomainAutoRenewPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const updateDomainAutoRenewQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const updateDomainAutoRenew204Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const updateDomainAutoRenew400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const updateDomainAutoRenew401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const updateDomainAutoRenew403Schema = z.unknown();
+
+/**
+ * @description The domain was not found in our system.
+ */
+export const updateDomainAutoRenew404Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const updateDomainAutoRenew429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const updateDomainAutoRenew500Schema = z.unknown();
+
+export const updateDomainAutoRenewMutationResponseSchema = z.lazy(
+	() => updateDomainAutoRenew204Schema,
+);
+
+export const updateDomainNameserversPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const updateDomainNameserversQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const updateDomainNameservers204Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const updateDomainNameservers400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const updateDomainNameservers401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const updateDomainNameservers403Schema = z.unknown();
+
+/**
+ * @description The domain was not found in our system.
+ */
+export const updateDomainNameservers404Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const updateDomainNameservers429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const updateDomainNameservers500Schema = z.unknown();
+
+export const updateDomainNameserversMutationResponseSchema = z.lazy(
+	() => updateDomainNameservers204Schema,
+);
+
+export const getContactInfoSchemaPathParamsSchema = z.object({
+	domain: z.unknown(),
+});
+
+export const getContactInfoSchemaQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getContactInfoSchema200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getContactInfoSchema400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getContactInfoSchema401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getContactInfoSchema403Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getContactInfoSchema429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getContactInfoSchema500Schema = z.unknown();
+
+export const getContactInfoSchemaQueryResponseSchema = z.lazy(() => getContactInfoSchema200Schema);
+
+export const getOrderPathParamsSchema = z.object({
+	orderId: z.unknown(),
+});
+
+export const getOrderQueryParamsSchema = z
+	.object({
+		teamId: z.optional(z.string()),
+	})
+	.optional();
+
+/**
+ * @description Success
+ */
+export const getOrder200Schema = z.unknown();
+
+/**
+ * @description There was something wrong with the request
+ */
+export const getOrder400Schema = z.unknown();
+
+/**
+ * @description Unauthorized
+ */
+export const getOrder401Schema = z.unknown();
+
+/**
+ * @description NotAuthorizedForScope
+ */
+export const getOrder403Schema = z.unknown();
+
+/**
+ * @description NotFound
+ */
+export const getOrder404Schema = z.unknown();
+
+/**
+ * @description TooManyRequests
+ */
+export const getOrder429Schema = z.unknown();
+
+/**
+ * @description InternalServerError
+ */
+export const getOrder500Schema = z.unknown();
+
+export const getOrderQueryResponseSchema = z.lazy(() => getOrder200Schema);
 
 export const getDomainConfigPathParamsSchema = z.object({
 	domain: z.string().describe("The name of the domain."),
@@ -5273,17 +7368,24 @@ export const getDomainConfigPathParamsSchema = z.object({
 
 export const getDomainConfigQueryParamsSchema = z
 	.object({
-		strict: z
-			.enum(["true", "false"])
-			.describe(
-				"When true, the response will only include the nameservers assigned directly to the specified domain. When false and there are no nameservers assigned directly to the specified domain, the response will include the nameservers of the domain's parent zone.",
-			)
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		projectIdOrName: z.optional(
+			z
+				.string()
+				.describe(
+					"The project id or name that will be associated with the domain. Use this when the domain is not yet associated with a project.",
+				),
+		),
+		strict: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe(
+					"When true, the response will only include the nameservers assigned directly to the specified domain. When false and there are no nameservers assigned directly to the specified domain, the response will include the nameservers of the domain's parent zone.",
+				),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5294,14 +7396,15 @@ export const getDomainConfig200Schema = z.unknown();
  */
 export const getDomainConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getDomainConfig401Schema = z.unknown();
 
 /**
  * @description You do not have permission to access this resource.
  */
 export const getDomainConfig403Schema = z.unknown();
-
-export const getDomainConfig500Schema = z.unknown();
 
 export const getDomainConfigQueryResponseSchema = z.lazy(() => getDomainConfig200Schema);
 
@@ -5311,11 +7414,10 @@ export const getDomainPathParamsSchema = z.object({
 
 export const getDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5329,6 +7431,9 @@ export const getDomain200Schema = z.unknown();
  */
 export const getDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getDomain401Schema = z.unknown();
 
 /**
@@ -5342,23 +7447,19 @@ export const getDomainQueryResponseSchema = z.lazy(() => getDomain200Schema);
 
 export const getDomainsQueryParamsSchema = z
 	.object({
-		limit: z.coerce
-			.number()
-			.describe("Maximum number of domains to list from a request.")
-			.optional(),
-		since: z.coerce
-			.number()
-			.describe("Get domains created after this JavaScript timestamp.")
-			.optional(),
-		until: z.coerce
-			.number()
-			.describe("Get domains created before this JavaScript timestamp.")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		limit: z.optional(
+			z.coerce.number().describe("Maximum number of domains to list from a request."),
+		),
+		since: z.optional(
+			z.coerce.number().describe("Get domains created after this JavaScript timestamp."),
+		),
+		until: z.optional(
+			z.coerce.number().describe("Get domains created before this JavaScript timestamp."),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5372,6 +7473,9 @@ export const getDomains200Schema = z.unknown();
  */
 export const getDomains400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getDomains401Schema = z.unknown();
 
 /**
@@ -5385,11 +7489,10 @@ export const getDomainsQueryResponseSchema = z.lazy(() => getDomains200Schema);
 
 export const createOrTransferDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5400,6 +7503,9 @@ export const createOrTransferDomain200Schema = z.unknown();
  */
 export const createOrTransferDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createOrTransferDomain401Schema = z.unknown();
 
 /**
@@ -5419,8 +7525,6 @@ export const createOrTransferDomain404Schema = z.unknown();
  */
 export const createOrTransferDomain409Schema = z.unknown();
 
-export const createOrTransferDomain500Schema = z.unknown();
-
 export const createOrTransferDomainMutationResponseSchema = z.lazy(
 	() => createOrTransferDomain200Schema,
 );
@@ -5431,11 +7535,10 @@ export const patchDomainPathParamsSchema = z.object({
 
 export const patchDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5446,6 +7549,9 @@ export const patchDomain200Schema = z.unknown();
  */
 export const patchDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const patchDomain401Schema = z.unknown();
 
 /**
@@ -5457,6 +7563,8 @@ export const patchDomain404Schema = z.unknown();
 
 export const patchDomain409Schema = z.unknown();
 
+export const patchDomain500Schema = z.unknown();
+
 export const patchDomainMutationResponseSchema = z.lazy(() => patchDomain200Schema);
 
 export const deleteDomainPathParamsSchema = z.object({
@@ -5465,11 +7573,10 @@ export const deleteDomainPathParamsSchema = z.object({
 
 export const deleteDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5483,6 +7590,9 @@ export const deleteDomain200Schema = z.unknown();
  */
 export const deleteDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteDomain401Schema = z.unknown();
 
 /**
@@ -5496,13 +7606,459 @@ export const deleteDomain409Schema = z.unknown();
 
 export const deleteDomainMutationResponseSchema = z.lazy(() => deleteDomain200Schema);
 
+export const getConfigurableLogDrainPathParamsSchema = z.object({
+	id: z.string(),
+});
+
+export const getConfigurableLogDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const getConfigurableLogDrain200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getConfigurableLogDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getConfigurableLogDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getConfigurableLogDrain403Schema = z.unknown();
+
+export const getConfigurableLogDrain404Schema = z.unknown();
+
+export const getConfigurableLogDrainQueryResponseSchema = z.lazy(
+	() => getConfigurableLogDrain200Schema,
+);
+
+export const deleteConfigurableLogDrainPathParamsSchema = z.object({
+	id: z.string(),
+});
+
+export const deleteConfigurableLogDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const deleteConfigurableLogDrain204Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const deleteConfigurableLogDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const deleteConfigurableLogDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const deleteConfigurableLogDrain403Schema = z.unknown();
+
+export const deleteConfigurableLogDrain404Schema = z.unknown();
+
+export const deleteConfigurableLogDrainMutationResponseSchema = z.lazy(
+	() => deleteConfigurableLogDrain204Schema,
+);
+
+export const getAllLogDrainsQueryParamsSchema = z.object({
+	projectId: z.optional(z.string()),
+	includeMetadata: z.boolean().default(false),
+	projectIdOrName: z.optional(z.string()),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const getAllLogDrains200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getAllLogDrains400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getAllLogDrains401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getAllLogDrains403Schema = z.unknown();
+
+export const getAllLogDrains404Schema = z.unknown();
+
+export const getAllLogDrainsQueryResponseSchema = z.lazy(() => getAllLogDrains200Schema);
+
+export const createConfigurableLogDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const createConfigurableLogDrain200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const createConfigurableLogDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const createConfigurableLogDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const createConfigurableLogDrain403Schema = z.unknown();
+
+export const createConfigurableLogDrainMutationResponseSchema = z.lazy(
+	() => createConfigurableLogDrain200Schema,
+);
+
+export const createDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const createDrain200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const createDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const createDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const createDrain403Schema = z.unknown();
+
+export const createDrainMutationResponseSchema = z.lazy(() => createDrain200Schema);
+
+export const getDrainsQueryParamsSchema = z.object({
+	projectId: z.optional(z.string()),
+	includeMetadata: z.boolean().default(false),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const getDrains200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getDrains400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getDrains401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getDrains403Schema = z.unknown();
+
+export const getDrains404Schema = z.unknown();
+
+export const getDrainsQueryResponseSchema = z.lazy(() => getDrains200Schema);
+
+export const deleteDrainPathParamsSchema = z.object({
+	id: z.string(),
+});
+
+export const deleteDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const deleteDrain204Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const deleteDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const deleteDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const deleteDrain403Schema = z.unknown();
+
+export const deleteDrain404Schema = z.unknown();
+
+export const deleteDrainMutationResponseSchema = z.lazy(() => deleteDrain204Schema);
+
+export const getDrainPathParamsSchema = z.object({
+	id: z.string(),
+});
+
+export const getDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const getDrain200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getDrain403Schema = z.unknown();
+
+export const getDrain404Schema = z.unknown();
+
+export const getDrainQueryResponseSchema = z.lazy(() => getDrain200Schema);
+
+export const updateDrainPathParamsSchema = z.object({
+	id: z.string(),
+});
+
+export const updateDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const updateDrain200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const updateDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const updateDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const updateDrain403Schema = z.unknown();
+
+export const updateDrain404Schema = z.unknown();
+
+export const updateDrainMutationResponseSchema = z.lazy(() => updateDrain200Schema);
+
+export const testDrainQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const testDrain200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const testDrain400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const testDrain401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const testDrain403Schema = z.unknown();
+
+export const testDrainMutationResponseSchema = z.lazy(() => testDrain200Schema);
+
+export const invalidateByTagsQueryParamsSchema = z.object({
+	projectIdOrName: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const invalidateByTags200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const invalidateByTags400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const invalidateByTags401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const invalidateByTags403Schema = z.unknown();
+
+export const invalidateByTags404Schema = z.unknown();
+
+export const invalidateByTagsMutationResponseSchema = z.lazy(() => invalidateByTags200Schema);
+
+export const dangerouslyDeleteByTagsQueryParamsSchema = z.object({
+	projectIdOrName: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const dangerouslyDeleteByTags200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const dangerouslyDeleteByTags400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const dangerouslyDeleteByTags401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const dangerouslyDeleteByTags403Schema = z.unknown();
+
+export const dangerouslyDeleteByTags404Schema = z.unknown();
+
+export const dangerouslyDeleteByTagsMutationResponseSchema = z.lazy(
+	() => dangerouslyDeleteByTags200Schema,
+);
+
+export const invalidateBySrcImagesQueryParamsSchema = z.object({
+	projectIdOrName: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const invalidateBySrcImages200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const invalidateBySrcImages400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const invalidateBySrcImages401Schema = z.unknown();
+
+export const invalidateBySrcImages402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const invalidateBySrcImages403Schema = z.unknown();
+
+export const invalidateBySrcImages404Schema = z.unknown();
+
+export const invalidateBySrcImagesMutationResponseSchema = z.lazy(
+	() => invalidateBySrcImages200Schema,
+);
+
+export const dangerouslyDeleteBySrcImagesQueryParamsSchema = z.object({
+	projectIdOrName: z.string(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+});
+
+export const dangerouslyDeleteBySrcImages200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const dangerouslyDeleteBySrcImages400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const dangerouslyDeleteBySrcImages401Schema = z.unknown();
+
+export const dangerouslyDeleteBySrcImages402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const dangerouslyDeleteBySrcImages403Schema = z.unknown();
+
+export const dangerouslyDeleteBySrcImages404Schema = z.unknown();
+
+export const dangerouslyDeleteBySrcImagesMutationResponseSchema = z.lazy(
+	() => dangerouslyDeleteBySrcImages200Schema,
+);
+
 export const getEdgeConfigsQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5516,6 +8072,9 @@ export const getEdgeConfigs200Schema = z.unknown();
  */
 export const getEdgeConfigs400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigs401Schema = z.unknown();
 
 /**
@@ -5527,11 +8086,10 @@ export const getEdgeConfigsQueryResponseSchema = z.lazy(() => getEdgeConfigs200S
 
 export const createEdgeConfigQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5542,6 +8100,9 @@ export const createEdgeConfig201Schema = z.unknown();
  */
 export const createEdgeConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createEdgeConfig401Schema = z.unknown();
 
 /**
@@ -5562,11 +8123,10 @@ export const getEdgeConfigPathParamsSchema = z.object({
 
 export const getEdgeConfigQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5580,6 +8140,9 @@ export const getEdgeConfig200Schema = z.unknown();
  */
 export const getEdgeConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfig401Schema = z.unknown();
 
 /**
@@ -5597,11 +8160,10 @@ export const updateEdgeConfigPathParamsSchema = z.object({
 
 export const updateEdgeConfigQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5612,6 +8174,9 @@ export const updateEdgeConfig200Schema = z.unknown();
  */
 export const updateEdgeConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateEdgeConfig401Schema = z.unknown();
 
 /**
@@ -5626,6 +8191,8 @@ export const updateEdgeConfig403Schema = z.unknown();
 
 export const updateEdgeConfig404Schema = z.unknown();
 
+export const updateEdgeConfig409Schema = z.unknown();
+
 export const updateEdgeConfigMutationResponseSchema = z.lazy(() => updateEdgeConfig200Schema);
 
 export const deleteEdgeConfigPathParamsSchema = z.object({
@@ -5634,11 +8201,10 @@ export const deleteEdgeConfigPathParamsSchema = z.object({
 
 export const deleteEdgeConfigQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5649,6 +8215,9 @@ export const deleteEdgeConfig204Schema = z.unknown();
  */
 export const deleteEdgeConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteEdgeConfig401Schema = z.unknown();
 
 /**
@@ -5658,6 +8227,8 @@ export const deleteEdgeConfig403Schema = z.unknown();
 
 export const deleteEdgeConfig404Schema = z.unknown();
 
+export const deleteEdgeConfig409Schema = z.unknown();
+
 export const deleteEdgeConfigMutationResponseSchema = z.lazy(() => deleteEdgeConfig204Schema);
 
 export const getEdgeConfigItemsPathParamsSchema = z.object({
@@ -5666,11 +8237,10 @@ export const getEdgeConfigItemsPathParamsSchema = z.object({
 
 export const getEdgeConfigItemsQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5684,6 +8254,9 @@ export const getEdgeConfigItems200Schema = z.unknown();
  */
 export const getEdgeConfigItems400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigItems401Schema = z.unknown();
 
 /**
@@ -5701,12 +8274,10 @@ export const patchEdgeConfigItemsPathParamsSchema = z.object({
 
 export const patchEdgeConfigItemsQueryParamsSchema = z
 	.object({
-		dryRun: z.string().optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5717,6 +8288,9 @@ export const patchEdgeConfigItems200Schema = z.unknown();
  */
 export const patchEdgeConfigItems400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const patchEdgeConfigItems401Schema = z.unknown();
 
 /**
@@ -5733,6 +8307,8 @@ export const patchEdgeConfigItems404Schema = z.unknown();
 
 export const patchEdgeConfigItems409Schema = z.unknown();
 
+export const patchEdgeConfigItems412Schema = z.unknown();
+
 export const patchEdgeConfigItemsMutationResponseSchema = z.lazy(
 	() => patchEdgeConfigItems200Schema,
 );
@@ -5743,11 +8319,10 @@ export const getEdgeConfigSchemaPathParamsSchema = z.object({
 
 export const getEdgeConfigSchemaQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5761,6 +8336,9 @@ export const getEdgeConfigSchema200Schema = z.unknown();
  */
 export const getEdgeConfigSchema400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigSchema401Schema = z.unknown();
 
 /**
@@ -5778,12 +8356,11 @@ export const patchEdgeConfigSchemaPathParamsSchema = z.object({
 
 export const patchEdgeConfigSchemaQueryParamsSchema = z
 	.object({
-		dryRun: z.string().optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		dryRun: z.optional(z.string()),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5794,6 +8371,9 @@ export const patchEdgeConfigSchema200Schema = z.unknown();
  */
 export const patchEdgeConfigSchema400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const patchEdgeConfigSchema401Schema = z.unknown();
 
 /**
@@ -5808,6 +8388,8 @@ export const patchEdgeConfigSchema403Schema = z.unknown();
 
 export const patchEdgeConfigSchema404Schema = z.unknown();
 
+export const patchEdgeConfigSchema409Schema = z.unknown();
+
 export const patchEdgeConfigSchemaMutationResponseSchema = z.lazy(
 	() => patchEdgeConfigSchema200Schema,
 );
@@ -5818,11 +8400,10 @@ export const deleteEdgeConfigSchemaPathParamsSchema = z.object({
 
 export const deleteEdgeConfigSchemaQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5833,6 +8414,9 @@ export const deleteEdgeConfigSchema204Schema = z.unknown();
  */
 export const deleteEdgeConfigSchema400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteEdgeConfigSchema401Schema = z.unknown();
 
 /**
@@ -5847,6 +8431,8 @@ export const deleteEdgeConfigSchema403Schema = z.unknown();
 
 export const deleteEdgeConfigSchema404Schema = z.unknown();
 
+export const deleteEdgeConfigSchema409Schema = z.unknown();
+
 export const deleteEdgeConfigSchemaMutationResponseSchema = z.lazy(
 	() => deleteEdgeConfigSchema204Schema,
 );
@@ -5858,11 +8444,10 @@ export const getEdgeConfigItemPathParamsSchema = z.object({
 
 export const getEdgeConfigItemQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5876,6 +8461,9 @@ export const getEdgeConfigItem200Schema = z.unknown();
  */
 export const getEdgeConfigItem400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigItem401Schema = z.unknown();
 
 /**
@@ -5893,11 +8481,10 @@ export const getEdgeConfigTokensPathParamsSchema = z.object({
 
 export const getEdgeConfigTokensQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5911,6 +8498,9 @@ export const getEdgeConfigTokens200Schema = z.unknown();
  */
 export const getEdgeConfigTokens400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigTokens401Schema = z.unknown();
 
 /**
@@ -5928,11 +8518,10 @@ export const deleteEdgeConfigTokensPathParamsSchema = z.object({
 
 export const deleteEdgeConfigTokensQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5943,6 +8532,9 @@ export const deleteEdgeConfigTokens204Schema = z.unknown();
  */
 export const deleteEdgeConfigTokens400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteEdgeConfigTokens401Schema = z.unknown();
 
 /**
@@ -5957,6 +8549,8 @@ export const deleteEdgeConfigTokens403Schema = z.unknown();
 
 export const deleteEdgeConfigTokens404Schema = z.unknown();
 
+export const deleteEdgeConfigTokens409Schema = z.unknown();
+
 export const deleteEdgeConfigTokensMutationResponseSchema = z.lazy(
 	() => deleteEdgeConfigTokens204Schema,
 );
@@ -5968,11 +8562,10 @@ export const getEdgeConfigTokenPathParamsSchema = z.object({
 
 export const getEdgeConfigTokenQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -5986,6 +8579,9 @@ export const getEdgeConfigToken200Schema = z.unknown();
  */
 export const getEdgeConfigToken400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigToken401Schema = z.unknown();
 
 /**
@@ -6003,11 +8599,10 @@ export const createEdgeConfigTokenPathParamsSchema = z.object({
 
 export const createEdgeConfigTokenQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6018,6 +8613,9 @@ export const createEdgeConfigToken201Schema = z.unknown();
  */
 export const createEdgeConfigToken400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createEdgeConfigToken401Schema = z.unknown();
 
 /**
@@ -6032,6 +8630,8 @@ export const createEdgeConfigToken403Schema = z.unknown();
 
 export const createEdgeConfigToken404Schema = z.unknown();
 
+export const createEdgeConfigToken409Schema = z.unknown();
+
 export const createEdgeConfigTokenMutationResponseSchema = z.lazy(
 	() => createEdgeConfigToken201Schema,
 );
@@ -6043,11 +8643,10 @@ export const getEdgeConfigBackupPathParamsSchema = z.object({
 
 export const getEdgeConfigBackupQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6058,6 +8657,9 @@ export const getEdgeConfigBackup200Schema = z.unknown();
  */
 export const getEdgeConfigBackup400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigBackup401Schema = z.unknown();
 
 /**
@@ -6075,14 +8677,13 @@ export const getEdgeConfigBackupsPathParamsSchema = z.object({
 
 export const getEdgeConfigBackupsQueryParamsSchema = z
 	.object({
-		next: z.string().optional(),
-		limit: z.coerce.number().min(0).max(50).optional(),
-		metadata: z.string().optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		next: z.optional(z.string()),
+		limit: z.optional(z.coerce.number().min(0).max(50)),
+		metadata: z.optional(z.string()),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6093,6 +8694,9 @@ export const getEdgeConfigBackups200Schema = z.unknown();
  */
 export const getEdgeConfigBackups400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getEdgeConfigBackups401Schema = z.unknown();
 
 /**
@@ -6104,40 +8708,267 @@ export const getEdgeConfigBackups404Schema = z.unknown();
 
 export const getEdgeConfigBackupsQueryResponseSchema = z.lazy(() => getEdgeConfigBackups200Schema);
 
+export const createSharedEnvVariableQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const createSharedEnvVariable201Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const createSharedEnvVariable400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const createSharedEnvVariable401Schema = z.unknown();
+
+/**
+ * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ */
+export const createSharedEnvVariable402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const createSharedEnvVariable403Schema = z.unknown();
+
+export const createSharedEnvVariableMutationResponseSchema = z.lazy(
+	() => createSharedEnvVariable201Schema,
+);
+
+export const listSharedEnvVariableQueryParamsSchema = z
+	.object({
+		search: z.optional(z.string()),
+		projectId: z.optional(
+			z.string().describe("Filter SharedEnvVariables that belong to a project"),
+		),
+		ids: z.optional(z.string().describe("Filter SharedEnvVariables based on comma separated ids")),
+		exclude_ids: z.optional(
+			z.string().describe("Filter SharedEnvVariables based on comma separated ids"),
+		),
+		"exclude-ids": z.optional(
+			z.string().describe("Filter SharedEnvVariables based on comma separated ids"),
+		),
+		exclude_projectId: z.optional(
+			z.string().describe("Filter SharedEnvVariables that belong to a project"),
+		),
+		"exclude-projectId": z.optional(
+			z.string().describe("Filter SharedEnvVariables that belong to a project"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const listSharedEnvVariable200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const listSharedEnvVariable400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const listSharedEnvVariable401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const listSharedEnvVariable403Schema = z.unknown();
+
+export const listSharedEnvVariable404Schema = z.unknown();
+
+export const listSharedEnvVariableQueryResponseSchema = z.lazy(
+	() => listSharedEnvVariable200Schema,
+);
+
+export const updateSharedEnvVariableQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const updateSharedEnvVariable200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const updateSharedEnvVariable400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const updateSharedEnvVariable401Schema = z.unknown();
+
+/**
+ * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ */
+export const updateSharedEnvVariable402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const updateSharedEnvVariable403Schema = z.unknown();
+
+export const updateSharedEnvVariableMutationResponseSchema = z.lazy(
+	() => updateSharedEnvVariable200Schema,
+);
+
+export const deleteSharedEnvVariableQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const deleteSharedEnvVariable200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const deleteSharedEnvVariable400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const deleteSharedEnvVariable401Schema = z.unknown();
+
+/**
+ * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ */
+export const deleteSharedEnvVariable402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const deleteSharedEnvVariable403Schema = z.unknown();
+
+export const deleteSharedEnvVariableMutationResponseSchema = z.lazy(
+	() => deleteSharedEnvVariable200Schema,
+);
+
+export const getSharedEnvVarPathParamsSchema = z.object({
+	id: z
+		.string()
+		.describe("The unique ID for the Shared Environment Variable to get the decrypted value."),
+});
+
+export const getSharedEnvVarQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const getSharedEnvVar200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getSharedEnvVar400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getSharedEnvVar401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getSharedEnvVar403Schema = z.unknown();
+
+export const getSharedEnvVarQueryResponseSchema = z.lazy(() => getSharedEnvVar200Schema);
+
+export const unlinkSharedEnvVariablePathParamsSchema = z.object({
+	id: z
+		.string()
+		.describe("The unique ID for the Shared Environment Variable to unlink from the project."),
+	projectId: z.string(),
+});
+
+export const unlinkSharedEnvVariableQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const unlinkSharedEnvVariable200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const unlinkSharedEnvVariable400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const unlinkSharedEnvVariable401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const unlinkSharedEnvVariable403Schema = z.unknown();
+
+export const unlinkSharedEnvVariableMutationResponseSchema = z.lazy(
+	() => unlinkSharedEnvVariable200Schema,
+);
+
 export const listUserEventsQueryParamsSchema = z
 	.object({
-		limit: z.coerce.number().describe("Maximum number of items which may be returned.").optional(),
-		since: z.string().describe("Timestamp to only include items created since then.").optional(),
-		until: z.string().describe("Timestamp to only include items created until then.").optional(),
-		types: z
-			.string()
-			.describe('Comma-delimited list of event \\"types\\" to filter the results by.')
-			.optional(),
-		userId: z
-			.string()
-			.describe(
-				"Deprecated. Use `principalId` instead. If `principalId` and `userId` both exist, `principalId` will be used.",
-			)
-			.optional(),
-		principalId: z
-			.string()
-			.describe(
-				"When retrieving events for a Team, the `principalId` parameter may be specified to filter events generated by a specific principal.",
-			)
-			.optional(),
-		projectIds: z
-			.string()
-			.describe("Comma-delimited list of project IDs to filter the results by.")
-			.optional(),
-		withPayload: z
-			.string()
-			.describe("When set to `true`, the response will include the `payload` field for each event.")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		limit: z.optional(z.coerce.number().describe("Maximum number of items which may be returned.")),
+		since: z.optional(z.string().describe("Timestamp to only include items created since then.")),
+		until: z.optional(z.string().describe("Timestamp to only include items created until then.")),
+		types: z.optional(
+			z.string().describe('Comma-delimited list of event \\"types\\" to filter the results by.'),
+		),
+		userId: z.optional(
+			z
+				.string()
+				.describe(
+					"Deprecated. Use `principalId` instead. If `principalId` and `userId` both exist, `principalId` will be used.",
+				),
+		),
+		principalId: z.optional(
+			z
+				.string()
+				.describe(
+					"When retrieving events for a Team, the `principalId` parameter may be specified to filter events generated by a specific principal.",
+				),
+		),
+		projectIds: z.optional(
+			z.string().describe("Comma-delimited list of project IDs to filter the results by."),
+		),
+		withPayload: z.optional(
+			z
+				.string()
+				.describe(
+					"When set to `true`, the response will include the `payload` field for each event.",
+				),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6151,6 +8982,9 @@ export const listUserEvents200Schema = z.unknown();
  */
 export const listUserEvents400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listUserEvents401Schema = z.unknown();
 
 /**
@@ -6159,6 +8993,187 @@ export const listUserEvents401Schema = z.unknown();
 export const listUserEvents403Schema = z.unknown();
 
 export const listUserEventsQueryResponseSchema = z.lazy(() => listUserEvents200Schema);
+
+export const gitNamespacesQueryParamsSchema = z
+	.object({
+		host: z.optional(
+			z
+				.string()
+				.describe(
+					"The custom Git host if using a custom Git provider, like GitHub Enterprise Server",
+				),
+		),
+		provider: z.optional(
+			z.enum(["github", "github-limited", "github-custom-host", "gitlab", "bitbucket"]),
+		),
+	})
+	.optional();
+
+export const gitNamespaces200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const gitNamespaces400Schema = z.unknown();
+
+export const gitNamespaces401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const gitNamespaces403Schema = z.unknown();
+
+export const gitNamespaces404Schema = z.unknown();
+
+export const gitNamespaces429Schema = z.unknown();
+
+export const gitNamespaces500Schema = z.unknown();
+
+export const gitNamespacesQueryResponseSchema = z.lazy(() => gitNamespaces200Schema);
+
+export const searchRepoQueryParamsSchema = z
+	.object({
+		query: z.optional(z.string()),
+		namespaceId: z.union([z.string(), z.coerce.number()]).nullish(),
+		provider: z.optional(
+			z.enum(["github", "github-limited", "github-custom-host", "gitlab", "bitbucket"]),
+		),
+		installationId: z.optional(z.string()),
+		host: z.optional(
+			z
+				.string()
+				.describe(
+					"The custom Git host if using a custom Git provider, like GitHub Enterprise Server",
+				),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const searchRepo200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const searchRepo400Schema = z.unknown();
+
+export const searchRepo401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const searchRepo403Schema = z.unknown();
+
+export const searchRepo404Schema = z.unknown();
+
+export const searchRepo429Schema = z.unknown();
+
+export const searchRepo500Schema = z.unknown();
+
+export const searchRepoQueryResponseSchema = z.lazy(() => searchRepo200Schema);
+
+export const getBillingPlansPathParamsSchema = z.object({
+	integrationIdOrSlug: z.string(),
+	productIdOrSlug: z.string(),
+});
+
+export const getBillingPlansQueryParamsSchema = z
+	.object({
+		integrationConfigurationId: z.optional(z.string()),
+		metadata: z.optional(z.string()),
+		source: z.optional(z.string()),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const getBillingPlans200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getBillingPlans400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getBillingPlans401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getBillingPlans403Schema = z.unknown();
+
+export const getBillingPlans404Schema = z.unknown();
+
+export const getBillingPlansQueryResponseSchema = z.lazy(() => getBillingPlans200Schema);
+
+export const connectIntegrationResourceToProjectPathParamsSchema = z.object({
+	integrationConfigurationId: z.string(),
+	resourceId: z.string(),
+});
+
+export const connectIntegrationResourceToProjectQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const connectIntegrationResourceToProject201Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const connectIntegrationResourceToProject400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const connectIntegrationResourceToProject401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const connectIntegrationResourceToProject403Schema = z.unknown();
+
+export const connectIntegrationResourceToProject404Schema = z.unknown();
+
+export const connectIntegrationResourceToProjectMutationResponseSchema = z.lazy(
+	() => connectIntegrationResourceToProject201Schema,
+);
+
+export const updateInstallationPathParamsSchema = z.object({
+	integrationConfigurationId: z.string(),
+});
+
+export const updateInstallation204Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const updateInstallation400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const updateInstallation401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const updateInstallation403Schema = z.unknown();
+
+export const updateInstallation404Schema = z.unknown();
+
+export const updateInstallationMutationResponseSchema = z.lazy(() => updateInstallation204Schema);
 
 export const getAccountInfoPathParamsSchema = z.object({
 	integrationConfigurationId: z.string(),
@@ -6171,6 +9186,9 @@ export const getAccountInfo200Schema = z.unknown();
  */
 export const getAccountInfo400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getAccountInfo401Schema = z.unknown();
 
 /**
@@ -6194,6 +9212,9 @@ export const getMember200Schema = z.unknown();
  */
 export const getMember400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getMember401Schema = z.unknown();
 
 /**
@@ -6216,6 +9237,9 @@ export const createEvent201Schema = z.unknown();
  */
 export const createEvent400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createEvent401Schema = z.unknown();
 
 /**
@@ -6238,6 +9262,9 @@ export const getIntegrationResources200Schema = z.unknown();
  */
 export const getIntegrationResources400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getIntegrationResources401Schema = z.unknown();
 
 /**
@@ -6267,6 +9294,9 @@ export const getIntegrationResource200Schema = z.unknown();
  */
 export const getIntegrationResource400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getIntegrationResource401Schema = z.unknown();
 
 /**
@@ -6292,6 +9322,9 @@ export const deleteIntegrationResource204Schema = z.unknown();
  */
 export const deleteIntegrationResource400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteIntegrationResource401Schema = z.unknown();
 
 /**
@@ -6317,6 +9350,9 @@ export const importResource200Schema = z.unknown();
  */
 export const importResource400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const importResource401Schema = z.unknown();
 
 /**
@@ -6326,7 +9362,43 @@ export const importResource403Schema = z.unknown();
 
 export const importResource404Schema = z.unknown();
 
+export const importResource409Schema = z.unknown();
+
+export const importResource422Schema = z.unknown();
+
+export const importResource429Schema = z.unknown();
+
 export const importResourceMutationResponseSchema = z.lazy(() => importResource200Schema);
+
+export const updateResourcePathParamsSchema = z.object({
+	integrationConfigurationId: z.string(),
+	resourceId: z.string(),
+});
+
+export const updateResource200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const updateResource400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const updateResource401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const updateResource403Schema = z.unknown();
+
+export const updateResource404Schema = z.unknown();
+
+export const updateResource409Schema = z.unknown();
+
+export const updateResource422Schema = z.unknown();
+
+export const updateResourceMutationResponseSchema = z.lazy(() => updateResource200Schema);
 
 export const submitBillingDataPathParamsSchema = z.object({
 	integrationConfigurationId: z.string(),
@@ -6339,6 +9411,9 @@ export const submitBillingData201Schema = z.unknown();
  */
 export const submitBillingData400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const submitBillingData401Schema = z.unknown();
 
 /**
@@ -6361,6 +9436,9 @@ export const submitInvoice200Schema = z.unknown();
  */
 export const submitInvoice400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const submitInvoice401Schema = z.unknown();
 
 /**
@@ -6369,6 +9447,8 @@ export const submitInvoice401Schema = z.unknown();
 export const submitInvoice403Schema = z.unknown();
 
 export const submitInvoice404Schema = z.unknown();
+
+export const submitInvoice409Schema = z.unknown();
 
 export const submitInvoiceMutationResponseSchema = z.lazy(() => submitInvoice200Schema);
 
@@ -6384,6 +9464,9 @@ export const getInvoice200Schema = z.unknown();
  */
 export const getInvoice400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getInvoice401Schema = z.unknown();
 
 /**
@@ -6407,6 +9490,9 @@ export const updateInvoice204Schema = z.unknown();
  */
 export const updateInvoice400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateInvoice401Schema = z.unknown();
 
 /**
@@ -6415,6 +9501,8 @@ export const updateInvoice401Schema = z.unknown();
 export const updateInvoice403Schema = z.unknown();
 
 export const updateInvoice404Schema = z.unknown();
+
+export const updateInvoice409Schema = z.unknown();
 
 export const updateInvoiceMutationResponseSchema = z.lazy(() => updateInvoice204Schema);
 
@@ -6429,6 +9517,9 @@ export const submitPrepaymentBalances201Schema = z.unknown();
  */
 export const submitPrepaymentBalances400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const submitPrepaymentBalances401Schema = z.unknown();
 
 /**
@@ -6455,6 +9546,9 @@ export const updateResourceSecrets201Schema = z.unknown();
  */
 export const updateResourceSecrets400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateResourceSecrets401Schema = z.unknown();
 
 /**
@@ -6463,6 +9557,10 @@ export const updateResourceSecrets401Schema = z.unknown();
 export const updateResourceSecrets403Schema = z.unknown();
 
 export const updateResourceSecrets404Schema = z.unknown();
+
+export const updateResourceSecrets409Schema = z.unknown();
+
+export const updateResourceSecrets422Schema = z.unknown();
 
 export const updateResourceSecretsMutationResponseSchema = z.lazy(
 	() => updateResourceSecrets201Schema,
@@ -6480,6 +9578,9 @@ export const updateResourceSecretsById201Schema = z.unknown();
  */
 export const updateResourceSecretsById400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateResourceSecretsById401Schema = z.unknown();
 
 /**
@@ -6489,6 +9590,8 @@ export const updateResourceSecretsById403Schema = z.unknown();
 
 export const updateResourceSecretsById404Schema = z.unknown();
 
+export const updateResourceSecretsById409Schema = z.unknown();
+
 export const updateResourceSecretsById422Schema = z.unknown();
 
 export const updateResourceSecretsByIdMutationResponseSchema = z.lazy(
@@ -6497,13 +9600,12 @@ export const updateResourceSecretsByIdMutationResponseSchema = z.lazy(
 
 export const getConfigurationsQueryParamsSchema = z.object({
 	view: z.enum(["account", "project"]),
-	installationType: z.enum(["marketplace", "external"]).optional(),
-	integrationIdOrSlug: z.string().describe("ID of the integration").optional(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	installationType: z.optional(z.enum(["marketplace", "external", "provisioning"])),
+	integrationIdOrSlug: z.optional(z.string().describe("ID of the integration")),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 /**
@@ -6516,6 +9618,9 @@ export const getConfigurations200Schema = z.unknown();
  */
 export const getConfigurations400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getConfigurations401Schema = z.unknown();
 
 /**
@@ -6531,11 +9636,10 @@ export const getConfigurationPathParamsSchema = z.object({
 
 export const getConfigurationQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6549,6 +9653,9 @@ export const getConfiguration200Schema = z.unknown();
  */
 export const getConfiguration400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getConfiguration401Schema = z.unknown();
 
 /**
@@ -6569,11 +9676,10 @@ export const deleteConfigurationPathParamsSchema = z.object({
 
 export const deleteConfigurationQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6587,6 +9693,9 @@ export const deleteConfiguration204Schema = z.unknown();
  */
 export const deleteConfiguration400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteConfiguration401Schema = z.unknown();
 
 /**
@@ -6601,12 +9710,55 @@ export const deleteConfiguration404Schema = z.unknown();
 
 export const deleteConfigurationMutationResponseSchema = z.lazy(() => deleteConfiguration204Schema);
 
+export const getConfigurationProductsPathParamsSchema = z.object({
+	id: z.string().describe("ID of the integration configuration"),
+});
+
+export const getConfigurationProductsQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+/**
+ * @description List of products available for this integration configuration
+ */
+export const getConfigurationProducts200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getConfigurationProducts400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getConfigurationProducts401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getConfigurationProducts403Schema = z.unknown();
+
+export const getConfigurationProducts404Schema = z.unknown();
+
+export const getConfigurationProducts500Schema = z.unknown();
+
+export const getConfigurationProductsQueryResponseSchema = z.lazy(
+	() => getConfigurationProducts200Schema,
+);
+
 export const exchangeSsoToken200Schema = z.unknown();
 
 /**
  * @description One of the provided values in the request body is invalid.
  */
 export const exchangeSsoToken400Schema = z.unknown();
+
+export const exchangeSsoToken403Schema = z.unknown();
 
 export const exchangeSsoToken404Schema = z.unknown();
 
@@ -6616,11 +9768,10 @@ export const exchangeSsoTokenMutationResponseSchema = z.lazy(() => exchangeSsoTo
 
 export const getIntegrationLogDrainsQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6631,6 +9782,9 @@ export const getIntegrationLogDrains200Schema = z.unknown();
 
 export const getIntegrationLogDrains400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getIntegrationLogDrains401Schema = z.unknown();
 
 /**
@@ -6644,11 +9798,10 @@ export const getIntegrationLogDrainsQueryResponseSchema = z.lazy(
 
 export const createLogDrainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6662,6 +9815,9 @@ export const createLogDrain200Schema = z.unknown();
  */
 export const createLogDrain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createLogDrain401Schema = z.unknown();
 
 /**
@@ -6677,11 +9833,10 @@ export const deleteIntegrationLogDrainPathParamsSchema = z.object({
 
 export const deleteIntegrationLogDrainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6695,6 +9850,9 @@ export const deleteIntegrationLogDrain204Schema = z.unknown();
  */
 export const deleteIntegrationLogDrain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteIntegrationLogDrain401Schema = z.unknown();
 
 /**
@@ -6702,9 +9860,6 @@ export const deleteIntegrationLogDrain401Schema = z.unknown();
  */
 export const deleteIntegrationLogDrain403Schema = z.unknown();
 
-/**
- * @description The log drain was not found
- */
 export const deleteIntegrationLogDrain404Schema = z.unknown();
 
 export const deleteIntegrationLogDrainMutationResponseSchema = z.lazy(
@@ -6718,11 +9873,10 @@ export const getRuntimeLogsPathParamsSchema = z.object({
 
 export const getRuntimeLogsQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6733,6 +9887,9 @@ export const getRuntimeLogs200Schema = z.unknown();
  */
 export const getRuntimeLogs400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getRuntimeLogs401Schema = z.unknown();
 
 /**
@@ -6757,6 +9914,9 @@ export const createExperimentationItem204Schema = z.unknown();
  */
 export const createExperimentationItem400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createExperimentationItem401Schema = z.unknown();
 
 /**
@@ -6786,6 +9946,9 @@ export const updateExperimentationItem204Schema = z.unknown();
  */
 export const updateExperimentationItem400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateExperimentationItem401Schema = z.unknown();
 
 /**
@@ -6815,6 +9978,9 @@ export const deleteExperimentationItem204Schema = z.unknown();
  */
 export const deleteExperimentationItem400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteExperimentationItem401Schema = z.unknown();
 
 /**
@@ -6843,6 +10009,9 @@ export const updateExperimentationEdgeConfig200Schema = z.unknown();
  */
 export const updateExperimentationEdgeConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateExperimentationEdgeConfig401Schema = z.unknown();
 
 /**
@@ -6851,6 +10020,8 @@ export const updateExperimentationEdgeConfig401Schema = z.unknown();
 export const updateExperimentationEdgeConfig403Schema = z.unknown();
 
 export const updateExperimentationEdgeConfig404Schema = z.unknown();
+
+export const updateExperimentationEdgeConfig409Schema = z.unknown();
 
 export const updateExperimentationEdgeConfig412Schema = z.unknown();
 
@@ -6864,32 +10035,33 @@ export const getProjectMembersPathParamsSchema = z.object({
 
 export const getProjectMembersQueryParamsSchema = z
 	.object({
-		limit: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(100)
-			.describe("Limit how many project members should be returned")
-			.optional(),
-		since: z.coerce
-			.number()
-			.int()
-			.describe("Timestamp in milliseconds to only include members added since then.")
-			.optional(),
-		until: z.coerce
-			.number()
-			.int()
-			.describe("Timestamp in milliseconds to only include members added until then.")
-			.optional(),
-		search: z
-			.string()
-			.describe("Search project members by their name, username, and email.")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		limit: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.min(1)
+				.max(100)
+				.describe("Limit how many project members should be returned"),
+		),
+		since: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.describe("Timestamp in milliseconds to only include members added since then."),
+		),
+		until: z.optional(
+			z.coerce
+				.number()
+				.int()
+				.describe("Timestamp in milliseconds to only include members added until then."),
+		),
+		search: z.optional(
+			z.string().describe("Search project members by their name, username, and email."),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6903,6 +10075,9 @@ export const getProjectMembers200Schema = z.unknown();
  */
 export const getProjectMembers400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getProjectMembers401Schema = z.unknown();
 
 /**
@@ -6918,11 +10093,10 @@ export const addProjectMemberPathParamsSchema = z.object({
 
 export const addProjectMemberQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6936,6 +10110,9 @@ export const addProjectMember200Schema = z.unknown();
  */
 export const addProjectMember400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const addProjectMember401Schema = z.unknown();
 
 /**
@@ -6954,11 +10131,10 @@ export const removeProjectMemberPathParamsSchema = z.object({
 
 export const removeProjectMemberQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -6969,6 +10145,9 @@ export const removeProjectMember200Schema = z.unknown();
  */
 export const removeProjectMember400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeProjectMember401Schema = z.unknown();
 
 /**
@@ -6980,33 +10159,48 @@ export const removeProjectMemberMutationResponseSchema = z.lazy(() => removeProj
 
 export const getProjectsQueryParamsSchema = z
 	.object({
-		from: z.string().describe("Query only projects updated after the given timestamp").optional(),
-		gitForkProtection: z
-			.enum(["1", "0"])
-			.describe(
-				"Specifies whether PRs from Git forks should require a team member's authorization before it can be deployed",
-			)
-			.optional(),
-		limit: z.string().describe("Limit the number of projects returned").optional(),
-		search: z.string().max(100).describe("Search projects by the name field").optional(),
-		repo: z.string().describe("Filter results by repo. Also used for project count").optional(),
-		repoId: z.string().describe("Filter results by Repository ID.").optional(),
-		repoUrl: z.string().describe("Filter results by Repository URL.").optional(),
-		excludeRepos: z
-			.string()
-			.describe("Filter results by excluding those projects that belong to a repo")
-			.optional(),
-		edgeConfigId: z.string().describe("Filter results by connected Edge Config ID").optional(),
-		edgeConfigTokenId: z
-			.string()
-			.describe("Filter results by connected Edge Config Token ID")
-			.optional(),
-		deprecated: z.boolean().optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		from: z.optional(
+			z
+				.string()
+				.describe("Query only projects updated after the given timestamp or continuation token."),
+		),
+		gitForkProtection: z.optional(
+			z
+				.enum(["1", "0"])
+				.describe(
+					"Specifies whether PRs from Git forks should require a team member's authorization before it can be deployed",
+				),
+		),
+		limit: z.optional(z.string().describe("Limit the number of projects returned")),
+		search: z.optional(z.string().max(100).describe("Search projects by the name field")),
+		repo: z.optional(z.string().describe("Filter results by repo. Also used for project count")),
+		repoId: z.optional(z.string().describe("Filter results by Repository ID.")),
+		repoUrl: z.optional(z.string().describe("Filter results by Repository URL.")),
+		excludeRepos: z.optional(
+			z.string().describe("Filter results by excluding those projects that belong to a repo"),
+		),
+		edgeConfigId: z.optional(z.string().describe("Filter results by connected Edge Config ID")),
+		edgeConfigTokenId: z.optional(
+			z.string().describe("Filter results by connected Edge Config Token ID"),
+		),
+		deprecated: z.optional(z.boolean()),
+		elasticConcurrencyEnabled: z.optional(
+			z.enum(["1", "0"]).describe("Filter results by projects with elastic concurrency enabled"),
+		),
+		staticIpsEnabled: z.optional(
+			z.enum(["0", "1"]).describe("Filter results by projects with Static IPs enabled"),
+		),
+		buildMachineTypes: z.optional(
+			z
+				.string()
+				.describe(
+					'Filter results by build machine types. Accepts comma-separated values. Use \\"default\\" for projects without a build machine type set.',
+				),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7020,6 +10214,9 @@ export const getProjects200Schema = z.unknown();
  */
 export const getProjects400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getProjects401Schema = z.unknown();
 
 /**
@@ -7031,11 +10228,10 @@ export const getProjectsQueryResponseSchema = z.lazy(() => getProjects200Schema)
 
 export const createProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7049,6 +10245,9 @@ export const createProject200Schema = z.unknown();
  */
 export const createProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createProject401Schema = z.unknown();
 
 /**
@@ -7061,10 +10260,21 @@ export const createProject402Schema = z.unknown();
  */
 export const createProject403Schema = z.unknown();
 
+export const createProject404Schema = z.unknown();
+
 /**
  * @description A project with the provided name already exists.
  */
 export const createProject409Schema = z.unknown();
+
+/**
+ * @description Owner does not have protection add-on
+ */
+export const createProject428Schema = z.unknown();
+
+export const createProject429Schema = z.unknown();
+
+export const createProject500Schema = z.unknown();
 
 export const createProjectMutationResponseSchema = z.lazy(() => createProject200Schema);
 
@@ -7076,11 +10286,10 @@ export const getProjectPathParamsSchema = z.object({
 
 export const getProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7094,6 +10303,9 @@ export const getProject200Schema = z.unknown();
  */
 export const getProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getProject401Schema = z.unknown();
 
 /**
@@ -7109,11 +10321,10 @@ export const updateProjectPathParamsSchema = z.object({
 
 export const updateProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7127,6 +10338,9 @@ export const updateProject200Schema = z.unknown();
  */
 export const updateProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateProject401Schema = z.unknown();
 
 /**
@@ -7159,11 +10373,10 @@ export const deleteProjectPathParamsSchema = z.object({
 
 export const deleteProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7177,6 +10390,9 @@ export const deleteProject204Schema = z.unknown();
  */
 export const deleteProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteProject401Schema = z.unknown();
 
 /**
@@ -7188,17 +10404,54 @@ export const deleteProject409Schema = z.unknown();
 
 export const deleteProjectMutationResponseSchema = z.lazy(() => deleteProject204Schema);
 
+export const updateStaticIpsPathParamsSchema = z.object({
+	idOrName: z.string().describe("The unique project identifier or the project name"),
+});
+
+export const updateStaticIpsQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const updateStaticIps200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const updateStaticIps400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const updateStaticIps401Schema = z.unknown();
+
+export const updateStaticIps402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const updateStaticIps403Schema = z.unknown();
+
+export const updateStaticIps404Schema = z.unknown();
+
+export const updateStaticIps500Schema = z.unknown();
+
+export const updateStaticIpsMutationResponseSchema = z.lazy(() => updateStaticIps200Schema);
+
 export const createCustomEnvironmentPathParamsSchema = z.object({
 	idOrName: z.string().describe("The unique project identifier or the project name"),
 });
 
 export const createCustomEnvironmentQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7209,6 +10462,9 @@ export const createCustomEnvironment201Schema = z.unknown();
  */
 export const createCustomEnvironment400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createCustomEnvironment401Schema = z.unknown();
 
 /**
@@ -7233,15 +10489,13 @@ export const listCustomEnvironmentsPathParamsSchema = z.object({
 
 export const listCustomEnvironmentsQueryParamsSchema = z
 	.object({
-		gitBranch: z
-			.string()
-			.describe("Fetch custom environments for a specific git branch")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		gitBranch: z.optional(
+			z.string().describe("Fetch custom environments for a specific git branch"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7252,6 +10506,9 @@ export const listCustomEnvironments200Schema = z.unknown();
  */
 export const listCustomEnvironments400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listCustomEnvironments401Schema = z.unknown();
 
 /**
@@ -7272,11 +10529,10 @@ export const getCustomEnvironmentPathParamsSchema = z.object({
 
 export const getCustomEnvironmentQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7287,6 +10543,9 @@ export const getCustomEnvironment200Schema = z.unknown();
  */
 export const getCustomEnvironment400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getCustomEnvironment401Schema = z.unknown();
 
 /**
@@ -7307,11 +10566,10 @@ export const updateCustomEnvironmentPathParamsSchema = z.object({
 
 export const updateCustomEnvironmentQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7322,6 +10580,9 @@ export const updateCustomEnvironment200Schema = z.unknown();
  */
 export const updateCustomEnvironment400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateCustomEnvironment401Schema = z.unknown();
 
 /**
@@ -7349,11 +10610,10 @@ export const removeCustomEnvironmentPathParamsSchema = z.object({
 
 export const removeCustomEnvironmentQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7364,6 +10624,9 @@ export const removeCustomEnvironment200Schema = z.unknown();
  */
 export const removeCustomEnvironment400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeCustomEnvironment401Schema = z.unknown();
 
 /**
@@ -7386,44 +10649,41 @@ export const getProjectDomainsQueryParamsSchema = z.object({
 		.enum(["true", "false"])
 		.default("false")
 		.describe("Filters only production domains when set to `true`."),
-	target: z
-		.enum(["production", "preview"])
-		.describe('Filters on the target of the domain. Can be either \\"production\\", \\"preview\\"')
-		.optional(),
-	customEnvironmentId: z
-		.string()
-		.describe("The unique custom environment identifier within the project")
-		.optional(),
-	gitBranch: z.string().describe("Filters domains based on specific branch.").optional(),
+	target: z.optional(
+		z
+			.enum(["production", "preview"])
+			.describe(
+				'Filters on the target of the domain. Can be either \\"production\\", \\"preview\\"',
+			),
+	),
+	customEnvironmentId: z.optional(
+		z.string().describe("The unique custom environment identifier within the project"),
+	),
+	gitBranch: z.optional(z.string().describe("Filters domains based on specific branch.")),
 	redirects: z
 		.enum(["true", "false"])
 		.default("true")
 		.describe(
 			'Excludes redirect project domains when \\"false\\". Includes redirect project domains when \\"true\\" (default).',
 		),
-	redirect: z.string().describe("Filters domains based on their redirect target.").optional(),
-	verified: z
-		.enum(["true", "false"])
-		.describe("Filters domains based on their verification status.")
-		.optional(),
-	limit: z.coerce
-		.number()
-		.describe("Maximum number of domains to list from a request (max 100).")
-		.optional(),
-	since: z.coerce
-		.number()
-		.describe("Get domains created after this JavaScript timestamp.")
-		.optional(),
-	until: z.coerce
-		.number()
-		.describe("Get domains created before this JavaScript timestamp.")
-		.optional(),
+	redirect: z.optional(z.string().describe("Filters domains based on their redirect target.")),
+	verified: z.optional(
+		z.enum(["true", "false"]).describe("Filters domains based on their verification status."),
+	),
+	limit: z.optional(
+		z.coerce.number().describe("Maximum number of domains to list from a request (max 100)."),
+	),
+	since: z.optional(
+		z.coerce.number().describe("Get domains created after this JavaScript timestamp."),
+	),
+	until: z.optional(
+		z.coerce.number().describe("Get domains created before this JavaScript timestamp."),
+	),
 	order: z.enum(["ASC", "DESC"]).default("DESC").describe("Domains sort order by createdAt"),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 /**
@@ -7436,6 +10696,9 @@ export const getProjectDomains200Schema = z.unknown();
  */
 export const getProjectDomains400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getProjectDomains401Schema = z.unknown();
 
 /**
@@ -7452,11 +10715,10 @@ export const getProjectDomainPathParamsSchema = z.object({
 
 export const getProjectDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7467,6 +10729,9 @@ export const getProjectDomain200Schema = z.unknown();
  */
 export const getProjectDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getProjectDomain401Schema = z.unknown();
 
 /**
@@ -7483,11 +10748,10 @@ export const updateProjectDomainPathParamsSchema = z.object({
 
 export const updateProjectDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7501,6 +10765,9 @@ export const updateProjectDomain200Schema = z.unknown();
  */
 export const updateProjectDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateProjectDomain401Schema = z.unknown();
 
 /**
@@ -7522,11 +10789,10 @@ export const removeProjectDomainPathParamsSchema = z.object({
 
 export const removeProjectDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7540,6 +10806,9 @@ export const removeProjectDomain200Schema = z.unknown();
  */
 export const removeProjectDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeProjectDomain401Schema = z.unknown();
 
 /**
@@ -7562,11 +10831,10 @@ export const addProjectDomainPathParamsSchema = z.object({
 
 export const addProjectDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7580,6 +10848,9 @@ export const addProjectDomain200Schema = z.unknown();
  */
 export const addProjectDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const addProjectDomain401Schema = z.unknown();
 
 /**
@@ -7606,11 +10877,10 @@ export const moveProjectDomainPathParamsSchema = z.object({
 
 export const moveProjectDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7620,10 +10890,13 @@ export const moveProjectDomainQueryParamsSchema = z
 export const moveProjectDomain200Schema = z.unknown();
 
 /**
- * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.\nThe domain redirect is not valid
  */
 export const moveProjectDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const moveProjectDomain401Schema = z.unknown();
 
 /**
@@ -7645,11 +10918,10 @@ export const verifyProjectDomainPathParamsSchema = z.object({
 
 export const verifyProjectDomainQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7663,6 +10935,9 @@ export const verifyProjectDomain200Schema = z.unknown();
  */
 export const verifyProjectDomain400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const verifyProjectDomain401Schema = z.unknown();
 
 /**
@@ -7678,31 +10953,30 @@ export const filterProjectEnvsPathParamsSchema = z.object({
 
 export const filterProjectEnvsQueryParamsSchema = z
 	.object({
-		gitBranch: z
-			.string()
-			.max(250)
-			.describe(
-				"If defined, the git branch of the environment variable to filter the results (must have target=preview)",
-			)
-			.optional(),
-		decrypt: z
-			.enum(["true", "false"])
-			.describe("If true, the environment variable value will be decrypted")
-			.optional(),
-		source: z.string().describe("The source that is calling the endpoint.").optional(),
-		customEnvironmentId: z
-			.string()
-			.describe("The unique custom environment identifier within the project")
-			.optional(),
-		customEnvironmentSlug: z
-			.string()
-			.describe("The custom environment slug (name) within the project")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		gitBranch: z.optional(
+			z
+				.string()
+				.max(250)
+				.describe(
+					"If defined, the git branch of the environment variable to filter the results (must have target=preview)",
+				),
+		),
+		decrypt: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe("If true, the environment variable value will be decrypted"),
+		),
+		source: z.optional(z.string().describe("The source that is calling the endpoint.")),
+		customEnvironmentId: z.optional(
+			z.string().describe("The unique custom environment identifier within the project"),
+		),
+		customEnvironmentSlug: z.optional(
+			z.string().describe("The custom environment slug (name) within the project"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7716,6 +10990,9 @@ export const filterProjectEnvs200Schema = z.unknown();
  */
 export const filterProjectEnvs400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const filterProjectEnvs401Schema = z.unknown();
 
 /**
@@ -7731,15 +11008,13 @@ export const createProjectEnvPathParamsSchema = z.object({
 
 export const createProjectEnvQueryParamsSchema = z
 	.object({
-		upsert: z
-			.string()
-			.describe("Allow override of environment variable if it already exists")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		upsert: z.optional(
+			z.string().describe("Allow override of environment variable if it already exists"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7753,6 +11028,9 @@ export const createProjectEnv201Schema = z.unknown();
  */
 export const createProjectEnv400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createProjectEnv401Schema = z.unknown();
 
 /**
@@ -7765,10 +11043,16 @@ export const createProjectEnv402Schema = z.unknown();
  */
 export const createProjectEnv403Schema = z.unknown();
 
+export const createProjectEnv404Schema = z.unknown();
+
 /**
  * @description The project is being transfered and creating an environment variable is not possible
  */
 export const createProjectEnv409Schema = z.unknown();
+
+export const createProjectEnv429Schema = z.unknown();
+
+export const createProjectEnv500Schema = z.unknown();
 
 export const createProjectEnvMutationResponseSchema = z.lazy(() => createProjectEnv201Schema);
 
@@ -7779,11 +11063,10 @@ export const getProjectEnvPathParamsSchema = z.object({
 
 export const getProjectEnvQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7794,6 +11077,9 @@ export const getProjectEnv200Schema = z.unknown();
  */
 export const getProjectEnv400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getProjectEnv401Schema = z.unknown();
 
 /**
@@ -7810,15 +11096,13 @@ export const removeProjectEnvPathParamsSchema = z.object({
 
 export const removeProjectEnvQueryParamsSchema = z
 	.object({
-		customEnvironmentId: z
-			.string()
-			.describe("The unique custom environment identifier within the project")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		customEnvironmentId: z.optional(
+			z.string().describe("The unique custom environment identifier within the project"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7832,6 +11116,9 @@ export const removeProjectEnv200Schema = z.unknown();
  */
 export const removeProjectEnv400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeProjectEnv401Schema = z.unknown();
 
 /**
@@ -7855,11 +11142,10 @@ export const editProjectEnvPathParamsSchema = z.object({
 
 export const editProjectEnvQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7873,6 +11159,9 @@ export const editProjectEnv200Schema = z.unknown();
  */
 export const editProjectEnv400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const editProjectEnv401Schema = z.unknown();
 
 /**
@@ -7880,12 +11169,197 @@ export const editProjectEnv401Schema = z.unknown();
  */
 export const editProjectEnv403Schema = z.unknown();
 
+export const editProjectEnv404Schema = z.unknown();
+
 /**
  * @description The project is being transfered and removing an environment variable is not possible
  */
 export const editProjectEnv409Schema = z.unknown();
 
+export const editProjectEnv429Schema = z.unknown();
+
+export const editProjectEnv500Schema = z.unknown();
+
 export const editProjectEnvMutationResponseSchema = z.lazy(() => editProjectEnv200Schema);
+
+export const batchRemoveProjectEnvPathParamsSchema = z.object({
+	idOrName: z.string().describe("The unique project identifier or the project name"),
+});
+
+export const batchRemoveProjectEnvQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const batchRemoveProjectEnv200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const batchRemoveProjectEnv400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const batchRemoveProjectEnv401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const batchRemoveProjectEnv403Schema = z.unknown();
+
+export const batchRemoveProjectEnv404Schema = z.unknown();
+
+export const batchRemoveProjectEnv409Schema = z.unknown();
+
+export const batchRemoveProjectEnvMutationResponseSchema = z.lazy(
+	() => batchRemoveProjectEnv200Schema,
+);
+
+export const uploadProjectClientCertPathParamsSchema = z.object({
+	idOrName: z.string().describe("The unique project identifier or the project name"),
+});
+
+export const uploadProjectClientCertQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+/**
+ * @description Client certificate uploaded successfully
+ */
+export const uploadProjectClientCert200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const uploadProjectClientCert400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const uploadProjectClientCert401Schema = z.unknown();
+
+/**
+ * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ */
+export const uploadProjectClientCert402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const uploadProjectClientCert403Schema = z.unknown();
+
+export const uploadProjectClientCert404Schema = z.unknown();
+
+/**
+ * @description The project is being transferred and uploading certificates is not possible
+ */
+export const uploadProjectClientCert409Schema = z.unknown();
+
+/**
+ * @description Failed to upload the client certificate\nFailed to encrypt the private key
+ */
+export const uploadProjectClientCert500Schema = z.unknown();
+
+export const uploadProjectClientCertMutationResponseSchema = z.lazy(
+	() => uploadProjectClientCert200Schema,
+);
+
+export const getProjectClientCertsPathParamsSchema = z.object({
+	idOrName: z.string().describe("The unique project identifier or the project name"),
+});
+
+export const getProjectClientCertsQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+/**
+ * @description Client certificates retrieved successfully
+ */
+export const getProjectClientCerts200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const getProjectClientCerts400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const getProjectClientCerts401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const getProjectClientCerts403Schema = z.unknown();
+
+export const getProjectClientCerts404Schema = z.unknown();
+
+export const getProjectClientCertsQueryResponseSchema = z.lazy(
+	() => getProjectClientCerts200Schema,
+);
+
+export const deleteProjectClientCertPathParamsSchema = z.object({
+	idOrName: z.string().describe("The unique project identifier or the project name"),
+	certId: z.string().describe("The certificate identifier"),
+});
+
+export const deleteProjectClientCertQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+/**
+ * @description Client certificate deleted successfully
+ */
+export const deleteProjectClientCert200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const deleteProjectClientCert400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const deleteProjectClientCert401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const deleteProjectClientCert403Schema = z.unknown();
+
+/**
+ * @description The certificate could not be found
+ */
+export const deleteProjectClientCert404Schema = z.unknown();
+
+/**
+ * @description The project is being transferred and deleting certificates is not possible
+ */
+export const deleteProjectClientCert409Schema = z.unknown();
+
+export const deleteProjectClientCertMutationResponseSchema = z.lazy(
+	() => deleteProjectClientCert200Schema,
+);
 
 export const getRollingReleaseBillingStatusPathParamsSchema = z.object({
 	idOrName: z.string().describe("Project ID or project name (URL-encoded)"),
@@ -7893,11 +11367,10 @@ export const getRollingReleaseBillingStatusPathParamsSchema = z.object({
 
 export const getRollingReleaseBillingStatusQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7908,6 +11381,9 @@ export const getRollingReleaseBillingStatus200Schema = z.unknown();
  */
 export const getRollingReleaseBillingStatus400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getRollingReleaseBillingStatus401Schema = z.unknown();
 
 /**
@@ -7927,11 +11403,10 @@ export const getRollingReleaseConfigPathParamsSchema = z.object({
 
 export const getRollingReleaseConfigQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7942,6 +11417,9 @@ export const getRollingReleaseConfig200Schema = z.unknown();
  */
 export const getRollingReleaseConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getRollingReleaseConfig401Schema = z.unknown();
 
 /**
@@ -7961,11 +11439,10 @@ export const deleteRollingReleaseConfigPathParamsSchema = z.object({
 
 export const deleteRollingReleaseConfigQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -7976,6 +11453,9 @@ export const deleteRollingReleaseConfig200Schema = z.unknown();
  */
 export const deleteRollingReleaseConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteRollingReleaseConfig401Schema = z.unknown();
 
 /**
@@ -7995,11 +11475,10 @@ export const updateRollingReleaseConfigPathParamsSchema = z.object({
 
 export const updateRollingReleaseConfigQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8010,6 +11489,9 @@ export const updateRollingReleaseConfig200Schema = z.unknown();
  */
 export const updateRollingReleaseConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateRollingReleaseConfig401Schema = z.unknown();
 
 /**
@@ -8029,15 +11511,13 @@ export const getRollingReleasePathParamsSchema = z.object({
 
 export const getRollingReleaseQueryParamsSchema = z
 	.object({
-		state: z
-			.enum(["ACTIVE", "COMPLETE", "ABORTED"])
-			.describe("Filter by rolling release state")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		state: z.optional(
+			z.enum(["ACTIVE", "COMPLETE", "ABORTED"]).describe("Filter by rolling release state"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8048,6 +11528,9 @@ export const getRollingRelease200Schema = z.unknown();
  */
 export const getRollingRelease400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getRollingRelease401Schema = z.unknown();
 
 /**
@@ -8065,11 +11548,10 @@ export const approveRollingReleaseStagePathParamsSchema = z.object({
 
 export const approveRollingReleaseStageQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8080,6 +11562,9 @@ export const approveRollingReleaseStage200Schema = z.unknown();
  */
 export const approveRollingReleaseStage400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const approveRollingReleaseStage401Schema = z.unknown();
 
 /**
@@ -8101,11 +11586,10 @@ export const completeRollingReleasePathParamsSchema = z.object({
 
 export const completeRollingReleaseQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8116,6 +11600,9 @@ export const completeRollingRelease200Schema = z.unknown();
  */
 export const completeRollingRelease400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const completeRollingRelease401Schema = z.unknown();
 
 /**
@@ -8135,11 +11622,10 @@ export const createProjectTransferRequestPathParamsSchema = z.object({
 
 export const createProjectTransferRequestQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8153,6 +11639,9 @@ export const createProjectTransferRequest200Schema = z.unknown();
  */
 export const createProjectTransferRequest400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createProjectTransferRequest401Schema = z.unknown();
 
 /**
@@ -8170,11 +11659,10 @@ export const acceptProjectTransferRequestPathParamsSchema = z.object({
 
 export const acceptProjectTransferRequestQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8188,6 +11676,9 @@ export const acceptProjectTransferRequest202Schema = z.unknown();
  */
 export const acceptProjectTransferRequest400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const acceptProjectTransferRequest401Schema = z.unknown();
 
 /**
@@ -8209,11 +11700,10 @@ export const updateProjectProtectionBypassPathParamsSchema = z.object({
 
 export const updateProjectProtectionBypassQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8224,6 +11714,9 @@ export const updateProjectProtectionBypass200Schema = z.unknown();
  */
 export const updateProjectProtectionBypass400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateProjectProtectionBypass401Schema = z.unknown();
 
 /**
@@ -8246,11 +11739,10 @@ export const requestPromotePathParamsSchema = z.object({
 
 export const requestPromoteQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8263,6 +11755,9 @@ export const requestPromote202Schema = z.unknown();
  */
 export const requestPromote400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const requestPromote401Schema = z.unknown();
 
 /**
@@ -8283,25 +11778,27 @@ export const listPromoteAliasesPathParamsSchema = z.object({
 
 export const listPromoteAliasesQueryParamsSchema = z
 	.object({
-		limit: z.coerce
-			.number()
-			.max(100)
-			.describe("Maximum number of aliases to list from a request (max 100).")
-			.optional(),
-		since: z.coerce.number().describe("Get aliases created after this epoch timestamp.").optional(),
-		until: z.coerce
-			.number()
-			.describe("Get aliases created before this epoch timestamp.")
-			.optional(),
-		failedOnly: z
-			.boolean()
-			.describe("Filter results down to aliases that failed to map to the requested deployment")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		limit: z.optional(
+			z.coerce
+				.number()
+				.max(100)
+				.describe("Maximum number of aliases to list from a request (max 100)."),
+		),
+		since: z.optional(
+			z.coerce.number().describe("Get aliases created after this epoch timestamp."),
+		),
+		until: z.optional(
+			z.coerce.number().describe("Get aliases created before this epoch timestamp."),
+		),
+		failedOnly: z.optional(
+			z
+				.boolean()
+				.describe("Filter results down to aliases that failed to map to the requested deployment"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8312,6 +11809,9 @@ export const listPromoteAliases200Schema = z.unknown();
  */
 export const listPromoteAliases400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listPromoteAliases401Schema = z.unknown();
 
 /**
@@ -8329,11 +11829,10 @@ export const pauseProjectPathParamsSchema = z.object({
 
 export const pauseProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8344,12 +11843,10 @@ export const pauseProject200Schema = z.unknown();
  */
 export const pauseProject400Schema = z.unknown();
 
-export const pauseProject401Schema = z.unknown();
-
 /**
- * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ * @description The request is not authorized.
  */
-export const pauseProject402Schema = z.unknown();
+export const pauseProject401Schema = z.unknown();
 
 /**
  * @description You do not have permission to access this resource.
@@ -8366,11 +11863,10 @@ export const unpauseProjectPathParamsSchema = z.object({
 
 export const unpauseProjectQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8381,6 +11877,9 @@ export const unpauseProject200Schema = z.unknown();
  */
 export const unpauseProject400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const unpauseProject401Schema = z.unknown();
 
 /**
@@ -8394,11 +11893,10 @@ export const unpauseProjectMutationResponseSchema = z.lazy(() => unpauseProject2
 
 export const updateAttackChallengeModeQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8409,6 +11907,9 @@ export const updateAttackChallengeMode200Schema = z.unknown();
  */
 export const updateAttackChallengeMode400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateAttackChallengeMode401Schema = z.unknown();
 
 /**
@@ -8424,11 +11925,10 @@ export const updateAttackChallengeModeMutationResponseSchema = z.lazy(
 
 export const putFirewallConfigQueryParamsSchema = z.object({
 	projectId: z.string(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 export const putFirewallConfig200Schema = z.unknown();
@@ -8438,6 +11938,9 @@ export const putFirewallConfig200Schema = z.unknown();
  */
 export const putFirewallConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const putFirewallConfig401Schema = z.unknown();
 
 export const putFirewallConfig402Schema = z.unknown();
@@ -8455,11 +11958,10 @@ export const putFirewallConfigMutationResponseSchema = z.lazy(() => putFirewallC
 
 export const updateFirewallConfigQueryParamsSchema = z.object({
 	projectId: z.string(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 export const updateFirewallConfig200Schema = z.unknown();
@@ -8469,6 +11971,9 @@ export const updateFirewallConfig200Schema = z.unknown();
  */
 export const updateFirewallConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const updateFirewallConfig401Schema = z.unknown();
 
 export const updateFirewallConfig402Schema = z.unknown();
@@ -8492,11 +11997,10 @@ export const getFirewallConfigPathParamsSchema = z.object({
 
 export const getFirewallConfigQueryParamsSchema = z.object({
 	projectId: z.string(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 /**
@@ -8509,6 +12013,9 @@ export const getFirewallConfig200Schema = z.unknown();
  */
 export const getFirewallConfig400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getFirewallConfig401Schema = z.unknown();
 
 /**
@@ -8522,11 +12029,11 @@ export const getFirewallConfigQueryResponseSchema = z.lazy(() => getFirewallConf
 
 export const getActiveAttackStatusQueryParamsSchema = z.object({
 	projectId: z.string(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	since: z.optional(z.coerce.number().min(1)),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 export const getActiveAttackStatus200Schema = z.unknown();
@@ -8536,6 +12043,9 @@ export const getActiveAttackStatus200Schema = z.unknown();
  */
 export const getActiveAttackStatus400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getActiveAttackStatus401Schema = z.unknown();
 
 /**
@@ -8551,25 +12061,23 @@ export const getActiveAttackStatusQueryResponseSchema = z.lazy(
 
 export const getBypassIpQueryParamsSchema = z.object({
 	projectId: z.string(),
-	limit: z.coerce.number().max(128).optional(),
-	sourceIp: z.string().max(49).describe("Filter by source IP").optional(),
-	domain: z
-		.string()
-		.regex(/([a-z]+[a-z.]+)$/)
-		.max(2544)
-		.describe("Filter by domain")
-		.optional(),
-	projectScope: z.boolean().describe("Filter by project scoped rules").optional(),
-	offset: z
-		.string()
-		.max(2560)
-		.describe("Used for pagination. Retrieves results after the provided id")
-		.optional(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	limit: z.optional(z.coerce.number().max(256)),
+	sourceIp: z.optional(z.string().max(49).describe("Filter by source IP")),
+	domain: z.optional(
+		z
+			.string()
+			.max(2544)
+			.regex(/([a-z]+[a-z.]+)$/)
+			.describe("Filter by domain"),
+	),
+	projectScope: z.optional(z.boolean().describe("Filter by project scoped rules")),
+	offset: z.optional(
+		z.string().max(2560).describe("Used for pagination. Retrieves results after the provided id"),
+	),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 export const getBypassIp200Schema = z.unknown();
@@ -8579,6 +12087,9 @@ export const getBypassIp200Schema = z.unknown();
  */
 export const getBypassIp400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getBypassIp401Schema = z.unknown();
 
 /**
@@ -8594,11 +12105,10 @@ export const getBypassIpQueryResponseSchema = z.lazy(() => getBypassIp200Schema)
 
 export const addBypassIpQueryParamsSchema = z.object({
 	projectId: z.string(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 export const addBypassIp200Schema = z.unknown();
@@ -8608,6 +12118,9 @@ export const addBypassIp200Schema = z.unknown();
  */
 export const addBypassIp400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const addBypassIp401Schema = z.unknown();
 
 /**
@@ -8623,11 +12136,10 @@ export const addBypassIpMutationResponseSchema = z.lazy(() => addBypassIp200Sche
 
 export const removeBypassIpQueryParamsSchema = z.object({
 	projectId: z.string(),
-	teamId: z
-		.string()
-		.describe("The Team identifier to perform the request on behalf of.")
-		.optional(),
-	slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
 export const removeBypassIp200Schema = z.unknown();
@@ -8637,6 +12149,9 @@ export const removeBypassIp200Schema = z.unknown();
  */
 export const removeBypassIp400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeBypassIp401Schema = z.unknown();
 
 /**
@@ -8650,37 +12165,123 @@ export const removeBypassIp500Schema = z.unknown();
 
 export const removeBypassIpMutationResponseSchema = z.lazy(() => removeBypassIp200Schema);
 
+export const GETV1SecurityFirewallEventsQueryParamsSchema = z.object({
+	projectId: z.string(),
+	startTimestamp: z.optional(z.coerce.number()),
+	endTimestamp: z.optional(z.coerce.number()),
+	hosts: z.optional(z.string()),
+});
+
+export const GETV1SecurityFirewallEvents200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const GETV1SecurityFirewallEvents400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const GETV1SecurityFirewallEvents401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const GETV1SecurityFirewallEvents403Schema = z.unknown();
+
+export const GETV1SecurityFirewallEvents404Schema = z.unknown();
+
+export const GETV1SecurityFirewallEvents500Schema = z.unknown();
+
+export const GETV1SecurityFirewallEventsQueryResponseSchema = z.lazy(
+	() => GETV1SecurityFirewallEvents200Schema,
+);
+
+export const createIntegrationStoreDirectQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const createIntegrationStoreDirect200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const createIntegrationStoreDirect400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const createIntegrationStoreDirect401Schema = z.unknown();
+
+/**
+ * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ */
+export const createIntegrationStoreDirect402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const createIntegrationStoreDirect403Schema = z.unknown();
+
+export const createIntegrationStoreDirect404Schema = z.unknown();
+
+export const createIntegrationStoreDirect409Schema = z.unknown();
+
+export const createIntegrationStoreDirect429Schema = z.unknown();
+
+export const createIntegrationStoreDirect500Schema = z.unknown();
+
+export const createIntegrationStoreDirectMutationResponseSchema = z.lazy(
+	() => createIntegrationStoreDirect200Schema,
+);
+
 export const getTeamMembersPathParamsSchema = z.object({
 	teamId: z.string(),
 });
 
 export const getTeamMembersQueryParamsSchema = z
 	.object({
-		limit: z.coerce.number().min(1).describe("Limit how many teams should be returned").optional(),
-		since: z.coerce
-			.number()
-			.describe("Timestamp in milliseconds to only include members added since then.")
-			.optional(),
-		until: z.coerce
-			.number()
-			.describe("Timestamp in milliseconds to only include members added until then.")
-			.optional(),
-		search: z
-			.string()
-			.describe("Search team members by their name, username, and email.")
-			.optional(),
-		role: z
-			.enum(["OWNER", "MEMBER", "DEVELOPER", "VIEWER", "BILLING", "CONTRIBUTOR"])
-			.describe("Only return members with the specified team role.")
-			.optional(),
-		excludeProject: z
-			.string()
-			.describe("Exclude members who belong to the specified project.")
-			.optional(),
-		eligibleMembersForProjectId: z
-			.string()
-			.describe("Include team members who are eligible to be members of the specified project.")
-			.optional(),
+		limit: z.optional(z.coerce.number().min(1).describe("Limit how many teams should be returned")),
+		since: z.optional(
+			z.coerce
+				.number()
+				.describe("Timestamp in milliseconds to only include members added since then."),
+		),
+		until: z.optional(
+			z.coerce
+				.number()
+				.describe("Timestamp in milliseconds to only include members added until then."),
+		),
+		search: z.optional(
+			z.string().describe("Search team members by their name, username, and email."),
+		),
+		role: z.optional(
+			z
+				.enum([
+					"OWNER",
+					"MEMBER",
+					"DEVELOPER",
+					"SECURITY",
+					"BILLING",
+					"VIEWER",
+					"VIEWER_FOR_PLUS",
+					"CONTRIBUTOR",
+				])
+				.describe("Only return members with the specified team role."),
+		),
+		excludeProject: z.optional(
+			z.string().describe("Exclude members who belong to the specified project."),
+		),
+		eligibleMembersForProjectId: z.optional(
+			z
+				.string()
+				.describe("Include team members who are eligible to be members of the specified project."),
+		),
 	})
 	.optional();
 
@@ -8691,6 +12292,9 @@ export const getTeamMembers200Schema = z.unknown();
  */
 export const getTeamMembers400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getTeamMembers401Schema = z.unknown();
 
 /**
@@ -8706,16 +12310,16 @@ export const inviteUserToTeamPathParamsSchema = z.object({
 	teamId: z.string(),
 });
 
-/**
- * @description The member was successfully added to the team
- */
 export const inviteUserToTeam200Schema = z.unknown();
 
 /**
- * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.\nThe user already requested access to the team\nThe team reached the maximum allowed amount of members
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
  */
 export const inviteUserToTeam400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const inviteUserToTeam401Schema = z.unknown();
 
 /**
@@ -8829,7 +12433,7 @@ export const updateTeamMember200Schema = z.unknown();
 export const updateTeamMember400Schema = z.unknown();
 
 /**
- * @description Team members can only be updated by an owner, or by the authenticated user if they are only disconnecting their SAML connection to the Team.
+ * @description The request is not authorized.\nTeam members can only be updated by an owner, or by the authenticated user if they are only disconnecting their SAML connection to the Team.
  */
 export const updateTeamMember401Schema = z.unknown();
 
@@ -8845,6 +12449,8 @@ export const updateTeamMember403Schema = z.unknown();
  */
 export const updateTeamMember404Schema = z.unknown();
 
+export const updateTeamMember409Schema = z.unknown();
+
 export const updateTeamMember500Schema = z.unknown();
 
 export const updateTeamMemberMutationResponseSchema = z.lazy(() => updateTeamMember200Schema);
@@ -8856,10 +12462,11 @@ export const removeTeamMemberPathParamsSchema = z.object({
 
 export const removeTeamMemberQueryParamsSchema = z
 	.object({
-		newDefaultTeamId: z
-			.string()
-			.describe("The ID of the team to set as the new default team for the Northstar user.")
-			.optional(),
+		newDefaultTeamId: z.optional(
+			z
+				.string()
+				.describe("The ID of the team to set as the new default team for the Northstar user."),
+		),
 	})
 	.optional();
 
@@ -8873,6 +12480,9 @@ export const removeTeamMember200Schema = z.unknown();
  */
 export const removeTeamMember400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeTeamMember401Schema = z.unknown();
 
 /**
@@ -8892,7 +12502,7 @@ export const getTeamPathParamsSchema = z.object({
 
 export const getTeamQueryParamsSchema = z
 	.object({
-		slug: z.string().optional(),
+		slug: z.optional(z.string()),
 	})
 	.optional();
 
@@ -8906,6 +12516,9 @@ export const getTeam200Schema = z.unknown();
  */
 export const getTeam400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getTeam401Schema = z.unknown();
 
 /**
@@ -8926,7 +12539,7 @@ export const patchTeamPathParamsSchema = z.object({
 
 export const patchTeamQueryParamsSchema = z
 	.object({
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -8937,11 +12550,11 @@ export const patchTeam200Schema = z.unknown();
  */
 export const patchTeam400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const patchTeam401Schema = z.unknown();
 
-/**
- * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
- */
 export const patchTeam402Schema = z.unknown();
 
 /**
@@ -8958,15 +12571,17 @@ export const patchTeamMutationResponseSchema = z.lazy(() => patchTeam200Schema);
 
 export const getTeamsQueryParamsSchema = z
 	.object({
-		limit: z.coerce.number().describe("Maximum number of Teams which may be returned.").optional(),
-		since: z.coerce
-			.number()
-			.describe("Timestamp (in milliseconds) to only include Teams created since then.")
-			.optional(),
-		until: z.coerce
-			.number()
-			.describe("Timestamp (in milliseconds) to only include Teams created until then.")
-			.optional(),
+		limit: z.optional(z.coerce.number().describe("Maximum number of Teams which may be returned.")),
+		since: z.optional(
+			z.coerce
+				.number()
+				.describe("Timestamp (in milliseconds) to only include Teams created since then."),
+		),
+		until: z.optional(
+			z.coerce
+				.number()
+				.describe("Timestamp (in milliseconds) to only include Teams created until then."),
+		),
 	})
 	.optional();
 
@@ -9008,17 +12623,45 @@ export const createTeam403Schema = z.unknown();
 
 export const createTeamMutationResponseSchema = z.lazy(() => createTeam200Schema);
 
+export const postTeamDsyncRolesPathParamsSchema = z.object({
+	teamId: z.string().describe("The Team identifier to perform the request on behalf of."),
+});
+
+export const postTeamDsyncRolesQueryParamsSchema = z
+	.object({
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const postTeamDsyncRoles200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.
+ */
+export const postTeamDsyncRoles400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const postTeamDsyncRoles401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const postTeamDsyncRoles403Schema = z.unknown();
+
+export const postTeamDsyncRolesMutationResponseSchema = z.lazy(() => postTeamDsyncRoles200Schema);
+
 export const deleteTeamPathParamsSchema = z.object({
 	teamId: z.string().describe("The Team identifier to perform the request on behalf of."),
 });
 
 export const deleteTeamQueryParamsSchema = z
 	.object({
-		newDefaultTeamId: z
-			.string()
-			.describe("Id of the team to be set as the new default team")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		newDefaultTeamId: z.optional(
+			z.string().describe("Id of the team to be set as the new default team"),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9032,6 +12675,9 @@ export const deleteTeam200Schema = z.unknown();
  */
 export const deleteTeam400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteTeam401Schema = z.unknown();
 
 export const deleteTeam402Schema = z.unknown();
@@ -9060,6 +12706,9 @@ export const deleteTeamInviteCode200Schema = z.unknown();
  */
 export const deleteTeamInviteCode400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteTeamInviteCode401Schema = z.unknown();
 
 /**
@@ -9078,37 +12727,25 @@ export const deleteTeamInviteCodeMutationResponseSchema = z.lazy(
 
 export const uploadFileQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
 export const uploadFileHeaderParamsSchema = z
 	.object({
-		"Content-Length": z.coerce.number().describe("The file size in bytes").optional(),
-		"x-vercel-digest": z
-			.string()
-			.max(40)
-			.describe("The file SHA1 used to check the integrity")
-			.optional(),
-		"x-now-digest": z
-			.string()
-			.max(40)
-			.describe("The file SHA1 used to check the integrity")
-			.optional(),
-		"x-now-size": z.coerce
-			.number()
-			.describe("The file size as an alternative to `Content-Length`")
-			.optional(),
-		"x-internal-v0-token": z
-			.string()
-			.describe(
-				"Shared secret token set by v0 deployments. When present and valid, the API applies an extended rate limit.",
-			)
-			.optional(),
+		"Content-Length": z.optional(z.coerce.number().describe("The file size in bytes")),
+		"x-vercel-digest": z.optional(
+			z.string().max(40).describe("The file SHA1 used to check the integrity"),
+		),
+		"x-now-digest": z.optional(
+			z.string().max(40).describe("The file SHA1 used to check the integrity"),
+		),
+		"x-now-size": z.optional(
+			z.coerce.number().describe("The file size as an alternative to `Content-Length`"),
+		),
 	})
 	.optional();
 
@@ -9122,6 +12759,9 @@ export const uploadFile200Schema = z.unknown();
  */
 export const uploadFile400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const uploadFile401Schema = z.unknown();
 
 /**
@@ -9135,6 +12775,9 @@ export const listAuthTokens200Schema = z.unknown();
 
 export const listAuthTokens400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listAuthTokens401Schema = z.unknown();
 
 /**
@@ -9146,11 +12789,10 @@ export const listAuthTokensQueryResponseSchema = z.lazy(() => listAuthTokens200S
 
 export const createAuthTokenQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9164,6 +12806,9 @@ export const createAuthToken200Schema = z.unknown();
  */
 export const createAuthToken400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createAuthToken401Schema = z.unknown();
 
 /**
@@ -9223,6 +12868,9 @@ export const deleteAuthToken200Schema = z.unknown();
  */
 export const deleteAuthToken400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteAuthToken401Schema = z.unknown();
 
 /**
@@ -9242,8 +12890,13 @@ export const deleteAuthTokenMutationResponseSchema = z.lazy(() => deleteAuthToke
  */
 export const getAuthUser200Schema = z.unknown();
 
+export const getAuthUser302Schema = z.unknown();
+
 export const getAuthUser400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getAuthUser401Schema = z.unknown();
 
 /**
@@ -9278,11 +12931,10 @@ export const requestDeleteMutationResponseSchema = z.lazy(() => requestDelete202
 
 export const createWebhookQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9293,6 +12945,9 @@ export const createWebhook200Schema = z.unknown();
  */
 export const createWebhook400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createWebhook401Schema = z.unknown();
 
 /**
@@ -9304,15 +12959,11 @@ export const createWebhookMutationResponseSchema = z.lazy(() => createWebhook200
 
 export const getWebhooksQueryParamsSchema = z
 	.object({
-		projectId: z
-			.string()
-			.regex(/^[a-zA-z0-9_]+$/)
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		projectId: z.optional(z.string().regex(/^[a-zA-z0-9_]+$/)),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9323,6 +12974,9 @@ export const getWebhooks200Schema = z.unknown();
  */
 export const getWebhooks400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getWebhooks401Schema = z.unknown();
 
 /**
@@ -9338,11 +12992,10 @@ export const getWebhookPathParamsSchema = z.object({
 
 export const getWebhookQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9353,6 +13006,9 @@ export const getWebhook200Schema = z.unknown();
  */
 export const getWebhook400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getWebhook401Schema = z.unknown();
 
 /**
@@ -9368,11 +13024,10 @@ export const deleteWebhookPathParamsSchema = z.object({
 
 export const deleteWebhookQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9383,6 +13038,9 @@ export const deleteWebhook204Schema = z.unknown();
  */
 export const deleteWebhook400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteWebhook401Schema = z.unknown();
 
 /**
@@ -9398,11 +13056,10 @@ export const listDeploymentAliasesPathParamsSchema = z.object({
 
 export const listDeploymentAliasesQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9416,6 +13073,9 @@ export const listDeploymentAliases200Schema = z.unknown();
  */
 export const listDeploymentAliases400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listDeploymentAliases401Schema = z.unknown();
 
 /**
@@ -9438,11 +13098,10 @@ export const assignAliasPathParamsSchema = z.object({
 
 export const assignAliasQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9456,6 +13115,9 @@ export const assignAlias200Schema = z.unknown();
  */
 export const assignAlias400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const assignAlias401Schema = z.unknown();
 
 /**
@@ -9482,36 +13144,31 @@ export const assignAliasMutationResponseSchema = z.lazy(() => assignAlias200Sche
 
 export const listAliasesQueryParamsSchema = z
 	.object({
-		domain: z
-			.union([z.array(z.string()).max(20), z.string()])
-			.describe("Get only aliases of the given domain name")
-			.optional(),
-		from: z.coerce
-			.number()
-			.describe("Get only aliases created after the provided timestamp")
-			.optional(),
-		limit: z.coerce
-			.number()
-			.describe("Maximum number of aliases to list from a request")
-			.optional(),
-		projectId: z.string().describe("Filter aliases from the given `projectId`").optional(),
-		since: z.coerce
-			.number()
-			.describe("Get aliases created after this JavaScript timestamp")
-			.optional(),
-		until: z.coerce
-			.number()
-			.describe("Get aliases created before this JavaScript timestamp")
-			.optional(),
-		rollbackDeploymentId: z
-			.string()
-			.describe("Get aliases that would be rolled back for the given deployment")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		domain: z.optional(
+			z
+				.union([z.array(z.string()).max(20), z.string()])
+				.describe("Get only aliases of the given domain name"),
+		),
+		from: z.optional(
+			z.coerce.number().describe("Get only aliases created after the provided timestamp"),
+		),
+		limit: z.optional(
+			z.coerce.number().describe("Maximum number of aliases to list from a request"),
+		),
+		projectId: z.optional(z.string().describe("Filter aliases from the given `projectId`")),
+		since: z.optional(
+			z.coerce.number().describe("Get aliases created after this JavaScript timestamp"),
+		),
+		until: z.optional(
+			z.coerce.number().describe("Get aliases created before this JavaScript timestamp"),
+		),
+		rollbackDeploymentId: z.optional(
+			z.string().describe("Get aliases that would be rolled back for the given deployment"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9525,6 +13182,9 @@ export const listAliases200Schema = z.unknown();
  */
 export const listAliases400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listAliases401Schema = z.unknown();
 
 /**
@@ -9542,27 +13202,28 @@ export const getAliasPathParamsSchema = z.object({
 
 export const getAliasQueryParamsSchema = z
 	.object({
-		from: z.coerce
-			.number()
-			.describe("Get the alias only if it was created after the provided timestamp")
-			.optional(),
-		projectId: z
-			.string()
-			.describe("Get the alias only if it is assigned to the provided project ID")
-			.optional(),
-		since: z.coerce
-			.number()
-			.describe("Get the alias only if it was created after this JavaScript timestamp")
-			.optional(),
-		until: z.coerce
-			.number()
-			.describe("Get the alias only if it was created before this JavaScript timestamp")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		from: z.optional(
+			z.coerce
+				.number()
+				.describe("Get the alias only if it was created after the provided timestamp"),
+		),
+		projectId: z.optional(
+			z.string().describe("Get the alias only if it is assigned to the provided project ID"),
+		),
+		since: z.optional(
+			z.coerce
+				.number()
+				.describe("Get the alias only if it was created after this JavaScript timestamp"),
+		),
+		until: z.optional(
+			z.coerce
+				.number()
+				.describe("Get the alias only if it was created before this JavaScript timestamp"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9576,6 +13237,9 @@ export const getAlias200Schema = z.unknown();
  */
 export const getAlias400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getAlias401Schema = z.unknown();
 
 /**
@@ -9596,11 +13260,10 @@ export const deleteAliasPathParamsSchema = z.object({
 
 export const deleteAliasQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9614,6 +13277,9 @@ export const deleteAlias200Schema = z.unknown();
  */
 export const deleteAlias400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteAlias401Schema = z.unknown();
 
 /**
@@ -9634,11 +13300,10 @@ export const patchUrlProtectionBypassPathParamsSchema = z.object({
 
 export const patchUrlProtectionBypassQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9649,6 +13314,9 @@ export const patchUrlProtectionBypass200Schema = z.unknown();
  */
 export const patchUrlProtectionBypass400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const patchUrlProtectionBypass401Schema = z.unknown();
 
 /**
@@ -9672,6 +13340,9 @@ export const listCerts200Schema = z.unknown();
 
 export const listCerts400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listCerts401Schema = z.unknown();
 
 /**
@@ -9687,11 +13358,10 @@ export const getCertByIdPathParamsSchema = z.object({
 
 export const getCertByIdQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9702,6 +13372,9 @@ export const getCertById200Schema = z.unknown();
  */
 export const getCertById400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getCertById401Schema = z.unknown();
 
 /**
@@ -9719,11 +13392,10 @@ export const removeCertPathParamsSchema = z.object({
 
 export const removeCertQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9734,6 +13406,9 @@ export const removeCert200Schema = z.unknown();
  */
 export const removeCert400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const removeCert401Schema = z.unknown();
 
 /**
@@ -9747,11 +13422,10 @@ export const removeCertMutationResponseSchema = z.lazy(() => removeCert200Schema
 
 export const issueCertQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9762,6 +13436,9 @@ export const issueCert200Schema = z.unknown();
  */
 export const issueCert400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const issueCert401Schema = z.unknown();
 
 /**
@@ -9784,11 +13461,10 @@ export const issueCertMutationResponseSchema = z.lazy(() => issueCert200Schema);
 
 export const uploadCertQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9799,6 +13475,9 @@ export const uploadCert200Schema = z.unknown();
  */
 export const uploadCert400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const uploadCert401Schema = z.unknown();
 
 /**
@@ -9819,11 +13498,10 @@ export const listDeploymentFilesPathParamsSchema = z.object({
 
 export const listDeploymentFilesQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9837,6 +13515,9 @@ export const listDeploymentFiles200Schema = z.unknown();
  */
 export const listDeploymentFiles400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const listDeploymentFiles401Schema = z.unknown();
 
 /**
@@ -9858,12 +13539,11 @@ export const getDeploymentFileContentsPathParamsSchema = z.object({
 
 export const getDeploymentFileContentsQueryParamsSchema = z
 	.object({
-		path: z.string().describe("Path to the file to fetch (only for Git deployments)").optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		path: z.optional(z.string().describe("Path to the file to fetch (only for Git deployments)")),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9872,6 +13552,9 @@ export const getDeploymentFileContentsQueryParamsSchema = z
  */
 export const getDeploymentFileContents400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getDeploymentFileContents401Schema = z.unknown();
 
 /**
@@ -9893,50 +13576,58 @@ export const getDeploymentFileContentsQueryResponseSchema = z.unknown();
 
 export const getDeploymentsQueryParamsSchema = z
 	.object({
-		app: z.string().describe("Name of the deployment.").optional(),
-		from: z.coerce
-			.number()
-			.describe("Gets the deployment created after this Date timestamp. (default: current time)")
-			.optional(),
-		limit: z.coerce
-			.number()
-			.describe("Maximum number of deployments to list from a request.")
-			.optional(),
-		projectId: z.string().describe("Filter deployments from the given ID or name.").optional(),
-		target: z.string().describe("Filter deployments based on the environment.").optional(),
-		to: z.coerce
-			.number()
-			.describe("Gets the deployment created before this Date timestamp. (default: current time)")
-			.optional(),
-		users: z
-			.string()
-			.describe("Filter out deployments based on users who have created the deployment.")
-			.optional(),
-		since: z.coerce
-			.number()
-			.describe("Get Deployments created after this JavaScript timestamp.")
-			.optional(),
-		until: z.coerce
-			.number()
-			.describe("Get Deployments created before this JavaScript timestamp.")
-			.optional(),
-		state: z
-			.string()
-			.describe(
-				"Filter deployments based on their state (`BUILDING`, `ERROR`, `INITIALIZING`, `QUEUED`, `READY`, `CANCELED`)",
-			)
-			.optional(),
-		rollbackCandidate: z
-			.boolean()
-			.describe("Filter deployments based on their rollback candidacy")
-			.optional(),
-		branch: z.string().describe("Filter deployments based on the branch name").optional(),
-		sha: z.string().describe("Filter deployments based on the SHA").optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		app: z.optional(z.string().describe("Name of the deployment.")),
+		from: z.optional(
+			z.coerce
+				.number()
+				.describe("Gets the deployment created after this Date timestamp. (default: current time)"),
+		),
+		limit: z.optional(
+			z.coerce.number().describe("Maximum number of deployments to list from a request."),
+		),
+		projectId: z.optional(z.string().describe("Filter deployments from the given ID or name.")),
+		projectIds: z.optional(
+			z
+				.array(z.string())
+				.min(1)
+				.max(20)
+				.describe(
+					"Filter deployments from the given project IDs. Cannot be used when projectId is specified.",
+				),
+		),
+		target: z.optional(z.string().describe("Filter deployments based on the environment.")),
+		to: z.optional(
+			z.coerce
+				.number()
+				.describe(
+					"Gets the deployment created before this Date timestamp. (default: current time)",
+				),
+		),
+		users: z.optional(
+			z.string().describe("Filter out deployments based on users who have created the deployment."),
+		),
+		since: z.optional(
+			z.coerce.number().describe("Get Deployments created after this JavaScript timestamp."),
+		),
+		until: z.optional(
+			z.coerce.number().describe("Get Deployments created before this JavaScript timestamp."),
+		),
+		state: z.optional(
+			z
+				.string()
+				.describe(
+					"Filter deployments based on their state (`BUILDING`, `ERROR`, `INITIALIZING`, `QUEUED`, `READY`, `CANCELED`)",
+				),
+		),
+		rollbackCandidate: z.optional(
+			z.boolean().describe("Filter deployments based on their rollback candidacy"),
+		),
+		branch: z.optional(z.string().describe("Filter deployments based on the branch name")),
+		sha: z.optional(z.string().describe("Filter deployments based on the SHA")),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9947,6 +13638,9 @@ export const getDeployments200Schema = z.unknown();
  */
 export const getDeployments400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getDeployments401Schema = z.unknown();
 
 /**
@@ -9966,15 +13660,15 @@ export const deleteDeploymentPathParamsSchema = z.object({
 
 export const deleteDeploymentQueryParamsSchema = z
 	.object({
-		url: z
-			.string()
-			.describe("A Deployment or Alias URL. In case it is passed, the ID will be ignored")
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		url: z.optional(
+			z
+				.string()
+				.describe("A Deployment or Alias URL. In case it is passed, the ID will be ignored"),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -9988,6 +13682,9 @@ export const deleteDeployment200Schema = z.unknown();
  */
 export const deleteDeployment400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteDeployment401Schema = z.unknown();
 
 /**
@@ -10004,13 +13701,12 @@ export const deleteDeploymentMutationResponseSchema = z.lazy(() => deleteDeploym
 
 export const getSecretsQueryParamsSchema = z
 	.object({
-		id: z.string().describe("Filter out secrets based on comma separated secret ids.").optional(),
-		projectId: z.string().describe("Filter out secrets that belong to a project.").optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		id: z.optional(z.string().describe("Filter out secrets based on comma separated secret ids.")),
+		projectId: z.optional(z.string().describe("Filter out secrets that belong to a project.")),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -10024,6 +13720,9 @@ export const getSecrets200Schema = z.unknown();
  */
 export const getSecrets400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getSecrets401Schema = z.unknown();
 
 /**
@@ -10041,11 +13740,10 @@ export const createSecretPathParamsSchema = z.object({
 
 export const createSecretQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -10059,6 +13757,9 @@ export const createSecret200Schema = z.unknown();
  */
 export const createSecret400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const createSecret401Schema = z.unknown();
 
 /**
@@ -10081,11 +13782,10 @@ export const renameSecretPathParamsSchema = z.object({
 
 export const renameSecretQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -10096,6 +13796,9 @@ export const renameSecret200Schema = z.unknown();
  */
 export const renameSecret400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const renameSecret401Schema = z.unknown();
 
 /**
@@ -10115,17 +13818,17 @@ export const getSecretPathParamsSchema = z.object({
 
 export const getSecretQueryParamsSchema = z
 	.object({
-		decrypt: z
-			.enum(["true", "false"])
-			.describe(
-				"Whether to try to decrypt the value of the secret. Only works if `decryptable` has been set to `true` when the secret was created.",
-			)
-			.optional(),
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		decrypt: z.optional(
+			z
+				.enum(["true", "false"])
+				.describe(
+					"Whether to try to decrypt the value of the secret. Only works if `decryptable` has been set to `true` when the secret was created.",
+				),
+		),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -10139,6 +13842,9 @@ export const getSecret200Schema = z.unknown();
  */
 export const getSecret400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const getSecret401Schema = z.unknown();
 
 /**
@@ -10160,11 +13866,10 @@ export const deleteSecretPathParamsSchema = z.object({
 
 export const deleteSecretQueryParamsSchema = z
 	.object({
-		teamId: z
-			.string()
-			.describe("The Team identifier to perform the request on behalf of.")
-			.optional(),
-		slug: z.string().describe("The Team slug to perform the request on behalf of.").optional(),
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 	})
 	.optional();
 
@@ -10175,6 +13880,9 @@ export const deleteSecret200Schema = z.unknown();
  */
 export const deleteSecret400Schema = z.unknown();
 
+/**
+ * @description The request is not authorized.
+ */
 export const deleteSecret401Schema = z.unknown();
 
 /**

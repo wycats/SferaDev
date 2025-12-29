@@ -2735,21 +2735,9 @@ export type AccessAppLauncherProps = {
 	custom_deny_url?: AccessCustomDenyUrl;
 	custom_non_identity_deny_url?: AccessCustomNonIdentityDenyUrl;
 	custom_pages?: AccessSchemasCustomPages;
-	/**
-	 * @example authdomain.cloudflareaccess.com
-	 */
 	domain?: AccessDomain;
-	/**
-	 * @default App Launcher
-	 * @example App Launcher
-	 */
 	name?: AccessAppsComponentsSchemasName;
 	session_duration?: AccessSchemasSessionDuration;
-	/**
-	 * The application type.
-	 *
-	 * @example app_launcher
-	 */
 	type: AccessType;
 	app_launcher_logo_url?: AccessAppLauncherLogoUrl;
 	bg_color?: AccessBgColor;
@@ -2789,7 +2777,7 @@ export type AccessAppReqEmbeddedPolicies = {
 	 */
 	policies?: (
 		| AccessAppPolicyLink
-		| (undefined & AccessSchemasUuid)
+		| (void & AccessSchemasUuid)
 		| (Record<string, any> & {
 				id?: AccessSchemasUuid;
 		  } & AccessAppPolicyRequest)
@@ -2833,13 +2821,13 @@ export type AccessAppRequest =
 			 *
 			 * @example self_hosted
 			 */
-			type: AccessType & undefined;
+			type: AccessType & void;
 			/**
 			 * The policies that Access applies to the application, in ascending order of precedence. Items can reference existing policies or create new policies exclusive to the application.
 			 */
 			policies?: (
 				| AccessAppPolicyLink
-				| (undefined & AccessSchemasUuid)
+				| (void & AccessSchemasUuid)
 				| (Record<string, any> & {
 						id?: AccessSchemasUuid;
 				  } & AccessAppPolicyRequest)
@@ -2860,13 +2848,13 @@ export type AccessAppRequest =
 			 *
 			 * @example saas
 			 */
-			type?: AccessType & undefined;
+			type?: AccessType & void;
 			/**
 			 * The policies that Access applies to the application, in ascending order of precedence. Items can reference existing policies or create new policies exclusive to the application.
 			 */
 			policies?: (
 				| AccessAppPolicyLink
-				| (undefined & AccessSchemasUuid)
+				| (void & AccessSchemasUuid)
 				| (Record<string, any> & {
 						id?: AccessSchemasUuid;
 				  } & AccessAppPolicyRequest)
@@ -3250,21 +3238,9 @@ export type AccessBisoProps = {
 	custom_deny_url?: AccessCustomDenyUrl;
 	custom_non_identity_deny_url?: AccessCustomNonIdentityDenyUrl;
 	custom_pages?: AccessSchemasCustomPages;
-	/**
-	 * @example authdomain.cloudflareaccess.com/browser
-	 */
 	domain?: AccessDomain;
-	/**
-	 * @default Clientless Web Isolation
-	 * @example Clientless Web Isolation
-	 */
 	name?: AccessAppsComponentsSchemasName;
 	session_duration?: AccessSchemasSessionDuration;
-	/**
-	 * The application type.
-	 *
-	 * @example biso
-	 */
 	type: AccessType;
 };
 
@@ -3284,7 +3260,7 @@ export type AccessBookmarkProps = {
 	 *
 	 * @example bookmark
 	 */
-	type?: AccessType & undefined;
+	type?: AccessType & void;
 };
 
 export type AccessBookmarks = {
@@ -3571,7 +3547,7 @@ export type AccessComponentsSchemasCertificates = {
 	/**
 	 * The ID of the application that will use this certificate.
 	 */
-	id?: undefined;
+	id?: void;
 	name?: AccessCertificatesComponentsSchemasName2;
 	updated_at?: AccessTimestamp;
 };
@@ -3738,7 +3714,7 @@ export type AccessCreateResponse = AccessApiResponseSingle & {
  * @format date-time
  * @x-auditable true
  */
-export type AccessCreatedAt = undefined & AccessTimestamp;
+export type AccessCreatedAt = void & AccessTimestamp;
 
 export type AccessCustomClaimsSupport = {
 	/**
@@ -4075,9 +4051,6 @@ export type AccessExternalEvaluationRule = {
 };
 
 export type AccessFacebook = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -4244,9 +4217,6 @@ export type AccessGeo = {
 };
 
 export type AccessGithub = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -4326,7 +4296,7 @@ export type AccessGithub = {
  * Requires a Github identity provider.
  */
 export type AccessGithubOrganizationRule = {
-	"github-organization": {
+	["github-organization"]: {
 		/**
 		 * The ID of your Github identity provider.
 		 *
@@ -4872,7 +4842,7 @@ export type AccessInfraProps = {
 	 *
 	 * @example infrastructure
 	 */
-	type?: AccessType & undefined;
+	type?: AccessType & void;
 } & AccessAppRespEmbeddedTargetCriteriaInfra;
 
 /**
@@ -5008,9 +4978,6 @@ export type AccessLinkedAppTokenRule = {
 };
 
 export type AccessLinkedin = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -5785,7 +5752,7 @@ export type AccessOrganizations = {
 /**
  * @example 699d98642c564d2e855e9661899b7252
  */
-export type AccessOrganizationsComponentsSchemasIdentifier = undefined;
+export type AccessOrganizationsComponentsSchemasIdentifier = void;
 
 /**
  * The name of your Zero Trust organization.
@@ -6140,24 +6107,9 @@ export type AccessProxyEndpointProps = {
 	custom_deny_url?: AccessCustomDenyUrl;
 	custom_non_identity_deny_url?: AccessCustomNonIdentityDenyUrl;
 	custom_pages?: AccessSchemasCustomPages;
-	/**
-	 * The proxy endpoint domain in the format: 10 alphanumeric characters followed by .proxy.cloudflare-gateway.com
-	 *
-	 * @example abcd123456.proxy.cloudflare-gateway.com
-	 * @pattern ^[A-Za-z0-9]{10}\.proxy\.cloudflare-gateway\.com$
-	 */
 	domain?: AccessDomain;
-	/**
-	 * @default Gateway Proxy
-	 * @example Gateway Proxy
-	 */
 	name?: AccessAppsComponentsSchemasName;
 	session_duration?: AccessSchemasSessionDuration;
-	/**
-	 * The application type.
-	 *
-	 * @example proxy_endpoint
-	 */
 	type: AccessType;
 };
 
@@ -6226,7 +6178,7 @@ export type AccessRdpProps = {
 	 *
 	 * @example rdp
 	 */
-	type: AccessType & undefined;
+	type: AccessType & void;
 };
 
 /**
@@ -6446,7 +6398,7 @@ export type AccessSaasProps = {
 	 *
 	 * @example saas
 	 */
-	type?: AccessType & undefined;
+	type?: AccessType & void;
 };
 
 /**
@@ -6773,21 +6725,9 @@ export type AccessSchemasAppCount = number;
 export type AccessSchemasAppLauncherProps = {
 	allowed_idps?: AccessAllowedIdps;
 	auto_redirect_to_identity?: AccessSchemasAutoRedirectToIdentity;
-	/**
-	 * @example authdomain.cloudflareaccess.com
-	 */
 	domain?: AccessComponentsSchemasDomain;
-	/**
-	 * @default App Launcher
-	 * @example App Launcher
-	 */
 	name?: AccessAppsComponentsSchemasName;
 	session_duration?: AccessAppsComponentsSchemasSessionDuration;
-	/**
-	 * The application type.
-	 *
-	 * @example app_launcher
-	 */
 	type: AccessComponentsSchemasType;
 };
 
@@ -6968,21 +6908,9 @@ export type AccessSchemasBasicAppResponseProps = {
 export type AccessSchemasBisoProps = {
 	allowed_idps?: AccessAllowedIdps;
 	auto_redirect_to_identity?: AccessSchemasAutoRedirectToIdentity;
-	/**
-	 * @example authdomain.cloudflareaccess.com/browser
-	 */
 	domain?: AccessComponentsSchemasDomain;
-	/**
-	 * @default Clientless Web Isolation
-	 * @example Clientless Web Isolation
-	 */
 	name?: AccessAppsComponentsSchemasName;
 	session_duration?: AccessAppsComponentsSchemasSessionDuration;
-	/**
-	 * The application type.
-	 *
-	 * @example biso
-	 */
 	type: AccessComponentsSchemasType;
 };
 
@@ -6990,13 +6918,13 @@ export type AccessSchemasBookmarkProps = {
 	/**
 	 * @default true
 	 */
-	app_launcher_visible?: undefined;
+	app_launcher_visible?: void;
 	/**
 	 * The URL or domain of the bookmark.
 	 *
 	 * @example https://mybookmark.com
 	 */
-	domain: undefined;
+	domain: void;
 	logo_url?: AccessLogoUrl;
 	name?: AccessAppsComponentsSchemasName;
 	/**
@@ -7224,9 +7152,6 @@ export type AccessSchemasEmptyResponse = {
 export type AccessSchemasExclude = AccessRule[];
 
 export type AccessSchemasFacebook = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessSchemasGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -7328,9 +7253,6 @@ export type AccessSchemasGenericOauthConfig = {
 };
 
 export type AccessSchemasGithub = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessSchemasGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -7400,9 +7322,6 @@ export type AccessSchemasGithub = {
 };
 
 export type AccessSchemasGoogle = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessSchemasGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -7583,7 +7502,7 @@ export type AccessSchemasIdResponse = AccessApiResponseSingle & {
  * @maxLength 32
  * @x-auditable true
  */
-export type AccessSchemasIdentifier = AccessIdentifier & undefined;
+export type AccessSchemasIdentifier = AccessIdentifier & void;
 
 export type AccessSchemasIdentityProvider = {
 	/**
@@ -7695,9 +7614,6 @@ export type AccessSchemasIsUiReadOnly = boolean;
 export type AccessSchemasIsolationRequired = boolean;
 
 export type AccessSchemasLinkedin = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessSchemasGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -8824,7 +8740,7 @@ export type AccessSchemasServiceTokens = {
 	 * @maxLength 36
 	 * @x-auditable true
 	 */
-	id?: undefined & AccessUuid;
+	id?: void & AccessUuid;
 	last_seen_at?: AccessTimestamp;
 	name?: AccessServiceTokensComponentsSchemasName;
 	updated_at?: AccessTimestamp;
@@ -8954,28 +8870,13 @@ export type AccessSchemasVncProps = {
 export type AccessSchemasWarpProps = {
 	allowed_idps?: AccessAllowedIdps;
 	auto_redirect_to_identity?: AccessSchemasAutoRedirectToIdentity;
-	/**
-	 * @example authdomain.cloudflareaccess.com/warp
-	 */
 	domain?: AccessComponentsSchemasDomain;
-	/**
-	 * @default Warp Login App
-	 * @example Warp Login App
-	 */
 	name?: AccessAppsComponentsSchemasName;
 	session_duration?: AccessAppsComponentsSchemasSessionDuration;
-	/**
-	 * The application type.
-	 *
-	 * @example warp
-	 */
 	type: AccessComponentsSchemasType;
 };
 
 export type AccessSchemasYandex = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessSchemasGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -9182,7 +9083,7 @@ export type AccessScimConfigMapping = {
 		/**
 		 * Whether or not this mapping applies to DELETE operations.
 		 */
-		delete?: boolean;
+		["delete"]?: boolean;
 		/**
 		 * Whether or not this mapping applies to update (PATCH/PUT) operations.
 		 */
@@ -9299,7 +9200,7 @@ export type AccessSelfHostedProps = {
 	 *
 	 * @example self_hosted
 	 */
-	type: AccessType & undefined;
+	type: AccessType & void;
 };
 
 export type AccessServiceTokens = {
@@ -9314,14 +9215,14 @@ export type AccessServiceTokens = {
 	 * @maxLength 36
 	 * @x-auditable true
 	 */
-	id?: undefined & AccessUuid;
+	id?: void & AccessUuid;
 	/**
 	 * @x-stainless-skip true
 	 * @example 2014-01-01T05:20:00.12345Z
 	 * @format date-time
 	 * @x-auditable true
 	 */
-	last_seen_at?: undefined & AccessTimestamp;
+	last_seen_at?: void & AccessTimestamp;
 	name?: AccessSchemasName;
 	updated_at?: AccessUpdatedAt;
 };
@@ -9461,7 +9362,7 @@ export type AccessSshProps = {
 	 *
 	 * @example ssh
 	 */
-	type: AccessType & undefined;
+	type: AccessType & void;
 };
 
 /**
@@ -9624,7 +9525,7 @@ export type AccessUpdateStatus = "blocked" | "processing" | "exceeded time" | "c
  * @format date-time
  * @x-auditable true
  */
-export type AccessUpdatedAt = undefined & AccessTimestamp;
+export type AccessUpdatedAt = void & AccessTimestamp;
 
 /**
  * The UUID of the authenticating user.
@@ -9764,19 +9665,19 @@ export type AccessUsersComponentsSchemasResponseCollection = AccessApiResponseCo
 		/**
 		 * @example 1
 		 */
-		count?: undefined;
+		count?: void;
 		/**
 		 * @example 1
 		 */
-		page?: undefined;
+		page?: void;
 		/**
 		 * @example 100
 		 */
-		per_page?: undefined;
+		per_page?: void;
 		/**
 		 * @example 1
 		 */
-		total_count?: undefined;
+		total_count?: void;
 	};
 } & {
 	result?: AccessSchemasUsers[];
@@ -9830,7 +9731,7 @@ export type AccessVncProps = {
 	 *
 	 * @example vnc
 	 */
-	type: AccessType & undefined;
+	type: AccessType & void;
 };
 
 /**
@@ -9847,28 +9748,13 @@ export type AccessWarpProps = {
 	custom_deny_url?: AccessCustomDenyUrl;
 	custom_non_identity_deny_url?: AccessCustomNonIdentityDenyUrl;
 	custom_pages?: AccessSchemasCustomPages;
-	/**
-	 * @example authdomain.cloudflareaccess.com/warp
-	 */
 	domain?: AccessDomain;
-	/**
-	 * @default Warp Login App
-	 * @example Warp Login App
-	 */
 	name?: AccessAppsComponentsSchemasName;
 	session_duration?: AccessSchemasSessionDuration;
-	/**
-	 * The application type.
-	 *
-	 * @example warp
-	 */
 	type: AccessType;
 };
 
 export type AccessYandex = {
-	/**
-	 * The configuration parameters for the identity provider. To view the required parameters for a specific provider, refer to our [developer documentation](https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/).
-	 */
 	config: AccessGenericOauthConfig;
 	id?: AccessUuid;
 	name: AccessComponentsSchemasName;
@@ -12492,7 +12378,7 @@ export type BillSubsApiBillingResponseSingle = BillSubsApiApiResponseSingle & {
 export type BillSubsApiCanSubscribe = boolean;
 
 export type BillSubsApiComponentValue = {
-	default?: BillSubsApiDefault;
+	["default"]?: BillSubsApiDefault;
 	name?: BillSubsApiComponentsSchemasName;
 	unit_price?: BillSubsApiUnitPrice;
 };
@@ -13284,7 +13170,7 @@ export type BrandProtectionApiQuery = {
 	 */
 	min_time?: string | null;
 	scan?: boolean;
-	string_matches?: undefined;
+	string_matches?: void;
 	tag?: string;
 };
 
@@ -15595,9 +15481,6 @@ export type CloudforceOnePortScanApiApiResponseCommon = {
 };
 
 export type CloudforceOnePortScanApiApiResponseCommonFailure = {
-	/**
-	 * @example {"code":10433,"message":"request error"}
-	 */
 	errors: CloudforceOnePortScanApiMessages;
 	messages: CloudforceOnePortScanApiMessages;
 	/**
@@ -17550,7 +17433,7 @@ export type DigitalExperienceMonitoringDexTargetPolicy = {
 	/**
 	 * Whether the DEX rule is the account default
 	 */
-	default?: boolean;
+	["default"]?: boolean;
 	/**
 	 * The id of the DEX rule
 	 */
@@ -17701,7 +17584,7 @@ export type DigitalExperienceMonitoringHttpDetailsResponse = {
 				/**
 				 * Whether the policy is the default for the account
 				 */
-				default: boolean;
+				["default"]: boolean;
 				id: string;
 				name: string;
 		  }[]
@@ -18004,7 +17887,7 @@ export type DigitalExperienceMonitoringTestsResponse = {
 					/**
 					 * Whether the policy is the default for the account
 					 */
-					default: boolean;
+					["default"]: boolean;
 					id: string;
 					name: string;
 			  }[]
@@ -18080,7 +17963,7 @@ export type DigitalExperienceMonitoringTracerouteDetailsResponse = {
 				/**
 				 * Whether the policy is the default for the account
 				 */
-				default: boolean;
+				["default"]: boolean;
 				id: string;
 				name: string;
 		  }[]
@@ -19338,7 +19221,7 @@ export type DlpRegexValidationResult = {
 };
 
 export type DlpRiskEvent = {
-	event_details?: undefined;
+	event_details?: void;
 	id: string;
 	name: string;
 	risk_level: DlpRiskLevel;
@@ -19545,7 +19428,7 @@ export type DlpWordListEntry = {
 	 * @format date-time
 	 */
 	updated_at: string;
-	word_list: undefined;
+	word_list: void;
 };
 
 export type DlpApiResponseCollection = DlpApiResponseCommon & {
@@ -19719,7 +19602,7 @@ export type DlsRegionalHostnameResponse = {
 	 * @format date-time
 	 * @x-auditable true
 	 */
-	created_on: DlsTimestamp & undefined & undefined;
+	created_on: DlsTimestamp & void & void;
 	hostname: DlsHostname;
 	region_key: DlsRegionKey;
 	routing?: DlsRouting;
@@ -23676,7 +23559,7 @@ export type EmailSecurityLink = {
  * @example {"action_log":[],"alert_id":"4Njp3P0STMz2c02Q-2022-12-30T02:44:49","client_recipients":["email@example.com"],"delivery_mode":"DIRECT","detection_reasons":["Selector is a source of spam/uce : Smtp-Helo-Server-Ip=<b>127.0.0[dot]186</b>"],"edf_hash":null,"envelope_from":"d1994@example.com","envelope_to":["email@example.com"],"final_disposition":"MALICIOUS","findings":null,"from":"d1994@example.com","from_name":"Sender Name","htmltext_structure_hash":null,"id":"47JJcT1w6GztQV7-email@example.com","is_phish_submission":false,"is_quarantined":false,"message_id":"<4VAZPrAdg7IGNxdt1DWRNu0gvOeL_iZiwP4BQfo4DaE.Yw-woXuugQbeFhBpzwFQtqq_v2v1HOKznoMBqbciQpE@example.com>","postfix_id":"47JJcT1w6GztQV7","postfix_id_outbound":null,"properties":{},"replyto":"email@example.com","sent_date":"2019-11-21T00:22:01","subject":"listen, I highly recommend u to read that email, just to ensure not a thing will take place","threat_categories":["IPReputation","ASNReputation"],"to":["email@example.com"],"to_name":["Recipient Name"],"ts":"2019-11-20T23:22:01","validation":{"comment":null,"dkim":"pass","dmarc":"none","spf":"fail"}}
  */
 export type EmailSecurityMailsearchMessage = {
-	action_log: undefined;
+	action_log: void;
 	alert_id?: string | null;
 	client_recipients: string[];
 	delivery_mode?: EmailSecurityMessageDeliveryMode & (string | null);
@@ -24187,19 +24070,19 @@ export type EmailDestinationAddressesResponseCollection = EmailApiResponseCollec
 		/**
 		 * @example 1
 		 */
-		count?: undefined;
+		count?: void;
 		/**
 		 * @example 1
 		 */
-		page?: undefined;
+		page?: void;
 		/**
 		 * @example 20
 		 */
-		per_page?: undefined;
+		per_page?: void;
 		/**
 		 * @example 1
 		 */
-		total_count?: undefined;
+		total_count?: void;
 	};
 };
 
@@ -24564,19 +24447,19 @@ export type EmailRulesResponseCollection = EmailApiResponseCollection & {
 		/**
 		 * @example 1
 		 */
-		count?: undefined;
+		count?: void;
 		/**
 		 * @example 1
 		 */
-		page?: undefined;
+		page?: void;
 		/**
 		 * @example 20
 		 */
-		per_page?: undefined;
+		per_page?: void;
 		/**
 		 * @example 1
 		 */
-		total_count?: undefined;
+		total_count?: void;
 	};
 };
 
@@ -25035,13 +24918,6 @@ export type FirewallFilterRuleResponse = FirewallFilterRuleBase & {
 export type FirewallFilterRuleUpdateRequest = {
 	description?: FirewallFiltersComponentsSchemasDescription;
 	expression?: FirewallExpression;
-	/**
-	 * The unique identifier of the filter.
-	 *
-	 * @example 372e67954025e0ba6aaa6d586b9e0b61
-	 * @maxLength 32
-	 * @minLength 32
-	 */
 	id?: FirewallFiltersComponentsSchemasId;
 	paused?: FirewallFiltersComponentsSchemasPaused;
 	ref?: FirewallSchemasRef;
@@ -25070,14 +24946,14 @@ export type FirewallFilters = {
 	 * @example ip
 	 * @x-auditable true
 	 */
-	"configuration.target"?: "ip" | "ip_range" | "asn" | "country";
+	["configuration.target"]?: "ip" | "ip_range" | "asn" | "country";
 	/**
 	 * The target value to search for in existing rules: an IP address, an IP address range, or a country code, depending on the provided `configuration.target`.
 	 * Notes: You can search for a single IPv4 address, an IP address range with a subnet of '/16' or '/24', or a two-letter ISO-3166-1 alpha-2 country code.
 	 *
 	 * @example 198.51.100.4
 	 */
-	"configuration.value"?: string;
+	["configuration.value"]?: string;
 	/**
 	 * When set to `all`, all the search requirements must match. When set to `any`, only one of the search requirements has to match.
 	 *
@@ -25521,7 +25397,7 @@ export type FirewallResultInfo = {
 export type FirewallRewriteAction = {
 	block?: FirewallWafRewriteAction;
 	challenge?: FirewallWafRewriteAction;
-	default?: FirewallWafRewriteAction;
+	["default"]?: FirewallWafRewriteAction;
 	disable?: FirewallWafRewriteAction;
 	simulate?: FirewallWafRewriteAction;
 };
@@ -26764,7 +26640,7 @@ export type IamCreatePayload = {
  *
  * @example com.cloudflare.api.account.eb78d65290b24279ba6f44721b3ea3c4
  */
-export type IamCreateResourceGroupScopeScopeKey = undefined;
+export type IamCreateResourceGroupScopeScopeKey = void;
 
 /**
  * A scope object represents any resource that can have actions applied against invite.
@@ -26778,7 +26654,7 @@ export type IamCreateResourceGroupScopeScopeObject = {
  *
  * @example com.cloudflare.api.account.zone.23f8d65290b24279ba6f44721b3eaad5
  */
-export type IamCreateResourceGroupScopeScopeObjectKey = undefined;
+export type IamCreateResourceGroupScopeScopeObjectKey = void;
 
 export type IamCreateUserGroupBody = {
 	/**
@@ -27235,7 +27111,7 @@ export type IamRequestCreateResourceGroup = {
  * @example {"in":["123.123.123.0/24","2606:4700::/32"],"not_in":["123.123.123.100/24","2606:4700:4700::/48"]}
  */
 export type IamRequestIp = {
-	in?: IamCidrList;
+	["in"]?: IamCidrList;
 	not_in?: IamCidrList;
 };
 
@@ -27403,7 +27279,7 @@ export type IamRole = {
 	/**
 	 * @example {"analytics":{"read":true,"write":false},"zones":{"read":true,"write":true}}
 	 */
-	permissions: IamPermissions & undefined;
+	permissions: IamPermissions & void;
 };
 
 /**
@@ -27486,7 +27362,7 @@ export type IamScope = {
  * @example com.cloudflare.api.account.eb78d65290b24279ba6f44721b3ea3c4
  * @x-auditable true
  */
-export type IamScopeKey = undefined;
+export type IamScopeKey = void;
 
 /**
  * A scope object represents any resource that can have actions applied against invite.
@@ -27501,7 +27377,7 @@ export type IamScopeObject = {
  * @example com.cloudflare.api.account.zone.23f8d65290b24279ba6f44721b3eaad5
  * @x-auditable true
  */
-export type IamScopeObjectKey = undefined;
+export type IamScopeObjectKey = void;
 
 export type IamSingleInviteResponse = IamApiResponseSingle & {
 	result?: IamUserInvite;
@@ -31050,7 +30926,7 @@ export type LoadBalancingPort = number | null;
 /**
  * @example f1aba936b94213e5b8dca0c0dbf1f9cc
  */
-export type LoadBalancingPreviewId = undefined;
+export type LoadBalancingPreviewId = void;
 
 export type LoadBalancingPreviewResponse = LoadBalancingApiResponseSingle & {
 	result?: {
@@ -31981,7 +31857,7 @@ export type LogpushOutputOptions = {
 	 *
 	 * @x-auditable true
 	 */
-	"CVE-2021-44228"?: boolean | null;
+	["CVE-2021-44228"]?: boolean | null;
 	/**
 	 * String to be prepended before each batch.
 	 *
@@ -33534,7 +33410,7 @@ export type MagicAppSingleResponse = {
 /**
  * IPv4 CIDRs to associate with traffic decisions. (IPv6 CIDRs are currently unsupported)
  */
-export type MagicAppSubnets = (MagicCidr & undefined)[];
+export type MagicAppSubnets = (MagicCidr & void)[];
 
 /**
  * Category of the app.
@@ -40930,7 +40806,7 @@ export type PayPerCrawlMsg = {
 	 * Meta object containing non-standard meta-information about the error.
 	 * This field must be an object or null!
 	 */
-	meta?: undefined;
+	meta?: void;
 	source?: PayPerCrawlSource;
 };
 
@@ -40988,7 +40864,7 @@ export type PayPerCrawlZonesCanBeEnabledPayload = {
 
 export type PayPerCrawlApiErrorResponse = {
 	errors?: PayPerCrawlRESTError[];
-	result?: undefined;
+	result?: void;
 	success?: boolean;
 };
 
@@ -43551,45 +43427,45 @@ export type RealtimekitPreset = {
 					/**
 					 * @default #222222
 					 */
-					"600": string;
+					["600"]: string;
 					/**
 					 * @default #1f1f1f
 					 */
-					"700": string;
+					["700"]: string;
 					/**
 					 * @default #1b1b1b
 					 */
-					"800": string;
+					["800"]: string;
 					/**
 					 * @default #181818
 					 */
-					"900": string;
+					["900"]: string;
 					/**
 					 * @default #141414
 					 */
-					"1000": string;
+					["1000"]: string;
 				};
 				brand: {
 					/**
 					 * @default #844d1c
 					 */
-					"300": string;
+					["300"]: string;
 					/**
 					 * @default #9d5b22
 					 */
-					"400": string;
+					["400"]: string;
 					/**
 					 * @default #b56927
 					 */
-					"500": string;
+					["500"]: string;
 					/**
 					 * @default #d37c30
 					 */
-					"600": string;
+					["600"]: string;
 					/**
 					 * @default #d9904f
 					 */
-					"700": string;
+					["700"]: string;
 				};
 				/**
 				 * @default #FF2D2D
@@ -44127,45 +44003,45 @@ export type RealtimekitUpdatePreset = {
 					/**
 					 * @default #222222
 					 */
-					"600"?: string;
+					["600"]?: string;
 					/**
 					 * @default #1f1f1f
 					 */
-					"700"?: string;
+					["700"]?: string;
 					/**
 					 * @default #1b1b1b
 					 */
-					"800"?: string;
+					["800"]?: string;
 					/**
 					 * @default #181818
 					 */
-					"900"?: string;
+					["900"]?: string;
 					/**
 					 * @default #141414
 					 */
-					"1000"?: string;
+					["1000"]?: string;
 				};
 				brand?: {
 					/**
 					 * @default #844d1c
 					 */
-					"300"?: string;
+					["300"]?: string;
 					/**
 					 * @default #9d5b22
 					 */
-					"400"?: string;
+					["400"]?: string;
 					/**
 					 * @default #b56927
 					 */
-					"500"?: string;
+					["500"]?: string;
 					/**
 					 * @default #d37c30
 					 */
-					"600"?: string;
+					["600"]?: string;
 					/**
 					 * @default #d9904f
 					 */
-					"700"?: string;
+					["700"]?: string;
 				};
 				/**
 				 * @default #FF2D2D
@@ -45470,7 +45346,7 @@ export type RulesetsBlockRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -45527,7 +45403,7 @@ export type RulesetsChallengeRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -45599,7 +45475,7 @@ export type RulesetsCompressResponseRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -45664,7 +45540,7 @@ export type RulesetsDDoSDynamicRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -45719,26 +45595,26 @@ export type RulesetsExecuteCategoryOverrides = {
 	 * @pattern ^[a-z_]+$
 	 * @example log
 	 */
-	action?: RulesetsRuleAction & undefined;
+	action?: RulesetsRuleAction & void;
 	/**
 	 * The name of the category to override.
 	 *
 	 * @example directory-traversal
 	 * @minLength 1
 	 */
-	category: RulesetsRuleCategory & undefined;
+	category: RulesetsRuleCategory & void;
 	/**
 	 * Whether to enable execution of rules in the category.
 	 *
 	 * @example true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	/**
 	 * The sensitivity level to use for rules in the category. This option is only applicable for DDoS phases.
 	 *
 	 * @example default
 	 */
-	sensitivity_level?: RulesetsExecuteSensitivityLevel & undefined;
+	sensitivity_level?: RulesetsExecuteSensitivityLevel & void;
 }[];
 
 /**
@@ -45766,21 +45642,21 @@ export type RulesetsExecuteOverrides = {
 	 * @pattern ^[a-z_]+$
 	 * @example log
 	 */
-	action?: RulesetsRuleAction & undefined;
+	action?: RulesetsRuleAction & void;
 	categories?: RulesetsExecuteCategoryOverrides;
 	/**
 	 * Whether to enable execution of all rules. This option has lower precedence than rule and category overrides.
 	 *
 	 * @example true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	rules?: RulesetsExecuteRuleOverrides;
 	/**
 	 * A sensitivity level to set for all rules. This option has lower precedence than rule and category overrides and is only applicable for DDoS phases.
 	 *
 	 * @example default
 	 */
-	sensitivity_level?: RulesetsExecuteSensitivityLevel & undefined;
+	sensitivity_level?: RulesetsExecuteSensitivityLevel & void;
 };
 
 export type RulesetsExecuteRule = {
@@ -45797,7 +45673,7 @@ export type RulesetsExecuteRule = {
 		 * @example 4814384a9e5d4991b9815dcfc25d2f1f
 		 * @pattern ^[0-9a-f]{32}$
 		 */
-		id: RulesetsRulesetId & undefined;
+		id: RulesetsRulesetId & void;
 		matched_data?: RulesetsExecuteMatchedData;
 		overrides?: RulesetsExecuteOverrides;
 	};
@@ -45815,7 +45691,7 @@ export type RulesetsExecuteRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -45863,20 +45739,20 @@ export type RulesetsExecuteRuleOverrides = {
 	 * @pattern ^[a-z_]+$
 	 * @example log
 	 */
-	action?: RulesetsRuleAction & undefined;
+	action?: RulesetsRuleAction & void;
 	/**
 	 * Whether to enable execution of the rule.
 	 *
 	 * @example true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	/**
 	 * The ID of the rule to override.
 	 *
 	 * @example 8ac8bc2a661e475d940980f9317f28e1
 	 * @pattern ^[0-9a-f]{32}$
 	 */
-	id: RulesetsRuleId & undefined;
+	id: RulesetsRuleId & void;
 	/**
 	 * The score threshold to use for the rule.
 	 */
@@ -45886,7 +45762,7 @@ export type RulesetsExecuteRuleOverrides = {
 	 *
 	 * @example default
 	 */
-	sensitivity_level?: RulesetsExecuteSensitivityLevel & undefined;
+	sensitivity_level?: RulesetsExecuteSensitivityLevel & void;
 }[];
 
 /**
@@ -45916,7 +45792,7 @@ export type RulesetsForceConnectionCloseRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -45973,7 +45849,7 @@ export type RulesetsJsChallengeRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -46111,7 +45987,7 @@ export type RulesetsLogCustomFieldRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -46183,7 +46059,7 @@ export type RulesetsLogRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -46240,7 +46116,7 @@ export type RulesetsManagedChallengeRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -46285,7 +46161,7 @@ export type RulesetsManagedTransform = {
 	 * @minItems 1
 	 * @uniqueItems true
 	 */
-	conflicts_with?: (RulesetsManagedTransformId & undefined)[];
+	conflicts_with?: (RulesetsManagedTransformId & void)[];
 	/**
 	 * Whether the Managed Transform is enabled.
 	 *
@@ -46324,7 +46200,7 @@ export type RulesetsManagedTransforms = {
 		 * @minItems 1
 		 * @uniqueItems true
 		 */
-		conflicts_with?: (RulesetsManagedTransformId & undefined)[];
+		conflicts_with?: (RulesetsManagedTransformId & void)[];
 		/**
 		 * Whether the Managed Transform is enabled.
 		 *
@@ -46337,9 +46213,6 @@ export type RulesetsManagedTransforms = {
 		 * @example false
 		 */
 		has_conflict: boolean;
-		/**
-		 * @example add_bot_protection_headers
-		 */
 		id: RulesetsManagedTransformId;
 	}[];
 	/**
@@ -46354,7 +46227,7 @@ export type RulesetsManagedTransforms = {
 		 * @minItems 1
 		 * @uniqueItems true
 		 */
-		conflicts_with?: (RulesetsManagedTransformId & undefined)[];
+		conflicts_with?: (RulesetsManagedTransformId & void)[];
 		/**
 		 * Whether the Managed Transform is enabled.
 		 *
@@ -46367,9 +46240,6 @@ export type RulesetsManagedTransforms = {
 		 * @example false
 		 */
 		has_conflict: boolean;
-		/**
-		 * @example add_security_headers
-		 */
 		id: RulesetsManagedTransformId;
 	}[];
 };
@@ -46509,7 +46379,7 @@ export type RulesetsRedirectRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -46614,14 +46484,14 @@ export type RulesetsResponse = {
 	/**
 	 * A result.
 	 */
-	result: undefined;
+	result: void;
 	/**
 	 * Whether the API call was successful.
 	 */
 	success: boolean;
 };
 
-export type RulesetsResponseRule = RulesetsRequestRule & undefined;
+export type RulesetsResponseRule = RulesetsRequestRule & void;
 
 /**
  * The list of rules in the ruleset.
@@ -46642,7 +46512,7 @@ export type RulesetsResultInfo = {
 		 * @example dGhpc2lzYW5leGFtcGxlCg
 		 * @minLength 1
 		 */
-		after: RulesetsCursor & undefined;
+		after: RulesetsCursor & void;
 	};
 };
 
@@ -46737,7 +46607,7 @@ export type RulesetsRewriteRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -46883,7 +46753,7 @@ export type RulesetsRouteRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -46952,7 +46822,7 @@ export type RulesetsRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -47139,7 +47009,7 @@ export type RulesetsRuleset = {
 	 * @example 2f2feab2026849078ba485f918791bdc
 	 * @pattern ^[0-9a-f]{32}$
 	 */
-	id: RulesetsRulesetId & undefined;
+	id: RulesetsRulesetId & void;
 	/**
 	 * The timestamp of when the ruleset was last modified.
 	 *
@@ -47160,7 +47030,7 @@ export type RulesetsRuleset = {
 	 * @example 1
 	 * @pattern ^[0-9]+$
 	 */
-	version: RulesetsRulesetVersion & undefined;
+	version: RulesetsRulesetVersion & void;
 };
 
 /**
@@ -47247,7 +47117,7 @@ export type RulesetsScoreRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -47339,7 +47209,7 @@ export type RulesetsServeErrorRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -47401,7 +47271,7 @@ export type RulesetsSetCacheSettingsBrowserTTL = {
 	 * @example 60
 	 * @minimum 0
 	 */
-	default?: number;
+	["default"]?: number;
 	/**
 	 * The browser TTL mode.
 	 *
@@ -47619,7 +47489,7 @@ export type RulesetsSetCacheSettingsEdgeTTL = {
 	 * @example 60
 	 * @minimum 0
 	 */
-	default?: number;
+	["default"]?: number;
 	/**
 	 * The edge TTL mode.
 	 *
@@ -47694,7 +47564,7 @@ export type RulesetsSetCacheSettingsRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -47938,7 +47808,7 @@ export type RulesetsSetConfigRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -47984,7 +47854,7 @@ export type RulesetsSkipPhase = "current";
  * @minItems 1
  * @uniqueItems true
  */
-export type RulesetsSkipPhases = (RulesetsRulesetPhase & undefined)[];
+export type RulesetsSkipPhases = (RulesetsRulesetPhase & void)[];
 
 /**
  * A list of legacy security products to skip the execution of.
@@ -48032,7 +47902,7 @@ export type RulesetsSkipRule = {
 	 * @example true
 	 * @default true
 	 */
-	enabled?: RulesetsRuleEnabled & undefined;
+	enabled?: RulesetsRuleEnabled & void;
 	exposed_credential_check?: RulesetsRuleExposedCredentialCheck;
 	/**
 	 * The expression defining which traffic will match the rule.
@@ -48074,7 +47944,7 @@ export type RulesetsSkipRule = {
  * @minProperties 1
  */
 export type RulesetsSkipRules = {
-	[key: string]: (RulesetsRuleId & undefined)[];
+	[key: string]: (RulesetsRuleId & void)[];
 };
 
 /**
@@ -48088,7 +47958,7 @@ export type RulesetsSkipRuleset = "current";
  * @minItems 1
  * @uniqueItems true
  */
-export type RulesetsSkipRulesets = (RulesetsRulesetId & undefined)[];
+export type RulesetsSkipRulesets = (RulesetsRulesetId & void)[];
 
 /**
  * A URL Normalization object.
@@ -50064,7 +49934,7 @@ export type SnippetsResponse = {
 	/**
 	 * A result.
 	 */
-	result: undefined;
+	result: void;
 	/**
 	 * Whether the API call was successful.
 	 *
@@ -50350,7 +50220,7 @@ export type SpectrumAnalyticsQueryResponseAggregate = SpectrumAnalyticsApiRespon
 		 * @maxLength 32
 		 * @x-auditable true
 		 */
-		appID: undefined & SpectrumAnalyticsIdentifier;
+		appID: void & SpectrumAnalyticsIdentifier;
 		/**
 		 * Number of bytes sent
 		 */
@@ -50388,13 +50258,13 @@ export type SpectrumAnalyticsQueryResponseSingle = SpectrumAnalyticsApiResponseS
 		 *
 		 * @example {"bytesEgress":100,"bytesIngress":50}
 		 */
-		max: undefined & SpectrumAnalyticsStat;
+		max: void & SpectrumAnalyticsStat;
 		/**
 		 * Minimum result for each selected metrics across all data.
 		 *
 		 * @example {"bytesEgress":100,"bytesIngress":50}
 		 */
-		min: undefined & SpectrumAnalyticsStat;
+		min: void & SpectrumAnalyticsStat;
 		query: SpectrumAnalyticsQuery;
 		/**
 		 * Total number of rows in the result.
@@ -50412,7 +50282,7 @@ export type SpectrumAnalyticsQueryResponseSingle = SpectrumAnalyticsApiResponseS
 		 *
 		 * @example {"bytesEgress":100,"bytesIngress":50}
 		 */
-		totals: undefined & SpectrumAnalyticsStat;
+		totals: void & SpectrumAnalyticsStat;
 	};
 };
 
@@ -50423,7 +50293,7 @@ export type SpectrumAnalyticsQueryResponseSingle = SpectrumAnalyticsApiResponseS
  * @format date-time
  * @x-auditable true
  */
-export type SpectrumAnalyticsSince = undefined & SpectrumAnalyticsTimestamp;
+export type SpectrumAnalyticsSince = void & SpectrumAnalyticsTimestamp;
 
 /**
  * The sort order for the result set; sort fields must be included in `metrics` or `dimensions`.
@@ -50454,7 +50324,7 @@ export type SpectrumAnalyticsTimestamp = string;
  * @format date-time
  * @x-auditable true
  */
-export type SpectrumAnalyticsUntil = undefined & SpectrumAnalyticsTimestamp;
+export type SpectrumAnalyticsUntil = void & SpectrumAnalyticsTimestamp;
 
 export type SpectrumConfigApiResponseCollection = SpectrumConfigApiResponseCommon & {
 	result_info?: {
@@ -50549,7 +50419,7 @@ export type SpectrumConfigAppConfigSingle = SpectrumConfigApiResponseSingle & {
  * @maxLength 32
  * @x-auditable true
  */
-export type SpectrumConfigAppIdentifier = undefined & undefined & SpectrumConfigIdentifier;
+export type SpectrumConfigAppIdentifier = void & void & SpectrumConfigIdentifier;
 
 /**
  * Enables Argo Smart Routing for this application.
@@ -50573,7 +50443,7 @@ export type SpectrumConfigBaseAppConfig = {
  * @format date-time
  * @x-auditable true
  */
-export type SpectrumConfigCreated = undefined & undefined & SpectrumConfigTimestamp;
+export type SpectrumConfigCreated = void & void & SpectrumConfigTimestamp;
 
 /**
  * The name and type of DNS record for the Spectrum application.
@@ -50677,7 +50547,7 @@ export type SpectrumConfigMessages = {
  * @format date-time
  * @x-auditable true
  */
-export type SpectrumConfigModified = undefined & undefined & SpectrumConfigTimestamp;
+export type SpectrumConfigModified = void & void & SpectrumConfigTimestamp;
 
 /**
  * List of origin IP addresses. Array may contain multiple IP addresses for load balancing.
@@ -50771,7 +50641,7 @@ export type SpectrumConfigUpdateAppConfig = SpectrumConfigAppConfig | SpectrumCo
  * @maxLength 32
  * @x-auditable true
  */
-export type SpectrumConfigZoneIdentifier = undefined & undefined & SpectrumConfigIdentifier;
+export type SpectrumConfigZoneIdentifier = void & void & SpectrumConfigIdentifier;
 
 export type SpeedApiResponseCommon = {
 	errors: SpeedMessages;
@@ -50867,12 +50737,6 @@ export type SpeedCloudflareFonts = {
 	 * @x-auditable true
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 * @x-auditable true
-	 */
 	value?: SpeedCloudflareFontsValue;
 };
 
@@ -50980,7 +50844,7 @@ export type StreamAddAudioTrackResponse = StreamApiResponseCommon & {
 };
 
 export type StreamAdditionalAudio = {
-	default?: StreamAudioDefault;
+	["default"]?: StreamAudioDefault;
 	label?: StreamAudioLabel;
 	status?: StreamAudioState;
 	uid?: StreamIdentifier;
@@ -51247,7 +51111,7 @@ export type StreamDownloadsResponse = StreamApiResponseSingle & {
 export type StreamDuration = number;
 
 export type StreamEditAudioTrack = {
-	default?: StreamAudioDefault;
+	["default"]?: StreamAudioDefault;
 	label?: StreamAudioLabel;
 };
 
@@ -52847,7 +52711,7 @@ export type TeamsDevicesDefaultDeviceSettingsPolicy = {
 	 *
 	 * @example true
 	 */
-	default?: boolean;
+	["default"]?: boolean;
 	disable_auto_fallback?: TeamsDevicesDisableAutoFallback;
 	/**
 	 * Whether the policy will be applied to matching devices.
@@ -53025,7 +52889,7 @@ export type TeamsDevicesDeviceSettingsPolicy = {
 	allowed_to_leave?: TeamsDevicesAllowedToLeave;
 	auto_connect?: TeamsDevicesAutoConnect;
 	captive_portal?: TeamsDevicesCaptivePortal;
-	default?: TeamsDevicesDefault;
+	["default"]?: TeamsDevicesDefault;
 	description?: TeamsDevicesSchemasDescription;
 	disable_auto_fallback?: TeamsDevicesDisableAutoFallback;
 	/**
@@ -53144,7 +53008,7 @@ export type TeamsDevicesDexTargetPolicy = {
 	/**
 	 * Whether the profile is the account default.
 	 */
-	default?: boolean;
+	["default"]?: boolean;
 	/**
 	 * The id of the device settings profile.
 	 */
@@ -53170,31 +53034,31 @@ export type TeamsDevicesDisableForTime = {
 	 *
 	 * @example 9106681
 	 */
-	"1"?: string;
+	["1"]?: string;
 	/**
 	 * Override code that is valid for 3 hours.
 	 *
 	 * @example 5356247
 	 */
-	"3"?: string;
+	["3"]?: string;
 	/**
 	 * Override code that is valid for 6 hours.
 	 *
 	 * @example 9478972
 	 */
-	"6"?: string;
+	["6"]?: string;
 	/**
 	 * Override code that is valid for 12 hour2.
 	 *
 	 * @example 3424359
 	 */
-	"12"?: string;
+	["12"]?: string;
 	/**
 	 * Override code that is valid for 24 hour.2.
 	 *
 	 * @example 2887634
 	 */
-	"24"?: string;
+	["24"]?: string;
 };
 
 /**
@@ -53426,7 +53290,7 @@ export type TeamsDevicesIdResponse = TeamsDevicesApiResponseSingle & {
 /**
  * @example 699d98642c564d2e855e9661899b7252
  */
-export type TeamsDevicesIdentifier = undefined;
+export type TeamsDevicesIdentifier = void;
 
 /**
  * List of routes included in the WARP client's tunnel.
@@ -53930,7 +53794,7 @@ export type TeamsDevicesPolicySummary = {
 	/**
 	 * Whether the device settings profile is the default profile for the account.
 	 */
-	default: boolean;
+	["default"]: boolean;
 	/**
 	 * Whether the device settings profile was deleted.
 	 */
@@ -56144,19 +56008,19 @@ export type TlsCertificatesAndHostnamesMtlsManagementComponentsSchemasCertificat
 			/**
 			 * @example 1
 			 */
-			count?: undefined;
+			count?: void;
 			/**
 			 * @example 1
 			 */
-			page?: undefined;
+			page?: void;
 			/**
 			 * @example 50
 			 */
-			per_page?: undefined;
+			per_page?: void;
 			/**
 			 * @example 1
 			 */
-			total_count?: undefined;
+			total_count?: void;
 			/**
 			 * Total pages available of results
 			 *
@@ -56303,19 +56167,19 @@ export type TlsCertificatesAndHostnamesPerHostnameSettingsResponseCollection =
 			/**
 			 * @example 1
 			 */
-			count?: undefined;
+			count?: void;
 			/**
 			 * @example 1
 			 */
-			page?: undefined;
+			page?: void;
 			/**
 			 * @example 50
 			 */
-			per_page?: undefined;
+			per_page?: void;
 			/**
 			 * @example 1
 			 */
-			total_count?: undefined;
+			total_count?: void;
 			/**
 			 * Total pages available of results
 			 *
@@ -57519,7 +57383,7 @@ export type TunnelConfig = {
 	 * @x-stainless-deprecation-message This field is ignored by cloudflared since version 2023.10.0.
 	 * @x-stainless-skip true
 	 */
-	"warp-routing"?: {
+	["warp-routing"]?: {
 		enabled?: boolean;
 	};
 };
@@ -59188,7 +59052,7 @@ export type VectorizeMessages = {
  * @maxLength 36
  * @x-auditable true
  */
-export type VectorizeMutationUuid = undefined;
+export type VectorizeMutationUuid = void;
 
 export type VectorizeResultInfo = {
 	/**
@@ -61092,11 +60956,11 @@ export type WorkersKvBulkGetResultWithMetadata = {
 			/**
 			 * The metadata associated with the key.
 			 */
-			metadata: WorkersKvAny & undefined;
+			metadata: WorkersKvAny & void;
 			/**
 			 * The value associated with the key.
 			 */
-			value: WorkersKvAny & undefined;
+			value: WorkersKvAny & void;
 		} | null;
 	};
 };
@@ -61206,7 +61070,7 @@ export type WorkersKvKeyNameBulk = string;
  *
  * @example {"someMetadataKey":"someMetadataValue"}
  */
-export type WorkersKvListMetadata = WorkersKvAny & undefined;
+export type WorkersKvListMetadata = WorkersKvAny & void;
 
 /**
  * @uniqueItems true
@@ -61224,7 +61088,7 @@ export type WorkersKvMessages = {
  *
  * @example {"someMetadataKey":"someMetadataValue"}
  */
-export type WorkersKvMetadata = WorkersKvAny & undefined;
+export type WorkersKvMetadata = WorkersKvAny & void;
 
 export type WorkersKvNamespace = {
 	id: WorkersKvNamespaceIdentifier;
@@ -62019,20 +61883,20 @@ export type WorkersVersion = {
 		 * @example Fixed bug.
 		 * @maxLength 100
 		 */
-		"workers/message"?: string;
+		["workers/message"]?: string;
 		/**
 		 * User-provided identifier for the version.
 		 *
 		 * @example v1.0.1
 		 * @maxLength 25
 		 */
-		"workers/tag"?: string;
+		["workers/tag"]?: string;
 		/**
 		 * Operation that triggered the creation of the version.
 		 *
 		 * @example upload
 		 */
-		"workers/triggered_by"?: string;
+		["workers/triggered_by"]?: string;
 	};
 	/**
 	 * Configuration for assets within a Worker.
@@ -63288,13 +63152,13 @@ export type WorkersDeployment = {
 		 * @maxLength 100
 		 * @x-auditable true
 		 */
-		"workers/message"?: string;
+		["workers/message"]?: string;
 		/**
 		 * Operation that triggered the creation of the deployment.
 		 *
 		 * @example deployment
 		 */
-		"workers/triggered_by"?: string;
+		["workers/triggered_by"]?: string;
 	};
 	/**
 	 * @format email
@@ -63606,7 +63470,7 @@ export type WorkersMultipleStepMigrations = WorkersMigrationTagConditions & {
 };
 
 export type WorkersNamespace = {
-	class?: string;
+	["class"]?: string;
 	id?: string;
 	name?: string;
 	script?: string;
@@ -64259,7 +64123,7 @@ export type WorkersVersionItemFull = WorkersVersionItemShort & {
 		 *
 		 * @example {"name":"MY_ENV_VAR","text":"my_data","type":"plain_text"}
 		 */
-		bindings?: WorkersBindings & undefined;
+		bindings?: WorkersBindings & void;
 		/**
 		 * @example {"etag":"13a3240e8fb414561b0366813b0b8f42b3e6cfa0d9e70e99835dae83d0d8a794","handlers":["fetch"],"last_deployed_from":"api","named_handlers":[{"handlers":["fetch"],"name":"MyClass"}]}
 		 */
@@ -65613,7 +65477,7 @@ export type ZeroTrustGatewayBrowserIsolationSettings = {
 
 export type ZeroTrustGatewayCategories = {
 	beta?: ZeroTrustGatewayBeta;
-	class?: ZeroTrustGatewayClass;
+	["class"]?: ZeroTrustGatewayClass;
 	description?: ZeroTrustGatewayComponentsSchemasDescription;
 	id?: ZeroTrustGatewayId;
 	name?: ZeroTrustGatewayCategoriesComponentsSchemasName;
@@ -67381,7 +67245,7 @@ export type ZeroTrustGatewaySourceAccount = string;
 
 export type ZeroTrustGatewaySubcategory = {
 	beta?: ZeroTrustGatewayBeta;
-	class?: ZeroTrustGatewayClass;
+	["class"]?: ZeroTrustGatewayClass;
 	description?: ZeroTrustGatewayComponentsSchemasDescription;
 	id?: ZeroTrustGatewayId;
 	name?: ZeroTrustGatewayCategoriesComponentsSchemasName;
@@ -67617,15 +67481,15 @@ export type ZoneAnalyticsApiBandwidth = {
 		/**
 		 * The number of requests served over TLS v1.1.
 		 */
-		"TLSv1.1"?: number;
+		["TLSv1.1"]?: number;
 		/**
 		 * The number of requests served over TLS v1.2.
 		 */
-		"TLSv1.2"?: number;
+		["TLSv1.2"]?: number;
 		/**
 		 * The number of requests served over TLS v1.3.
 		 */
-		"TLSv1.3"?: number;
+		["TLSv1.3"]?: number;
 		/**
 		 * The number of requests served over HTTP.
 		 */
@@ -67787,15 +67651,15 @@ export type ZoneAnalyticsApiRequests = {
 		/**
 		 * The number of requests served over TLS v1.1.
 		 */
-		"TLSv1.1"?: number;
+		["TLSv1.1"]?: number;
 		/**
 		 * The number of requests served over TLS v1.2.
 		 */
-		"TLSv1.2"?: number;
+		["TLSv1.2"]?: number;
 		/**
 		 * The number of requests served over TLS v1.3.
 		 */
-		"TLSv1.3"?: number;
+		["TLSv1.3"]?: number;
 		/**
 		 * The number of requests served over HTTP.
 		 */
@@ -67962,11 +67826,6 @@ export type Zones0rtt = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: Zones0rttValue;
 };
 
@@ -68044,11 +67903,6 @@ export type ZonesAdvancedDdos = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesAdvancedDdosValue;
 };
 
@@ -68083,11 +67937,6 @@ export type ZonesAlwaysOnline = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesAlwaysOnlineValue;
 };
 
@@ -68244,7 +68093,7 @@ export type ZonesBase = {
 	 *
 	 * @example on
 	 */
-	value: undefined;
+	value: void;
 };
 
 /**
@@ -68270,11 +68119,6 @@ export type ZonesBrotli = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesBrotliValue;
 };
 
@@ -68737,11 +68581,6 @@ export type ZonesChallengeTtl = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesChallengeTtlValue;
 };
 
@@ -68789,11 +68628,6 @@ export type ZonesChinaNetworkEnabled = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesChinaNetworkEnabledValue;
 };
 
@@ -68827,11 +68661,6 @@ export type ZonesCiphers = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesCiphersValue;
 };
 
@@ -68870,11 +68699,6 @@ export type ZonesCnameFlattening = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesCnameFlatteningValue;
 };
 
@@ -68947,11 +68771,6 @@ export type ZonesDevelopmentMode = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesDevelopmentModeValue;
 	/**
 	 * Value of the zone setting.
@@ -69037,11 +68856,6 @@ export type ZonesEarlyHints = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesEarlyHintsValue;
 };
 
@@ -69190,11 +69004,6 @@ export type ZonesH2Prioritization = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesH2PrioritizationValue;
 };
 
@@ -69245,11 +69054,6 @@ export type ZonesHotlinkProtection = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesHotlinkProtectionValue;
 };
 
@@ -69283,11 +69087,6 @@ export type ZonesHttp2 = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesHttp2Value;
 };
 
@@ -69321,11 +69120,6 @@ export type ZonesHttp3 = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesHttp3Value;
 };
 
@@ -69367,11 +69161,6 @@ export type ZonesImageResizing = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesImageResizingValue;
 };
 
@@ -69429,11 +69218,6 @@ export type ZonesIpv6 = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesIpv6Value;
 };
 
@@ -69467,11 +69251,6 @@ export type ZonesMaxUpload = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesMaxUploadValue;
 };
 
@@ -69534,11 +69313,6 @@ export type ZonesMinTlsVersion = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesMinTlsVersionValue;
 };
 
@@ -69677,11 +69451,6 @@ export type ZonesNel = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesNelValue;
 };
 
@@ -69749,11 +69518,6 @@ export type ZonesOpportunisticOnion = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesOpportunisticOnionValue;
 };
 
@@ -69788,11 +69552,6 @@ export type ZonesOrangeToOrange = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesOrangeToOrangeValue;
 };
 
@@ -69895,11 +69654,6 @@ export type ZonesPrefetchPreload = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesPrefetchPreloadValue;
 };
 
@@ -69949,11 +69703,6 @@ export type ZonesPrivacyPass = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesPrivacyPassValue;
 };
 
@@ -69989,11 +69738,6 @@ export type ZonesProxyReadTimeout = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesProxyReadTimeoutValue;
 };
 
@@ -70029,11 +69773,6 @@ export type ZonesPseudoIpv4 = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesPseudoIpv4Value;
 };
 
@@ -70067,11 +69806,6 @@ export type ZonesReplaceInsecureJs = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesReplaceInsecureJsValue;
 };
 
@@ -70227,11 +69961,6 @@ export type ZonesSchemasAlwaysUseHttps = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesAlwaysUseHttpsValue;
 };
 
@@ -70305,11 +70034,6 @@ export type ZonesSchemasAutomaticHttpsRewrites = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesAutomaticHttpsRewritesValue;
 };
 
@@ -70334,11 +70058,6 @@ export type ZonesSchemasAutomaticPlatformOptimization = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesAutomaticPlatformOptimization;
 };
 
@@ -70365,7 +70084,7 @@ export type ZonesSchemasBase = {
 	 *
 	 * @example on
 	 */
-	value: undefined;
+	value: void;
 };
 
 /**
@@ -70391,11 +70110,6 @@ export type ZonesSchemasBrowserCacheTtl = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesBrowserCacheTtlValue;
 };
 
@@ -70422,11 +70136,6 @@ export type ZonesSchemasBrowserCheck = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesBrowserCheckValue;
 };
 
@@ -70453,11 +70162,6 @@ export type ZonesSchemasCacheLevel = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesCacheLevelValue;
 };
 
@@ -70484,11 +70188,6 @@ export type ZonesSchemasEdgeCacheTtl = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesEdgeCacheTtlValue;
 };
 
@@ -70515,11 +70214,6 @@ export type ZonesSchemasEmailObfuscation = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesEmailObfuscationValue;
 };
 
@@ -70555,11 +70249,6 @@ export type ZonesSchemasIpGeolocation = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesIpGeolocationValue;
 };
 
@@ -70603,11 +70292,6 @@ export type ZonesSchemasMirage = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesMirageValue;
 };
 
@@ -70634,11 +70318,6 @@ export type ZonesSchemasOpportunisticEncryption = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesOpportunisticEncryptionValue;
 };
 
@@ -70667,11 +70346,6 @@ export type ZonesSchemasOriginErrorPagePassThru = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesOriginErrorPagePassThruValue;
 };
 
@@ -70698,11 +70372,6 @@ export type ZonesSchemasPolish = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesPolishValue;
 };
 
@@ -70733,11 +70402,6 @@ export type ZonesSchemasResponseBuffering = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesResponseBufferingValue;
 };
 
@@ -70764,11 +70428,6 @@ export type ZonesSchemasRocketLoader = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesRocketLoaderValue;
 };
 
@@ -70795,11 +70454,6 @@ export type ZonesSchemasSecurityLevel = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesSecurityLevelValue;
 };
 
@@ -70828,11 +70482,6 @@ export type ZonesSchemasSortQueryStringForCache = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesSortQueryStringForCacheValue;
 };
 
@@ -70859,11 +70508,6 @@ export type ZonesSchemasSsl = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesSslValue;
 };
 
@@ -70892,11 +70536,6 @@ export type ZonesSchemasTrueClientIpHeader = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesTrueClientIpHeaderValue;
 };
 
@@ -70923,11 +70562,6 @@ export type ZonesSchemasWaf = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesWafValue;
 };
 
@@ -70954,11 +70588,6 @@ export type ZonesSecurityHeader = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesSecurityHeaderValue;
 };
 
@@ -71053,11 +70682,6 @@ export type ZonesServerSideExclude = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesServerSideExcludeValue;
 };
 
@@ -71264,11 +70888,6 @@ export type ZonesSha1Support = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesSha1SupportValue;
 };
 
@@ -71410,11 +71029,6 @@ export type ZonesTls12Only = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesTls12OnlyValue;
 };
 
@@ -71450,11 +71064,6 @@ export type ZonesTls13 = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesTls13Value;
 };
 
@@ -71489,11 +71098,6 @@ export type ZonesTlsClientAuth = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesTlsClientAuthValue;
 };
 
@@ -71527,11 +71131,6 @@ export type ZonesTransformations = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesImageResizingValue;
 };
 
@@ -71558,11 +71157,6 @@ export type ZonesTransformationsAllowedOrigins = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesTransformationsAllowedOriginsValue;
 };
 
@@ -71695,11 +71289,6 @@ export type ZonesWebp = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesWebpValue;
 };
 
@@ -71733,11 +71322,6 @@ export type ZonesWebsockets = {
 	 * @format date-time
 	 */
 	modified_on?: string | null;
-	/**
-	 * Current value of the zone setting.
-	 *
-	 * @example on
-	 */
 	value: ZonesWebsocketsValue;
 };
 
@@ -72094,7 +71678,7 @@ export type BillSubsApiComponentValue2 = {
 	 * @example 5
 	 * @x-auditable true
 	 */
-	default?: number;
+	["default"]?: number;
 	/**
 	 * The name of the component value.
 	 *

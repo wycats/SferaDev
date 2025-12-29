@@ -2962,7 +2962,7 @@ export type ListSiteDeploysPathParams = {
 };
 
 export type ListSiteDeploysQueryParams = {
-	"deploy-previews"?: boolean;
+	["deploy-previews"]?: boolean;
 	production?: boolean;
 	state?:
 		| "new"
@@ -2981,7 +2981,7 @@ export type ListSiteDeploysQueryParams = {
 		| "error"
 		| "retrying";
 	branch?: string;
-	"latest-published"?: boolean;
+	["latest-published"]?: boolean;
 	/**
 	 * @format int32
 	 */
@@ -3069,7 +3069,7 @@ export type CreateSiteDeployPathParams = {
 };
 
 export type CreateSiteDeployQueryParams = {
-	"deploy-previews"?: boolean;
+	["deploy-previews"]?: boolean;
 	production?: boolean;
 	state?:
 		| "new"
@@ -3088,7 +3088,7 @@ export type CreateSiteDeployQueryParams = {
 		| "error"
 		| "retrying";
 	branch?: string;
-	"latest-published"?: boolean;
+	["latest-published"]?: boolean;
 	title?: string;
 };
 
@@ -4635,7 +4635,7 @@ export type UploadDeployFunctionQueryParams = {
 };
 
 export type UploadDeployFunctionHeaders = {
-	"X-Nf-Retry-Count"?: number;
+	["X-Nf-Retry-Count"]?: number;
 };
 
 export type UploadDeployFunctionError = Fetcher.ErrorWrapper<{
@@ -9391,7 +9391,7 @@ export type GetAIGatewayProvidersError = Fetcher.ErrorWrapper<{
 }>;
 
 export type GetAIGatewayProvidersResponse = {
-	providers?: undefined;
+	providers?: void;
 };
 
 export type GetAIGatewayProvidersVariables = FetcherExtraProps;

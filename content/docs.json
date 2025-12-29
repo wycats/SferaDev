@@ -42,8 +42,7 @@
 									"docs/packages/zoom-api-js",
 									"docs/packages/keycloak-api",
 									"docs/packages/nuki-api-js",
-									"docs/packages/litellm-api",
-									"docs/packages/dhis2-openapi"
+									"docs/packages/litellm-api"
 								]
 							}
 						]

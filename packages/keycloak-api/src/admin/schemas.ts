@@ -99,11 +99,11 @@ export type AccessToken = {
 	/**
 	 * @uniqueItems true
 	 */
-	"trusted-certs"?: string[];
+	["trusted-certs"]?: string[];
 	/**
 	 * @uniqueItems true
 	 */
-	"allowed-origins"?: string[];
+	["allowed-origins"]?: string[];
 	realm_access?: Access;
 	resource_access?: {
 		[key: string]: Access;
@@ -556,8 +556,8 @@ export type ClientTypeRepresentation = {
 };
 
 export type ClientTypesRepresentation = {
-	"client-types"?: ClientTypeRepresentation[];
-	"global-client-types"?: ClientTypeRepresentation[];
+	["client-types"]?: ClientTypeRepresentation[];
+	["global-client-types"]?: ClientTypeRepresentation[];
 };
 
 export type ComponentExportRepresentation = {
@@ -610,7 +610,7 @@ export type ConfigPropertyRepresentation = {
 	label?: string;
 	helpText?: string;
 	type?: string;
-	defaultValue?: undefined;
+	defaultValue?: void;
 	options?: string[];
 	secret?: boolean;
 	required?: boolean;
@@ -618,7 +618,7 @@ export type ConfigPropertyRepresentation = {
 };
 
 export type Confirmation = {
-	"x5t#S256"?: string;
+	["x5t#S256"]?: string;
 	jkt?: string;
 };
 
@@ -868,22 +868,22 @@ export type IdentityProviderRepresentation = {
 
 export type InstallationAdapterConfig = {
 	realm?: string;
-	"realm-public-key"?: string;
-	"auth-server-url"?: string;
-	"ssl-required"?: string;
-	"bearer-only"?: boolean;
+	["realm-public-key"]?: string;
+	["auth-server-url"]?: string;
+	["ssl-required"]?: string;
+	["bearer-only"]?: boolean;
 	resource?: string;
-	"public-client"?: boolean;
-	"verify-token-audience"?: boolean;
+	["public-client"]?: boolean;
+	["verify-token-audience"]?: boolean;
 	credentials?: {
 		[key: string]: any;
 	};
-	"use-resource-role-mappings"?: boolean;
+	["use-resource-role-mappings"]?: boolean;
 	/**
 	 * @format int32
 	 */
-	"confidential-port"?: number;
-	"policy-enforcer"?: PolicyEnforcerConfig;
+	["confidential-port"]?: number;
+	["policy-enforcer"]?: PolicyEnforcerConfig;
 };
 
 export type KeyMetadataRepresentation = {
@@ -1007,7 +1007,7 @@ export type MembershipType = "MANAGED" | "UNMANAGED";
 export type MethodConfig = {
 	method?: string;
 	scopes?: string[];
-	"scopes-enforcement-mode"?: ScopeEnforcementMode;
+	["scopes-enforcement-mode"]?: ScopeEnforcementMode;
 };
 
 export type MultivaluedHashMapStringComponentExportRepresentation = {
@@ -1131,7 +1131,7 @@ export type PathCacheConfig = {
 	/**
 	 * @format int32
 	 */
-	"max-entries"?: number;
+	["max-entries"]?: number;
 	/**
 	 * @format int64
 	 */
@@ -1145,8 +1145,8 @@ export type PathConfig = {
 	methods?: MethodConfig[];
 	scopes?: string[];
 	id?: string;
-	"enforcement-mode"?: EnforcementMode;
-	"claim-information-point"?: {
+	["enforcement-mode"]?: EnforcementMode;
+	["claim-information-point"]?: {
 		[key: string]: {
 			[key: string]: any;
 		};
@@ -1171,20 +1171,20 @@ export type Permission = {
 export type PolicyEnforcementMode = "DISABLED" | "ENFORCING" | "PERMISSIVE";
 
 export type PolicyEnforcerConfig = {
-	"enforcement-mode"?: EnforcementMode;
+	["enforcement-mode"]?: EnforcementMode;
 	paths?: PathConfig[];
-	"path-cache"?: PathCacheConfig;
-	"lazy-load-paths"?: boolean;
-	"on-deny-redirect-to"?: string;
-	"user-managed-access"?: UserManagedAccessConfig;
-	"claim-information-point"?: {
+	["path-cache"]?: PathCacheConfig;
+	["lazy-load-paths"]?: boolean;
+	["on-deny-redirect-to"]?: string;
+	["user-managed-access"]?: UserManagedAccessConfig;
+	["claim-information-point"]?: {
 		[key: string]: {
 			[key: string]: any;
 		};
 	};
-	"http-method-as-scope"?: boolean;
+	["http-method-as-scope"]?: boolean;
 	realm?: string;
-	"auth-server-url"?: string;
+	["auth-server-url"]?: string;
 	credentials?: {
 		[key: string]: any;
 	};
@@ -1265,7 +1265,7 @@ export type PolicyResultRepresentation = {
 
 export type PropertyConfig = {
 	applicable?: boolean;
-	value?: undefined;
+	value?: void;
 };
 
 export type ProtocolMapperEvaluationRepresentation = {
@@ -1298,12 +1298,12 @@ export type ProtocolMapperRepresentation = {
 export type PublishedRealmRepresentation = {
 	realm?: string;
 	public_key?: string;
-	"token-service"?: string;
-	"account-service"?: string;
+	["token-service"]?: string;
+	["account-service"]?: string;
 	/**
 	 * @format int32
 	 */
-	"tokens-not-before"?: number;
+	["tokens-not-before"]?: number;
 };
 
 export type RealmEventsConfigRepresentation = {
@@ -2024,13 +2024,13 @@ export type WorkflowRepresentation = {
 	name?: string;
 	uses?: string;
 	enabled?: boolean;
-	on?: undefined;
-	"reset-on"?: undefined;
+	on?: void;
+	["reset-on"]?: void;
 	recurring?: boolean;
-	if?: WorkflowConditionRepresentation[];
+	["if"]?: WorkflowConditionRepresentation[];
 	steps?: WorkflowStepRepresentation[];
 	state?: WorkflowStateRepresentation;
-	with?: MultivaluedHashMapStringString;
+	["with"]?: MultivaluedHashMapStringString;
 	onValues?: string[];
 	onEventsReset?: string[];
 };

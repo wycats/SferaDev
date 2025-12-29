@@ -2,12 +2,22 @@
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"workspaces": {
 		".": {
-			"entry": ["turbo.json"]
+			"entry": ["turbo.json", ".github/workflows/scripts/*.ts"]
 		},
 		"apps/website": {
-			"entry": ["app/**/*.{ts,tsx}", "lib/**/*.ts", "components/**/*.tsx"],
+			"entry": ["app/**/*.{ts,tsx}", "lib/**/*.ts", "components/**/*.tsx", "vercel.ts"],
 			"project": ["**/*.{ts,tsx}"],
 			"ignore": ["**/*.d.ts"]
+		},
+		"apps/openapi": {
+			"entry": ["src/app/**/*.{ts,tsx}", "src/lib/**/*.ts", "src/components/**/*.tsx"],
+			"project": ["src/**/*.{ts,tsx}"],
+			"ignore": ["**/*.d.ts"],
+			"ignoreDependencies": ["tailwindcss", "tw-animate-css"]
+		},
+		"apps/vscode-ai-gateway": {
+			"project": ["src/**/*.ts"],
+			"ignoreDependencies": ["@types/json-schema"]
 		},
 		"packages/ai-gateway-proxy": {
 			"entry": ["src/index.ts"],
@@ -19,47 +29,64 @@
 		},
 		"packages/openapi-utils": {
 			"entry": ["src/index.ts"],
-			"project": ["src/**/*.{ts,tsx}"]
+			"project": ["src/**/*.{ts,tsx}"],
+			"ignoreDependencies": ["@types/react", "@types/react-dom", "react", "react-dom"]
 		},
 		"packages/vercel-api-js": {
 			"entry": ["src/index.ts", "src/mcp.ts"],
 			"project": ["src/**/*.ts"],
-			"ignore": ["src/generated/**"]
+			"ignore": ["src/generated/**"],
+			"ignoreDependencies": ["@kubb/core", "@sferadev/openapi-utils"],
+			"includeEntryExports": false
 		},
 		"packages/v0-api": {
 			"entry": ["src/index.ts", "src/mcp.ts"],
 			"project": ["src/**/*.ts"],
-			"ignore": ["src/generated/**"]
+			"ignore": ["src/generated/**"],
+			"ignoreDependencies": [
+				"@kubb/core",
+				"@kubb/plugin-zod",
+				"@kubb/react",
+				"@sferadev/openapi-utils"
+			],
+			"includeEntryExports": false
 		},
 		"packages/cloudflare-api": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
+			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
+			"project": ["src/**/*.ts"],
+			"includeEntryExports": false
 		},
 		"packages/netlify-api": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
+			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
+			"project": ["src/**/*.ts"],
+			"includeEntryExports": false
 		},
 		"packages/zoom-api-js": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
+			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
+			"project": ["src/**/*.ts"],
+			"includeEntryExports": false
 		},
 		"packages/keycloak-api": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
+			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
+			"project": ["src/**/*.ts"],
+			"includeEntryExports": false
 		},
 		"packages/nuki-api-js": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
+			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
+			"project": ["src/**/*.ts"],
+			"includeEntryExports": false
 		},
 		"packages/litellm-api": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
-		},
-		"packages/dhis2-openapi": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
+			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
+			"project": ["src/**/*.ts"],
+			"includeEntryExports": false
 		},
 		"configs/tsconfig": {}
 	},
-	"ignoreWorkspaces": ["configs/tsconfig"]
+	"ignoreWorkspaces": ["configs/tsconfig"],
+	"ignoreExportsUsedInFile": true,
+	"rules": {
+		"duplicates": "off",
+		"optionalPeerDependencies": "off"
+	}
 }

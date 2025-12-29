@@ -1,103 +1,105 @@
+import { usePluginManager } from "@kubb/core/hooks";
 import type { PluginClient } from "@kubb/plugin-client";
-import { createReactGenerator } from "@kubb/plugin-oas";
+import { createReactGenerator } from "@kubb/plugin-oas/generators";
 import { useOas, useOperationManager } from "@kubb/plugin-oas/hooks";
 import { getBanner, getFooter } from "@kubb/plugin-oas/utils";
-import { File, useApp } from "@kubb/react";
+import { File } from "@kubb/react-fabric";
 import c from "case";
 
-export const extraGenerator = createReactGenerator<PluginClient>({
-	name: "extra",
-	Operations({ operations }) {
-		const { pluginManager, plugin } = useApp<PluginClient>();
-		const oas = useOas();
-		const { getFile, getName } = useOperationManager();
+export const extraGenerator: ReturnType<typeof createReactGenerator<PluginClient>> =
+	createReactGenerator<PluginClient>({
+		name: "extra",
+		Operations({ operations, generator, plugin }) {
+			const pluginManager = usePluginManager();
+			const oas = useOas();
+			const { getFile, getName } = useOperationManager(generator);
 
-		const fileName = "extra";
-		const file = pluginManager.getFile({ name: fileName, extname: ".ts", pluginKey: plugin.key });
+			const fileName = "extra";
+			const file = pluginManager.getFile({ name: fileName, extname: ".ts", pluginKey: plugin.key });
 
-		const imports = operations.map((operation) => {
-			const name = getName(operation, {
-				type: "function",
+			const imports = operations.map((operation) => {
+				const name = getName(operation, {
+					type: "function",
+				});
+
+				return (
+					<File.Import key={name} name={[name]} root={file.path} path={getFile(operation).path} />
+				);
 			});
 
-			return (
-				<File.Import key={name} name={[name]} root={file.path} path={getFile(operation).path} />
-			);
-		});
-
-		const tags = Array.from(
-			new Set(
-				operations.flatMap((operation) =>
-					operation.getTags().map((tag: { name: string }) => tag.name),
+			const tags = Array.from(
+				new Set(
+					operations.flatMap((operation) =>
+						operation.getTags().map((tag: { name: string }) => tag.name),
+					),
 				),
-			),
-		);
+			);
 
-		const operationsByPath = Object.fromEntries(
-			operations
-				.filter(
-					(operation) =>
-						["GET", "POST", "PUT", "PATCH", "DELETE"].includes(operation.method.toUpperCase()) &&
-						operation.getOperationId() !== undefined,
-				)
-				.map((operation) => [
-					`${operation.method.toUpperCase()} ${operation.path}`,
-					operation.getOperationId(),
-				]),
-		);
-
-		const operationsByTag = Object.fromEntries(
-			tags.map((name) => [
-				c.camel(name.toLowerCase()),
+			const operationsByPath = Object.fromEntries(
 				operations
-					.filter((operation) => {
-						return operation
-							.getTags()
-							.map((tag: { name: string }) => tag.name)
-							.includes(name);
-					})
-					.map((operation) => operation.getOperationId()),
-			]),
-		);
+					.filter(
+						(operation) =>
+							["GET", "POST", "PUT", "PATCH", "DELETE"].includes(operation.method.toUpperCase()) &&
+							operation.getOperationId() !== undefined,
+					)
+					.map((operation) => [
+						`${operation.method.toUpperCase()} ${operation.path}`,
+						operation.getOperationId(),
+					]),
+			);
 
-		const tagDictionary = Object.fromEntries(
-			tags.map((name) => [
-				c.camel(name.toLowerCase()),
-				operations.reduce(
-					(acc, operation) => {
-						const upperMethod = operation.method.toUpperCase();
-						if (
-							operation
+			const operationsByTag = Object.fromEntries(
+				tags.map((name) => [
+					c.camel(name.toLowerCase()),
+					operations
+						.filter((operation) => {
+							return operation
 								.getTags()
 								.map((tag: { name: string }) => tag.name)
-								.includes(name) &&
-							["GET", "POST", "PUT", "PATCH", "DELETE"].includes(upperMethod) &&
-							operation?.getOperationId() !== undefined
-						) {
-							acc[upperMethod] = acc[upperMethod] ?? [];
-							acc[upperMethod].push(operation.getOperationId());
-						}
+								.includes(name);
+						})
+						.map((operation) => operation.getOperationId()),
+				]),
+			);
 
-						return acc;
-					},
-					{} as Record<string, string[]>,
-				),
-			]),
-		);
+			const tagDictionary = Object.fromEntries(
+				tags.map((name) => [
+					c.camel(name.toLowerCase()),
+					operations.reduce(
+						(acc, operation) => {
+							const upperMethod = operation.method.toUpperCase();
+							if (
+								operation
+									.getTags()
+									.map((tag: { name: string }) => tag.name)
+									.includes(name) &&
+								["GET", "POST", "PUT", "PATCH", "DELETE"].includes(upperMethod) &&
+								operation?.getOperationId() !== undefined
+							) {
+								acc[upperMethod] = acc[upperMethod] ?? [];
+								acc[upperMethod].push(operation.getOperationId());
+							}
 
-		return (
-			// @ts-expect-error - JSX runtime module resolution issue
-			<File
-				baseName={file.baseName}
-				path={file.path}
-				meta={file.meta}
-				banner={getBanner({ oas, output: plugin.options.output })}
-				footer={getFooter({ oas, output: plugin.options.output })}
-			>
-				{imports}
+							return acc;
+						},
+						{} as Record<string, string[]>,
+					),
+				]),
+			);
 
-				<File.Source>
-					{`
+			return (
+				<File
+					baseName={file.baseName}
+					path={file.path}
+					meta={file.meta}
+					// @ts-expect-error conflict with react-fabric types
+					banner={getBanner({ oas, output: plugin.options.output, config: pluginManager.config })}
+					footer={getFooter({ oas, output: plugin.options.output })}
+				>
+					{imports}
+
+					<File.Source>
+						{`
         export const operationsByPath = {
             ${Object.entries(operationsByPath)
 							.map(([path, operation]) => `"${path}": ${operation}`)
@@ -120,8 +122,8 @@ export const extraGenerator = createReactGenerator<PluginClient>({
 							.join(",\n")}
         } as const;
         `}
-				</File.Source>
-			</File>
-		);
-	},
-});
+					</File.Source>
+				</File>
+			);
+		},
+	});

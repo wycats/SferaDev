@@ -27393,7 +27393,7 @@ export type UploadWebinarBrandingVBRequestBody = {
 	 * @example true
 	 * @default false
 	 */
-	default?: boolean;
+	["default"]?: boolean;
 	/**
 	 * Whether to set the virtual background file as the new default for all panelists. This includes panelists not currently assigned a default virtual background.
 	 *

@@ -3,7 +3,7 @@ import { isOptional, type Operation } from "@kubb/oas";
 import type { PluginClient } from "@kubb/plugin-client";
 import type { OperationSchemas } from "@kubb/plugin-oas";
 import { getComments, getPathParams } from "@kubb/plugin-oas/utils";
-import { File, Function as FunctionDeclaration, FunctionParams } from "@kubb/react";
+import { File, Function as FunctionDeclaration, FunctionParams } from "@kubb/react-fabric";
 
 export function getParams({
 	paramsCasing,
@@ -35,17 +35,13 @@ export function getParams({
 					: undefined,
 				queryParams: typeSchemas.queryParams?.name
 					? {
-							type: isOptional(typeSchemas.queryParams?.schema)
-								? `${typeSchemas.queryParams?.name} | undefined`
-								: typeSchemas.queryParams?.name,
+							type: typeSchemas.queryParams?.name,
 							optional: isOptional(typeSchemas.queryParams?.schema),
 						}
 					: undefined,
 				headers: typeSchemas.headerParams?.name
 					? {
-							type: isOptional(typeSchemas.headerParams?.schema)
-								? `${typeSchemas.headerParams?.name} | undefined`
-								: typeSchemas.headerParams?.name,
+							type: typeSchemas.headerParams?.name,
 							optional: isOptional(typeSchemas.headerParams?.schema),
 						}
 					: undefined,
@@ -60,7 +56,7 @@ export function getParams({
 	});
 }
 
-export const ClientOperation: any = ({
+export function ClientOperation({
 	name,
 	isExportable = true,
 	isIndexable = true,
@@ -91,7 +87,7 @@ export const ClientOperation: any = ({
 	zodSchemas: OperationSchemas | undefined;
 	operation: Operation;
 	children?: any;
-}) => {
+}) {
 	const path = new URLPath(operation.path, { casing: paramsCasing });
 	const contentType = operation.getContentType();
 	const isFormData = contentType === "multipart/form-data";
@@ -175,7 +171,6 @@ export const ClientOperation: any = ({
 	);
 
 	return (
-		// @ts-expect-error - JSX runtime module resolution issue
 		<File.Source name={name} isExportable={isExportable} isIndexable={isIndexable}>
 			<FunctionDeclaration
 				name={name}
@@ -207,6 +202,6 @@ export const ClientOperation: any = ({
 			</FunctionDeclaration>
 		</File.Source>
 	);
-};
+}
 
 ClientOperation.getParams = getParams;

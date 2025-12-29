@@ -164,7 +164,7 @@ export const deleteConsent = (variables: DeleteConsentVariables, signal?: AbortS
 
 export type GetCredentialsQueryParams = {
 	type?: string;
-	"user-credentials"?: boolean;
+	["user-credentials"]?: boolean;
 };
 
 export type GetCredentialsError = Fetcher.ErrorWrapper<undefined>;

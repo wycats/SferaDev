@@ -459,21 +459,21 @@ export type WorkersVersionPost = {
 			 * @example staging
 			 * @maxLength 63
 			 */
-			"workers/alias"?: string;
+			["workers/alias"]?: string;
 			/**
 			 * Human-readable message about the version. Truncated to 100 bytes.
 			 *
 			 * @example Fixed worker code.
 			 * @maxLength 100
 			 */
-			"workers/message"?: string;
+			["workers/message"]?: string;
 			/**
 			 * User-provided identifier for the version.
 			 *
 			 * @example any-identifier-from-external-system
 			 * @maxLength 25
 			 */
-			"workers/tag"?: string;
+			["workers/tag"]?: string;
 		};
 		bindings?: Schemas.WorkersBindings;
 		compatibility_date?: Schemas.WorkersCompatibilityDate;

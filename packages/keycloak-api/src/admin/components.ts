@@ -1772,7 +1772,7 @@ export type GetAdminRealmsRealmClientPoliciesPoliciesPathParams = {
 };
 
 export type GetAdminRealmsRealmClientPoliciesPoliciesQueryParams = {
-	"include-global-policies"?: boolean;
+	["include-global-policies"]?: boolean;
 };
 
 export type GetAdminRealmsRealmClientPoliciesPoliciesError = Fetcher.ErrorWrapper<undefined>;
@@ -1840,7 +1840,7 @@ export type GetAdminRealmsRealmClientPoliciesProfilesPathParams = {
 };
 
 export type GetAdminRealmsRealmClientPoliciesProfilesQueryParams = {
-	"include-global-profiles"?: boolean;
+	["include-global-profiles"]?: boolean;
 };
 
 export type GetAdminRealmsRealmClientPoliciesProfilesError = Fetcher.ErrorWrapper<undefined>;

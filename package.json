@@ -5,9 +5,8 @@
 		"build": "turbo run build",
 		"dev": "turbo run dev",
 		"generate": "turbo run generate",
-		"check": "biome check .",
+		"check": "biome check . && knip --config configs/knip.json",
 		"check:fix": "biome check . --write",
-		"format": "biome format . --write",
 		"tsc": "turbo run tsc",
 		"test": "turbo run test",
 		"knip": "knip --config configs/knip.json",
@@ -25,7 +24,8 @@
 		"lefthook": "catalog:",
 		"tsx": "catalog:",
 		"turbo": "catalog:",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"zod": "catalog:"
 	},
 	"packageManager": "pnpm@10.26.2",
 	"engines": {

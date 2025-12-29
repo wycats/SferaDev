@@ -305,9 +305,6 @@ export type RealtimekitDeleteParticipant = {
 export type RealtimekitGenericError = Schemas.RealtimekitGenericErrorResponse;
 
 export type RealtimekitGetActiveRecording = {
-	/**
-	 * Data returned by the operation
-	 */
 	data: Schemas.RealtimekitRecording;
 	/**
 	 * Success status of the operation
@@ -408,9 +405,6 @@ export type RealtimekitGetOverallStats = {
 };
 
 export type RealtimekitGetParticipant = {
-	/**
-	 * Data returned by the operation
-	 */
 	data: Schemas.RealtimekitParticipant;
 	/**
 	 * Success status of the operation
@@ -521,10 +515,10 @@ export type RealtimekitGetParticipantDataFromPeerId = {
 					}[];
 					audio_producer_cumulative?: {
 						packet_loss?: {
-							"10_or_greater_event_fraction"?: number;
-							"25_or_greater_event_fraction"?: number;
-							"50_or_greater_event_fraction"?: number;
-							"5_or_greater_event_fraction"?: number;
+							["10_or_greater_event_fraction"]?: number;
+							["25_or_greater_event_fraction"]?: number;
+							["50_or_greater_event_fraction"]?: number;
+							["5_or_greater_event_fraction"]?: number;
 							avg?: number;
 						};
 						quality_mos?: {
@@ -534,9 +528,9 @@ export type RealtimekitGetParticipantDataFromPeerId = {
 							p90?: number;
 						};
 						rtt?: {
-							"100ms_or_greater_event_fraction"?: number;
-							"250ms_or_greater_event_fraction"?: number;
-							"500ms_or_greater_event_fraction"?: number;
+							["100ms_or_greater_event_fraction"]?: number;
+							["250ms_or_greater_event_fraction"]?: number;
+							["500ms_or_greater_event_fraction"]?: number;
 							avg?: number;
 						};
 					};
@@ -817,7 +811,7 @@ export type RealtimekitRegenToken = {
 	success?: boolean;
 };
 
-export type RulesetsEmpty = undefined;
+export type RulesetsEmpty = void;
 
 /**
  * A response object.
@@ -841,9 +835,6 @@ export type RulesetsFailure = {
 export type RulesetsManagedTransforms = {
 	errors: Schemas.RulesetsErrors;
 	messages: Schemas.RulesetsMessages;
-	/**
-	 * A result.
-	 */
 	result: Schemas.RulesetsManagedTransforms;
 	/**
 	 * Whether the API call was successful.
@@ -897,9 +888,6 @@ export type RulesetsRulesets = {
 export type RulesetsUrlNormalization = {
 	errors: Schemas.RulesetsErrors;
 	messages: Schemas.RulesetsMessages;
-	/**
-	 * A result.
-	 */
 	result: Schemas.RulesetsUrlNormalization;
 	/**
 	 * Whether the API call was successful.
@@ -953,9 +941,6 @@ export type SnippetsNull = {
 export type SnippetsSnippet = {
 	errors: Schemas.SnippetsErrors;
 	messages: Schemas.SnippetsMessages;
-	/**
-	 * A result.
-	 */
 	result: Schemas.SnippetsSnippet;
 	/**
 	 * Whether the API call was successful.
@@ -978,9 +963,6 @@ export type SnippetsSnippetContent = {
 export type SnippetsSnippetRules = {
 	errors: Schemas.SnippetsErrors;
 	messages: Schemas.SnippetsMessages;
-	/**
-	 * A result.
-	 */
 	result: Schemas.SnippetsSnippetRules;
 	/**
 	 * Whether the API call was successful.

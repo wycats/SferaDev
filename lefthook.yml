@@ -1,10 +1,6 @@
 pre-commit:
   parallel: false
   commands:
-    format:
-      glob: "*.{js,ts,tsx,json,md}"
-      run: pnpm format
-      stage_fixed: true
     check:
       glob: "*.{js,ts,tsx,json}"
       run: pnpm check:fix

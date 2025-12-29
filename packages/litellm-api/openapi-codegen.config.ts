@@ -13,6 +13,8 @@ export default defineConfig({
 		outputDir: "src/api",
 		to: async (context) => {
 			context.openAPIDocument = ignorePassThroughPaths(context.openAPIDocument);
+			context.openAPIDocument = moveDefsToComponents(context.openAPIDocument);
+			context.openAPIDocument = deduplicateOperationIds(context.openAPIDocument);
 			pathReturnFixCatchAll(context.openAPIDocument);
 
 			fixAPIReturns(context.openAPIDocument, [
@@ -53,6 +55,31 @@ function removeDuplicatedTags(openAPIObject: Context["openAPIDocument"]) {
 	};
 }
 
+// Deduplicate operationIds by appending a numeric suffix to duplicates
+function deduplicateOperationIds(openAPIObject: Context["openAPIDocument"]) {
+	const operationIdCount: Record<string, number> = {};
+	const methods = ["get", "post", "put", "patch", "delete"] as const;
+
+	for (const pathItem of Object.values(openAPIObject.paths)) {
+		for (const method of methods) {
+			const operation = pathItem[method];
+			if (!operation?.operationId) continue;
+
+			const originalId = operation.operationId;
+			if (operationIdCount[originalId] === undefined) {
+				operationIdCount[originalId] = 0;
+			}
+			operationIdCount[originalId] += 1;
+
+			if (operationIdCount[originalId] > 1) {
+				operation.operationId = `${originalId}_${operationIdCount[originalId]}`;
+			}
+		}
+	}
+
+	return openAPIObject;
+}
+
 // Remove all pass-through paths. We don't need them in the client and they are causing problems with the codegen
 // because all ops have the same operationId
 // pass-through paths can be identified by the path ending in {endpoint}
@@ -63,6 +90,68 @@ function ignorePassThroughPaths(openAPIObject: Context["openAPIDocument"]) {
 		...openAPIObject,
 		paths: Object.fromEntries(filteredPaths.map((path) => [path, paths[path]])),
 	};
+}
+
+// Move inline $defs to #/components/schemas and update all references.
+// The OpenAPI spec uses JSON Schema $defs which are not supported by @openapi-codegen/typescript.
+function moveDefsToComponents(openAPIObject: Context["openAPIDocument"]) {
+	const collectedDefs: Record<string, any> = {};
+
+	// Recursively find and collect all $defs, then remove them from the source
+	function collectDefs(obj: any): any {
+		if (typeof obj !== "object" || obj === null) return obj;
+
+		if (Array.isArray(obj)) {
+			return obj.map(collectDefs);
+		}
+
+		const result: Record<string, any> = {};
+		for (const [key, value] of Object.entries(obj)) {
+			if (key === "$defs" && typeof value === "object" && value !== null) {
+				// Collect all $defs into the shared collection
+				Object.assign(collectedDefs, value);
+			} else {
+				result[key] = collectDefs(value);
+			}
+		}
+		return result;
+	}
+
+	// Update all $ref from #/$defs/... to #/components/schemas/...
+	function updateRefs(obj: any): any {
+		if (typeof obj !== "object" || obj === null) return obj;
+
+		if (Array.isArray(obj)) {
+			return obj.map(updateRefs);
+		}
+
+		const result: Record<string, any> = {};
+		for (const [key, value] of Object.entries(obj)) {
+			if (key === "$ref" && typeof value === "string" && value.startsWith("#/$defs/")) {
+				result[key] = value.replace("#/$defs/", "#/components/schemas/");
+			} else {
+				result[key] = updateRefs(value);
+			}
+		}
+		return result;
+	}
+
+	// First pass: collect all $defs and remove them
+	let result = collectDefs(openAPIObject);
+
+	// Second pass: update all references
+	result = updateRefs(result);
+
+	// Merge collected $defs into components.schemas (also update refs within the defs themselves)
+	if (Object.keys(collectedDefs).length > 0) {
+		result.components = result.components || {};
+		result.components.schemas = {
+			...result.components.schemas,
+			...updateRefs(collectedDefs),
+		};
+	}
+
+	return result;
 }
 
 // The OpenAPI declaration uses empty objects for some return types. Code-gen uses 'void' in that case.

@@ -4,7 +4,6 @@ const packages = [
 	"netlify-api",
 	"keycloak-api",
 	"zoom-api-js",
-	"dhis2-openapi",
 	"nuki-api-js",
 	"litellm-api",
 	"v0-api",

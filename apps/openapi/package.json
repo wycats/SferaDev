@@ -12,7 +12,6 @@
 		"@auth/drizzle-adapter": "catalog:",
 		"@mcpauth/auth": "catalog:",
 		"@modelcontextprotocol/sdk": "catalog:",
-		"@radix-ui/react-select": "catalog:",
 		"@radix-ui/react-slot": "catalog:",
 		"@radix-ui/react-tabs": "catalog:",
 		"class-variance-authority": "catalog:",
@@ -36,6 +35,7 @@
 		"@types/react-dom": "catalog:",
 		"dotenv": "catalog:",
 		"drizzle-kit": "catalog:",
+		"postcss": "catalog:",
 		"tailwindcss": "catalog:",
 		"tw-animate-css": "catalog:",
 		"typescript": "catalog:"

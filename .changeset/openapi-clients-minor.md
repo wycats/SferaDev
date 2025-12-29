@@ -7,7 +7,6 @@
 "keycloak-api": minor
 "nuki-api-js": minor
 "litellm-api": minor
-"dhis2-openapi": minor
 ---
 
 Migrate OpenAPI clients to SferaDev monorepo with improved build configuration, updated dependencies, and enhanced TypeScript support.

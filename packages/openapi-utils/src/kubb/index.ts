@@ -13,6 +13,12 @@ export const baseConfig: Omit<UserConfig, "input"> = {
 	root: ".",
 	output: {
 		path: "./src/generated",
+		extension: {
+			".ts": "",
+		},
+		format: "biome",
+		lint: false,
+		clean: true,
 	},
 	plugins: [
 		pluginOas({
@@ -34,7 +40,6 @@ export const baseConfig: Omit<UserConfig, "input"> = {
 			dateType: "string",
 			unknownType: "unknown",
 			optionalType: "questionTokenAndUndefined",
-			oasType: false,
 		}),
 		pluginClient({
 			output: {
@@ -47,17 +52,17 @@ export const baseConfig: Omit<UserConfig, "input"> = {
 			paramsType: "object",
 			urlType: "export",
 			importPath: "../utils/fetcher",
-			generators: [clientGenerator as any, extraGenerator as any],
+			generators: [clientGenerator, extraGenerator] as any[], // Workaround for generator mismatches
 		}),
 		pluginZod({
 			output: {
 				path: "./schemas.ts",
 				barrelType: false,
 			},
-			typed: false, // Workaround for https://github.com/kubb-labs/kubb/issues/1775
-			dateType: "date",
+			dateType: "string",
 			unknownType: "unknown",
-			version: "3",
+			importPath: "zod",
+			version: "4",
 		}),
 		pluginMcp({
 			output: {
@@ -65,7 +70,7 @@ export const baseConfig: Omit<UserConfig, "input"> = {
 				barrelType: false,
 			},
 			client: { importPath: "../utils/fetcher" },
-			generators: [toolsGenerator as any, serverGenerator as any],
+			generators: [toolsGenerator, serverGenerator] as any[], // Workaround for generator mismatches
 		}),
 	],
 };

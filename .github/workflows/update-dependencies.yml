@@ -44,7 +44,7 @@ jobs:
           pnpm biome migrate --write
 
           # Fix formatting and linting issues
-          pnpm biome check --write
+          pnpm check:fix
 
           # Commit changes
           git add .

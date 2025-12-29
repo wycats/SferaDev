@@ -32,9 +32,6 @@ jobs:
       - name: Install Dependencies
         run: pnpm i
 
-      - name: Check formatting
-        run: pnpm biome format .
-
       - name: Check linting
         run: pnpm check
 

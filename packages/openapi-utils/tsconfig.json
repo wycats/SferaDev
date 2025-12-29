@@ -2,13 +2,13 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": "@sferadev/tsconfig/base.json",
 	"compilerOptions": {
-		"target": "ESNext",
-		"lib": ["dom", "dom.iterable", "esnext"],
-		"types": ["node"],
-		"noEmit": true,
+		"paths": {
+			"~/*": ["./src/*"]
+		},
 		"jsx": "react-jsx",
-		"jsxImportSource": "@kubb/react"
+		"jsxImportSource": "@kubb/react-fabric",
+		"rootDir": "."
 	},
-	"include": ["src"],
-	"exclude": ["node_modules", "dist"]
+	// Exclude the generated MCP files because zod v3 uses lazy loading which is very slow to compile
+	"exclude": ["./src/generated/mcp.ts", "./src/generated/schemas-mcp.ts", "./src/mcp.ts"]
 }

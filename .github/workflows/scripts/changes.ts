@@ -5,15 +5,19 @@ import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-async function getChangeDiff() {
+async function getChangeDiff(packagePath: string) {
 	return new Promise<string>((resolve, reject) => {
-		exec("git diff", { maxBuffer: 1024 * 500 }, (error, stdout) => {
-			if (error) {
-				reject(error);
-			} else {
-				resolve(stdout);
-			}
-		});
+		exec(
+			`git diff --ignore-all-space --ignore-blank-lines --minimal -- ${packagePath}`,
+			{ maxBuffer: 1024 * 1024 * 10 },
+			(error, stdout) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve(stdout);
+				}
+			},
+		);
 	});
 }
 
@@ -44,8 +48,10 @@ async function main() {
 	const projectName = process.argv[2];
 	if (!projectName) throw new Error("Project name not provided");
 
+	const packagePath = `packages/${projectName}`;
+
 	try {
-		const diff = await getChangeDiff();
+		const diff = await getChangeDiff(packagePath);
 		if (diff.trim().length === 0) {
 			console.log("No changes detected");
 			return;

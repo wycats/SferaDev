@@ -59,13 +59,29 @@ import type {
 	AssignAliasMutationResponse,
 	AssignAliasPathParams,
 	AssignAliasQueryParams,
-	BuyDomain400,
-	BuyDomain401,
-	BuyDomain403,
-	BuyDomain409,
-	BuyDomain429,
-	BuyDomainMutationResponse,
-	BuyDomainQueryParams,
+	BatchRemoveProjectEnv400,
+	BatchRemoveProjectEnv401,
+	BatchRemoveProjectEnv403,
+	BatchRemoveProjectEnv404,
+	BatchRemoveProjectEnv409,
+	BatchRemoveProjectEnvMutationResponse,
+	BatchRemoveProjectEnvPathParams,
+	BatchRemoveProjectEnvQueryParams,
+	BuyDomains400,
+	BuyDomains401,
+	BuyDomains403,
+	BuyDomains429,
+	BuyDomains500,
+	BuyDomainsMutationResponse,
+	BuyDomainsQueryParams,
+	BuySingleDomain400,
+	BuySingleDomain401,
+	BuySingleDomain403,
+	BuySingleDomain429,
+	BuySingleDomain500,
+	BuySingleDomainMutationResponse,
+	BuySingleDomainPathParams,
+	BuySingleDomainQueryParams,
 	CancelDeployment400,
 	CancelDeployment401,
 	CancelDeployment403,
@@ -76,6 +92,8 @@ import type {
 	CheckDomainPrice400,
 	CheckDomainPrice401,
 	CheckDomainPrice403,
+	CheckDomainPrice404,
+	CheckDomainPrice500,
 	CheckDomainPriceQueryParams,
 	CheckDomainPriceQueryResponse,
 	CheckDomainStatus400,
@@ -92,6 +110,13 @@ import type {
 	CompleteRollingReleaseMutationResponse,
 	CompleteRollingReleasePathParams,
 	CompleteRollingReleaseQueryParams,
+	ConnectIntegrationResourceToProject400,
+	ConnectIntegrationResourceToProject401,
+	ConnectIntegrationResourceToProject403,
+	ConnectIntegrationResourceToProject404,
+	ConnectIntegrationResourceToProjectMutationResponse,
+	ConnectIntegrationResourceToProjectPathParams,
+	ConnectIntegrationResourceToProjectQueryParams,
 	CreateAccessGroup400,
 	CreateAccessGroup401,
 	CreateAccessGroup403,
@@ -115,6 +140,11 @@ import type {
 	CreateCheckMutationResponse,
 	CreateCheckPathParams,
 	CreateCheckQueryParams,
+	CreateConfigurableLogDrain400,
+	CreateConfigurableLogDrain401,
+	CreateConfigurableLogDrain403,
+	CreateConfigurableLogDrainMutationResponse,
+	CreateConfigurableLogDrainQueryParams,
 	CreateCustomEnvironment400,
 	CreateCustomEnvironment401,
 	CreateCustomEnvironment402,
@@ -132,6 +162,11 @@ import type {
 	CreateDeployment500,
 	CreateDeploymentMutationResponse,
 	CreateDeploymentQueryParams,
+	CreateDrain400,
+	CreateDrain401,
+	CreateDrain403,
+	CreateDrainMutationResponse,
+	CreateDrainQueryParams,
 	CreateEdgeConfig400,
 	CreateEdgeConfig401,
 	CreateEdgeConfig402,
@@ -143,6 +178,7 @@ import type {
 	CreateEdgeConfigToken402,
 	CreateEdgeConfigToken403,
 	CreateEdgeConfigToken404,
+	CreateEdgeConfigToken409,
 	CreateEdgeConfigTokenMutationResponse,
 	CreateEdgeConfigTokenPathParams,
 	CreateEdgeConfigTokenQueryParams,
@@ -158,6 +194,16 @@ import type {
 	CreateExperimentationItem404,
 	CreateExperimentationItemMutationResponse,
 	CreateExperimentationItemPathParams,
+	CreateIntegrationStoreDirect400,
+	CreateIntegrationStoreDirect401,
+	CreateIntegrationStoreDirect402,
+	CreateIntegrationStoreDirect403,
+	CreateIntegrationStoreDirect404,
+	CreateIntegrationStoreDirect409,
+	CreateIntegrationStoreDirect429,
+	CreateIntegrationStoreDirect500,
+	CreateIntegrationStoreDirectMutationResponse,
+	CreateIntegrationStoreDirectQueryParams,
 	CreateLogDrain400,
 	CreateLogDrain401,
 	CreateLogDrain403,
@@ -169,19 +215,25 @@ import type {
 	CreateOrTransferDomain403,
 	CreateOrTransferDomain404,
 	CreateOrTransferDomain409,
-	CreateOrTransferDomain500,
 	CreateOrTransferDomainMutationResponse,
 	CreateOrTransferDomainQueryParams,
 	CreateProject400,
 	CreateProject401,
 	CreateProject402,
 	CreateProject403,
+	CreateProject404,
 	CreateProject409,
+	CreateProject428,
+	CreateProject429,
+	CreateProject500,
 	CreateProjectEnv400,
 	CreateProjectEnv401,
 	CreateProjectEnv402,
 	CreateProjectEnv403,
+	CreateProjectEnv404,
 	CreateProjectEnv409,
+	CreateProjectEnv429,
+	CreateProjectEnv500,
 	CreateProjectEnvMutationResponse,
 	CreateProjectEnvPathParams,
 	CreateProjectEnvQueryParams,
@@ -210,6 +262,12 @@ import type {
 	CreateSecretMutationResponse,
 	CreateSecretPathParams,
 	CreateSecretQueryParams,
+	CreateSharedEnvVariable400,
+	CreateSharedEnvVariable401,
+	CreateSharedEnvVariable402,
+	CreateSharedEnvVariable403,
+	CreateSharedEnvVariableMutationResponse,
+	CreateSharedEnvVariableQueryParams,
 	CreateTeam400,
 	CreateTeam401,
 	CreateTeam403,
@@ -219,6 +277,19 @@ import type {
 	CreateWebhook403,
 	CreateWebhookMutationResponse,
 	CreateWebhookQueryParams,
+	DangerouslyDeleteBySrcImages400,
+	DangerouslyDeleteBySrcImages401,
+	DangerouslyDeleteBySrcImages402,
+	DangerouslyDeleteBySrcImages403,
+	DangerouslyDeleteBySrcImages404,
+	DangerouslyDeleteBySrcImagesMutationResponse,
+	DangerouslyDeleteBySrcImagesQueryParams,
+	DangerouslyDeleteByTags400,
+	DangerouslyDeleteByTags401,
+	DangerouslyDeleteByTags403,
+	DangerouslyDeleteByTags404,
+	DangerouslyDeleteByTagsMutationResponse,
+	DangerouslyDeleteByTagsQueryParams,
 	DeleteAccessGroup400,
 	DeleteAccessGroup401,
 	DeleteAccessGroup403,
@@ -244,6 +315,13 @@ import type {
 	DeleteAuthToken404,
 	DeleteAuthTokenMutationResponse,
 	DeleteAuthTokenPathParams,
+	DeleteConfigurableLogDrain400,
+	DeleteConfigurableLogDrain401,
+	DeleteConfigurableLogDrain403,
+	DeleteConfigurableLogDrain404,
+	DeleteConfigurableLogDrainMutationResponse,
+	DeleteConfigurableLogDrainPathParams,
+	DeleteConfigurableLogDrainQueryParams,
 	DeleteConfiguration400,
 	DeleteConfiguration401,
 	DeleteConfiguration403,
@@ -266,10 +344,18 @@ import type {
 	DeleteDomainMutationResponse,
 	DeleteDomainPathParams,
 	DeleteDomainQueryParams,
+	DeleteDrain400,
+	DeleteDrain401,
+	DeleteDrain403,
+	DeleteDrain404,
+	DeleteDrainMutationResponse,
+	DeleteDrainPathParams,
+	DeleteDrainQueryParams,
 	DeleteEdgeConfig400,
 	DeleteEdgeConfig401,
 	DeleteEdgeConfig403,
 	DeleteEdgeConfig404,
+	DeleteEdgeConfig409,
 	DeleteEdgeConfigMutationResponse,
 	DeleteEdgeConfigPathParams,
 	DeleteEdgeConfigQueryParams,
@@ -278,6 +364,7 @@ import type {
 	DeleteEdgeConfigSchema402,
 	DeleteEdgeConfigSchema403,
 	DeleteEdgeConfigSchema404,
+	DeleteEdgeConfigSchema409,
 	DeleteEdgeConfigSchemaMutationResponse,
 	DeleteEdgeConfigSchemaPathParams,
 	DeleteEdgeConfigSchemaQueryParams,
@@ -286,6 +373,7 @@ import type {
 	DeleteEdgeConfigTokens402,
 	DeleteEdgeConfigTokens403,
 	DeleteEdgeConfigTokens404,
+	DeleteEdgeConfigTokens409,
 	DeleteEdgeConfigTokensMutationResponse,
 	DeleteEdgeConfigTokensPathParams,
 	DeleteEdgeConfigTokensQueryParams,
@@ -312,9 +400,24 @@ import type {
 	DeleteProject401,
 	DeleteProject403,
 	DeleteProject409,
+	DeleteProjectClientCert400,
+	DeleteProjectClientCert401,
+	DeleteProjectClientCert403,
+	DeleteProjectClientCert404,
+	DeleteProjectClientCert409,
+	DeleteProjectClientCertMutationResponse,
+	DeleteProjectClientCertPathParams,
+	DeleteProjectClientCertQueryParams,
 	DeleteProjectMutationResponse,
 	DeleteProjectPathParams,
 	DeleteProjectQueryParams,
+	DeleteRedirects400,
+	DeleteRedirects401,
+	DeleteRedirects403,
+	DeleteRedirects404,
+	DeleteRedirects500,
+	DeleteRedirectsMutationResponse,
+	DeleteRedirectsQueryParams,
 	DeleteRollingReleaseConfig400,
 	DeleteRollingReleaseConfig401,
 	DeleteRollingReleaseConfig403,
@@ -329,6 +432,12 @@ import type {
 	DeleteSecretMutationResponse,
 	DeleteSecretPathParams,
 	DeleteSecretQueryParams,
+	DeleteSharedEnvVariable400,
+	DeleteSharedEnvVariable401,
+	DeleteSharedEnvVariable402,
+	DeleteSharedEnvVariable403,
+	DeleteSharedEnvVariableMutationResponse,
+	DeleteSharedEnvVariableQueryParams,
 	DeleteTeam400,
 	DeleteTeam401,
 	DeleteTeam402,
@@ -361,11 +470,22 @@ import type {
 	EditProjectEnv400,
 	EditProjectEnv401,
 	EditProjectEnv403,
+	EditProjectEnv404,
 	EditProjectEnv409,
+	EditProjectEnv429,
+	EditProjectEnv500,
 	EditProjectEnvMutationResponse,
 	EditProjectEnvPathParams,
 	EditProjectEnvQueryParams,
+	EditRedirect400,
+	EditRedirect401,
+	EditRedirect403,
+	EditRedirect404,
+	EditRedirect500,
+	EditRedirectMutationResponse,
+	EditRedirectQueryParams,
 	ExchangeSsoToken400,
+	ExchangeSsoToken403,
 	ExchangeSsoToken404,
 	ExchangeSsoToken500,
 	ExchangeSsoTokenMutationResponse,
@@ -375,6 +495,13 @@ import type {
 	FilterProjectEnvsPathParams,
 	FilterProjectEnvsQueryParams,
 	FilterProjectEnvsQueryResponse,
+	GETV1SecurityFirewallEvents400,
+	GETV1SecurityFirewallEvents401,
+	GETV1SecurityFirewallEvents403,
+	GETV1SecurityFirewallEvents404,
+	GETV1SecurityFirewallEvents500,
+	GETV1SecurityFirewallEventsQueryParams,
+	GETV1SecurityFirewallEventsQueryResponse,
 	GetAccountInfo400,
 	GetAccountInfo401,
 	GetAccountInfo403,
@@ -401,6 +528,12 @@ import type {
 	GetAllChecksPathParams,
 	GetAllChecksQueryParams,
 	GetAllChecksQueryResponse,
+	GetAllLogDrains400,
+	GetAllLogDrains401,
+	GetAllLogDrains403,
+	GetAllLogDrains404,
+	GetAllLogDrainsQueryParams,
+	GetAllLogDrainsQueryResponse,
 	GetAuthToken400,
 	GetAuthToken401,
 	GetAuthToken403,
@@ -412,6 +545,20 @@ import type {
 	GetAuthUser403,
 	GetAuthUser409,
 	GetAuthUserQueryResponse,
+	GetBillingPlans400,
+	GetBillingPlans401,
+	GetBillingPlans403,
+	GetBillingPlans404,
+	GetBillingPlansPathParams,
+	GetBillingPlansQueryParams,
+	GetBillingPlansQueryResponse,
+	GetBulkAvailability400,
+	GetBulkAvailability401,
+	GetBulkAvailability403,
+	GetBulkAvailability429,
+	GetBulkAvailability500,
+	GetBulkAvailabilityMutationResponse,
+	GetBulkAvailabilityQueryParams,
 	GetBypassIp400,
 	GetBypassIp401,
 	GetBypassIp403,
@@ -433,11 +580,26 @@ import type {
 	GetCheckPathParams,
 	GetCheckQueryParams,
 	GetCheckQueryResponse,
+	GetConfigurableLogDrain400,
+	GetConfigurableLogDrain401,
+	GetConfigurableLogDrain403,
+	GetConfigurableLogDrain404,
+	GetConfigurableLogDrainPathParams,
+	GetConfigurableLogDrainQueryParams,
+	GetConfigurableLogDrainQueryResponse,
 	GetConfiguration400,
 	GetConfiguration401,
 	GetConfiguration403,
 	GetConfiguration404,
 	GetConfigurationPathParams,
+	GetConfigurationProducts400,
+	GetConfigurationProducts401,
+	GetConfigurationProducts403,
+	GetConfigurationProducts404,
+	GetConfigurationProducts500,
+	GetConfigurationProductsPathParams,
+	GetConfigurationProductsQueryParams,
+	GetConfigurationProductsQueryResponse,
 	GetConfigurationQueryParams,
 	GetConfigurationQueryResponse,
 	GetConfigurations400,
@@ -445,6 +607,14 @@ import type {
 	GetConfigurations403,
 	GetConfigurationsQueryParams,
 	GetConfigurationsQueryResponse,
+	GetContactInfoSchema400,
+	GetContactInfoSchema401,
+	GetContactInfoSchema403,
+	GetContactInfoSchema429,
+	GetContactInfoSchema500,
+	GetContactInfoSchemaPathParams,
+	GetContactInfoSchemaQueryParams,
+	GetContactInfoSchemaQueryResponse,
 	GetCustomEnvironment400,
 	GetCustomEnvironment401,
 	GetCustomEnvironment403,
@@ -484,14 +654,40 @@ import type {
 	GetDomain401,
 	GetDomain403,
 	GetDomain404,
+	GetDomainAuthCode400,
+	GetDomainAuthCode401,
+	GetDomainAuthCode403,
+	GetDomainAuthCode404,
+	GetDomainAuthCode409,
+	GetDomainAuthCode429,
+	GetDomainAuthCode500,
+	GetDomainAuthCodePathParams,
+	GetDomainAuthCodeQueryParams,
+	GetDomainAuthCodeQueryResponse,
+	GetDomainAvailability400,
+	GetDomainAvailability401,
+	GetDomainAvailability403,
+	GetDomainAvailability404,
+	GetDomainAvailability429,
+	GetDomainAvailability500,
+	GetDomainAvailabilityPathParams,
+	GetDomainAvailabilityQueryParams,
+	GetDomainAvailabilityQueryResponse,
 	GetDomainConfig400,
 	GetDomainConfig401,
 	GetDomainConfig403,
-	GetDomainConfig500,
 	GetDomainConfigPathParams,
 	GetDomainConfigQueryParams,
 	GetDomainConfigQueryResponse,
 	GetDomainPathParams,
+	GetDomainPrice400,
+	GetDomainPrice401,
+	GetDomainPrice403,
+	GetDomainPrice429,
+	GetDomainPrice500,
+	GetDomainPricePathParams,
+	GetDomainPriceQueryParams,
+	GetDomainPriceQueryResponse,
 	GetDomainQueryParams,
 	GetDomainQueryResponse,
 	GetDomains400,
@@ -500,12 +696,28 @@ import type {
 	GetDomains409,
 	GetDomainsQueryParams,
 	GetDomainsQueryResponse,
-	GetDomainTransfer400,
-	GetDomainTransfer401,
-	GetDomainTransfer403,
-	GetDomainTransferPathParams,
-	GetDomainTransferQueryParams,
-	GetDomainTransferQueryResponse,
+	GetDomainTransferIn400,
+	GetDomainTransferIn401,
+	GetDomainTransferIn403,
+	GetDomainTransferIn404,
+	GetDomainTransferIn429,
+	GetDomainTransferIn500,
+	GetDomainTransferInPathParams,
+	GetDomainTransferInQueryParams,
+	GetDomainTransferInQueryResponse,
+	GetDrain400,
+	GetDrain401,
+	GetDrain403,
+	GetDrain404,
+	GetDrainPathParams,
+	GetDrainQueryParams,
+	GetDrainQueryResponse,
+	GetDrains400,
+	GetDrains401,
+	GetDrains403,
+	GetDrains404,
+	GetDrainsQueryParams,
+	GetDrainsQueryResponse,
 	GetEdgeConfig400,
 	GetEdgeConfig401,
 	GetEdgeConfig403,
@@ -603,9 +815,25 @@ import type {
 	GetMember404,
 	GetMemberPathParams,
 	GetMemberQueryResponse,
+	GetOrder400,
+	GetOrder401,
+	GetOrder403,
+	GetOrder404,
+	GetOrder429,
+	GetOrder500,
+	GetOrderPathParams,
+	GetOrderQueryParams,
+	GetOrderQueryResponse,
 	GetProject400,
 	GetProject401,
 	GetProject403,
+	GetProjectClientCerts400,
+	GetProjectClientCerts401,
+	GetProjectClientCerts403,
+	GetProjectClientCerts404,
+	GetProjectClientCertsPathParams,
+	GetProjectClientCertsQueryParams,
+	GetProjectClientCertsQueryResponse,
 	GetProjectDomain400,
 	GetProjectDomain401,
 	GetProjectDomain403,
@@ -645,6 +873,12 @@ import type {
 	GetRecordsPathParams,
 	GetRecordsQueryParams,
 	GetRecordsQueryResponse,
+	GetRedirects400,
+	GetRedirects401,
+	GetRedirects403,
+	GetRedirects404,
+	GetRedirectsQueryParams,
+	GetRedirectsQueryResponse,
 	GetRollingRelease400,
 	GetRollingRelease401,
 	GetRollingRelease403,
@@ -686,6 +920,19 @@ import type {
 	GetSecrets410,
 	GetSecretsQueryParams,
 	GetSecretsQueryResponse,
+	GetSharedEnvVar400,
+	GetSharedEnvVar401,
+	GetSharedEnvVar403,
+	GetSharedEnvVarPathParams,
+	GetSharedEnvVarQueryParams,
+	GetSharedEnvVarQueryResponse,
+	GetSupportedTlds400,
+	GetSupportedTlds401,
+	GetSupportedTlds403,
+	GetSupportedTlds429,
+	GetSupportedTlds500,
+	GetSupportedTldsQueryParams,
+	GetSupportedTldsQueryResponse,
 	GetTeam400,
 	GetTeam401,
 	GetTeam403,
@@ -711,6 +958,20 @@ import type {
 	GetTeams403,
 	GetTeamsQueryParams,
 	GetTeamsQueryResponse,
+	GetTldPrice400,
+	GetTldPrice401,
+	GetTldPrice403,
+	GetTldPrice429,
+	GetTldPrice500,
+	GetTldPricePathParams,
+	GetTldPriceQueryParams,
+	GetTldPriceQueryResponse,
+	GetVersions400,
+	GetVersions401,
+	GetVersions403,
+	GetVersions500,
+	GetVersionsQueryParams,
+	GetVersionsQueryResponse,
 	GetWebhook400,
 	GetWebhook401,
 	GetWebhook403,
@@ -722,12 +983,36 @@ import type {
 	GetWebhooks403,
 	GetWebhooksQueryParams,
 	GetWebhooksQueryResponse,
+	GitNamespaces400,
+	GitNamespaces401,
+	GitNamespaces403,
+	GitNamespaces404,
+	GitNamespaces429,
+	GitNamespaces500,
+	GitNamespacesQueryParams,
+	GitNamespacesQueryResponse,
 	ImportResource400,
 	ImportResource401,
 	ImportResource403,
 	ImportResource404,
+	ImportResource409,
+	ImportResource422,
+	ImportResource429,
 	ImportResourceMutationResponse,
 	ImportResourcePathParams,
+	InvalidateBySrcImages400,
+	InvalidateBySrcImages401,
+	InvalidateBySrcImages402,
+	InvalidateBySrcImages403,
+	InvalidateBySrcImages404,
+	InvalidateBySrcImagesMutationResponse,
+	InvalidateBySrcImagesQueryParams,
+	InvalidateByTags400,
+	InvalidateByTags401,
+	InvalidateByTags403,
+	InvalidateByTags404,
+	InvalidateByTagsMutationResponse,
+	InvalidateByTagsQueryParams,
 	InviteUserToTeam400,
 	InviteUserToTeam401,
 	InviteUserToTeam403,
@@ -808,6 +1093,12 @@ import type {
 	ListPromoteAliasesPathParams,
 	ListPromoteAliasesQueryParams,
 	ListPromoteAliasesQueryResponse,
+	ListSharedEnvVariable400,
+	ListSharedEnvVariable401,
+	ListSharedEnvVariable403,
+	ListSharedEnvVariable404,
+	ListSharedEnvVariableQueryParams,
+	ListSharedEnvVariableQueryResponse,
 	ListUserEvents400,
 	ListUserEvents401,
 	ListUserEvents403,
@@ -825,6 +1116,7 @@ import type {
 	PatchDomain403,
 	PatchDomain404,
 	PatchDomain409,
+	PatchDomain500,
 	PatchDomainMutationResponse,
 	PatchDomainPathParams,
 	PatchDomainQueryParams,
@@ -834,6 +1126,7 @@ import type {
 	PatchEdgeConfigItems403,
 	PatchEdgeConfigItems404,
 	PatchEdgeConfigItems409,
+	PatchEdgeConfigItems412,
 	PatchEdgeConfigItemsMutationResponse,
 	PatchEdgeConfigItemsPathParams,
 	PatchEdgeConfigItemsQueryParams,
@@ -842,6 +1135,7 @@ import type {
 	PatchEdgeConfigSchema402,
 	PatchEdgeConfigSchema403,
 	PatchEdgeConfigSchema404,
+	PatchEdgeConfigSchema409,
 	PatchEdgeConfigSchemaMutationResponse,
 	PatchEdgeConfigSchemaPathParams,
 	PatchEdgeConfigSchemaQueryParams,
@@ -865,12 +1159,17 @@ import type {
 	PatchUrlProtectionBypassQueryParams,
 	PauseProject400,
 	PauseProject401,
-	PauseProject402,
 	PauseProject403,
 	PauseProject500,
 	PauseProjectMutationResponse,
 	PauseProjectPathParams,
 	PauseProjectQueryParams,
+	PostTeamDsyncRoles400,
+	PostTeamDsyncRoles401,
+	PostTeamDsyncRoles403,
+	PostTeamDsyncRolesMutationResponse,
+	PostTeamDsyncRolesPathParams,
+	PostTeamDsyncRolesQueryParams,
 	PurgeAllDataCache400,
 	PurgeAllDataCache401,
 	PurgeAllDataCache403,
@@ -968,6 +1267,15 @@ import type {
 	RenameSecretMutationResponse,
 	RenameSecretPathParams,
 	RenameSecretQueryParams,
+	RenewDomain400,
+	RenewDomain401,
+	RenewDomain403,
+	RenewDomain404,
+	RenewDomain429,
+	RenewDomain500,
+	RenewDomainMutationResponse,
+	RenewDomainPathParams,
+	RenewDomainQueryParams,
 	RequestAccessToTeam400,
 	RequestAccessToTeam401,
 	RequestAccessToTeam403,
@@ -994,6 +1302,27 @@ import type {
 	RerequestCheckMutationResponse,
 	RerequestCheckPathParams,
 	RerequestCheckQueryParams,
+	RestoreRedirects400,
+	RestoreRedirects401,
+	RestoreRedirects403,
+	RestoreRedirects404,
+	RestoreRedirects500,
+	RestoreRedirectsMutationResponse,
+	RestoreRedirectsQueryParams,
+	SearchRepo400,
+	SearchRepo401,
+	SearchRepo403,
+	SearchRepo404,
+	SearchRepo429,
+	SearchRepo500,
+	SearchRepoQueryParams,
+	SearchRepoQueryResponse,
+	StageRedirects400,
+	StageRedirects401,
+	StageRedirects403,
+	StageRedirects500,
+	StageRedirectsMutationResponse,
+	StageRedirectsQueryParams,
 	Status400,
 	Status401,
 	Status402,
@@ -1010,6 +1339,7 @@ import type {
 	SubmitInvoice401,
 	SubmitInvoice403,
 	SubmitInvoice404,
+	SubmitInvoice409,
 	SubmitInvoiceMutationResponse,
 	SubmitInvoicePathParams,
 	SubmitPrepaymentBalances400,
@@ -1018,6 +1348,25 @@ import type {
 	SubmitPrepaymentBalances404,
 	SubmitPrepaymentBalancesMutationResponse,
 	SubmitPrepaymentBalancesPathParams,
+	TestDrain400,
+	TestDrain401,
+	TestDrain403,
+	TestDrainMutationResponse,
+	TestDrainQueryParams,
+	TransferInDomain400,
+	TransferInDomain401,
+	TransferInDomain403,
+	TransferInDomain429,
+	TransferInDomain500,
+	TransferInDomainMutationResponse,
+	TransferInDomainPathParams,
+	TransferInDomainQueryParams,
+	UnlinkSharedEnvVariable400,
+	UnlinkSharedEnvVariable401,
+	UnlinkSharedEnvVariable403,
+	UnlinkSharedEnvVariableMutationResponse,
+	UnlinkSharedEnvVariablePathParams,
+	UnlinkSharedEnvVariableQueryParams,
 	UnpauseProject400,
 	UnpauseProject401,
 	UnpauseProject403,
@@ -1064,11 +1413,37 @@ import type {
 	UpdateDataCacheBillingSettings403,
 	UpdateDataCacheBillingSettings404,
 	UpdateDataCacheBillingSettingsMutationResponse,
+	UpdateDomainAutoRenew400,
+	UpdateDomainAutoRenew401,
+	UpdateDomainAutoRenew403,
+	UpdateDomainAutoRenew404,
+	UpdateDomainAutoRenew429,
+	UpdateDomainAutoRenew500,
+	UpdateDomainAutoRenewMutationResponse,
+	UpdateDomainAutoRenewPathParams,
+	UpdateDomainAutoRenewQueryParams,
+	UpdateDomainNameservers400,
+	UpdateDomainNameservers401,
+	UpdateDomainNameservers403,
+	UpdateDomainNameservers404,
+	UpdateDomainNameservers429,
+	UpdateDomainNameservers500,
+	UpdateDomainNameserversMutationResponse,
+	UpdateDomainNameserversPathParams,
+	UpdateDomainNameserversQueryParams,
+	UpdateDrain400,
+	UpdateDrain401,
+	UpdateDrain403,
+	UpdateDrain404,
+	UpdateDrainMutationResponse,
+	UpdateDrainPathParams,
+	UpdateDrainQueryParams,
 	UpdateEdgeConfig400,
 	UpdateEdgeConfig401,
 	UpdateEdgeConfig402,
 	UpdateEdgeConfig403,
 	UpdateEdgeConfig404,
+	UpdateEdgeConfig409,
 	UpdateEdgeConfigMutationResponse,
 	UpdateEdgeConfigPathParams,
 	UpdateEdgeConfigQueryParams,
@@ -1076,6 +1451,7 @@ import type {
 	UpdateExperimentationEdgeConfig401,
 	UpdateExperimentationEdgeConfig403,
 	UpdateExperimentationEdgeConfig404,
+	UpdateExperimentationEdgeConfig409,
 	UpdateExperimentationEdgeConfig412,
 	UpdateExperimentationEdgeConfigMutationResponse,
 	UpdateExperimentationEdgeConfigPathParams,
@@ -1093,6 +1469,12 @@ import type {
 	UpdateFirewallConfig500,
 	UpdateFirewallConfigMutationResponse,
 	UpdateFirewallConfigQueryParams,
+	UpdateInstallation400,
+	UpdateInstallation401,
+	UpdateInstallation403,
+	UpdateInstallation404,
+	UpdateInstallationMutationResponse,
+	UpdateInstallationPathParams,
 	UpdateIntegrationDeploymentAction400,
 	UpdateIntegrationDeploymentAction401,
 	UpdateIntegrationDeploymentAction403,
@@ -1102,6 +1484,7 @@ import type {
 	UpdateInvoice401,
 	UpdateInvoice403,
 	UpdateInvoice404,
+	UpdateInvoice409,
 	UpdateInvoiceMutationResponse,
 	UpdateInvoicePathParams,
 	UpdateProject400,
@@ -1145,14 +1528,25 @@ import type {
 	UpdateRecordMutationResponse,
 	UpdateRecordPathParams,
 	UpdateRecordQueryParams,
+	UpdateResource400,
+	UpdateResource401,
+	UpdateResource403,
+	UpdateResource404,
+	UpdateResource409,
+	UpdateResource422,
+	UpdateResourceMutationResponse,
+	UpdateResourcePathParams,
 	UpdateResourceSecrets400,
 	UpdateResourceSecrets401,
 	UpdateResourceSecrets403,
 	UpdateResourceSecrets404,
+	UpdateResourceSecrets409,
+	UpdateResourceSecrets422,
 	UpdateResourceSecretsById400,
 	UpdateResourceSecretsById401,
 	UpdateResourceSecretsById403,
 	UpdateResourceSecretsById404,
+	UpdateResourceSecretsById409,
 	UpdateResourceSecretsById422,
 	UpdateResourceSecretsByIdMutationResponse,
 	UpdateResourceSecretsByIdPathParams,
@@ -1165,14 +1559,37 @@ import type {
 	UpdateRollingReleaseConfigMutationResponse,
 	UpdateRollingReleaseConfigPathParams,
 	UpdateRollingReleaseConfigQueryParams,
+	UpdateSharedEnvVariable400,
+	UpdateSharedEnvVariable401,
+	UpdateSharedEnvVariable402,
+	UpdateSharedEnvVariable403,
+	UpdateSharedEnvVariableMutationResponse,
+	UpdateSharedEnvVariableQueryParams,
+	UpdateStaticIps400,
+	UpdateStaticIps401,
+	UpdateStaticIps402,
+	UpdateStaticIps403,
+	UpdateStaticIps404,
+	UpdateStaticIps500,
+	UpdateStaticIpsMutationResponse,
+	UpdateStaticIpsPathParams,
+	UpdateStaticIpsQueryParams,
 	UpdateTeamMember400,
 	UpdateTeamMember401,
 	UpdateTeamMember402,
 	UpdateTeamMember403,
 	UpdateTeamMember404,
+	UpdateTeamMember409,
 	UpdateTeamMember500,
 	UpdateTeamMemberMutationResponse,
 	UpdateTeamMemberPathParams,
+	UpdateVersion400,
+	UpdateVersion401,
+	UpdateVersion403,
+	UpdateVersion404,
+	UpdateVersion500,
+	UpdateVersionMutationResponse,
+	UpdateVersionQueryParams,
 	UploadArtifact400,
 	UploadArtifact401,
 	UploadArtifact402,
@@ -1193,13 +1610,23 @@ import type {
 	UploadFileHeaderParams,
 	UploadFileMutationResponse,
 	UploadFileQueryParams,
+	UploadProjectClientCert400,
+	UploadProjectClientCert401,
+	UploadProjectClientCert402,
+	UploadProjectClientCert403,
+	UploadProjectClientCert404,
+	UploadProjectClientCert409,
+	UploadProjectClientCert500,
+	UploadProjectClientCertMutationResponse,
+	UploadProjectClientCertPathParams,
+	UploadProjectClientCertQueryParams,
 	VerifyProjectDomain400,
 	VerifyProjectDomain401,
 	VerifyProjectDomain403,
 	VerifyProjectDomainMutationResponse,
 	VerifyProjectDomainPathParams,
 	VerifyProjectDomainQueryParams,
-} from "./types.ts";
+} from "./types";
 
 /**
  * @description Allows to read an access group
@@ -1212,7 +1639,7 @@ export async function readAccessGroup({
 	config = {},
 }: {
 	pathParams: ReadAccessGroupPathParams;
-	queryParams?: ReadAccessGroupQueryParams | undefined;
+	queryParams?: ReadAccessGroupQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1220,7 +1647,6 @@ export async function readAccessGroup({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		ReadAccessGroupQueryResponse,
 		ErrorWrapper<ReadAccessGroup400 | ReadAccessGroup401 | ReadAccessGroup403>,
@@ -1243,7 +1669,7 @@ export async function updateAccessGroup({
 	config = {},
 }: {
 	pathParams: UpdateAccessGroupPathParams;
-	queryParams?: UpdateAccessGroupQueryParams | undefined;
+	queryParams?: UpdateAccessGroupQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1251,7 +1677,6 @@ export async function updateAccessGroup({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		UpdateAccessGroupMutationResponse,
 		ErrorWrapper<UpdateAccessGroup400 | UpdateAccessGroup401 | UpdateAccessGroup403>,
@@ -1280,7 +1705,7 @@ export async function deleteAccessGroup({
 	config = {},
 }: {
 	pathParams: DeleteAccessGroupPathParams;
-	queryParams?: DeleteAccessGroupQueryParams | undefined;
+	queryParams?: DeleteAccessGroupQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1288,7 +1713,6 @@ export async function deleteAccessGroup({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		DeleteAccessGroupMutationResponse,
 		ErrorWrapper<DeleteAccessGroup400 | DeleteAccessGroup401 | DeleteAccessGroup403>,
@@ -1311,7 +1735,7 @@ export async function listAccessGroupMembers({
 	config = {},
 }: {
 	pathParams: ListAccessGroupMembersPathParams;
-	queryParams?: ListAccessGroupMembersQueryParams | undefined;
+	queryParams?: ListAccessGroupMembersQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1319,7 +1743,6 @@ export async function listAccessGroupMembers({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		ListAccessGroupMembersQueryResponse,
 		ErrorWrapper<ListAccessGroupMembers400 | ListAccessGroupMembers401 | ListAccessGroupMembers403>,
@@ -1340,7 +1763,7 @@ export async function listAccessGroups({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: ListAccessGroupsQueryParams | undefined;
+	queryParams?: ListAccessGroupsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1365,7 +1788,7 @@ export async function createAccessGroup({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateAccessGroupQueryParams | undefined;
+	queryParams?: CreateAccessGroupQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1398,7 +1821,7 @@ export async function listAccessGroupProjects({
 	config = {},
 }: {
 	pathParams: ListAccessGroupProjectsPathParams;
-	queryParams?: ListAccessGroupProjectsQueryParams | undefined;
+	queryParams?: ListAccessGroupProjectsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1406,7 +1829,6 @@ export async function listAccessGroupProjects({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		ListAccessGroupProjectsQueryResponse,
 		ErrorWrapper<
@@ -1436,7 +1858,7 @@ export async function createAccessGroupProject({
 	config = {},
 }: {
 	pathParams: CreateAccessGroupProjectPathParams;
-	queryParams?: CreateAccessGroupProjectQueryParams | undefined;
+	queryParams?: CreateAccessGroupProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1444,7 +1866,6 @@ export async function createAccessGroupProject({
 	if (!accessGroupIdOrName) {
 		throw new Error(`Missing required path parameter: accessGroupIdOrName`);
 	}
-
 	const data = await request<
 		CreateAccessGroupProjectMutationResponse,
 		ErrorWrapper<
@@ -1475,7 +1896,7 @@ export async function readAccessGroupProject({
 	config = {},
 }: {
 	pathParams: ReadAccessGroupProjectPathParams;
-	queryParams?: ReadAccessGroupProjectQueryParams | undefined;
+	queryParams?: ReadAccessGroupProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1487,7 +1908,6 @@ export async function readAccessGroupProject({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		ReadAccessGroupProjectQueryResponse,
 		ErrorWrapper<ReadAccessGroupProject400 | ReadAccessGroupProject401 | ReadAccessGroupProject403>,
@@ -1515,7 +1935,7 @@ export async function updateAccessGroupProject({
 	config = {},
 }: {
 	pathParams: UpdateAccessGroupProjectPathParams;
-	queryParams?: UpdateAccessGroupProjectQueryParams | undefined;
+	queryParams?: UpdateAccessGroupProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1527,7 +1947,6 @@ export async function updateAccessGroupProject({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		UpdateAccessGroupProjectMutationResponse,
 		ErrorWrapper<
@@ -1558,7 +1977,7 @@ export async function deleteAccessGroupProject({
 	config = {},
 }: {
 	pathParams: DeleteAccessGroupProjectPathParams;
-	queryParams?: DeleteAccessGroupProjectQueryParams | undefined;
+	queryParams?: DeleteAccessGroupProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1570,7 +1989,6 @@ export async function deleteAccessGroupProject({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		DeleteAccessGroupProjectMutationResponse,
 		ErrorWrapper<
@@ -1599,8 +2017,8 @@ export async function recordEvents({
 	headers,
 	config = {},
 }: {
-	queryParams?: RecordEventsQueryParams | undefined;
-	headers?: RecordEventsHeaderParams | undefined;
+	queryParams?: RecordEventsQueryParams;
+	headers?: RecordEventsHeaderParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1631,7 +2049,7 @@ export async function status({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: StatusQueryParams | undefined;
+	queryParams?: StatusQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1660,7 +2078,7 @@ export async function uploadArtifact({
 }: {
 	pathParams: UploadArtifactPathParams;
 	headers: UploadArtifactHeaderParams;
-	queryParams?: UploadArtifactQueryParams | undefined;
+	queryParams?: UploadArtifactQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1668,7 +2086,6 @@ export async function uploadArtifact({
 	if (!hash) {
 		throw new Error(`Missing required path parameter: hash`);
 	}
-
 	const data = await request<
 		UploadArtifactMutationResponse,
 		ErrorWrapper<UploadArtifact400 | UploadArtifact401 | UploadArtifact402 | UploadArtifact403>,
@@ -1698,8 +2115,8 @@ export async function downloadArtifact({
 	config = {},
 }: {
 	pathParams: DownloadArtifactPathParams;
-	queryParams?: DownloadArtifactQueryParams | undefined;
-	headers?: DownloadArtifactHeaderParams | undefined;
+	queryParams?: DownloadArtifactQueryParams;
+	headers?: DownloadArtifactHeaderParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1707,7 +2124,6 @@ export async function downloadArtifact({
 	if (!hash) {
 		throw new Error(`Missing required path parameter: hash`);
 	}
-
 	const data = await request<
 		DownloadArtifactQueryResponse,
 		ErrorWrapper<
@@ -1740,7 +2156,7 @@ export async function artifactQuery({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: ArtifactQueryQueryParams | undefined;
+	queryParams?: ArtifactQueryQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1763,6 +2179,227 @@ export async function artifactQuery({
 }
 
 /**
+ * @description Stages new redirects for a project and returns the new version.
+ * @summary Stages new redirects for a project.
+ * {@link /v1/bulk-redirects}
+ */
+export async function stageRedirects({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: StageRedirectsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		StageRedirectsMutationResponse,
+		ErrorWrapper<StageRedirects400 | StageRedirects401 | StageRedirects403 | StageRedirects500>,
+		null,
+		Record<string, string>,
+		StageRedirectsQueryParams,
+		Record<string, string>
+	>({
+		method: "PUT",
+		url: `/v1/bulk-redirects`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Get the version history for a project's bulk redirects
+ * @summary Gets project-level redirects.
+ * {@link /v1/bulk-redirects}
+ */
+export async function getRedirects({
+	queryParams,
+	config = {},
+}: {
+	queryParams: GetRedirectsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GetRedirectsQueryResponse,
+		ErrorWrapper<GetRedirects400 | GetRedirects401 | GetRedirects403 | GetRedirects404>,
+		null,
+		Record<string, string>,
+		GetRedirectsQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/bulk-redirects`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Deletes the provided redirects from the latest version of the projects' bulk redirects. Stages a new change with the new redirects and returns the alias for the new version in the response.
+ * @summary Delete project-level redirects.
+ * {@link /v1/bulk-redirects}
+ */
+export async function deleteRedirects({
+	queryParams,
+	config = {},
+}: {
+	queryParams: DeleteRedirectsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		DeleteRedirectsMutationResponse,
+		ErrorWrapper<
+			| DeleteRedirects400
+			| DeleteRedirects401
+			| DeleteRedirects403
+			| DeleteRedirects404
+			| DeleteRedirects500
+		>,
+		null,
+		Record<string, string>,
+		DeleteRedirectsQueryParams,
+		Record<string, string>
+	>({
+		method: "DELETE",
+		url: `/v1/bulk-redirects`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Edits a single redirect identified by its source path. Stages a new change with the modified redirect and returns the alias for the new version in the response.
+ * @summary Edit a project-level redirect.
+ * {@link /v1/bulk-redirects}
+ */
+export async function editRedirect({
+	queryParams,
+	config = {},
+}: {
+	queryParams: EditRedirectQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		EditRedirectMutationResponse,
+		ErrorWrapper<
+			EditRedirect400 | EditRedirect401 | EditRedirect403 | EditRedirect404 | EditRedirect500
+		>,
+		null,
+		Record<string, string>,
+		EditRedirectQueryParams,
+		Record<string, string>
+	>({
+		method: "PATCH",
+		url: `/v1/bulk-redirects`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Restores the provided redirects in the staging version to the value in the production version. If no production version exists, removes the redirects from staging.
+ * @summary Restore staged project-level redirects to their production version.
+ * {@link /v1/bulk-redirects/restore}
+ */
+export async function restoreRedirects({
+	queryParams,
+	config = {},
+}: {
+	queryParams: RestoreRedirectsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		RestoreRedirectsMutationResponse,
+		ErrorWrapper<
+			| RestoreRedirects400
+			| RestoreRedirects401
+			| RestoreRedirects403
+			| RestoreRedirects404
+			| RestoreRedirects500
+		>,
+		null,
+		Record<string, string>,
+		RestoreRedirectsQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/bulk-redirects/restore`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Get the version history for a project's bulk redirects
+ * @summary Get the version history for a project's redirects.
+ * {@link /v1/bulk-redirects/versions}
+ */
+export async function getVersions({
+	queryParams,
+	config = {},
+}: {
+	queryParams: GetVersionsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GetVersionsQueryResponse,
+		ErrorWrapper<GetVersions400 | GetVersions401 | GetVersions403 | GetVersions500>,
+		null,
+		Record<string, string>,
+		GetVersionsQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/bulk-redirects/versions`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Update a version by promoting staging to production or restoring a previous production version
+ * @summary Promote a staging version to production or restore a previous production version.
+ * {@link /v1/bulk-redirects/versions}
+ */
+export async function updateVersion({
+	queryParams,
+	config = {},
+}: {
+	queryParams: UpdateVersionQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		UpdateVersionMutationResponse,
+		ErrorWrapper<
+			UpdateVersion400 | UpdateVersion401 | UpdateVersion403 | UpdateVersion404 | UpdateVersion500
+		>,
+		null,
+		Record<string, string>,
+		UpdateVersionQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/bulk-redirects/versions`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
  * @description Creates a new check. This endpoint must be called with an OAuth2 or it will produce a 400 error.
  * @summary Creates a new Check
  * {@link /v1/deployments/:deploymentId/checks}
@@ -1773,7 +2410,7 @@ export async function createCheck({
 	config = {},
 }: {
 	pathParams: CreateCheckPathParams;
-	queryParams?: CreateCheckQueryParams | undefined;
+	queryParams?: CreateCheckQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1781,7 +2418,6 @@ export async function createCheck({
 	if (!deploymentId) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
-
 	const data = await request<
 		CreateCheckMutationResponse,
 		ErrorWrapper<CreateCheck400 | CreateCheck401 | CreateCheck403 | CreateCheck404>,
@@ -1810,7 +2446,7 @@ export async function getAllChecks({
 	config = {},
 }: {
 	pathParams: GetAllChecksPathParams;
-	queryParams?: GetAllChecksQueryParams | undefined;
+	queryParams?: GetAllChecksQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1818,7 +2454,6 @@ export async function getAllChecks({
 	if (!deploymentId) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
-
 	const data = await request<
 		GetAllChecksQueryResponse,
 		ErrorWrapper<GetAllChecks400 | GetAllChecks401 | GetAllChecks403 | GetAllChecks404>,
@@ -1846,7 +2481,7 @@ export async function getCheck({
 	config = {},
 }: {
 	pathParams: GetCheckPathParams;
-	queryParams?: GetCheckQueryParams | undefined;
+	queryParams?: GetCheckQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1858,7 +2493,6 @@ export async function getCheck({
 	if (!checkId) {
 		throw new Error(`Missing required path parameter: checkId`);
 	}
-
 	const data = await request<
 		GetCheckQueryResponse,
 		ErrorWrapper<GetCheck400 | GetCheck401 | GetCheck403 | GetCheck404>,
@@ -1886,7 +2520,7 @@ export async function updateCheck({
 	config = {},
 }: {
 	pathParams: UpdateCheckPathParams;
-	queryParams?: UpdateCheckQueryParams | undefined;
+	queryParams?: UpdateCheckQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1898,7 +2532,6 @@ export async function updateCheck({
 	if (!checkId) {
 		throw new Error(`Missing required path parameter: checkId`);
 	}
-
 	const data = await request<
 		UpdateCheckMutationResponse,
 		ErrorWrapper<
@@ -1929,7 +2562,7 @@ export async function rerequestCheck({
 	config = {},
 }: {
 	pathParams: RerequestCheckPathParams;
-	queryParams?: RerequestCheckQueryParams | undefined;
+	queryParams?: RerequestCheckQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1941,7 +2574,6 @@ export async function rerequestCheck({
 	if (!checkId) {
 		throw new Error(`Missing required path parameter: checkId`);
 	}
-
 	const data = await request<
 		RerequestCheckMutationResponse,
 		ErrorWrapper<RerequestCheck400 | RerequestCheck401 | RerequestCheck403 | RerequestCheck404>,
@@ -2025,7 +2657,7 @@ export async function updateProjectDataCache({
 	config = {},
 }: {
 	pathParams: UpdateProjectDataCachePathParams;
-	queryParams?: UpdateProjectDataCacheQueryParams | undefined;
+	queryParams?: UpdateProjectDataCacheQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2033,7 +2665,6 @@ export async function updateProjectDataCache({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		UpdateProjectDataCacheMutationResponse,
 		ErrorWrapper<
@@ -2067,7 +2698,7 @@ export async function getDeploymentEvents({
 	config = {},
 }: {
 	pathParams: GetDeploymentEventsPathParams;
-	queryParams?: GetDeploymentEventsQueryParams | undefined;
+	queryParams?: GetDeploymentEventsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2075,7 +2706,6 @@ export async function getDeploymentEvents({
 	if (!idOrUrl) {
 		throw new Error(`Missing required path parameter: idOrUrl`);
 	}
-
 	const data = await request<
 		GetDeploymentEventsQueryResponse,
 		ErrorWrapper<
@@ -2121,7 +2751,6 @@ export async function updateIntegrationDeploymentAction({
 	if (!action) {
 		throw new Error(`Missing required path parameter: action`);
 	}
-
 	const data = await request<
 		UpdateIntegrationDeploymentActionMutationResponse,
 		ErrorWrapper<
@@ -2153,7 +2782,7 @@ export async function getDeployment({
 	config = {},
 }: {
 	pathParams: GetDeploymentPathParams;
-	queryParams?: GetDeploymentQueryParams | undefined;
+	queryParams?: GetDeploymentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2161,7 +2790,6 @@ export async function getDeployment({
 	if (!idOrUrl) {
 		throw new Error(`Missing required path parameter: idOrUrl`);
 	}
-
 	const data = await request<
 		GetDeploymentQueryResponse,
 		ErrorWrapper<GetDeployment400 | GetDeployment403 | GetDeployment404>,
@@ -2182,7 +2810,7 @@ export async function createDeployment({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateDeploymentQueryParams | undefined;
+	queryParams?: CreateDeploymentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2223,7 +2851,7 @@ export async function cancelDeployment({
 	config = {},
 }: {
 	pathParams: CancelDeploymentPathParams;
-	queryParams?: CancelDeploymentQueryParams | undefined;
+	queryParams?: CancelDeploymentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2231,7 +2859,6 @@ export async function cancelDeployment({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		CancelDeploymentMutationResponse,
 		ErrorWrapper<
@@ -2246,39 +2873,8 @@ export async function cancelDeployment({
 }
 
 /**
- * @description Allows to purchase the specified domain.
- * @summary Purchase a domain
- * {@link /v5/domains/buy}
- */
-export async function buyDomain({
-	queryParams,
-	config = {},
-}: {
-	queryParams?: BuyDomainQueryParams | undefined;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	const data = await request<
-		BuyDomainMutationResponse,
-		ErrorWrapper<BuyDomain400 | BuyDomain401 | BuyDomain403 | BuyDomain409 | BuyDomain429>,
-		null,
-		Record<string, string>,
-		BuyDomainQueryParams,
-		Record<string, string>
-	>({
-		method: "POST",
-		url: `/v5/domains/buy`,
-		queryParams,
-		...requestConfig,
-		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
-	});
-	return data;
-}
-
-/**
- * @description Check the price to purchase a domain and how long a single purchase period is.
- * @summary Check the price for a domain
+ * @description This endpoint is deprecated and replaced with the endpoint [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain). Check the price to purchase a domain and how long a single purchase period is.
+ * @summary Check the price for a domain (deprecated)
  * {@link /v4/domains/price}
  */
 export async function checkDomainPrice({
@@ -2292,7 +2888,13 @@ export async function checkDomainPrice({
 
 	const data = await request<
 		CheckDomainPriceQueryResponse,
-		ErrorWrapper<CheckDomainPrice400 | CheckDomainPrice401 | CheckDomainPrice403>,
+		ErrorWrapper<
+			| CheckDomainPrice400
+			| CheckDomainPrice401
+			| CheckDomainPrice403
+			| CheckDomainPrice404
+			| CheckDomainPrice500
+		>,
 		null,
 		Record<string, string>,
 		CheckDomainPriceQueryParams,
@@ -2302,8 +2904,8 @@ export async function checkDomainPrice({
 }
 
 /**
- * @description Check if a domain name is available for purchase.
- * @summary Check a Domain Availability
+ * @description This endpoint is deprecated and replaced with the endpoint [Get availability for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-availability-for-a-domain). Check if a domain name is available for purchase.
+ * @summary Check a Domain Availability (deprecated)
  * {@link /v4/domains/status}
  */
 export async function checkDomainStatus({
@@ -2343,7 +2945,7 @@ export async function getRecords({
 	config = {},
 }: {
 	pathParams: GetRecordsPathParams;
-	queryParams?: GetRecordsQueryParams | undefined;
+	queryParams?: GetRecordsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2351,7 +2953,6 @@ export async function getRecords({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		GetRecordsQueryResponse,
 		ErrorWrapper<GetRecords400 | GetRecords401 | GetRecords403 | GetRecords404>,
@@ -2374,7 +2975,7 @@ export async function createRecord({
 	config = {},
 }: {
 	pathParams: CreateRecordPathParams;
-	queryParams?: CreateRecordQueryParams | undefined;
+	queryParams?: CreateRecordQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2382,7 +2983,6 @@ export async function createRecord({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		CreateRecordMutationResponse,
 		ErrorWrapper<
@@ -2418,7 +3018,7 @@ export async function updateRecord({
 	config = {},
 }: {
 	pathParams: UpdateRecordPathParams;
-	queryParams?: UpdateRecordQueryParams | undefined;
+	queryParams?: UpdateRecordQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2426,7 +3026,6 @@ export async function updateRecord({
 	if (!recordId) {
 		throw new Error(`Missing required path parameter: recordId`);
 	}
-
 	const data = await request<
 		UpdateRecordMutationResponse,
 		ErrorWrapper<
@@ -2462,7 +3061,7 @@ export async function removeRecord({
 	config = {},
 }: {
 	pathParams: RemoveRecordPathParams;
-	queryParams?: RemoveRecordQueryParams | undefined;
+	queryParams?: RemoveRecordQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2474,7 +3073,6 @@ export async function removeRecord({
 	if (!recordId) {
 		throw new Error(`Missing required path parameter: recordId`);
 	}
-
 	const data = await request<
 		RemoveRecordMutationResponse,
 		ErrorWrapper<RemoveRecord400 | RemoveRecord401 | RemoveRecord403 | RemoveRecord404>,
@@ -2492,17 +3090,80 @@ export async function removeRecord({
 }
 
 /**
- * @description Fetch domain transfer availability or transfer status if a transfer is in progress.
- * @summary Get domain transfer info.
- * {@link /v1/domains/:domain/registry}
+ * @description Get a list of TLDs supported by Vercel
+ * @summary Get supported TLDs
+ * {@link /v1/registrar/tlds/supported}
  */
-export async function getDomainTransfer({
+export async function getSupportedTlds({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: GetSupportedTldsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GetSupportedTldsQueryResponse,
+		ErrorWrapper<
+			| GetSupportedTlds400
+			| GetSupportedTlds401
+			| GetSupportedTlds403
+			| GetSupportedTlds429
+			| GetSupportedTlds500
+		>,
+		null,
+		Record<string, string>,
+		GetSupportedTldsQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/registrar/tlds/supported`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Get price data for a specific TLD. This only reflects base prices for the given TLD. Premium domains may have different prices. Use the [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain) endpoint to get the price data for a specific domain.
+ * @summary Get TLD price data
+ * {@link /v1/registrar/tlds/:tld/price}
+ */
+export async function getTldPrice({
+	pathParams: { tld },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetTldPricePathParams;
+	queryParams?: GetTldPriceQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!tld) {
+		throw new Error(`Missing required path parameter: tld`);
+	}
+	const data = await request<
+		GetTldPriceQueryResponse,
+		ErrorWrapper<
+			GetTldPrice400 | GetTldPrice401 | GetTldPrice403 | GetTldPrice429 | GetTldPrice500
+		>,
+		null,
+		Record<string, string>,
+		GetTldPriceQueryParams,
+		GetTldPricePathParams
+	>({ method: "GET", url: `/v1/registrar/tlds/${tld}/price`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Get availability for a specific domain. If the domain is available, it can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.
+ * @summary Get availability for a domain
+ * {@link /v1/registrar/domains/:domain/availability}
+ */
+export async function getDomainAvailability({
 	pathParams: { domain },
 	queryParams,
 	config = {},
 }: {
-	pathParams: GetDomainTransferPathParams;
-	queryParams?: GetDomainTransferQueryParams | undefined;
+	pathParams: GetDomainAvailabilityPathParams;
+	queryParams?: GetDomainAvailabilityQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2510,15 +3171,499 @@ export async function getDomainTransfer({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
-		GetDomainTransferQueryResponse,
-		ErrorWrapper<GetDomainTransfer400 | GetDomainTransfer401 | GetDomainTransfer403>,
+		GetDomainAvailabilityQueryResponse,
+		ErrorWrapper<
+			| GetDomainAvailability400
+			| GetDomainAvailability401
+			| GetDomainAvailability403
+			| GetDomainAvailability404
+			| GetDomainAvailability429
+			| GetDomainAvailability500
+		>,
 		null,
 		Record<string, string>,
-		GetDomainTransferQueryParams,
-		GetDomainTransferPathParams
-	>({ method: "GET", url: `/v1/domains/${domain}/registry`, queryParams, ...requestConfig });
+		GetDomainAvailabilityQueryParams,
+		GetDomainAvailabilityPathParams
+	>({
+		method: "GET",
+		url: `/v1/registrar/domains/${domain}/availability`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Get price data for a specific domain
+ * @summary Get price data for a domain
+ * {@link /v1/registrar/domains/:domain/price}
+ */
+export async function getDomainPrice({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetDomainPricePathParams;
+	queryParams?: GetDomainPriceQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		GetDomainPriceQueryResponse,
+		ErrorWrapper<
+			| GetDomainPrice400
+			| GetDomainPrice401
+			| GetDomainPrice403
+			| GetDomainPrice429
+			| GetDomainPrice500
+		>,
+		null,
+		Record<string, string>,
+		GetDomainPriceQueryParams,
+		GetDomainPricePathParams
+	>({ method: "GET", url: `/v1/registrar/domains/${domain}/price`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Get availability for multiple domains. If the domains are available, they can be purchased using the [Buy a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-a-domain) endpoint or the [Buy multiple domains](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/buy-multiple-domains) endpoint.
+ * @summary Get availability for multiple domains
+ * {@link /v1/registrar/domains/availability}
+ */
+export async function getBulkAvailability({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: GetBulkAvailabilityQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GetBulkAvailabilityMutationResponse,
+		ErrorWrapper<
+			| GetBulkAvailability400
+			| GetBulkAvailability401
+			| GetBulkAvailability403
+			| GetBulkAvailability429
+			| GetBulkAvailability500
+		>,
+		null,
+		Record<string, string>,
+		GetBulkAvailabilityQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/registrar/domains/availability`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Get the auth code for a domain. This is required to transfer a domain from Vercel to another registrar.
+ * @summary Get the auth code for a domain
+ * {@link /v1/registrar/domains/:domain/auth-code}
+ */
+export async function getDomainAuthCode({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetDomainAuthCodePathParams;
+	queryParams?: GetDomainAuthCodeQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		GetDomainAuthCodeQueryResponse,
+		ErrorWrapper<
+			| GetDomainAuthCode400
+			| GetDomainAuthCode401
+			| GetDomainAuthCode403
+			| GetDomainAuthCode404
+			| GetDomainAuthCode409
+			| GetDomainAuthCode429
+			| GetDomainAuthCode500
+		>,
+		null,
+		Record<string, string>,
+		GetDomainAuthCodeQueryParams,
+		GetDomainAuthCodePathParams
+	>({
+		method: "GET",
+		url: `/v1/registrar/domains/${domain}/auth-code`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Buy a domain
+ * @summary Buy a domain
+ * {@link /v1/registrar/domains/:domain/buy}
+ */
+export async function buySingleDomain({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: BuySingleDomainPathParams;
+	queryParams?: BuySingleDomainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		BuySingleDomainMutationResponse,
+		ErrorWrapper<
+			| BuySingleDomain400
+			| BuySingleDomain401
+			| BuySingleDomain403
+			| BuySingleDomain429
+			| BuySingleDomain500
+		>,
+		null,
+		Record<string, string>,
+		BuySingleDomainQueryParams,
+		BuySingleDomainPathParams
+	>({
+		method: "POST",
+		url: `/v1/registrar/domains/${domain}/buy`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Buy multiple domains at once
+ * @summary Buy multiple domains
+ * {@link /v1/registrar/domains/buy}
+ */
+export async function buyDomains({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: BuyDomainsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		BuyDomainsMutationResponse,
+		ErrorWrapper<BuyDomains400 | BuyDomains401 | BuyDomains403 | BuyDomains429 | BuyDomains500>,
+		null,
+		Record<string, string>,
+		BuyDomainsQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/registrar/domains/buy`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Transfer a domain in from another registrar
+ * @summary Transfer-in a domain
+ * {@link /v1/registrar/domains/:domain/transfer}
+ */
+export async function transferInDomain({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: TransferInDomainPathParams;
+	queryParams?: TransferInDomainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		TransferInDomainMutationResponse,
+		ErrorWrapper<
+			| TransferInDomain400
+			| TransferInDomain401
+			| TransferInDomain403
+			| TransferInDomain429
+			| TransferInDomain500
+		>,
+		null,
+		Record<string, string>,
+		TransferInDomainQueryParams,
+		TransferInDomainPathParams
+	>({
+		method: "POST",
+		url: `/v1/registrar/domains/${domain}/transfer`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Get the transfer status for a domain
+ * @summary Get a domain's transfer status
+ * {@link /v1/registrar/domains/:domain/transfer}
+ */
+export async function getDomainTransferIn({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetDomainTransferInPathParams;
+	queryParams?: GetDomainTransferInQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		GetDomainTransferInQueryResponse,
+		ErrorWrapper<
+			| GetDomainTransferIn400
+			| GetDomainTransferIn401
+			| GetDomainTransferIn403
+			| GetDomainTransferIn404
+			| GetDomainTransferIn429
+			| GetDomainTransferIn500
+		>,
+		null,
+		Record<string, string>,
+		GetDomainTransferInQueryParams,
+		GetDomainTransferInPathParams
+	>({
+		method: "GET",
+		url: `/v1/registrar/domains/${domain}/transfer`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Renew a domain
+ * @summary Renew a domain
+ * {@link /v1/registrar/domains/:domain/renew}
+ */
+export async function renewDomain({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: RenewDomainPathParams;
+	queryParams?: RenewDomainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		RenewDomainMutationResponse,
+		ErrorWrapper<
+			| RenewDomain400
+			| RenewDomain401
+			| RenewDomain403
+			| RenewDomain404
+			| RenewDomain429
+			| RenewDomain500
+		>,
+		null,
+		Record<string, string>,
+		RenewDomainQueryParams,
+		RenewDomainPathParams
+	>({
+		method: "POST",
+		url: `/v1/registrar/domains/${domain}/renew`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Update the auto-renew setting for a domain
+ * @summary Update auto-renew for a domain
+ * {@link /v1/registrar/domains/:domain/auto-renew}
+ */
+export async function updateDomainAutoRenew({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: UpdateDomainAutoRenewPathParams;
+	queryParams?: UpdateDomainAutoRenewQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		UpdateDomainAutoRenewMutationResponse,
+		ErrorWrapper<
+			| UpdateDomainAutoRenew400
+			| UpdateDomainAutoRenew401
+			| UpdateDomainAutoRenew403
+			| UpdateDomainAutoRenew404
+			| UpdateDomainAutoRenew429
+			| UpdateDomainAutoRenew500
+		>,
+		null,
+		Record<string, string>,
+		UpdateDomainAutoRenewQueryParams,
+		UpdateDomainAutoRenewPathParams
+	>({
+		method: "PATCH",
+		url: `/v1/registrar/domains/${domain}/auto-renew`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Update the nameservers for a domain. Pass an empty array to use Vercel's default nameservers.
+ * @summary Update nameservers for a domain
+ * {@link /v1/registrar/domains/:domain/nameservers}
+ */
+export async function updateDomainNameservers({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: UpdateDomainNameserversPathParams;
+	queryParams?: UpdateDomainNameserversQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		UpdateDomainNameserversMutationResponse,
+		ErrorWrapper<
+			| UpdateDomainNameservers400
+			| UpdateDomainNameservers401
+			| UpdateDomainNameservers403
+			| UpdateDomainNameservers404
+			| UpdateDomainNameservers429
+			| UpdateDomainNameservers500
+		>,
+		null,
+		Record<string, string>,
+		UpdateDomainNameserversQueryParams,
+		UpdateDomainNameserversPathParams
+	>({
+		method: "PATCH",
+		url: `/v1/registrar/domains/${domain}/nameservers`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Some TLDs require additional contact information. Use this endpoint to get the schema for the tld-specific contact information for a domain.
+ * @summary Get contact info schema
+ * {@link /v1/registrar/domains/:domain/contact-info/schema}
+ */
+export async function getContactInfoSchema({
+	pathParams: { domain },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetContactInfoSchemaPathParams;
+	queryParams?: GetContactInfoSchemaQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!domain) {
+		throw new Error(`Missing required path parameter: domain`);
+	}
+	const data = await request<
+		GetContactInfoSchemaQueryResponse,
+		ErrorWrapper<
+			| GetContactInfoSchema400
+			| GetContactInfoSchema401
+			| GetContactInfoSchema403
+			| GetContactInfoSchema429
+			| GetContactInfoSchema500
+		>,
+		null,
+		Record<string, string>,
+		GetContactInfoSchemaQueryParams,
+		GetContactInfoSchemaPathParams
+	>({
+		method: "GET",
+		url: `/v1/registrar/domains/${domain}/contact-info/schema`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Get information about a domain order by its ID
+ * @summary Get a domain order
+ * {@link /v1/registrar/orders/:orderId}
+ */
+export async function getOrder({
+	pathParams: { orderId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetOrderPathParams;
+	queryParams?: GetOrderQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!orderId) {
+		throw new Error(`Missing required path parameter: orderId`);
+	}
+	const data = await request<
+		GetOrderQueryResponse,
+		ErrorWrapper<GetOrder400 | GetOrder401 | GetOrder403 | GetOrder404 | GetOrder429 | GetOrder500>,
+		null,
+		Record<string, string>,
+		GetOrderQueryParams,
+		GetOrderPathParams
+	>({ method: "GET", url: `/v1/registrar/orders/${orderId}`, queryParams, ...requestConfig });
 	return data;
 }
 
@@ -2533,7 +3678,7 @@ export async function getDomainConfig({
 	config = {},
 }: {
 	pathParams: GetDomainConfigPathParams;
-	queryParams?: GetDomainConfigQueryParams | undefined;
+	queryParams?: GetDomainConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2541,10 +3686,9 @@ export async function getDomainConfig({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		GetDomainConfigQueryResponse,
-		ErrorWrapper<GetDomainConfig400 | GetDomainConfig401 | GetDomainConfig403 | GetDomainConfig500>,
+		ErrorWrapper<GetDomainConfig400 | GetDomainConfig401 | GetDomainConfig403>,
 		null,
 		Record<string, string>,
 		GetDomainConfigQueryParams,
@@ -2564,7 +3708,7 @@ export async function getDomain({
 	config = {},
 }: {
 	pathParams: GetDomainPathParams;
-	queryParams?: GetDomainQueryParams | undefined;
+	queryParams?: GetDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2572,7 +3716,6 @@ export async function getDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		GetDomainQueryResponse,
 		ErrorWrapper<GetDomain400 | GetDomain401 | GetDomain403 | GetDomain404>,
@@ -2593,7 +3736,7 @@ export async function getDomains({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetDomainsQueryParams | undefined;
+	queryParams?: GetDomainsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2610,15 +3753,15 @@ export async function getDomains({
 }
 
 /**
- * @description This endpoint is used for adding a new apex domain name with Vercel for the authenticating user. Can also be used for initiating a domain transfer request from an external Registrar to Vercel.
- * @summary Register or transfer-in a new Domain
+ * @description This endpoint is used for adding a new apex domain name with Vercel for the authenticating user. Note: This endpoint is no longer used for initiating domain transfers from external registrars to Vercel. For this, please use the endpoint [Transfer-in a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/transfer-in-a-domain).
+ * @summary Add an existing domain to the Vercel platform
  * {@link /v7/domains}
  */
 export async function createOrTransferDomain({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateOrTransferDomainQueryParams | undefined;
+	queryParams?: CreateOrTransferDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2632,7 +3775,6 @@ export async function createOrTransferDomain({
 			| CreateOrTransferDomain403
 			| CreateOrTransferDomain404
 			| CreateOrTransferDomain409
-			| CreateOrTransferDomain500
 		>,
 		null,
 		Record<string, string>,
@@ -2649,7 +3791,7 @@ export async function createOrTransferDomain({
 }
 
 /**
- * @description Update or move apex domain.
+ * @description Update or move apex domain. Note: This endpoint is no longer used for updating auto-renew or nameservers. For this, please use the endpoints [Update auto-renew for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-auto-renew-for-a-domain) and [Update nameservers for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/update-nameservers-for-a-domain).
  * @summary Update or move apex domain
  * {@link /v3/domains/:domain}
  */
@@ -2659,7 +3801,7 @@ export async function patchDomain({
 	config = {},
 }: {
 	pathParams: PatchDomainPathParams;
-	queryParams?: PatchDomainQueryParams | undefined;
+	queryParams?: PatchDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2667,11 +3809,15 @@ export async function patchDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		PatchDomainMutationResponse,
 		ErrorWrapper<
-			PatchDomain400 | PatchDomain401 | PatchDomain403 | PatchDomain404 | PatchDomain409
+			| PatchDomain400
+			| PatchDomain401
+			| PatchDomain403
+			| PatchDomain404
+			| PatchDomain409
+			| PatchDomain500
 		>,
 		null,
 		Record<string, string>,
@@ -2698,7 +3844,7 @@ export async function deleteDomain({
 	config = {},
 }: {
 	pathParams: DeleteDomainPathParams;
-	queryParams?: DeleteDomainQueryParams | undefined;
+	queryParams?: DeleteDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2706,7 +3852,6 @@ export async function deleteDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		DeleteDomainMutationResponse,
 		ErrorWrapper<
@@ -2721,6 +3866,460 @@ export async function deleteDomain({
 }
 
 /**
+ * @description Retrieves a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be accessed.
+ * @summary Retrieves a Configurable Log Drain (deprecated)
+ * {@link /v1/log-drains/:id}
+ */
+export async function getConfigurableLogDrain({
+	pathParams: { id },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetConfigurableLogDrainPathParams;
+	queryParams?: GetConfigurableLogDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+	const data = await request<
+		GetConfigurableLogDrainQueryResponse,
+		ErrorWrapper<
+			| GetConfigurableLogDrain400
+			| GetConfigurableLogDrain401
+			| GetConfigurableLogDrain403
+			| GetConfigurableLogDrain404
+		>,
+		null,
+		Record<string, string>,
+		GetConfigurableLogDrainQueryParams,
+		GetConfigurableLogDrainPathParams
+	>({ method: "GET", url: `/v1/log-drains/${id}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Deletes a Configurable Log Drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated team can be deleted.
+ * @summary Deletes a Configurable Log Drain (deprecated)
+ * {@link /v1/log-drains/:id}
+ */
+export async function deleteConfigurableLogDrain({
+	pathParams: { id },
+	queryParams,
+	config = {},
+}: {
+	pathParams: DeleteConfigurableLogDrainPathParams;
+	queryParams?: DeleteConfigurableLogDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+	const data = await request<
+		DeleteConfigurableLogDrainMutationResponse,
+		ErrorWrapper<
+			| DeleteConfigurableLogDrain400
+			| DeleteConfigurableLogDrain401
+			| DeleteConfigurableLogDrain403
+			| DeleteConfigurableLogDrain404
+		>,
+		null,
+		Record<string, string>,
+		DeleteConfigurableLogDrainQueryParams,
+		DeleteConfigurableLogDrainPathParams
+	>({ method: "DELETE", url: `/v1/log-drains/${id}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Retrieves a list of all the Log Drains owned by the account. This endpoint must be called with an account AccessToken (integration OAuth2 clients are not allowed). Only log drains owned by the authenticated account can be accessed.
+ * @summary Retrieves a list of all the Log Drains (deprecated)
+ * {@link /v1/log-drains}
+ */
+export async function getAllLogDrains({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: GetAllLogDrainsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GetAllLogDrainsQueryResponse,
+		ErrorWrapper<GetAllLogDrains400 | GetAllLogDrains401 | GetAllLogDrains403 | GetAllLogDrains404>,
+		null,
+		Record<string, string>,
+		GetAllLogDrainsQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/log-drains`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Creates a configurable log drain. This endpoint must be called with a team AccessToken (integration OAuth2 clients are not allowed)
+ * @summary Creates a Configurable Log Drain (deprecated)
+ * {@link /v1/log-drains}
+ */
+export async function createConfigurableLogDrain({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: CreateConfigurableLogDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		CreateConfigurableLogDrainMutationResponse,
+		ErrorWrapper<
+			CreateConfigurableLogDrain400 | CreateConfigurableLogDrain401 | CreateConfigurableLogDrain403
+		>,
+		null,
+		Record<string, string>,
+		CreateConfigurableLogDrainQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/log-drains`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Create a new Drain with the provided configuration.
+ * @summary Create a new Drain
+ * {@link /v1/drains}
+ */
+export async function createDrain({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: CreateDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		CreateDrainMutationResponse,
+		ErrorWrapper<CreateDrain400 | CreateDrain401 | CreateDrain403>,
+		null,
+		Record<string, string>,
+		CreateDrainQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/drains`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Allows to retrieve the list of Drains of the authenticated team.
+ * @summary Retrieve a list of all Drains
+ * {@link /v1/drains}
+ */
+export async function getDrains({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: GetDrainsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GetDrainsQueryResponse,
+		ErrorWrapper<GetDrains400 | GetDrains401 | GetDrains403 | GetDrains404>,
+		null,
+		Record<string, string>,
+		GetDrainsQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/drains`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Delete a specific Drain by passing the drain id in the URL.
+ * @summary Delete a drain
+ * {@link /v1/drains/:id}
+ */
+export async function deleteDrain({
+	pathParams: { id },
+	queryParams,
+	config = {},
+}: {
+	pathParams: DeleteDrainPathParams;
+	queryParams?: DeleteDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+	const data = await request<
+		DeleteDrainMutationResponse,
+		ErrorWrapper<DeleteDrain400 | DeleteDrain401 | DeleteDrain403 | DeleteDrain404>,
+		null,
+		Record<string, string>,
+		DeleteDrainQueryParams,
+		DeleteDrainPathParams
+	>({ method: "DELETE", url: `/v1/drains/${id}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Get the information for a specific Drain by passing the drain id in the URL.
+ * @summary Find a Drain by id
+ * {@link /v1/drains/:id}
+ */
+export async function getDrain({
+	pathParams: { id },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetDrainPathParams;
+	queryParams?: GetDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+	const data = await request<
+		GetDrainQueryResponse,
+		ErrorWrapper<GetDrain400 | GetDrain401 | GetDrain403 | GetDrain404>,
+		null,
+		Record<string, string>,
+		GetDrainQueryParams,
+		GetDrainPathParams
+	>({ method: "GET", url: `/v1/drains/${id}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Update the configuration of an existing drain.
+ * @summary Update an existing Drain
+ * {@link /v1/drains/:id}
+ */
+export async function updateDrain({
+	pathParams: { id },
+	queryParams,
+	config = {},
+}: {
+	pathParams: UpdateDrainPathParams;
+	queryParams?: UpdateDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+	const data = await request<
+		UpdateDrainMutationResponse,
+		ErrorWrapper<UpdateDrain400 | UpdateDrain401 | UpdateDrain403 | UpdateDrain404>,
+		null,
+		Record<string, string>,
+		UpdateDrainQueryParams,
+		UpdateDrainPathParams
+	>({
+		method: "PATCH",
+		url: `/v1/drains/${id}`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Validate the delivery configuration of a Drain using sample events.
+ * @summary Validate Drain delivery configuration
+ * {@link /v1/drains/test}
+ */
+export async function testDrain({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: TestDrainQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		TestDrainMutationResponse,
+		ErrorWrapper<TestDrain400 | TestDrain401 | TestDrain403>,
+		null,
+		Record<string, string>,
+		TestDrainQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/drains/test`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Marks a cache tag as stale, causing cache entries associated with that tag to be revalidated in the background on the next request.
+ * @summary Invalidate by tag
+ * {@link /v1/edge-cache/invalidate-by-tags}
+ */
+export async function invalidateByTags({
+	queryParams,
+	config = {},
+}: {
+	queryParams: InvalidateByTagsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		InvalidateByTagsMutationResponse,
+		ErrorWrapper<
+			InvalidateByTags400 | InvalidateByTags401 | InvalidateByTags403 | InvalidateByTags404
+		>,
+		null,
+		Record<string, string>,
+		InvalidateByTagsQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/edge-cache/invalidate-by-tags`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Marks a cache tag as deleted, causing cache entries associated with that tag to be revalidated in the foreground on the next request. Use this method with caution because one tag can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.
+ * @summary Dangerously delete by tag
+ * {@link /v1/edge-cache/dangerously-delete-by-tags}
+ */
+export async function dangerouslyDeleteByTags({
+	queryParams,
+	config = {},
+}: {
+	queryParams: DangerouslyDeleteByTagsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		DangerouslyDeleteByTagsMutationResponse,
+		ErrorWrapper<
+			| DangerouslyDeleteByTags400
+			| DangerouslyDeleteByTags401
+			| DangerouslyDeleteByTags403
+			| DangerouslyDeleteByTags404
+		>,
+		null,
+		Record<string, string>,
+		DangerouslyDeleteByTagsQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/edge-cache/dangerously-delete-by-tags`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Marks a source image as stale, causing its corresponding transformed images to be revalidated in the background on the next request.
+ * @summary Invalidate by source image
+ * {@link /v1/edge-cache/invalidate-by-src-images}
+ */
+export async function invalidateBySrcImages({
+	queryParams,
+	config = {},
+}: {
+	queryParams: InvalidateBySrcImagesQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		InvalidateBySrcImagesMutationResponse,
+		ErrorWrapper<
+			| InvalidateBySrcImages400
+			| InvalidateBySrcImages401
+			| InvalidateBySrcImages402
+			| InvalidateBySrcImages403
+			| InvalidateBySrcImages404
+		>,
+		null,
+		Record<string, string>,
+		InvalidateBySrcImagesQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/edge-cache/invalidate-by-src-images`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Marks a source image as deleted, causing cache entries associated with that source image to be revalidated in the foreground on the next request. Use this method with caution because one source image can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.
+ * @summary Dangerously delete by source image
+ * {@link /v1/edge-cache/dangerously-delete-by-src-images}
+ */
+export async function dangerouslyDeleteBySrcImages({
+	queryParams,
+	config = {},
+}: {
+	queryParams: DangerouslyDeleteBySrcImagesQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		DangerouslyDeleteBySrcImagesMutationResponse,
+		ErrorWrapper<
+			| DangerouslyDeleteBySrcImages400
+			| DangerouslyDeleteBySrcImages401
+			| DangerouslyDeleteBySrcImages402
+			| DangerouslyDeleteBySrcImages403
+			| DangerouslyDeleteBySrcImages404
+		>,
+		null,
+		Record<string, string>,
+		DangerouslyDeleteBySrcImagesQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/edge-cache/dangerously-delete-by-src-images`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
  * @description Returns all Edge Configs.
  * @summary Get Edge Configs
  * {@link /v1/edge-config}
@@ -2729,7 +4328,7 @@ export async function getEdgeConfigs({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetEdgeConfigsQueryParams | undefined;
+	queryParams?: GetEdgeConfigsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2754,7 +4353,7 @@ export async function createEdgeConfig({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateEdgeConfigQueryParams | undefined;
+	queryParams?: CreateEdgeConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2789,7 +4388,7 @@ export async function getEdgeConfig({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigPathParams;
-	queryParams?: GetEdgeConfigQueryParams | undefined;
+	queryParams?: GetEdgeConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2797,7 +4396,6 @@ export async function getEdgeConfig({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		GetEdgeConfigQueryResponse,
 		ErrorWrapper<GetEdgeConfig400 | GetEdgeConfig401 | GetEdgeConfig403 | GetEdgeConfig404>,
@@ -2820,7 +4418,7 @@ export async function updateEdgeConfig({
 	config = {},
 }: {
 	pathParams: UpdateEdgeConfigPathParams;
-	queryParams?: UpdateEdgeConfigQueryParams | undefined;
+	queryParams?: UpdateEdgeConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2828,7 +4426,6 @@ export async function updateEdgeConfig({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		UpdateEdgeConfigMutationResponse,
 		ErrorWrapper<
@@ -2837,6 +4434,7 @@ export async function updateEdgeConfig({
 			| UpdateEdgeConfig402
 			| UpdateEdgeConfig403
 			| UpdateEdgeConfig404
+			| UpdateEdgeConfig409
 		>,
 		null,
 		Record<string, string>,
@@ -2863,7 +4461,7 @@ export async function deleteEdgeConfig({
 	config = {},
 }: {
 	pathParams: DeleteEdgeConfigPathParams;
-	queryParams?: DeleteEdgeConfigQueryParams | undefined;
+	queryParams?: DeleteEdgeConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2871,11 +4469,14 @@ export async function deleteEdgeConfig({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		DeleteEdgeConfigMutationResponse,
 		ErrorWrapper<
-			DeleteEdgeConfig400 | DeleteEdgeConfig401 | DeleteEdgeConfig403 | DeleteEdgeConfig404
+			| DeleteEdgeConfig400
+			| DeleteEdgeConfig401
+			| DeleteEdgeConfig403
+			| DeleteEdgeConfig404
+			| DeleteEdgeConfig409
 		>,
 		null,
 		Record<string, string>,
@@ -2896,7 +4497,7 @@ export async function getEdgeConfigItems({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigItemsPathParams;
-	queryParams?: GetEdgeConfigItemsQueryParams | undefined;
+	queryParams?: GetEdgeConfigItemsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2904,7 +4505,6 @@ export async function getEdgeConfigItems({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		GetEdgeConfigItemsQueryResponse,
 		ErrorWrapper<
@@ -2929,7 +4529,7 @@ export async function patchEdgeConfigItems({
 	config = {},
 }: {
 	pathParams: PatchEdgeConfigItemsPathParams;
-	queryParams?: PatchEdgeConfigItemsQueryParams | undefined;
+	queryParams?: PatchEdgeConfigItemsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2937,7 +4537,6 @@ export async function patchEdgeConfigItems({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		PatchEdgeConfigItemsMutationResponse,
 		ErrorWrapper<
@@ -2947,6 +4546,7 @@ export async function patchEdgeConfigItems({
 			| PatchEdgeConfigItems403
 			| PatchEdgeConfigItems404
 			| PatchEdgeConfigItems409
+			| PatchEdgeConfigItems412
 		>,
 		null,
 		Record<string, string>,
@@ -2973,7 +4573,7 @@ export async function getEdgeConfigSchema({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigSchemaPathParams;
-	queryParams?: GetEdgeConfigSchemaQueryParams | undefined;
+	queryParams?: GetEdgeConfigSchemaQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -2981,7 +4581,6 @@ export async function getEdgeConfigSchema({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		GetEdgeConfigSchemaQueryResponse,
 		ErrorWrapper<
@@ -3014,7 +4613,7 @@ export async function patchEdgeConfigSchema({
 	config = {},
 }: {
 	pathParams: PatchEdgeConfigSchemaPathParams;
-	queryParams?: PatchEdgeConfigSchemaQueryParams | undefined;
+	queryParams?: PatchEdgeConfigSchemaQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3022,7 +4621,6 @@ export async function patchEdgeConfigSchema({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		PatchEdgeConfigSchemaMutationResponse,
 		ErrorWrapper<
@@ -3031,6 +4629,7 @@ export async function patchEdgeConfigSchema({
 			| PatchEdgeConfigSchema402
 			| PatchEdgeConfigSchema403
 			| PatchEdgeConfigSchema404
+			| PatchEdgeConfigSchema409
 		>,
 		null,
 		Record<string, string>,
@@ -3057,7 +4656,7 @@ export async function deleteEdgeConfigSchema({
 	config = {},
 }: {
 	pathParams: DeleteEdgeConfigSchemaPathParams;
-	queryParams?: DeleteEdgeConfigSchemaQueryParams | undefined;
+	queryParams?: DeleteEdgeConfigSchemaQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3065,7 +4664,6 @@ export async function deleteEdgeConfigSchema({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		DeleteEdgeConfigSchemaMutationResponse,
 		ErrorWrapper<
@@ -3074,6 +4672,7 @@ export async function deleteEdgeConfigSchema({
 			| DeleteEdgeConfigSchema402
 			| DeleteEdgeConfigSchema403
 			| DeleteEdgeConfigSchema404
+			| DeleteEdgeConfigSchema409
 		>,
 		null,
 		Record<string, string>,
@@ -3099,7 +4698,7 @@ export async function getEdgeConfigItem({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigItemPathParams;
-	queryParams?: GetEdgeConfigItemQueryParams | undefined;
+	queryParams?: GetEdgeConfigItemQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3111,7 +4710,6 @@ export async function getEdgeConfigItem({
 	if (!edgeConfigItemKey) {
 		throw new Error(`Missing required path parameter: edgeConfigItemKey`);
 	}
-
 	const data = await request<
 		GetEdgeConfigItemQueryResponse,
 		ErrorWrapper<
@@ -3141,7 +4739,7 @@ export async function getEdgeConfigTokens({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigTokensPathParams;
-	queryParams?: GetEdgeConfigTokensQueryParams | undefined;
+	queryParams?: GetEdgeConfigTokensQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3149,7 +4747,6 @@ export async function getEdgeConfigTokens({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		GetEdgeConfigTokensQueryResponse,
 		ErrorWrapper<
@@ -3182,7 +4779,7 @@ export async function deleteEdgeConfigTokens({
 	config = {},
 }: {
 	pathParams: DeleteEdgeConfigTokensPathParams;
-	queryParams?: DeleteEdgeConfigTokensQueryParams | undefined;
+	queryParams?: DeleteEdgeConfigTokensQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3190,7 +4787,6 @@ export async function deleteEdgeConfigTokens({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		DeleteEdgeConfigTokensMutationResponse,
 		ErrorWrapper<
@@ -3199,6 +4795,7 @@ export async function deleteEdgeConfigTokens({
 			| DeleteEdgeConfigTokens402
 			| DeleteEdgeConfigTokens403
 			| DeleteEdgeConfigTokens404
+			| DeleteEdgeConfigTokens409
 		>,
 		null,
 		Record<string, string>,
@@ -3225,7 +4822,7 @@ export async function getEdgeConfigToken({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigTokenPathParams;
-	queryParams?: GetEdgeConfigTokenQueryParams | undefined;
+	queryParams?: GetEdgeConfigTokenQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3237,7 +4834,6 @@ export async function getEdgeConfigToken({
 	if (!token) {
 		throw new Error(`Missing required path parameter: token`);
 	}
-
 	const data = await request<
 		GetEdgeConfigTokenQueryResponse,
 		ErrorWrapper<
@@ -3267,7 +4863,7 @@ export async function createEdgeConfigToken({
 	config = {},
 }: {
 	pathParams: CreateEdgeConfigTokenPathParams;
-	queryParams?: CreateEdgeConfigTokenQueryParams | undefined;
+	queryParams?: CreateEdgeConfigTokenQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3275,7 +4871,6 @@ export async function createEdgeConfigToken({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		CreateEdgeConfigTokenMutationResponse,
 		ErrorWrapper<
@@ -3284,6 +4879,7 @@ export async function createEdgeConfigToken({
 			| CreateEdgeConfigToken402
 			| CreateEdgeConfigToken403
 			| CreateEdgeConfigToken404
+			| CreateEdgeConfigToken409
 		>,
 		null,
 		Record<string, string>,
@@ -3310,7 +4906,7 @@ export async function getEdgeConfigBackup({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigBackupPathParams;
-	queryParams?: GetEdgeConfigBackupQueryParams | undefined;
+	queryParams?: GetEdgeConfigBackupQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3322,7 +4918,6 @@ export async function getEdgeConfigBackup({
 	if (!edgeConfigBackupVersionId) {
 		throw new Error(`Missing required path parameter: edgeConfigBackupVersionId`);
 	}
-
 	const data = await request<
 		GetEdgeConfigBackupQueryResponse,
 		ErrorWrapper<
@@ -3355,7 +4950,7 @@ export async function getEdgeConfigBackups({
 	config = {},
 }: {
 	pathParams: GetEdgeConfigBackupsPathParams;
-	queryParams?: GetEdgeConfigBackupsQueryParams | undefined;
+	queryParams?: GetEdgeConfigBackupsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3363,7 +4958,6 @@ export async function getEdgeConfigBackups({
 	if (!edgeConfigId) {
 		throw new Error(`Missing required path parameter: edgeConfigId`);
 	}
-
 	const data = await request<
 		GetEdgeConfigBackupsQueryResponse,
 		ErrorWrapper<
@@ -3386,6 +4980,210 @@ export async function getEdgeConfigBackups({
 }
 
 /**
+ * @description Creates shared environment variable(s) for a team.
+ * @summary Create one or more shared environment variables
+ * {@link /v1/env}
+ */
+export async function createSharedEnvVariable({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: CreateSharedEnvVariableQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		CreateSharedEnvVariableMutationResponse,
+		ErrorWrapper<
+			| CreateSharedEnvVariable400
+			| CreateSharedEnvVariable401
+			| CreateSharedEnvVariable402
+			| CreateSharedEnvVariable403
+		>,
+		null,
+		Record<string, string>,
+		CreateSharedEnvVariableQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/env`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Lists all Shared Environment Variables for a team, taking into account optional filters.
+ * @summary Lists all Shared Environment Variables for a team
+ * {@link /v1/env}
+ */
+export async function listSharedEnvVariable({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: ListSharedEnvVariableQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		ListSharedEnvVariableQueryResponse,
+		ErrorWrapper<
+			| ListSharedEnvVariable400
+			| ListSharedEnvVariable401
+			| ListSharedEnvVariable403
+			| ListSharedEnvVariable404
+		>,
+		null,
+		Record<string, string>,
+		ListSharedEnvVariableQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/env`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Updates a given Shared Environment Variable for a Team.
+ * @summary Updates one or more shared environment variables
+ * {@link /v1/env}
+ */
+export async function updateSharedEnvVariable({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: UpdateSharedEnvVariableQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		UpdateSharedEnvVariableMutationResponse,
+		ErrorWrapper<
+			| UpdateSharedEnvVariable400
+			| UpdateSharedEnvVariable401
+			| UpdateSharedEnvVariable402
+			| UpdateSharedEnvVariable403
+		>,
+		null,
+		Record<string, string>,
+		UpdateSharedEnvVariableQueryParams,
+		Record<string, string>
+	>({
+		method: "PATCH",
+		url: `/v1/env`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Deletes one or many Shared Environment Variables for a given team.
+ * @summary Delete one or more Env Var
+ * {@link /v1/env}
+ */
+export async function deleteSharedEnvVariable({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: DeleteSharedEnvVariableQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		DeleteSharedEnvVariableMutationResponse,
+		ErrorWrapper<
+			| DeleteSharedEnvVariable400
+			| DeleteSharedEnvVariable401
+			| DeleteSharedEnvVariable402
+			| DeleteSharedEnvVariable403
+		>,
+		null,
+		Record<string, string>,
+		DeleteSharedEnvVariableQueryParams,
+		Record<string, string>
+	>({
+		method: "DELETE",
+		url: `/v1/env`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Retrieve the decrypted value of a Shared Environment Variable by id.
+ * @summary Retrieve the decrypted value of a Shared Environment Variable by id.
+ * {@link /v1/env/:id}
+ */
+export async function getSharedEnvVar({
+	pathParams: { id },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetSharedEnvVarPathParams;
+	queryParams?: GetSharedEnvVarQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+	const data = await request<
+		GetSharedEnvVarQueryResponse,
+		ErrorWrapper<GetSharedEnvVar400 | GetSharedEnvVar401 | GetSharedEnvVar403>,
+		null,
+		Record<string, string>,
+		GetSharedEnvVarQueryParams,
+		GetSharedEnvVarPathParams
+	>({ method: "GET", url: `/v1/env/${id}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Disconnects a shared environment variable for a given project
+ * @summary Disconnects a shared environment variable for a given project
+ * {@link /v1/env/:id/unlink/:projectId}
+ */
+export async function unlinkSharedEnvVariable({
+	pathParams: { id, projectId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: UnlinkSharedEnvVariablePathParams;
+	queryParams?: UnlinkSharedEnvVariableQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		UnlinkSharedEnvVariableMutationResponse,
+		ErrorWrapper<
+			UnlinkSharedEnvVariable400 | UnlinkSharedEnvVariable401 | UnlinkSharedEnvVariable403
+		>,
+		null,
+		Record<string, string>,
+		UnlinkSharedEnvVariableQueryParams,
+		UnlinkSharedEnvVariablePathParams
+	>({ method: "PATCH", url: `/v1/env/${id}/unlink/${projectId}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
  * @description Retrieves a list of "events" generated by the User on Vercel. Events are generated when the User performs a particular action, such as logging in, creating a deployment, and joining a Team (just to name a few). When the `teamId` parameter is supplied, then the events that are returned will be in relation to the Team that was specified.
  * @summary List User Events
  * {@link /v3/events}
@@ -3394,7 +5192,7 @@ export async function listUserEvents({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: ListUserEventsQueryParams | undefined;
+	queryParams?: ListUserEventsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3407,6 +5205,184 @@ export async function listUserEvents({
 		ListUserEventsQueryParams,
 		Record<string, string>
 	>({ method: "GET", url: `/v3/events`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Lists git namespaces for a supported provider. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider is not provided, it will try to obtain it from the user that authenticated the request.
+ * @summary List git namespaces by provider
+ * {@link /v1/integrations/git-namespaces}
+ */
+export async function gitNamespaces({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: GitNamespacesQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GitNamespacesQueryResponse,
+		ErrorWrapper<
+			| GitNamespaces400
+			| GitNamespaces401
+			| GitNamespaces403
+			| GitNamespaces404
+			| GitNamespaces429
+			| GitNamespaces500
+		>,
+		null,
+		Record<string, string>,
+		GitNamespacesQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/integrations/git-namespaces`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Lists git repositories linked to a namespace `id` for a supported provider. A specific namespace `id` can be obtained via the `git-namespaces`  endpoint. Supported providers are `github`, `gitlab` and `bitbucket`. If the provider or namespace is not provided, it will try to obtain it from the user that authenticated the request.
+ * @summary List git repositories linked to namespace by provider
+ * {@link /v1/integrations/search-repo}
+ */
+export async function searchRepo({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: SearchRepoQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		SearchRepoQueryResponse,
+		ErrorWrapper<
+			SearchRepo400 | SearchRepo401 | SearchRepo403 | SearchRepo404 | SearchRepo429 | SearchRepo500
+		>,
+		null,
+		Record<string, string>,
+		SearchRepoQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/integrations/search-repo`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Get a list of billing plans for an integration and product.
+ * @summary List integration billing plans
+ * {@link /v1/integrations/integration/:integrationIdOrSlug/products/:productIdOrSlug/plans}
+ */
+export async function getBillingPlans({
+	pathParams: { integrationIdOrSlug, productIdOrSlug },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetBillingPlansPathParams;
+	queryParams?: GetBillingPlansQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!integrationIdOrSlug) {
+		throw new Error(`Missing required path parameter: integrationIdOrSlug`);
+	}
+
+	if (!productIdOrSlug) {
+		throw new Error(`Missing required path parameter: productIdOrSlug`);
+	}
+	const data = await request<
+		GetBillingPlansQueryResponse,
+		ErrorWrapper<GetBillingPlans400 | GetBillingPlans401 | GetBillingPlans403 | GetBillingPlans404>,
+		null,
+		Record<string, string>,
+		GetBillingPlansQueryParams,
+		GetBillingPlansPathParams
+	>({
+		method: "GET",
+		url: `/v1/integrations/integration/${integrationIdOrSlug}/products/${productIdOrSlug}/plans`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Connects an integration resource to a Vercel project. This endpoint establishes a connection between a provisioned integration resource (from storage APIs like `POST /v1/storage/stores/integration/direct`) and a specific Vercel project.
+ * @summary Connect integration resource to project
+ * {@link /v1/integrations/installations/:integrationConfigurationId/resources/:resourceId/connections}
+ */
+export async function connectIntegrationResourceToProject({
+	pathParams: { integrationConfigurationId, resourceId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ConnectIntegrationResourceToProjectPathParams;
+	queryParams?: ConnectIntegrationResourceToProjectQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!integrationConfigurationId) {
+		throw new Error(`Missing required path parameter: integrationConfigurationId`);
+	}
+
+	if (!resourceId) {
+		throw new Error(`Missing required path parameter: resourceId`);
+	}
+	const data = await request<
+		ConnectIntegrationResourceToProjectMutationResponse,
+		ErrorWrapper<
+			| ConnectIntegrationResourceToProject400
+			| ConnectIntegrationResourceToProject401
+			| ConnectIntegrationResourceToProject403
+			| ConnectIntegrationResourceToProject404
+		>,
+		null,
+		Record<string, string>,
+		ConnectIntegrationResourceToProjectQueryParams,
+		ConnectIntegrationResourceToProjectPathParams
+	>({
+		method: "POST",
+		url: `/v1/integrations/installations/${integrationConfigurationId}/resources/${resourceId}/connections`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description This endpoint updates an integration installation.
+ * @summary Update Installation
+ * {@link /v1/installations/:integrationConfigurationId}
+ */
+export async function updateInstallation({
+	pathParams: { integrationConfigurationId },
+	config = {},
+}: {
+	pathParams: UpdateInstallationPathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!integrationConfigurationId) {
+		throw new Error(`Missing required path parameter: integrationConfigurationId`);
+	}
+	const data = await request<
+		UpdateInstallationMutationResponse,
+		ErrorWrapper<
+			UpdateInstallation400 | UpdateInstallation401 | UpdateInstallation403 | UpdateInstallation404
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		UpdateInstallationPathParams
+	>({
+		method: "PATCH",
+		url: `/v1/installations/${integrationConfigurationId}`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
 	return data;
 }
 
@@ -3427,7 +5403,6 @@ export async function getAccountInfo({
 	if (!integrationConfigurationId) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
-
 	const data = await request<
 		GetAccountInfoQueryResponse,
 		ErrorWrapper<GetAccountInfo400 | GetAccountInfo401 | GetAccountInfo403 | GetAccountInfo404>,
@@ -3464,7 +5439,6 @@ export async function getMember({
 	if (!memberId) {
 		throw new Error(`Missing required path parameter: memberId`);
 	}
-
 	const data = await request<
 		GetMemberQueryResponse,
 		ErrorWrapper<GetMember400 | GetMember401 | GetMember403 | GetMember404>,
@@ -3497,7 +5471,6 @@ export async function createEvent({
 	if (!integrationConfigurationId) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
-
 	const data = await request<
 		CreateEventMutationResponse,
 		ErrorWrapper<CreateEvent400 | CreateEvent401 | CreateEvent403 | CreateEvent404>,
@@ -3531,7 +5504,6 @@ export async function getIntegrationResources({
 	if (!integrationConfigurationId) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
-
 	const data = await request<
 		GetIntegrationResourcesQueryResponse,
 		ErrorWrapper<
@@ -3573,7 +5545,6 @@ export async function getIntegrationResource({
 	if (!resourceId) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
-
 	const data = await request<
 		GetIntegrationResourceQueryResponse,
 		ErrorWrapper<
@@ -3615,7 +5586,6 @@ export async function deleteIntegrationResource({
 	if (!resourceId) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
-
 	const data = await request<
 		DeleteIntegrationResourceMutationResponse,
 		ErrorWrapper<
@@ -3657,16 +5627,67 @@ export async function importResource({
 	if (!resourceId) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
-
 	const data = await request<
 		ImportResourceMutationResponse,
-		ErrorWrapper<ImportResource400 | ImportResource401 | ImportResource403 | ImportResource404>,
+		ErrorWrapper<
+			| ImportResource400
+			| ImportResource401
+			| ImportResource403
+			| ImportResource404
+			| ImportResource409
+			| ImportResource422
+			| ImportResource429
+		>,
 		null,
 		Record<string, string>,
 		Record<string, string>,
 		ImportResourcePathParams
 	>({
 		method: "PUT",
+		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description This endpoint updates an existing resource in the installation. All parameters are optional, allowing partial updates.
+ * @summary Update Resource
+ * {@link /v1/installations/:integrationConfigurationId/resources/:resourceId}
+ */
+export async function updateResource({
+	pathParams: { integrationConfigurationId, resourceId },
+	config = {},
+}: {
+	pathParams: UpdateResourcePathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!integrationConfigurationId) {
+		throw new Error(`Missing required path parameter: integrationConfigurationId`);
+	}
+
+	if (!resourceId) {
+		throw new Error(`Missing required path parameter: resourceId`);
+	}
+	const data = await request<
+		UpdateResourceMutationResponse,
+		ErrorWrapper<
+			| UpdateResource400
+			| UpdateResource401
+			| UpdateResource403
+			| UpdateResource404
+			| UpdateResource409
+			| UpdateResource422
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		UpdateResourcePathParams
+	>({
+		method: "PATCH",
 		url: `/v1/installations/${integrationConfigurationId}/resources/${resourceId}`,
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
@@ -3691,7 +5712,6 @@ export async function submitBillingData({
 	if (!integrationConfigurationId) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
-
 	const data = await request<
 		SubmitBillingDataMutationResponse,
 		ErrorWrapper<
@@ -3727,10 +5747,11 @@ export async function submitInvoice({
 	if (!integrationConfigurationId) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
-
 	const data = await request<
 		SubmitInvoiceMutationResponse,
-		ErrorWrapper<SubmitInvoice400 | SubmitInvoice401 | SubmitInvoice403 | SubmitInvoice404>,
+		ErrorWrapper<
+			SubmitInvoice400 | SubmitInvoice401 | SubmitInvoice403 | SubmitInvoice404 | SubmitInvoice409
+		>,
 		null,
 		Record<string, string>,
 		Record<string, string>,
@@ -3765,7 +5786,6 @@ export async function getInvoice({
 	if (!invoiceId) {
 		throw new Error(`Missing required path parameter: invoiceId`);
 	}
-
 	const data = await request<
 		GetInvoiceQueryResponse,
 		ErrorWrapper<GetInvoice400 | GetInvoice401 | GetInvoice403 | GetInvoice404>,
@@ -3802,10 +5822,11 @@ export async function updateInvoice({
 	if (!invoiceId) {
 		throw new Error(`Missing required path parameter: invoiceId`);
 	}
-
 	const data = await request<
 		UpdateInvoiceMutationResponse,
-		ErrorWrapper<UpdateInvoice400 | UpdateInvoice401 | UpdateInvoice403 | UpdateInvoice404>,
+		ErrorWrapper<
+			UpdateInvoice400 | UpdateInvoice401 | UpdateInvoice403 | UpdateInvoice404 | UpdateInvoice409
+		>,
 		null,
 		Record<string, string>,
 		Record<string, string>,
@@ -3836,7 +5857,6 @@ export async function submitPrepaymentBalances({
 	if (!integrationConfigurationId) {
 		throw new Error(`Missing required path parameter: integrationConfigurationId`);
 	}
-
 	const data = await request<
 		SubmitPrepaymentBalancesMutationResponse,
 		ErrorWrapper<
@@ -3883,7 +5903,6 @@ export async function updateResourceSecrets({
 	if (!resourceId) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
-
 	const data = await request<
 		UpdateResourceSecretsMutationResponse,
 		ErrorWrapper<
@@ -3891,6 +5910,8 @@ export async function updateResourceSecrets({
 			| UpdateResourceSecrets401
 			| UpdateResourceSecrets403
 			| UpdateResourceSecrets404
+			| UpdateResourceSecrets409
+			| UpdateResourceSecrets422
 		>,
 		null,
 		Record<string, string>,
@@ -3926,7 +5947,6 @@ export async function updateResourceSecretsById({
 	if (!resourceId) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
-
 	const data = await request<
 		UpdateResourceSecretsByIdMutationResponse,
 		ErrorWrapper<
@@ -3934,6 +5954,7 @@ export async function updateResourceSecretsById({
 			| UpdateResourceSecretsById401
 			| UpdateResourceSecretsById403
 			| UpdateResourceSecretsById404
+			| UpdateResourceSecretsById409
 			| UpdateResourceSecretsById422
 		>,
 		null,
@@ -3985,7 +6006,7 @@ export async function getConfiguration({
 	config = {},
 }: {
 	pathParams: GetConfigurationPathParams;
-	queryParams?: GetConfigurationQueryParams | undefined;
+	queryParams?: GetConfigurationQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -3993,7 +6014,6 @@ export async function getConfiguration({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		GetConfigurationQueryResponse,
 		ErrorWrapper<
@@ -4018,7 +6038,7 @@ export async function deleteConfiguration({
 	config = {},
 }: {
 	pathParams: DeleteConfigurationPathParams;
-	queryParams?: DeleteConfigurationQueryParams | undefined;
+	queryParams?: DeleteConfigurationQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4026,7 +6046,6 @@ export async function deleteConfiguration({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		DeleteConfigurationMutationResponse,
 		ErrorWrapper<
@@ -4049,6 +6068,47 @@ export async function deleteConfiguration({
 }
 
 /**
+ * @description Lists all products available for an integration configuration. Use this endpoint to discover what integration products are available for your integration configuration. The returned product IDs or slugs can then be used with storage provisioning endpoints like `POST /v1/storage/stores/integration/direct`. ## Workflow 1. Get your integration configurations: `GET /v1/integrations/configurations` 2. **Use this endpoint**: Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Create storage resource: `POST /v1/storage/stores/integration/direct` ## Response Returns an array of products with their IDs, slugs, names, supported protocols, and metadata requirements. Each product represents a different type of resource you can provision. The `metadataSchema` field contains a JSON Schema that defines: - **Required metadata**: Fields that must be provided during storage creation - **Optional metadata**: Fields that can be provided but are not mandatory - **Field validation**: Data types, allowed values, and constraints Use this schema to validate metadata before calling the storage creation endpoint.
+ * @summary List products for integration configuration
+ * {@link /v1/integrations/configuration/:id/products}
+ */
+export async function getConfigurationProducts({
+	pathParams: { id },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetConfigurationProductsPathParams;
+	queryParams?: GetConfigurationProductsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!id) {
+		throw new Error(`Missing required path parameter: id`);
+	}
+	const data = await request<
+		GetConfigurationProductsQueryResponse,
+		ErrorWrapper<
+			| GetConfigurationProducts400
+			| GetConfigurationProducts401
+			| GetConfigurationProducts403
+			| GetConfigurationProducts404
+			| GetConfigurationProducts500
+		>,
+		null,
+		Record<string, string>,
+		GetConfigurationProductsQueryParams,
+		GetConfigurationProductsPathParams
+	>({
+		method: "GET",
+		url: `/v1/integrations/configuration/${id}/products`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
  * @description During the autorization process, Vercel sends the user to the provider [redirectLoginUrl](https://vercel.com/docs/integrations/create-integration/submit-integration#redirect-login-url), that includes the OAuth authorization `code` parameter. The provider then calls the SSO Token Exchange endpoint with the sent code and receives the OIDC token. They log the user in based on this token and redirects the user back to the Vercel account using deep-link parameters included the redirectLoginUrl. Providers should not persist the returned `id_token` in a database since the token will expire. See [**Authentication with SSO**](https://vercel.com/docs/integrations/create-integration/marketplace-api#authentication-with-sso) for more details.
  * @summary SSO Token Exchange
  * {@link /v1/integrations/sso/token}
@@ -4062,7 +6122,9 @@ export async function exchangeSsoToken({
 
 	const data = await request<
 		ExchangeSsoTokenMutationResponse,
-		ErrorWrapper<ExchangeSsoToken400 | ExchangeSsoToken404 | ExchangeSsoToken500>,
+		ErrorWrapper<
+			ExchangeSsoToken400 | ExchangeSsoToken403 | ExchangeSsoToken404 | ExchangeSsoToken500
+		>,
 		null,
 		Record<string, string>,
 		Record<string, string>,
@@ -4078,14 +6140,14 @@ export async function exchangeSsoToken({
 
 /**
  * @description Retrieves a list of all Integration log drains that are defined for the authenticated user or team. When using an OAuth2 token, the list is limited to log drains created by the authenticated integration.
- * @summary Retrieves a list of Integration log drains
+ * @summary Retrieves a list of Integration log drains (deprecated)
  * {@link /v2/integrations/log-drains}
  */
 export async function getIntegrationLogDrains({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetIntegrationLogDrainsQueryParams | undefined;
+	queryParams?: GetIntegrationLogDrainsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4105,14 +6167,14 @@ export async function getIntegrationLogDrains({
 
 /**
  * @description Creates an Integration log drain. This endpoint must be called with an OAuth2 client (integration), since log drains are tied to integrations. If it is called with a different token type it will produce a 400 error.
- * @summary Creates a new Integration Log Drain
+ * @summary Creates a new Integration Log Drain (deprecated)
  * {@link /v2/integrations/log-drains}
  */
 export async function createLogDrain({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateLogDrainQueryParams | undefined;
+	queryParams?: CreateLogDrainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4136,7 +6198,7 @@ export async function createLogDrain({
 
 /**
  * @description Deletes the Integration log drain with the provided `id`. When using an OAuth2 Token, the log drain can be deleted only if the integration owns it.
- * @summary Deletes the Integration log drain with the provided `id`
+ * @summary Deletes the Integration log drain with the provided `id` (deprecated)
  * {@link /v1/integrations/log-drains/:id}
  */
 export async function deleteIntegrationLogDrain({
@@ -4145,7 +6207,7 @@ export async function deleteIntegrationLogDrain({
 	config = {},
 }: {
 	pathParams: DeleteIntegrationLogDrainPathParams;
-	queryParams?: DeleteIntegrationLogDrainQueryParams | undefined;
+	queryParams?: DeleteIntegrationLogDrainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4153,7 +6215,6 @@ export async function deleteIntegrationLogDrain({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		DeleteIntegrationLogDrainMutationResponse,
 		ErrorWrapper<
@@ -4181,7 +6242,7 @@ export async function getRuntimeLogs({
 	config = {},
 }: {
 	pathParams: GetRuntimeLogsPathParams;
-	queryParams?: GetRuntimeLogsQueryParams | undefined;
+	queryParams?: GetRuntimeLogsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4193,7 +6254,6 @@ export async function getRuntimeLogs({
 	if (!deploymentId) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
-
 	const data = await request<
 		GetRuntimeLogsQueryResponse,
 		ErrorWrapper<GetRuntimeLogs400 | GetRuntimeLogs401 | GetRuntimeLogs403>,
@@ -4231,7 +6291,6 @@ export async function createExperimentationItem({
 	if (!resourceId) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
-
 	const data = await request<
 		CreateExperimentationItemMutationResponse,
 		ErrorWrapper<
@@ -4278,7 +6337,6 @@ export async function updateExperimentationItem({
 	if (!itemId) {
 		throw new Error(`Missing required path parameter: itemId`);
 	}
-
 	const data = await request<
 		UpdateExperimentationItemMutationResponse,
 		ErrorWrapper<
@@ -4325,7 +6383,6 @@ export async function deleteExperimentationItem({
 	if (!itemId) {
 		throw new Error(`Missing required path parameter: itemId`);
 	}
-
 	const data = await request<
 		DeleteExperimentationItemMutationResponse,
 		ErrorWrapper<
@@ -4367,7 +6424,6 @@ export async function updateExperimentationEdgeConfig({
 	if (!resourceId) {
 		throw new Error(`Missing required path parameter: resourceId`);
 	}
-
 	const data = await request<
 		UpdateExperimentationEdgeConfigMutationResponse,
 		ErrorWrapper<
@@ -4375,6 +6431,7 @@ export async function updateExperimentationEdgeConfig({
 			| UpdateExperimentationEdgeConfig401
 			| UpdateExperimentationEdgeConfig403
 			| UpdateExperimentationEdgeConfig404
+			| UpdateExperimentationEdgeConfig409
 			| UpdateExperimentationEdgeConfig412
 		>,
 		null,
@@ -4401,7 +6458,7 @@ export async function getProjectMembers({
 	config = {},
 }: {
 	pathParams: GetProjectMembersPathParams;
-	queryParams?: GetProjectMembersQueryParams | undefined;
+	queryParams?: GetProjectMembersQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4409,7 +6466,6 @@ export async function getProjectMembers({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		GetProjectMembersQueryResponse,
 		ErrorWrapper<GetProjectMembers400 | GetProjectMembers401 | GetProjectMembers403>,
@@ -4432,7 +6488,7 @@ export async function addProjectMember({
 	config = {},
 }: {
 	pathParams: AddProjectMemberPathParams;
-	queryParams?: AddProjectMemberQueryParams | undefined;
+	queryParams?: AddProjectMemberQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4440,7 +6496,6 @@ export async function addProjectMember({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		AddProjectMemberMutationResponse,
 		ErrorWrapper<
@@ -4471,7 +6526,7 @@ export async function removeProjectMember({
 	config = {},
 }: {
 	pathParams: RemoveProjectMemberPathParams;
-	queryParams?: RemoveProjectMemberQueryParams | undefined;
+	queryParams?: RemoveProjectMemberQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4483,7 +6538,6 @@ export async function removeProjectMember({
 	if (!uid) {
 		throw new Error(`Missing required path parameter: uid`);
 	}
-
 	const data = await request<
 		RemoveProjectMemberMutationResponse,
 		ErrorWrapper<RemoveProjectMember400 | RemoveProjectMember401 | RemoveProjectMember403>,
@@ -4509,7 +6563,7 @@ export async function getProjects({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetProjectsQueryParams | undefined;
+	queryParams?: GetProjectsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4534,7 +6588,7 @@ export async function createProject({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateProjectQueryParams | undefined;
+	queryParams?: CreateProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4542,7 +6596,15 @@ export async function createProject({
 	const data = await request<
 		CreateProjectMutationResponse,
 		ErrorWrapper<
-			CreateProject400 | CreateProject401 | CreateProject402 | CreateProject403 | CreateProject409
+			| CreateProject400
+			| CreateProject401
+			| CreateProject402
+			| CreateProject403
+			| CreateProject404
+			| CreateProject409
+			| CreateProject428
+			| CreateProject429
+			| CreateProject500
 		>,
 		null,
 		Record<string, string>,
@@ -4569,7 +6631,7 @@ export async function getProject({
 	config = {},
 }: {
 	pathParams: GetProjectPathParams;
-	queryParams?: GetProjectQueryParams | undefined;
+	queryParams?: GetProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4577,7 +6639,6 @@ export async function getProject({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		GetProjectQueryResponse,
 		ErrorWrapper<GetProject400 | GetProject401 | GetProject403>,
@@ -4600,7 +6661,7 @@ export async function updateProject({
 	config = {},
 }: {
 	pathParams: UpdateProjectPathParams;
-	queryParams?: UpdateProjectQueryParams | undefined;
+	queryParams?: UpdateProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4608,7 +6669,6 @@ export async function updateProject({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		UpdateProjectMutationResponse,
 		ErrorWrapper<
@@ -4645,7 +6705,7 @@ export async function deleteProject({
 	config = {},
 }: {
 	pathParams: DeleteProjectPathParams;
-	queryParams?: DeleteProjectQueryParams | undefined;
+	queryParams?: DeleteProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4653,7 +6713,6 @@ export async function deleteProject({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		DeleteProjectMutationResponse,
 		ErrorWrapper<DeleteProject400 | DeleteProject401 | DeleteProject403 | DeleteProject409>,
@@ -4662,6 +6721,49 @@ export async function deleteProject({
 		DeleteProjectQueryParams,
 		DeleteProjectPathParams
 	>({ method: "DELETE", url: `/v9/projects/${idOrName}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Allows configuring Static IPs for a project
+ * @summary Configures Static IPs for a project
+ * {@link /v1/projects/:idOrName/shared-connect-links}
+ */
+export async function updateStaticIps({
+	pathParams: { idOrName },
+	queryParams,
+	config = {},
+}: {
+	pathParams: UpdateStaticIpsPathParams;
+	queryParams?: UpdateStaticIpsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!idOrName) {
+		throw new Error(`Missing required path parameter: idOrName`);
+	}
+	const data = await request<
+		UpdateStaticIpsMutationResponse,
+		ErrorWrapper<
+			| UpdateStaticIps400
+			| UpdateStaticIps401
+			| UpdateStaticIps402
+			| UpdateStaticIps403
+			| UpdateStaticIps404
+			| UpdateStaticIps500
+		>,
+		null,
+		Record<string, string>,
+		UpdateStaticIpsQueryParams,
+		UpdateStaticIpsPathParams
+	>({
+		method: "PATCH",
+		url: `/v1/projects/${idOrName}/shared-connect-links`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
 	return data;
 }
 
@@ -4676,7 +6778,7 @@ export async function createCustomEnvironment({
 	config = {},
 }: {
 	pathParams: CreateCustomEnvironmentPathParams;
-	queryParams?: CreateCustomEnvironmentQueryParams | undefined;
+	queryParams?: CreateCustomEnvironmentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4684,7 +6786,6 @@ export async function createCustomEnvironment({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		CreateCustomEnvironmentMutationResponse,
 		ErrorWrapper<
@@ -4719,7 +6820,7 @@ export async function listCustomEnvironments({
 	config = {},
 }: {
 	pathParams: ListCustomEnvironmentsPathParams;
-	queryParams?: ListCustomEnvironmentsQueryParams | undefined;
+	queryParams?: ListCustomEnvironmentsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4727,7 +6828,6 @@ export async function listCustomEnvironments({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		ListCustomEnvironmentsQueryResponse,
 		ErrorWrapper<ListCustomEnvironments400 | ListCustomEnvironments401 | ListCustomEnvironments403>,
@@ -4755,7 +6855,7 @@ export async function getCustomEnvironment({
 	config = {},
 }: {
 	pathParams: GetCustomEnvironmentPathParams;
-	queryParams?: GetCustomEnvironmentQueryParams | undefined;
+	queryParams?: GetCustomEnvironmentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4767,7 +6867,6 @@ export async function getCustomEnvironment({
 	if (!environmentSlugOrId) {
 		throw new Error(`Missing required path parameter: environmentSlugOrId`);
 	}
-
 	const data = await request<
 		GetCustomEnvironmentQueryResponse,
 		ErrorWrapper<
@@ -4800,7 +6899,7 @@ export async function updateCustomEnvironment({
 	config = {},
 }: {
 	pathParams: UpdateCustomEnvironmentPathParams;
-	queryParams?: UpdateCustomEnvironmentQueryParams | undefined;
+	queryParams?: UpdateCustomEnvironmentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4812,7 +6911,6 @@ export async function updateCustomEnvironment({
 	if (!environmentSlugOrId) {
 		throw new Error(`Missing required path parameter: environmentSlugOrId`);
 	}
-
 	const data = await request<
 		UpdateCustomEnvironmentMutationResponse,
 		ErrorWrapper<
@@ -4847,7 +6945,7 @@ export async function removeCustomEnvironment({
 	config = {},
 }: {
 	pathParams: RemoveCustomEnvironmentPathParams;
-	queryParams?: RemoveCustomEnvironmentQueryParams | undefined;
+	queryParams?: RemoveCustomEnvironmentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4859,7 +6957,6 @@ export async function removeCustomEnvironment({
 	if (!environmentSlugOrId) {
 		throw new Error(`Missing required path parameter: environmentSlugOrId`);
 	}
-
 	const data = await request<
 		RemoveCustomEnvironmentMutationResponse,
 		ErrorWrapper<
@@ -4890,7 +6987,7 @@ export async function getProjectDomains({
 	config = {},
 }: {
 	pathParams: GetProjectDomainsPathParams;
-	queryParams?: GetProjectDomainsQueryParams | undefined;
+	queryParams?: GetProjectDomainsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4898,7 +6995,6 @@ export async function getProjectDomains({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		GetProjectDomainsQueryResponse,
 		ErrorWrapper<GetProjectDomains400 | GetProjectDomains401 | GetProjectDomains403>,
@@ -4921,7 +7017,7 @@ export async function getProjectDomain({
 	config = {},
 }: {
 	pathParams: GetProjectDomainPathParams;
-	queryParams?: GetProjectDomainQueryParams | undefined;
+	queryParams?: GetProjectDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4933,7 +7029,6 @@ export async function getProjectDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		GetProjectDomainQueryResponse,
 		ErrorWrapper<GetProjectDomain400 | GetProjectDomain401 | GetProjectDomain403>,
@@ -4961,7 +7056,7 @@ export async function updateProjectDomain({
 	config = {},
 }: {
 	pathParams: UpdateProjectDomainPathParams;
-	queryParams?: UpdateProjectDomainQueryParams | undefined;
+	queryParams?: UpdateProjectDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -4973,7 +7068,6 @@ export async function updateProjectDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		UpdateProjectDomainMutationResponse,
 		ErrorWrapper<
@@ -5007,7 +7101,7 @@ export async function removeProjectDomain({
 	config = {},
 }: {
 	pathParams: RemoveProjectDomainPathParams;
-	queryParams?: RemoveProjectDomainQueryParams | undefined;
+	queryParams?: RemoveProjectDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5019,7 +7113,6 @@ export async function removeProjectDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		RemoveProjectDomainMutationResponse,
 		ErrorWrapper<
@@ -5054,7 +7147,7 @@ export async function addProjectDomain({
 	config = {},
 }: {
 	pathParams: AddProjectDomainPathParams;
-	queryParams?: AddProjectDomainQueryParams | undefined;
+	queryParams?: AddProjectDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5062,7 +7155,6 @@ export async function addProjectDomain({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		AddProjectDomainMutationResponse,
 		ErrorWrapper<
@@ -5097,7 +7189,7 @@ export async function moveProjectDomain({
 	config = {},
 }: {
 	pathParams: MoveProjectDomainPathParams;
-	queryParams?: MoveProjectDomainQueryParams | undefined;
+	queryParams?: MoveProjectDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5109,7 +7201,6 @@ export async function moveProjectDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		MoveProjectDomainMutationResponse,
 		ErrorWrapper<
@@ -5140,7 +7231,7 @@ export async function verifyProjectDomain({
 	config = {},
 }: {
 	pathParams: VerifyProjectDomainPathParams;
-	queryParams?: VerifyProjectDomainQueryParams | undefined;
+	queryParams?: VerifyProjectDomainQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5152,7 +7243,6 @@ export async function verifyProjectDomain({
 	if (!domain) {
 		throw new Error(`Missing required path parameter: domain`);
 	}
-
 	const data = await request<
 		VerifyProjectDomainMutationResponse,
 		ErrorWrapper<VerifyProjectDomain400 | VerifyProjectDomain401 | VerifyProjectDomain403>,
@@ -5180,7 +7270,7 @@ export async function filterProjectEnvs({
 	config = {},
 }: {
 	pathParams: FilterProjectEnvsPathParams;
-	queryParams?: FilterProjectEnvsQueryParams | undefined;
+	queryParams?: FilterProjectEnvsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5188,7 +7278,6 @@ export async function filterProjectEnvs({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		FilterProjectEnvsQueryResponse,
 		ErrorWrapper<FilterProjectEnvs400 | FilterProjectEnvs401 | FilterProjectEnvs403>,
@@ -5211,7 +7300,7 @@ export async function createProjectEnv({
 	config = {},
 }: {
 	pathParams: CreateProjectEnvPathParams;
-	queryParams?: CreateProjectEnvQueryParams | undefined;
+	queryParams?: CreateProjectEnvQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5219,7 +7308,6 @@ export async function createProjectEnv({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		CreateProjectEnvMutationResponse,
 		ErrorWrapper<
@@ -5227,7 +7315,10 @@ export async function createProjectEnv({
 			| CreateProjectEnv401
 			| CreateProjectEnv402
 			| CreateProjectEnv403
+			| CreateProjectEnv404
 			| CreateProjectEnv409
+			| CreateProjectEnv429
+			| CreateProjectEnv500
 		>,
 		null,
 		Record<string, string>,
@@ -5254,7 +7345,7 @@ export async function getProjectEnv({
 	config = {},
 }: {
 	pathParams: GetProjectEnvPathParams;
-	queryParams?: GetProjectEnvQueryParams | undefined;
+	queryParams?: GetProjectEnvQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5266,7 +7357,6 @@ export async function getProjectEnv({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		GetProjectEnvQueryResponse,
 		ErrorWrapper<GetProjectEnv400 | GetProjectEnv401 | GetProjectEnv403>,
@@ -5289,7 +7379,7 @@ export async function removeProjectEnv({
 	config = {},
 }: {
 	pathParams: RemoveProjectEnvPathParams;
-	queryParams?: RemoveProjectEnvQueryParams | undefined;
+	queryParams?: RemoveProjectEnvQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5301,7 +7391,6 @@ export async function removeProjectEnv({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		RemoveProjectEnvMutationResponse,
 		ErrorWrapper<
@@ -5330,7 +7419,7 @@ export async function editProjectEnv({
 	config = {},
 }: {
 	pathParams: EditProjectEnvPathParams;
-	queryParams?: EditProjectEnvQueryParams | undefined;
+	queryParams?: EditProjectEnvQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5342,10 +7431,17 @@ export async function editProjectEnv({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		EditProjectEnvMutationResponse,
-		ErrorWrapper<EditProjectEnv400 | EditProjectEnv401 | EditProjectEnv403 | EditProjectEnv409>,
+		ErrorWrapper<
+			| EditProjectEnv400
+			| EditProjectEnv401
+			| EditProjectEnv403
+			| EditProjectEnv404
+			| EditProjectEnv409
+			| EditProjectEnv429
+			| EditProjectEnv500
+		>,
 		null,
 		Record<string, string>,
 		EditProjectEnvQueryParams,
@@ -5361,6 +7457,172 @@ export async function editProjectEnv({
 }
 
 /**
+ * @description Delete multiple environment variables for a given project in a single batch operation.
+ * @summary Batch remove environment variables
+ * {@link /v1/projects/:idOrName/env}
+ */
+export async function batchRemoveProjectEnv({
+	pathParams: { idOrName },
+	queryParams,
+	config = {},
+}: {
+	pathParams: BatchRemoveProjectEnvPathParams;
+	queryParams?: BatchRemoveProjectEnvQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!idOrName) {
+		throw new Error(`Missing required path parameter: idOrName`);
+	}
+	const data = await request<
+		BatchRemoveProjectEnvMutationResponse,
+		ErrorWrapper<
+			| BatchRemoveProjectEnv400
+			| BatchRemoveProjectEnv401
+			| BatchRemoveProjectEnv403
+			| BatchRemoveProjectEnv404
+			| BatchRemoveProjectEnv409
+		>,
+		null,
+		Record<string, string>,
+		BatchRemoveProjectEnvQueryParams,
+		BatchRemoveProjectEnvPathParams
+	>({
+		method: "DELETE",
+		url: `/v1/projects/${idOrName}/env`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Upload a client certificate for mTLS authentication to external origins.
+ * @summary Upload client certificate for egress mTLS
+ * {@link /v1/projects/:idOrName/client-cert}
+ */
+export async function uploadProjectClientCert({
+	pathParams: { idOrName },
+	queryParams,
+	config = {},
+}: {
+	pathParams: UploadProjectClientCertPathParams;
+	queryParams?: UploadProjectClientCertQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!idOrName) {
+		throw new Error(`Missing required path parameter: idOrName`);
+	}
+	const data = await request<
+		UploadProjectClientCertMutationResponse,
+		ErrorWrapper<
+			| UploadProjectClientCert400
+			| UploadProjectClientCert401
+			| UploadProjectClientCert402
+			| UploadProjectClientCert403
+			| UploadProjectClientCert404
+			| UploadProjectClientCert409
+			| UploadProjectClientCert500
+		>,
+		null,
+		Record<string, string>,
+		UploadProjectClientCertQueryParams,
+		UploadProjectClientCertPathParams
+	>({
+		method: "POST",
+		url: `/v1/projects/${idOrName}/client-cert`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Retrieve client certificates configured for a project's mTLS egress authentication.
+ * @summary Get client certificates for a project
+ * {@link /v1/projects/:idOrName/client-cert}
+ */
+export async function getProjectClientCerts({
+	pathParams: { idOrName },
+	queryParams,
+	config = {},
+}: {
+	pathParams: GetProjectClientCertsPathParams;
+	queryParams?: GetProjectClientCertsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!idOrName) {
+		throw new Error(`Missing required path parameter: idOrName`);
+	}
+	const data = await request<
+		GetProjectClientCertsQueryResponse,
+		ErrorWrapper<
+			| GetProjectClientCerts400
+			| GetProjectClientCerts401
+			| GetProjectClientCerts403
+			| GetProjectClientCerts404
+		>,
+		null,
+		Record<string, string>,
+		GetProjectClientCertsQueryParams,
+		GetProjectClientCertsPathParams
+	>({ method: "GET", url: `/v1/projects/${idOrName}/client-cert`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Delete a client certificate for mTLS authentication to external origins.
+ * @summary Delete client certificate for egress mTLS
+ * {@link /v1/projects/:idOrName/client-cert/:certId}
+ */
+export async function deleteProjectClientCert({
+	pathParams: { idOrName, certId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: DeleteProjectClientCertPathParams;
+	queryParams?: DeleteProjectClientCertQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!idOrName) {
+		throw new Error(`Missing required path parameter: idOrName`);
+	}
+
+	if (!certId) {
+		throw new Error(`Missing required path parameter: certId`);
+	}
+	const data = await request<
+		DeleteProjectClientCertMutationResponse,
+		ErrorWrapper<
+			| DeleteProjectClientCert400
+			| DeleteProjectClientCert401
+			| DeleteProjectClientCert403
+			| DeleteProjectClientCert404
+			| DeleteProjectClientCert409
+		>,
+		null,
+		Record<string, string>,
+		DeleteProjectClientCertQueryParams,
+		DeleteProjectClientCertPathParams
+	>({
+		method: "DELETE",
+		url: `/v1/projects/${idOrName}/client-cert/${certId}`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
  * @description Get the Rolling Releases billing status for a project. The team level billing status is used to determine if the project can be configured for rolling releases.
  * @summary Get rolling release billing status
  * {@link /v1/projects/:idOrName/rolling-release/billing}
@@ -5371,7 +7633,7 @@ export async function getRollingReleaseBillingStatus({
 	config = {},
 }: {
 	pathParams: GetRollingReleaseBillingStatusPathParams;
-	queryParams?: GetRollingReleaseBillingStatusQueryParams | undefined;
+	queryParams?: GetRollingReleaseBillingStatusQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5379,7 +7641,6 @@ export async function getRollingReleaseBillingStatus({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		GetRollingReleaseBillingStatusQueryResponse,
 		ErrorWrapper<
@@ -5412,7 +7673,7 @@ export async function getRollingReleaseConfig({
 	config = {},
 }: {
 	pathParams: GetRollingReleaseConfigPathParams;
-	queryParams?: GetRollingReleaseConfigQueryParams | undefined;
+	queryParams?: GetRollingReleaseConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5420,7 +7681,6 @@ export async function getRollingReleaseConfig({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		GetRollingReleaseConfigQueryResponse,
 		ErrorWrapper<
@@ -5453,7 +7713,7 @@ export async function deleteRollingReleaseConfig({
 	config = {},
 }: {
 	pathParams: DeleteRollingReleaseConfigPathParams;
-	queryParams?: DeleteRollingReleaseConfigQueryParams | undefined;
+	queryParams?: DeleteRollingReleaseConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5461,7 +7721,6 @@ export async function deleteRollingReleaseConfig({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		DeleteRollingReleaseConfigMutationResponse,
 		ErrorWrapper<
@@ -5494,7 +7753,7 @@ export async function updateRollingReleaseConfig({
 	config = {},
 }: {
 	pathParams: UpdateRollingReleaseConfigPathParams;
-	queryParams?: UpdateRollingReleaseConfigQueryParams | undefined;
+	queryParams?: UpdateRollingReleaseConfigQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5502,7 +7761,6 @@ export async function updateRollingReleaseConfig({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		UpdateRollingReleaseConfigMutationResponse,
 		ErrorWrapper<
@@ -5535,7 +7793,7 @@ export async function getRollingRelease({
 	config = {},
 }: {
 	pathParams: GetRollingReleasePathParams;
-	queryParams?: GetRollingReleaseQueryParams | undefined;
+	queryParams?: GetRollingReleaseQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5543,7 +7801,6 @@ export async function getRollingRelease({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		GetRollingReleaseQueryResponse,
 		ErrorWrapper<
@@ -5573,7 +7830,7 @@ export async function approveRollingReleaseStage({
 	config = {},
 }: {
 	pathParams: ApproveRollingReleaseStagePathParams;
-	queryParams?: ApproveRollingReleaseStageQueryParams | undefined;
+	queryParams?: ApproveRollingReleaseStageQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5581,7 +7838,6 @@ export async function approveRollingReleaseStage({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		ApproveRollingReleaseStageMutationResponse,
 		ErrorWrapper<
@@ -5616,7 +7872,7 @@ export async function completeRollingRelease({
 	config = {},
 }: {
 	pathParams: CompleteRollingReleasePathParams;
-	queryParams?: CompleteRollingReleaseQueryParams | undefined;
+	queryParams?: CompleteRollingReleaseQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5624,7 +7880,6 @@ export async function completeRollingRelease({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		CompleteRollingReleaseMutationResponse,
 		ErrorWrapper<
@@ -5658,7 +7913,7 @@ export async function createProjectTransferRequest({
 	config = {},
 }: {
 	pathParams: CreateProjectTransferRequestPathParams;
-	queryParams?: CreateProjectTransferRequestQueryParams | undefined;
+	queryParams?: CreateProjectTransferRequestQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5666,7 +7921,6 @@ export async function createProjectTransferRequest({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		CreateProjectTransferRequestMutationResponse,
 		ErrorWrapper<
@@ -5699,7 +7953,7 @@ export async function acceptProjectTransferRequest({
 	config = {},
 }: {
 	pathParams: AcceptProjectTransferRequestPathParams;
-	queryParams?: AcceptProjectTransferRequestQueryParams | undefined;
+	queryParams?: AcceptProjectTransferRequestQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5707,7 +7961,6 @@ export async function acceptProjectTransferRequest({
 	if (!code) {
 		throw new Error(`Missing required path parameter: code`);
 	}
-
 	const data = await request<
 		AcceptProjectTransferRequestMutationResponse,
 		ErrorWrapper<
@@ -5742,7 +7995,7 @@ export async function updateProjectProtectionBypass({
 	config = {},
 }: {
 	pathParams: UpdateProjectProtectionBypassPathParams;
-	queryParams?: UpdateProjectProtectionBypassQueryParams | undefined;
+	queryParams?: UpdateProjectProtectionBypassQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5750,7 +8003,6 @@ export async function updateProjectProtectionBypass({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		UpdateProjectProtectionBypassMutationResponse,
 		ErrorWrapper<
@@ -5785,7 +8037,7 @@ export async function requestPromote({
 	config = {},
 }: {
 	pathParams: RequestPromotePathParams;
-	queryParams?: RequestPromoteQueryParams | undefined;
+	queryParams?: RequestPromoteQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5797,7 +8049,6 @@ export async function requestPromote({
 	if (!deploymentId) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
-
 	const data = await request<
 		RequestPromoteMutationResponse,
 		ErrorWrapper<RequestPromote400 | RequestPromote401 | RequestPromote403 | RequestPromote409>,
@@ -5825,7 +8076,7 @@ export async function listPromoteAliases({
 	config = {},
 }: {
 	pathParams: ListPromoteAliasesPathParams;
-	queryParams?: ListPromoteAliasesQueryParams | undefined;
+	queryParams?: ListPromoteAliasesQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5833,7 +8084,6 @@ export async function listPromoteAliases({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		ListPromoteAliasesQueryResponse,
 		ErrorWrapper<
@@ -5863,7 +8113,7 @@ export async function pauseProject({
 	config = {},
 }: {
 	pathParams: PauseProjectPathParams;
-	queryParams?: PauseProjectQueryParams | undefined;
+	queryParams?: PauseProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5871,12 +8121,9 @@ export async function pauseProject({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		PauseProjectMutationResponse,
-		ErrorWrapper<
-			PauseProject400 | PauseProject401 | PauseProject402 | PauseProject403 | PauseProject500
-		>,
+		ErrorWrapper<PauseProject400 | PauseProject401 | PauseProject403 | PauseProject500>,
 		null,
 		Record<string, string>,
 		PauseProjectQueryParams,
@@ -5896,7 +8143,7 @@ export async function unpauseProject({
 	config = {},
 }: {
 	pathParams: UnpauseProjectPathParams;
-	queryParams?: UnpauseProjectQueryParams | undefined;
+	queryParams?: UnpauseProjectQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -5904,7 +8151,6 @@ export async function unpauseProject({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		UnpauseProjectMutationResponse,
 		ErrorWrapper<UnpauseProject400 | UnpauseProject401 | UnpauseProject403 | UnpauseProject500>,
@@ -5925,7 +8171,7 @@ export async function updateAttackChallengeMode({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: UpdateAttackChallengeModeQueryParams | undefined;
+	queryParams?: UpdateAttackChallengeModeQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6047,7 +8293,6 @@ export async function getFirewallConfig({
 	if (!configVersion) {
 		throw new Error(`Missing required path parameter: configVersion`);
 	}
-
 	const data = await request<
 		GetFirewallConfigQueryResponse,
 		ErrorWrapper<
@@ -6067,7 +8312,7 @@ export async function getFirewallConfig({
 }
 
 /**
- * @description Retrieve active attack data within the last 24h window
+ * @description Retrieve active attack data within the last N days (default: 1 day)
  * @summary Read active attack data
  * {@link /v1/security/firewall/attack-status}
  */
@@ -6194,6 +8439,77 @@ export async function removeBypassIp({
 }
 
 /**
+ * @description Retrieve firewall actions for a project
+ * @summary Read Firewall Actions by Project
+ * {@link /v1/security/firewall/events}
+ */
+export async function gETV1SecurityFirewallEvents({
+	queryParams,
+	config = {},
+}: {
+	queryParams: GETV1SecurityFirewallEventsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		GETV1SecurityFirewallEventsQueryResponse,
+		ErrorWrapper<
+			| GETV1SecurityFirewallEvents400
+			| GETV1SecurityFirewallEvents401
+			| GETV1SecurityFirewallEvents403
+			| GETV1SecurityFirewallEvents404
+			| GETV1SecurityFirewallEvents500
+		>,
+		null,
+		Record<string, string>,
+		GETV1SecurityFirewallEventsQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/v1/security/firewall/events`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Creates an integration store for both FREE and PAID billing plans. This simplified endpoint automatically provisions real integration storage resources while handling billing complexity behind the scenes. It supports both free and paid billing plans with automatic authorization creation for paid resources. ## How it works 1. Validates the integration configuration and product 2. For free resources: Auto-discovers available free billing plans 3. For paid resources: Creates billing authorization inline using provided billingPlanId 4. Provisions real resources through the Vercel Marketplace 5. Returns the created store with connection details ## Workflow Before using this endpoint, discover available products and billing plans: 1. List your configurations: `GET /v1/integrations/configurations` 2. Get products for a configuration: `GET /v1/integrations/configuration/{id}/products` 3. Get billing plans for a product: `GET /integrations/integration/{integrationId}/products/{productId}/plans` 4. Review the `metadataSchema` for each product to understand required metadata 5. Create storage with discovered product: `POST /v1/storage/stores/integration/direct` ## Usage Patterns - **Free resources**: Omit `billingPlanId` - endpoint will auto-discover free plans - **Paid resources**: Provide `billingPlanId` from billing plans discovery - **Prepayment plans**: Also provide `prepaymentAmountCents` for variable amount plans ## Limitations - **Admin access required**: Only integration configuration admins can create stores - **Storage limits apply**: Subject to your team's storage quotas - **Payment method required**: For paid plans, ensure valid payment method is configured ## Error Responses - `400 Bad Request`: Invalid input, no plans available, or billing issues - `403 Forbidden`: Insufficient permissions (non-admin users) - `404 Not Found`: Integration configuration or product not found - `429 Too Many Requests`: Rate limit exceeded
+ * @summary Create integration store (free and paid plans)
+ * {@link /v1/storage/stores/integration/direct}
+ */
+export async function createIntegrationStoreDirect({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: CreateIntegrationStoreDirectQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		CreateIntegrationStoreDirectMutationResponse,
+		ErrorWrapper<
+			| CreateIntegrationStoreDirect400
+			| CreateIntegrationStoreDirect401
+			| CreateIntegrationStoreDirect402
+			| CreateIntegrationStoreDirect403
+			| CreateIntegrationStoreDirect404
+			| CreateIntegrationStoreDirect409
+			| CreateIntegrationStoreDirect429
+			| CreateIntegrationStoreDirect500
+		>,
+		null,
+		Record<string, string>,
+		CreateIntegrationStoreDirectQueryParams,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/v1/storage/stores/integration/direct`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
  * @description Get a paginated list of team members for the provided team.
  * @summary List team members
  * {@link /v3/teams/:teamId/members}
@@ -6204,7 +8520,7 @@ export async function getTeamMembers({
 	config = {},
 }: {
 	pathParams: GetTeamMembersPathParams;
-	queryParams?: GetTeamMembersQueryParams | undefined;
+	queryParams?: GetTeamMembersQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6212,7 +8528,6 @@ export async function getTeamMembers({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		GetTeamMembersQueryResponse,
 		ErrorWrapper<GetTeamMembers400 | GetTeamMembers401 | GetTeamMembers403 | GetTeamMembers404>,
@@ -6225,9 +8540,9 @@ export async function getTeamMembers({
 }
 
 /**
- * @description Invite a user to join the team specified in the URL. The authenticated user needs to be an `OWNER` in order to successfully invoke this endpoint. The user can be specified with an email or an ID. If both email and ID are provided, ID will take priority.
+ * @description Invite a user to join the team specified in the URL. The authenticated user needs to be an `OWNER` in order to successfully invoke this endpoint. The user to be invited must be specified by email.
  * @summary Invite a user
- * {@link /v1/teams/:teamId/members}
+ * {@link /v2/teams/:teamId/members}
  */
 export async function inviteUserToTeam({
 	pathParams: { teamId },
@@ -6241,7 +8556,6 @@ export async function inviteUserToTeam({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		InviteUserToTeamMutationResponse,
 		ErrorWrapper<
@@ -6253,7 +8567,7 @@ export async function inviteUserToTeam({
 		InviteUserToTeamPathParams
 	>({
 		method: "POST",
-		url: `/v1/teams/${teamId}/members`,
+		url: `/v2/teams/${teamId}/members`,
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
 	});
@@ -6277,7 +8591,6 @@ export async function requestAccessToTeam({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		RequestAccessToTeamMutationResponse,
 		ErrorWrapper<
@@ -6321,7 +8634,6 @@ export async function getTeamAccessRequest({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		GetTeamAccessRequestQueryResponse,
 		ErrorWrapper<
@@ -6355,7 +8667,6 @@ export async function joinTeam({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		JoinTeamMutationResponse,
 		ErrorWrapper<JoinTeam400 | JoinTeam401 | JoinTeam402 | JoinTeam403 | JoinTeam404>,
@@ -6393,7 +8704,6 @@ export async function updateTeamMember({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		UpdateTeamMemberMutationResponse,
 		ErrorWrapper<
@@ -6402,6 +8712,7 @@ export async function updateTeamMember({
 			| UpdateTeamMember402
 			| UpdateTeamMember403
 			| UpdateTeamMember404
+			| UpdateTeamMember409
 			| UpdateTeamMember500
 		>,
 		null,
@@ -6428,7 +8739,7 @@ export async function removeTeamMember({
 	config = {},
 }: {
 	pathParams: RemoveTeamMemberPathParams;
-	queryParams?: RemoveTeamMemberQueryParams | undefined;
+	queryParams?: RemoveTeamMemberQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6440,7 +8751,6 @@ export async function removeTeamMember({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		RemoveTeamMemberMutationResponse,
 		ErrorWrapper<
@@ -6469,7 +8779,7 @@ export async function getTeam({
 	config = {},
 }: {
 	pathParams: GetTeamPathParams;
-	queryParams?: GetTeamQueryParams | undefined;
+	queryParams?: GetTeamQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6477,7 +8787,6 @@ export async function getTeam({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		GetTeamQueryResponse,
 		ErrorWrapper<GetTeam400 | GetTeam401 | GetTeam403 | GetTeam404>,
@@ -6500,7 +8809,7 @@ export async function patchTeam({
 	config = {},
 }: {
 	pathParams: PatchTeamPathParams;
-	queryParams?: PatchTeamQueryParams | undefined;
+	queryParams?: PatchTeamQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6508,7 +8817,6 @@ export async function patchTeam({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		PatchTeamMutationResponse,
 		ErrorWrapper<PatchTeam400 | PatchTeam401 | PatchTeam402 | PatchTeam403 | PatchTeam428>,
@@ -6535,7 +8843,7 @@ export async function getTeams({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetTeamsQueryParams | undefined;
+	queryParams?: GetTeamsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6580,6 +8888,42 @@ export async function createTeam({
 }
 
 /**
+ * @description Update the Directory Sync role mappings for a Team. This endpoint allows updating the mapping between directory groups and team roles or access groups.
+ * @summary Update Team Directory Sync Role Mappings
+ * {@link /v1/teams/:teamId/dsync-roles}
+ */
+export async function postTeamDsyncRoles({
+	pathParams: { teamId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: PostTeamDsyncRolesPathParams;
+	queryParams?: PostTeamDsyncRolesQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!teamId) {
+		throw new Error(`Missing required path parameter: teamId`);
+	}
+	const data = await request<
+		PostTeamDsyncRolesMutationResponse,
+		ErrorWrapper<PostTeamDsyncRoles400 | PostTeamDsyncRoles401 | PostTeamDsyncRoles403>,
+		null,
+		Record<string, string>,
+		PostTeamDsyncRolesQueryParams,
+		PostTeamDsyncRolesPathParams
+	>({
+		method: "POST",
+		url: `/v1/teams/${teamId}/dsync-roles`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
  * @description Delete a team under your account. You need to send a `DELETE` request with the desired team `id`. An optional array of reasons for deletion may also be sent.
  * @summary Delete a Team
  * {@link /v1/teams/:teamId}
@@ -6590,7 +8934,7 @@ export async function deleteTeam({
 	config = {},
 }: {
 	pathParams: DeleteTeamPathParams;
-	queryParams?: DeleteTeamQueryParams | undefined;
+	queryParams?: DeleteTeamQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6598,7 +8942,6 @@ export async function deleteTeam({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		DeleteTeamMutationResponse,
 		ErrorWrapper<DeleteTeam400 | DeleteTeam401 | DeleteTeam402 | DeleteTeam403 | DeleteTeam409>,
@@ -6637,7 +8980,6 @@ export async function deleteTeamInviteCode({
 	if (!teamId) {
 		throw new Error(`Missing required path parameter: teamId`);
 	}
-
 	const data = await request<
 		DeleteTeamInviteCodeMutationResponse,
 		ErrorWrapper<
@@ -6664,8 +9006,8 @@ export async function uploadFile({
 	headers,
 	config = {},
 }: {
-	queryParams?: UploadFileQueryParams | undefined;
-	headers?: UploadFileHeaderParams | undefined;
+	queryParams?: UploadFileQueryParams;
+	headers?: UploadFileHeaderParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6719,7 +9061,7 @@ export async function createAuthToken({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateAuthTokenQueryParams | undefined;
+	queryParams?: CreateAuthTokenQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6758,7 +9100,6 @@ export async function getAuthToken({
 	if (!tokenId) {
 		throw new Error(`Missing required path parameter: tokenId`);
 	}
-
 	const data = await request<
 		GetAuthTokenQueryResponse,
 		ErrorWrapper<GetAuthToken400 | GetAuthToken401 | GetAuthToken403 | GetAuthToken404>,
@@ -6787,7 +9128,6 @@ export async function deleteAuthToken({
 	if (!tokenId) {
 		throw new Error(`Missing required path parameter: tokenId`);
 	}
-
 	const data = await request<
 		DeleteAuthTokenMutationResponse,
 		ErrorWrapper<DeleteAuthToken400 | DeleteAuthToken401 | DeleteAuthToken403 | DeleteAuthToken404>,
@@ -6859,7 +9199,7 @@ export async function createWebhook({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: CreateWebhookQueryParams | undefined;
+	queryParams?: CreateWebhookQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6890,7 +9230,7 @@ export async function getWebhooks({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetWebhooksQueryParams | undefined;
+	queryParams?: GetWebhooksQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6917,7 +9257,7 @@ export async function getWebhook({
 	config = {},
 }: {
 	pathParams: GetWebhookPathParams;
-	queryParams?: GetWebhookQueryParams | undefined;
+	queryParams?: GetWebhookQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6925,7 +9265,6 @@ export async function getWebhook({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		GetWebhookQueryResponse,
 		ErrorWrapper<GetWebhook400 | GetWebhook401 | GetWebhook403>,
@@ -6948,7 +9287,7 @@ export async function deleteWebhook({
 	config = {},
 }: {
 	pathParams: DeleteWebhookPathParams;
-	queryParams?: DeleteWebhookQueryParams | undefined;
+	queryParams?: DeleteWebhookQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6956,7 +9295,6 @@ export async function deleteWebhook({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		DeleteWebhookMutationResponse,
 		ErrorWrapper<DeleteWebhook400 | DeleteWebhook401 | DeleteWebhook403>,
@@ -6979,7 +9317,7 @@ export async function listDeploymentAliases({
 	config = {},
 }: {
 	pathParams: ListDeploymentAliasesPathParams;
-	queryParams?: ListDeploymentAliasesQueryParams | undefined;
+	queryParams?: ListDeploymentAliasesQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -6987,7 +9325,6 @@ export async function listDeploymentAliases({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		ListDeploymentAliasesQueryResponse,
 		ErrorWrapper<
@@ -7015,7 +9352,7 @@ export async function assignAlias({
 	config = {},
 }: {
 	pathParams: AssignAliasPathParams;
-	queryParams?: AssignAliasQueryParams | undefined;
+	queryParams?: AssignAliasQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7023,7 +9360,6 @@ export async function assignAlias({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		AssignAliasMutationResponse,
 		ErrorWrapper<
@@ -7057,7 +9393,7 @@ export async function listAliases({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: ListAliasesQueryParams | undefined;
+	queryParams?: ListAliasesQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7084,7 +9420,7 @@ export async function getAlias({
 	config = {},
 }: {
 	pathParams: GetAliasPathParams;
-	queryParams?: GetAliasQueryParams | undefined;
+	queryParams?: GetAliasQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7092,7 +9428,6 @@ export async function getAlias({
 	if (!idOrAlias) {
 		throw new Error(`Missing required path parameter: idOrAlias`);
 	}
-
 	const data = await request<
 		GetAliasQueryResponse,
 		ErrorWrapper<GetAlias400 | GetAlias401 | GetAlias403 | GetAlias404>,
@@ -7115,7 +9450,7 @@ export async function deleteAlias({
 	config = {},
 }: {
 	pathParams: DeleteAliasPathParams;
-	queryParams?: DeleteAliasQueryParams | undefined;
+	queryParams?: DeleteAliasQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7123,7 +9458,6 @@ export async function deleteAlias({
 	if (!aliasId) {
 		throw new Error(`Missing required path parameter: aliasId`);
 	}
-
 	const data = await request<
 		DeleteAliasMutationResponse,
 		ErrorWrapper<DeleteAlias400 | DeleteAlias401 | DeleteAlias403 | DeleteAlias404>,
@@ -7146,7 +9480,7 @@ export async function patchUrlProtectionBypass({
 	config = {},
 }: {
 	pathParams: PatchUrlProtectionBypassPathParams;
-	queryParams?: PatchUrlProtectionBypassQueryParams | undefined;
+	queryParams?: PatchUrlProtectionBypassQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7154,7 +9488,6 @@ export async function patchUrlProtectionBypass({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		PatchUrlProtectionBypassMutationResponse,
 		ErrorWrapper<
@@ -7212,7 +9545,7 @@ export async function getCertById({
 	config = {},
 }: {
 	pathParams: GetCertByIdPathParams;
-	queryParams?: GetCertByIdQueryParams | undefined;
+	queryParams?: GetCertByIdQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7220,7 +9553,6 @@ export async function getCertById({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		GetCertByIdQueryResponse,
 		ErrorWrapper<GetCertById400 | GetCertById401 | GetCertById403 | GetCertById404>,
@@ -7243,7 +9575,7 @@ export async function removeCert({
 	config = {},
 }: {
 	pathParams: RemoveCertPathParams;
-	queryParams?: RemoveCertQueryParams | undefined;
+	queryParams?: RemoveCertQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7251,7 +9583,6 @@ export async function removeCert({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		RemoveCertMutationResponse,
 		ErrorWrapper<RemoveCert400 | RemoveCert401 | RemoveCert403 | RemoveCert404>,
@@ -7272,7 +9603,7 @@ export async function issueCert({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: IssueCertQueryParams | undefined;
+	queryParams?: IssueCertQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7311,7 +9642,7 @@ export async function uploadCert({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: UploadCertQueryParams | undefined;
+	queryParams?: UploadCertQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7344,7 +9675,7 @@ export async function listDeploymentFiles({
 	config = {},
 }: {
 	pathParams: ListDeploymentFilesPathParams;
-	queryParams?: ListDeploymentFilesQueryParams | undefined;
+	queryParams?: ListDeploymentFilesQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7352,7 +9683,6 @@ export async function listDeploymentFiles({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		ListDeploymentFilesQueryResponse,
 		ErrorWrapper<
@@ -7380,7 +9710,7 @@ export async function getDeploymentFileContents({
 	config = {},
 }: {
 	pathParams: GetDeploymentFileContentsPathParams;
-	queryParams?: GetDeploymentFileContentsQueryParams | undefined;
+	queryParams?: GetDeploymentFileContentsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7392,7 +9722,6 @@ export async function getDeploymentFileContents({
 	if (!fileId) {
 		throw new Error(`Missing required path parameter: fileId`);
 	}
-
 	const data = await request<
 		GetDeploymentFileContentsQueryResponse,
 		ErrorWrapper<
@@ -7419,7 +9748,7 @@ export async function getDeployments({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetDeploymentsQueryParams | undefined;
+	queryParams?: GetDeploymentsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7452,7 +9781,7 @@ export async function deleteDeployment({
 	config = {},
 }: {
 	pathParams: DeleteDeploymentPathParams;
-	queryParams?: DeleteDeploymentQueryParams | undefined;
+	queryParams?: DeleteDeploymentQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7460,7 +9789,6 @@ export async function deleteDeployment({
 	if (!id) {
 		throw new Error(`Missing required path parameter: id`);
 	}
-
 	const data = await request<
 		DeleteDeploymentMutationResponse,
 		ErrorWrapper<
@@ -7483,7 +9811,7 @@ export async function getSecrets({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: GetSecretsQueryParams | undefined;
+	queryParams?: GetSecretsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7510,7 +9838,7 @@ export async function createSecret({
 	config = {},
 }: {
 	pathParams: CreateSecretPathParams;
-	queryParams?: CreateSecretQueryParams | undefined;
+	queryParams?: CreateSecretQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7518,7 +9846,6 @@ export async function createSecret({
 	if (!name) {
 		throw new Error(`Missing required path parameter: name`);
 	}
-
 	const data = await request<
 		CreateSecretMutationResponse,
 		ErrorWrapper<
@@ -7549,7 +9876,7 @@ export async function renameSecret({
 	config = {},
 }: {
 	pathParams: RenameSecretPathParams;
-	queryParams?: RenameSecretQueryParams | undefined;
+	queryParams?: RenameSecretQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7557,7 +9884,6 @@ export async function renameSecret({
 	if (!name) {
 		throw new Error(`Missing required path parameter: name`);
 	}
-
 	const data = await request<
 		RenameSecretMutationResponse,
 		ErrorWrapper<RenameSecret400 | RenameSecret401 | RenameSecret403 | RenameSecret410>,
@@ -7586,7 +9912,7 @@ export async function getSecret({
 	config = {},
 }: {
 	pathParams: GetSecretPathParams;
-	queryParams?: GetSecretQueryParams | undefined;
+	queryParams?: GetSecretQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7594,7 +9920,6 @@ export async function getSecret({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		GetSecretQueryResponse,
 		ErrorWrapper<GetSecret400 | GetSecret401 | GetSecret403 | GetSecret404 | GetSecret410>,
@@ -7617,7 +9942,7 @@ export async function deleteSecret({
 	config = {},
 }: {
 	pathParams: DeleteSecretPathParams;
-	queryParams?: DeleteSecretQueryParams | undefined;
+	queryParams?: DeleteSecretQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -7625,7 +9950,6 @@ export async function deleteSecret({
 	if (!idOrName) {
 		throw new Error(`Missing required path parameter: idOrName`);
 	}
-
 	const data = await request<
 		DeleteSecretMutationResponse,
 		ErrorWrapper<DeleteSecret400 | DeleteSecret401 | DeleteSecret403 | DeleteSecret410>,
@@ -7654,6 +9978,13 @@ export const operationsByPath = {
 	"PUT /v8/artifacts/{hash}": uploadArtifact,
 	"GET /v8/artifacts/{hash}": downloadArtifact,
 	"POST /v8/artifacts": artifactQuery,
+	"PUT /v1/bulk-redirects": stageRedirects,
+	"GET /v1/bulk-redirects": getRedirects,
+	"DELETE /v1/bulk-redirects": deleteRedirects,
+	"PATCH /v1/bulk-redirects": editRedirect,
+	"POST /v1/bulk-redirects/restore": restoreRedirects,
+	"GET /v1/bulk-redirects/versions": getVersions,
+	"POST /v1/bulk-redirects/versions": updateVersion,
 	"POST /v1/deployments/{deploymentId}/checks": createCheck,
 	"GET /v1/deployments/{deploymentId}/checks": getAllChecks,
 	"GET /v1/deployments/{deploymentId}/checks/{checkId}": getCheck,
@@ -7668,20 +9999,47 @@ export const operationsByPath = {
 	"GET /v13/deployments/{idOrUrl}": getDeployment,
 	"POST /v13/deployments": createDeployment,
 	"PATCH /v12/deployments/{id}/cancel": cancelDeployment,
-	"POST /v5/domains/buy": buyDomain,
 	"GET /v4/domains/price": checkDomainPrice,
 	"GET /v4/domains/status": checkDomainStatus,
 	"GET /v4/domains/{domain}/records": getRecords,
 	"POST /v2/domains/{domain}/records": createRecord,
 	"PATCH /v1/domains/records/{recordId}": updateRecord,
 	"DELETE /v2/domains/{domain}/records/{recordId}": removeRecord,
-	"GET /v1/domains/{domain}/registry": getDomainTransfer,
+	"GET /v1/registrar/tlds/supported": getSupportedTlds,
+	"GET /v1/registrar/tlds/{tld}/price": getTldPrice,
+	"GET /v1/registrar/domains/{domain}/availability": getDomainAvailability,
+	"GET /v1/registrar/domains/{domain}/price": getDomainPrice,
+	"POST /v1/registrar/domains/availability": getBulkAvailability,
+	"GET /v1/registrar/domains/{domain}/auth-code": getDomainAuthCode,
+	"POST /v1/registrar/domains/{domain}/buy": buySingleDomain,
+	"POST /v1/registrar/domains/buy": buyDomains,
+	"POST /v1/registrar/domains/{domain}/transfer": transferInDomain,
+	"GET /v1/registrar/domains/{domain}/transfer": getDomainTransferIn,
+	"POST /v1/registrar/domains/{domain}/renew": renewDomain,
+	"PATCH /v1/registrar/domains/{domain}/auto-renew": updateDomainAutoRenew,
+	"PATCH /v1/registrar/domains/{domain}/nameservers": updateDomainNameservers,
+	"GET /v1/registrar/domains/{domain}/contact-info/schema": getContactInfoSchema,
+	"GET /v1/registrar/orders/{orderId}": getOrder,
 	"GET /v6/domains/{domain}/config": getDomainConfig,
 	"GET /v5/domains/{domain}": getDomain,
 	"GET /v5/domains": getDomains,
 	"POST /v7/domains": createOrTransferDomain,
 	"PATCH /v3/domains/{domain}": patchDomain,
 	"DELETE /v6/domains/{domain}": deleteDomain,
+	"GET /v1/log-drains/{id}": getConfigurableLogDrain,
+	"DELETE /v1/log-drains/{id}": deleteConfigurableLogDrain,
+	"GET /v1/log-drains": getAllLogDrains,
+	"POST /v1/log-drains": createConfigurableLogDrain,
+	"POST /v1/drains": createDrain,
+	"GET /v1/drains": getDrains,
+	"DELETE /v1/drains/{id}": deleteDrain,
+	"GET /v1/drains/{id}": getDrain,
+	"PATCH /v1/drains/{id}": updateDrain,
+	"POST /v1/drains/test": testDrain,
+	"POST /v1/edge-cache/invalidate-by-tags": invalidateByTags,
+	"POST /v1/edge-cache/dangerously-delete-by-tags": dangerouslyDeleteByTags,
+	"POST /v1/edge-cache/invalidate-by-src-images": invalidateBySrcImages,
+	"POST /v1/edge-cache/dangerously-delete-by-src-images": dangerouslyDeleteBySrcImages,
 	"GET /v1/edge-config": getEdgeConfigs,
 	"POST /v1/edge-config": createEdgeConfig,
 	"GET /v1/edge-config/{edgeConfigId}": getEdgeConfig,
@@ -7699,7 +10057,20 @@ export const operationsByPath = {
 	"POST /v1/edge-config/{edgeConfigId}/token": createEdgeConfigToken,
 	"GET /v1/edge-config/{edgeConfigId}/backups/{edgeConfigBackupVersionId}": getEdgeConfigBackup,
 	"GET /v1/edge-config/{edgeConfigId}/backups": getEdgeConfigBackups,
+	"POST /v1/env": createSharedEnvVariable,
+	"GET /v1/env": listSharedEnvVariable,
+	"PATCH /v1/env": updateSharedEnvVariable,
+	"DELETE /v1/env": deleteSharedEnvVariable,
+	"GET /v1/env/{id}": getSharedEnvVar,
+	"PATCH /v1/env/{id}/unlink/{projectId}": unlinkSharedEnvVariable,
 	"GET /v3/events": listUserEvents,
+	"GET /v1/integrations/git-namespaces": gitNamespaces,
+	"GET /v1/integrations/search-repo": searchRepo,
+	"GET /v1/integrations/integration/{integrationIdOrSlug}/products/{productIdOrSlug}/plans":
+		getBillingPlans,
+	"POST /v1/integrations/installations/{integrationConfigurationId}/resources/{resourceId}/connections":
+		connectIntegrationResourceToProject,
+	"PATCH /v1/installations/{integrationConfigurationId}": updateInstallation,
 	"GET /v1/installations/{integrationConfigurationId}/account": getAccountInfo,
 	"GET /v1/installations/{integrationConfigurationId}/member/{memberId}": getMember,
 	"POST /v1/installations/{integrationConfigurationId}/events": createEvent,
@@ -7709,6 +10080,7 @@ export const operationsByPath = {
 	"DELETE /v1/installations/{integrationConfigurationId}/resources/{resourceId}":
 		deleteIntegrationResource,
 	"PUT /v1/installations/{integrationConfigurationId}/resources/{resourceId}": importResource,
+	"PATCH /v1/installations/{integrationConfigurationId}/resources/{resourceId}": updateResource,
 	"POST /v1/installations/{integrationConfigurationId}/billing": submitBillingData,
 	"POST /v1/installations/{integrationConfigurationId}/billing/invoices": submitInvoice,
 	"GET /v1/installations/{integrationConfigurationId}/billing/invoices/{invoiceId}": getInvoice,
@@ -7722,6 +10094,7 @@ export const operationsByPath = {
 	"GET /v1/integrations/configurations": getConfigurations,
 	"GET /v1/integrations/configuration/{id}": getConfiguration,
 	"DELETE /v1/integrations/configuration/{id}": deleteConfiguration,
+	"GET /v1/integrations/configuration/{id}/products": getConfigurationProducts,
 	"POST /v1/integrations/sso/token": exchangeSsoToken,
 	"GET /v2/integrations/log-drains": getIntegrationLogDrains,
 	"POST /v2/integrations/log-drains": createLogDrain,
@@ -7743,6 +10116,7 @@ export const operationsByPath = {
 	"GET /v9/projects/{idOrName}": getProject,
 	"PATCH /v9/projects/{idOrName}": updateProject,
 	"DELETE /v9/projects/{idOrName}": deleteProject,
+	"PATCH /v1/projects/{idOrName}/shared-connect-links": updateStaticIps,
 	"POST /v9/projects/{idOrName}/custom-environments": createCustomEnvironment,
 	"GET /v9/projects/{idOrName}/custom-environments": listCustomEnvironments,
 	"GET /v9/projects/{idOrName}/custom-environments/{environmentSlugOrId}": getCustomEnvironment,
@@ -7762,6 +10136,10 @@ export const operationsByPath = {
 	"GET /v1/projects/{idOrName}/env/{id}": getProjectEnv,
 	"DELETE /v9/projects/{idOrName}/env/{id}": removeProjectEnv,
 	"PATCH /v9/projects/{idOrName}/env/{id}": editProjectEnv,
+	"DELETE /v1/projects/{idOrName}/env": batchRemoveProjectEnv,
+	"POST /v1/projects/{idOrName}/client-cert": uploadProjectClientCert,
+	"GET /v1/projects/{idOrName}/client-cert": getProjectClientCerts,
+	"DELETE /v1/projects/{idOrName}/client-cert/{certId}": deleteProjectClientCert,
 	"GET /v1/projects/{idOrName}/rolling-release/billing": getRollingReleaseBillingStatus,
 	"GET /v1/projects/{idOrName}/rolling-release/config": getRollingReleaseConfig,
 	"DELETE /v1/projects/{idOrName}/rolling-release/config": deleteRollingReleaseConfig,
@@ -7784,8 +10162,10 @@ export const operationsByPath = {
 	"GET /v1/security/firewall/bypass": getBypassIp,
 	"POST /v1/security/firewall/bypass": addBypassIp,
 	"DELETE /v1/security/firewall/bypass": removeBypassIp,
+	"GET /v1/security/firewall/events": gETV1SecurityFirewallEvents,
+	"POST /v1/storage/stores/integration/direct": createIntegrationStoreDirect,
 	"GET /v3/teams/{teamId}/members": getTeamMembers,
-	"POST /v1/teams/{teamId}/members": inviteUserToTeam,
+	"POST /v2/teams/{teamId}/members": inviteUserToTeam,
 	"POST /v1/teams/{teamId}/request": requestAccessToTeam,
 	"GET /v1/teams/{teamId}/request/{userId}": getTeamAccessRequest,
 	"POST /v1/teams/{teamId}/members/teams/join": joinTeam,
@@ -7795,6 +10175,7 @@ export const operationsByPath = {
 	"PATCH /v2/teams/{teamId}": patchTeam,
 	"GET /v2/teams": getTeams,
 	"POST /v1/teams": createTeam,
+	"POST /v1/teams/{teamId}/dsync-roles": postTeamDsyncRoles,
 	"DELETE /v1/teams/{teamId}": deleteTeam,
 	"DELETE /v1/teams/{teamId}/invites/{inviteId}": deleteTeamInviteCode,
 	"POST /v2/files": uploadFile,
@@ -7851,6 +10232,15 @@ export const operationsByTag = {
 		downloadArtifact,
 		artifactQuery,
 	},
+	bulkRedirects: {
+		stageRedirects,
+		getRedirects,
+		deleteRedirects,
+		editRedirect,
+		restoreRedirects,
+		getVersions,
+		updateVersion,
+	},
 	checks: {
 		createCheck,
 		getAllChecks,
@@ -7877,6 +10267,10 @@ export const operationsByTag = {
 		getProjectEnv,
 		removeProjectEnv,
 		editProjectEnv,
+		batchRemoveProjectEnv,
+		uploadProjectClientCert,
+		getProjectClientCerts,
+		deleteProjectClientCert,
 		createProjectTransferRequest,
 		acceptProjectTransferRequest,
 		updateProjectProtectionBypass,
@@ -7899,15 +10293,19 @@ export const operationsByTag = {
 	},
 	integrations: {
 		updateIntegrationDeploymentAction,
+		gitNamespaces,
+		searchRepo,
+		getBillingPlans,
+		connectIntegrationResourceToProject,
 		getConfigurations,
 		getConfiguration,
 		deleteConfiguration,
+		getConfigurationProducts,
+		createIntegrationStoreDirect,
 	},
 	domains: {
-		buyDomain,
 		checkDomainPrice,
 		checkDomainStatus,
-		getDomainTransfer,
 		getDomainConfig,
 		getDomain,
 		getDomains,
@@ -7920,6 +10318,46 @@ export const operationsByTag = {
 		createRecord,
 		updateRecord,
 		removeRecord,
+	},
+	domainsRegistrar: {
+		getSupportedTlds,
+		getTldPrice,
+		getDomainAvailability,
+		getDomainPrice,
+		getBulkAvailability,
+		getDomainAuthCode,
+		buySingleDomain,
+		buyDomains,
+		transferInDomain,
+		getDomainTransferIn,
+		renewDomain,
+		updateDomainAutoRenew,
+		updateDomainNameservers,
+		getContactInfoSchema,
+		getOrder,
+	},
+	logdrains: {
+		getConfigurableLogDrain,
+		deleteConfigurableLogDrain,
+		getAllLogDrains,
+		createConfigurableLogDrain,
+		getIntegrationLogDrains,
+		createLogDrain,
+		deleteIntegrationLogDrain,
+	},
+	drains: {
+		createDrain,
+		getDrains,
+		deleteDrain,
+		getDrain,
+		updateDrain,
+		testDrain,
+	},
+	edgeCache: {
+		invalidateByTags,
+		dangerouslyDeleteByTags,
+		invalidateBySrcImages,
+		dangerouslyDeleteBySrcImages,
 	},
 	edgeConfig: {
 		getEdgeConfigs,
@@ -7940,12 +10378,26 @@ export const operationsByTag = {
 		getEdgeConfigBackup,
 		getEdgeConfigBackups,
 	},
+	environment: {
+		createSharedEnvVariable,
+		listSharedEnvVariable,
+		updateSharedEnvVariable,
+		deleteSharedEnvVariable,
+		getSharedEnvVar,
+		unlinkSharedEnvVariable,
+		createCustomEnvironment,
+		listCustomEnvironments,
+		getCustomEnvironment,
+		updateCustomEnvironment,
+		removeCustomEnvironment,
+	},
 	user: {
 		listUserEvents,
 		getAuthUser,
 		requestDelete,
 	},
 	marketplace: {
+		updateInstallation,
 		getAccountInfo,
 		getMember,
 		createEvent,
@@ -7953,6 +10405,7 @@ export const operationsByTag = {
 		getIntegrationResource,
 		deleteIntegrationResource,
 		importResource,
+		updateResource,
 		submitBillingData,
 		submitInvoice,
 		getInvoice,
@@ -7973,11 +10426,6 @@ export const operationsByTag = {
 		getAuthToken,
 		deleteAuthToken,
 	},
-	logdrains: {
-		getIntegrationLogDrains,
-		createLogDrain,
-		deleteIntegrationLogDrain,
-	},
 	logs: {
 		getRuntimeLogs,
 	},
@@ -7986,12 +10434,11 @@ export const operationsByTag = {
 		addProjectMember,
 		removeProjectMember,
 	},
-	environment: {
-		createCustomEnvironment,
-		listCustomEnvironments,
-		getCustomEnvironment,
-		updateCustomEnvironment,
-		removeCustomEnvironment,
+	connect: {
+		updateStaticIps,
+	},
+	staticIps: {
+		updateStaticIps,
 	},
 	rollingRelease: {
 		getRollingReleaseBillingStatus,
@@ -8011,6 +10458,7 @@ export const operationsByTag = {
 		getBypassIp,
 		addBypassIp,
 		removeBypassIp,
+		gETV1SecurityFirewallEvents,
 	},
 	teams: {
 		getTeamMembers,
@@ -8024,6 +10472,7 @@ export const operationsByTag = {
 		patchTeam,
 		getTeams,
 		createTeam,
+		postTeamDsyncRoles,
 		deleteTeam,
 		deleteTeamInviteCode,
 	},
@@ -8074,6 +10523,13 @@ export const tagDictionary = {
 		GET: ["status", "downloadArtifact"],
 		PUT: ["uploadArtifact"],
 	},
+	bulkRedirects: {
+		PUT: ["stageRedirects"],
+		GET: ["getRedirects", "getVersions"],
+		DELETE: ["deleteRedirects"],
+		PATCH: ["editRedirect"],
+		POST: ["restoreRedirects", "updateVersion"],
+	},
 	checks: {
 		POST: ["createCheck", "rerequestCheck"],
 		GET: ["getAllChecks", "getCheck"],
@@ -8094,6 +10550,7 @@ export const tagDictionary = {
 			"getProjectDomain",
 			"filterProjectEnvs",
 			"getProjectEnv",
+			"getProjectClientCerts",
 			"listPromoteAliases",
 		],
 		POST: [
@@ -8102,12 +10559,19 @@ export const tagDictionary = {
 			"moveProjectDomain",
 			"verifyProjectDomain",
 			"createProjectEnv",
+			"uploadProjectClientCert",
 			"createProjectTransferRequest",
 			"requestPromote",
 			"pauseProject",
 			"unpauseProject",
 		],
-		DELETE: ["deleteProject", "removeProjectDomain", "removeProjectEnv"],
+		DELETE: [
+			"deleteProject",
+			"removeProjectDomain",
+			"removeProjectEnv",
+			"batchRemoveProjectEnv",
+			"deleteProjectClientCert",
+		],
 		PUT: ["acceptProjectTransferRequest"],
 	},
 	deployments: {
@@ -8124,19 +10588,20 @@ export const tagDictionary = {
 	},
 	integrations: {
 		PATCH: ["updateIntegrationDeploymentAction"],
-		GET: ["getConfigurations", "getConfiguration"],
+		GET: [
+			"gitNamespaces",
+			"searchRepo",
+			"getBillingPlans",
+			"getConfigurations",
+			"getConfiguration",
+			"getConfigurationProducts",
+		],
+		POST: ["connectIntegrationResourceToProject", "createIntegrationStoreDirect"],
 		DELETE: ["deleteConfiguration"],
 	},
 	domains: {
-		POST: ["buyDomain", "createOrTransferDomain"],
-		GET: [
-			"checkDomainPrice",
-			"checkDomainStatus",
-			"getDomainTransfer",
-			"getDomainConfig",
-			"getDomain",
-			"getDomains",
-		],
+		GET: ["checkDomainPrice", "checkDomainStatus", "getDomainConfig", "getDomain", "getDomains"],
+		POST: ["createOrTransferDomain"],
 		PATCH: ["patchDomain"],
 		DELETE: ["deleteDomain"],
 	},
@@ -8145,6 +10610,45 @@ export const tagDictionary = {
 		POST: ["createRecord"],
 		PATCH: ["updateRecord"],
 		DELETE: ["removeRecord"],
+	},
+	domainsRegistrar: {
+		GET: [
+			"getSupportedTlds",
+			"getTldPrice",
+			"getDomainAvailability",
+			"getDomainPrice",
+			"getDomainAuthCode",
+			"getDomainTransferIn",
+			"getContactInfoSchema",
+			"getOrder",
+		],
+		POST: [
+			"getBulkAvailability",
+			"buySingleDomain",
+			"buyDomains",
+			"transferInDomain",
+			"renewDomain",
+		],
+		PATCH: ["updateDomainAutoRenew", "updateDomainNameservers"],
+	},
+	logdrains: {
+		GET: ["getConfigurableLogDrain", "getAllLogDrains", "getIntegrationLogDrains"],
+		DELETE: ["deleteConfigurableLogDrain", "deleteIntegrationLogDrain"],
+		POST: ["createConfigurableLogDrain", "createLogDrain"],
+	},
+	drains: {
+		POST: ["createDrain", "testDrain"],
+		GET: ["getDrains", "getDrain"],
+		DELETE: ["deleteDrain"],
+		PATCH: ["updateDrain"],
+	},
+	edgeCache: {
+		POST: [
+			"invalidateByTags",
+			"dangerouslyDeleteByTags",
+			"invalidateBySrcImages",
+			"dangerouslyDeleteBySrcImages",
+		],
 	},
 	edgeConfig: {
 		GET: [
@@ -8163,11 +10667,23 @@ export const tagDictionary = {
 		DELETE: ["deleteEdgeConfig", "deleteEdgeConfigSchema", "deleteEdgeConfigTokens"],
 		PATCH: ["patchEdgeConfigItems"],
 	},
+	environment: {
+		POST: ["createSharedEnvVariable", "createCustomEnvironment"],
+		GET: [
+			"listSharedEnvVariable",
+			"getSharedEnvVar",
+			"listCustomEnvironments",
+			"getCustomEnvironment",
+		],
+		PATCH: ["updateSharedEnvVariable", "unlinkSharedEnvVariable", "updateCustomEnvironment"],
+		DELETE: ["deleteSharedEnvVariable", "removeCustomEnvironment"],
+	},
 	user: {
 		GET: ["listUserEvents", "getAuthUser"],
 		DELETE: ["requestDelete"],
 	},
 	marketplace: {
+		PATCH: ["updateInstallation", "updateResource", "updateExperimentationItem"],
 		GET: [
 			"getAccountInfo",
 			"getMember",
@@ -8191,17 +10707,11 @@ export const tagDictionary = {
 			"updateResourceSecretsById",
 			"updateExperimentationEdgeConfig",
 		],
-		PATCH: ["updateExperimentationItem"],
 	},
 	authentication: {
 		POST: ["exchangeSsoToken", "createAuthToken"],
 		GET: ["listAuthTokens", "getAuthToken"],
 		DELETE: ["deleteAuthToken"],
-	},
-	logdrains: {
-		GET: ["getIntegrationLogDrains"],
-		POST: ["createLogDrain"],
-		DELETE: ["deleteIntegrationLogDrain"],
 	},
 	logs: {
 		GET: ["getRuntimeLogs"],
@@ -8211,11 +10721,11 @@ export const tagDictionary = {
 		POST: ["addProjectMember"],
 		DELETE: ["removeProjectMember"],
 	},
-	environment: {
-		POST: ["createCustomEnvironment"],
-		GET: ["listCustomEnvironments", "getCustomEnvironment"],
-		PATCH: ["updateCustomEnvironment"],
-		DELETE: ["removeCustomEnvironment"],
+	connect: {
+		PATCH: ["updateStaticIps"],
+	},
+	staticIps: {
+		PATCH: ["updateStaticIps"],
 	},
 	rollingRelease: {
 		GET: ["getRollingReleaseBillingStatus", "getRollingReleaseConfig", "getRollingRelease"],
@@ -8227,12 +10737,23 @@ export const tagDictionary = {
 		POST: ["updateAttackChallengeMode", "addBypassIp"],
 		PUT: ["putFirewallConfig"],
 		PATCH: ["updateFirewallConfig"],
-		GET: ["getFirewallConfig", "getActiveAttackStatus", "getBypassIp"],
+		GET: [
+			"getFirewallConfig",
+			"getActiveAttackStatus",
+			"getBypassIp",
+			"gETV1SecurityFirewallEvents",
+		],
 		DELETE: ["removeBypassIp"],
 	},
 	teams: {
 		GET: ["getTeamMembers", "getTeamAccessRequest", "getTeam", "getTeams"],
-		POST: ["inviteUserToTeam", "requestAccessToTeam", "joinTeam", "createTeam"],
+		POST: [
+			"inviteUserToTeam",
+			"requestAccessToTeam",
+			"joinTeam",
+			"createTeam",
+			"postTeamDsyncRoles",
+		],
 		PATCH: ["updateTeamMember", "patchTeam"],
 		DELETE: ["removeTeamMember", "deleteTeam", "deleteTeamInviteCode"],
 	},

@@ -10,6 +10,5 @@ pnpm build      # Build for production
 pnpm start      # Start production server
 pnpm check      # Run Biome linting
 pnpm check:fix  # Fix linting issues
-pnpm format     # Format code
 pnpm tsc        # Type check
 ```

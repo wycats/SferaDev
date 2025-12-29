@@ -1,88 +1,93 @@
+import { usePluginManager } from "@kubb/core/hooks";
 import { camelCase } from "@kubb/core/transformers";
 import { isNullable, isReference } from "@kubb/oas";
 import type { PluginMcp } from "@kubb/plugin-mcp";
-import { createReactGenerator, type OperationSchemas } from "@kubb/plugin-oas";
+import type { OperationSchemas } from "@kubb/plugin-oas";
+import { createReactGenerator } from "@kubb/plugin-oas/generators";
 import { useOas, useOperationManager } from "@kubb/plugin-oas/hooks";
 import { getBanner, getFooter, getPathParams, isOptional } from "@kubb/plugin-oas/utils";
 import { pluginTsName } from "@kubb/plugin-ts";
 import { pluginZodName } from "@kubb/plugin-zod";
-import { File, FunctionParams, useApp } from "@kubb/react";
+import { File, FunctionParams } from "@kubb/react-fabric";
 import { getParams as getClientParams } from "../components/client-operation";
 
-export const serverGenerator = createReactGenerator<PluginMcp>({
-	name: "operations",
-	Operations({ operations, options }) {
-		const { pluginManager, plugin } = useApp<PluginMcp>();
-		const oas = useOas();
-		const { getFile, getName, getSchemas } = useOperationManager();
+export const serverGenerator: ReturnType<typeof createReactGenerator<PluginMcp>> =
+	createReactGenerator<PluginMcp>({
+		name: "operations",
+		Operations({ operations, generator, plugin }) {
+			const pluginManager = usePluginManager();
+			const { options } = plugin;
 
-		const fileName = "mcp";
-		const file = pluginManager.getFile({ name: fileName, extname: ".ts", pluginKey: plugin.key });
+			const oas = useOas();
+			const { getFile, getName, getSchemas } = useOperationManager(generator);
 
-		const operationsMapped = operations.map((operation) => {
-			return {
-				tool: {
-					name:
-						operation.getOperationId() ||
-						operation.getSummary() ||
-						`${operation.method.toUpperCase()} ${operation.path}`,
-					description:
-						operation.getDescription() ||
-						`Make a ${operation.method.toUpperCase()} request to ${operation.path}`,
-				},
-				mcp: {
-					name: getName(operation, {
-						type: "function",
-					}),
-					file: getFile(operation),
-				},
-				zod: {
-					name: getName(operation, {
-						type: "function",
-						pluginKey: [pluginZodName],
-					}),
-					schemas: getSchemas(operation, { pluginKey: [pluginZodName], type: "function" }),
-					file: getFile(operation, { pluginKey: [pluginZodName] }),
-				},
-				type: {
-					schemas: getSchemas(operation, { pluginKey: [pluginTsName], type: "type" }),
-				},
-			};
-		});
+			const fileName = "mcp";
+			const file = pluginManager.getFile({ name: fileName, extname: ".ts", pluginKey: plugin.key });
 
-		const imports = operationsMapped.flatMap(({ mcp, zod }) => {
-			return [
-				<File.Import key={mcp.name} name={[mcp.name]} root={file.path} path={mcp.file.path} />,
-				<File.Import
-					key={zod.name}
-					name={
-						[
-							zod.schemas.request?.name,
-							zod.schemas.pathParams?.name,
-							zod.schemas.queryParams?.name,
-							zod.schemas.headerParams?.name,
-						].filter(Boolean) as string[]
-					}
-					root={file.path}
-					path={zod.file.path}
-				/>,
-			];
-		});
+			const operationsMapped = operations.map((operation) => {
+				return {
+					tool: {
+						name:
+							operation.getOperationId() ||
+							operation.getSummary() ||
+							`${operation.method.toUpperCase()} ${operation.path}`,
+						description:
+							operation.getDescription() ||
+							`Make a ${operation.method.toUpperCase()} request to ${operation.path}`,
+					},
+					mcp: {
+						name: getName(operation, {
+							type: "function",
+						}),
+						file: getFile(operation),
+					},
+					zod: {
+						name: getName(operation, {
+							type: "function",
+							pluginKey: [pluginZodName],
+						}),
+						schemas: getSchemas(operation, { pluginKey: [pluginZodName], type: "function" }),
+						file: getFile(operation, { pluginKey: [pluginZodName] }),
+					},
+					type: {
+						schemas: getSchemas(operation, { pluginKey: [pluginTsName], type: "type" }),
+					},
+				};
+			});
 
-		return (
-			// @ts-expect-error - JSX runtime module resolution issue
-			<File
-				baseName={file.baseName}
-				path={file.path}
-				meta={file.meta}
-				banner={getBanner({ oas, output: options.output, config: pluginManager.config })}
-				footer={getFooter({ oas, output: options.output })}
-			>
-				{imports}
+			const imports = operationsMapped.flatMap(({ mcp, zod }) => {
+				return [
+					<File.Import key={mcp.name} name={[mcp.name]} root={file.path} path={mcp.file.path} />,
+					<File.Import
+						key={zod.name}
+						name={
+							[
+								zod.schemas.request?.name,
+								zod.schemas.pathParams?.name,
+								zod.schemas.queryParams?.name,
+								zod.schemas.headerParams?.name,
+							].filter(Boolean) as string[]
+						}
+						root={file.path}
+						path={zod.file.path}
+					/>,
+				];
+			});
 
-				<File.Source name={fileName} isExportable isIndexable>
-					{`
-            import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+			return (
+				<File
+					baseName={file.baseName}
+					path={file.path}
+					meta={file.meta}
+					// @ts-expect-error conflict with react-fabric types
+					banner={getBanner({ oas, output: options.output, config: pluginManager.config })}
+					footer={getFooter({ oas, output: options.output })}
+				>
+					{imports}
+
+					<File.Source name={fileName} isExportable isIndexable>
+						{`
+            import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
             
             export function initMcpTools<Server>(serverLike: Server, config: FetcherConfig) {
               const server = serverLike as McpServer;
@@ -102,6 +107,7 @@ export const serverGenerator = createReactGenerator<PluginMcp>({
 										zod.schemas.pathParams?.name
 									) {
 										return `
+                      // @ts-ignore: Type instantiation is excessively deep and possibly infinite
                       server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, ${params.toObjectValue()}, async (${params.toObject()}) => {
                         try {
                           return await ${mcp.name}(${clientParams.toObject()})
@@ -112,6 +118,7 @@ export const serverGenerator = createReactGenerator<PluginMcp>({
 									}
 
 									return `
+                    // @ts-ignore: Type instantiation is excessively deep and possibly infinite
                     server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, async () => {
                       try {
                         return await ${mcp.name}(${clientParams.toObject()})
@@ -124,11 +131,11 @@ export const serverGenerator = createReactGenerator<PluginMcp>({
 								.filter(Boolean)
 								.join("\n")}
             }`}
-				</File.Source>
-			</File>
-		);
-	},
-});
+					</File.Source>
+				</File>
+			);
+		},
+	});
 
 function getParams({ schemas }: { schemas: OperationSchemas }) {
 	const pathParams = getPathParams(schemas.pathParams, {
