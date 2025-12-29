@@ -16,7 +16,8 @@
 	"scripts": {
 		"tsc": "tsc --noEmit",
 		"build": "bunchee",
-		"generate": "rimraf ./src/admin/generated ./src/account/generated && kubb generate"
+		"generate": "rimraf ./src/admin/generated ./src/account/generated && kubb generate",
+		"is-tree-shakable": "is-tree-shakable"
 	},
 	"dependencies": {
 		"zod": "catalog:"
@@ -55,6 +56,66 @@
 			"require": {
 				"types": "./dist/index.d.cts",
 				"default": "./dist/index.cjs"
+			}
+		},
+		"./admin/types": {
+			"import": {
+				"types": "./dist/admin/types.d.mts",
+				"default": "./dist/admin/types.mjs"
+			},
+			"require": {
+				"types": "./dist/admin/types.d.cts",
+				"default": "./dist/admin/types.cjs"
+			}
+		},
+		"./admin/schemas": {
+			"import": {
+				"types": "./dist/admin/schemas.d.mts",
+				"default": "./dist/admin/schemas.mjs"
+			},
+			"require": {
+				"types": "./dist/admin/schemas.d.cts",
+				"default": "./dist/admin/schemas.cjs"
+			}
+		},
+		"./admin/components": {
+			"import": {
+				"types": "./dist/admin/components.d.mts",
+				"default": "./dist/admin/components.mjs"
+			},
+			"require": {
+				"types": "./dist/admin/components.d.cts",
+				"default": "./dist/admin/components.cjs"
+			}
+		},
+		"./account/types": {
+			"import": {
+				"types": "./dist/account/types.d.mts",
+				"default": "./dist/account/types.mjs"
+			},
+			"require": {
+				"types": "./dist/account/types.d.cts",
+				"default": "./dist/account/types.cjs"
+			}
+		},
+		"./account/schemas": {
+			"import": {
+				"types": "./dist/account/schemas.d.mts",
+				"default": "./dist/account/schemas.mjs"
+			},
+			"require": {
+				"types": "./dist/account/schemas.d.cts",
+				"default": "./dist/account/schemas.cjs"
+			}
+		},
+		"./account/components": {
+			"import": {
+				"types": "./dist/account/components.d.mts",
+				"default": "./dist/account/components.mjs"
+			},
+			"require": {
+				"types": "./dist/account/components.d.cts",
+				"default": "./dist/account/components.cjs"
 			}
 		}
 	},
