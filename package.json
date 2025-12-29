@@ -4,7 +4,7 @@
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
-		"generate": "turbo run generate",
+		"generate": "turbo run generate && pnpm check:fix",
 		"check": "biome check .",
 		"check:fix": "biome check . --write",
 		"tsc": "turbo run tsc",
