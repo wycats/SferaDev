@@ -1,22 +1,47 @@
-import { Context, Data, Effect, Layer } from "effect";
+import { Context, Data, Effect, Layer, Schema } from "effect";
 
 // ============================================================================
-// Configuration Types
+// Configuration Schema
 // ============================================================================
 
 /**
- * Configuration for the Effect-based API client.
+ * Schema for API client configuration.
+ * Provides runtime validation and type inference.
+ *
+ * @example
+ * ```ts
+ * import { ApiClientConfig } from "vercel-api-js/effect";
+ * import { Schema } from "effect";
+ *
+ * // Parse and validate config
+ * const config = Schema.decodeUnknownSync(ApiClientConfig)({
+ *   token: "my-token",
+ *   baseUrl: "https://api.vercel.com"
+ * });
+ * ```
  */
-export interface ApiClientConfig {
+export const ApiClientConfig = Schema.Struct({
 	/** Base URL for the API. Defaults to "https://api.vercel.com" */
-	readonly baseUrl?: string;
+	baseUrl: Schema.optionalWith(Schema.String, { default: () => "https://api.vercel.com" }),
 	/** Bearer token for authentication */
-	readonly token?: string;
-	/** Custom fetch implementation */
-	readonly fetchImpl?: typeof fetch;
+	token: Schema.optional(Schema.String),
 	/** Additional headers to include in all requests */
-	readonly headers?: Record<string, string>;
-}
+	headers: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.String })),
+});
+
+export type ApiClientConfig = typeof ApiClientConfig.Type;
+
+/**
+ * Schema for API client request options.
+ */
+export const ApiClientRequest = Schema.Struct({
+	method: Schema.String,
+	url: Schema.String,
+	body: Schema.optional(Schema.Unknown),
+	headers: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.String })),
+});
+
+export type ApiClientRequest = typeof ApiClientRequest.Type;
 
 // ============================================================================
 // Error Types
@@ -24,26 +49,38 @@ export interface ApiClientConfig {
 
 /**
  * API error with status code and error payload.
- * Uses Effect's Data.TaggedError for excellent pattern matching support.
+ * Uses Effect's Data.TaggedError for pattern matching support.
  *
  * @example
  * ```ts
- * import { ApiError } from "your-package/effect";
+ * import { ApiError, ApiService, makeApiClientLive } from "vercel-api-js/effect";
  * import { Effect, Match } from "effect";
  *
- * const handleError = Match.type<ApiError>().pipe(
- *   Match.when({ status: 401 }, () => "Unauthorized"),
- *   Match.when({ status: 404 }, () => "Not found"),
- *   Match.orElse(() => "Unknown error")
- * );
+ * const program = Effect.gen(function* () {
+ *   const result = yield* ApiService.projects.listProjects().pipe(
+ *     Effect.catchTag("ApiError", (error) =>
+ *       Effect.gen(function* () {
+ *         const message = Match.value(error).pipe(
+ *           Match.when({ status: 401 }, () => "Please check your API token"),
+ *           Match.when({ status: 403 }, () => "You don't have access to this resource"),
+ *           Match.when({ status: 404 }, () => "Resource not found"),
+ *           Match.when({ status: 429 }, () => "Rate limited, please retry later"),
+ *           Match.orElse(() => `API error: ${error.status}`)
+ *         );
+ *         console.error(message);
+ *         return yield* Effect.fail(error);
+ *       })
+ *     )
+ *   );
+ *   return result;
+ * });
  * ```
  */
 export class ApiError extends Data.TaggedError("ApiError")<{
 	readonly status: number;
 	readonly error: unknown;
-	readonly message?: string;
 }> {
-	override get message(): string {
+	get message(): string {
 		if (this.error && typeof this.error === "object" && "message" in this.error) {
 			return String((this.error as { message: unknown }).message);
 		}
@@ -52,12 +89,31 @@ export class ApiError extends Data.TaggedError("ApiError")<{
 }
 
 /**
- * Network error for fetch failures.
+ * Network error for fetch failures (timeouts, DNS errors, etc).
+ *
+ * @example
+ * ```ts
+ * import { NetworkError, ApiService, makeApiClientLive } from "vercel-api-js/effect";
+ * import { Effect } from "effect";
+ *
+ * const program = Effect.gen(function* () {
+ *   const result = yield* ApiService.projects.listProjects().pipe(
+ *     Effect.catchTag("NetworkError", (error) =>
+ *       Effect.gen(function* () {
+ *         console.error("Network failed:", error.message);
+ *         // Implement retry logic or fallback
+ *         return yield* Effect.fail(error);
+ *       })
+ *     )
+ *   );
+ *   return result;
+ * });
+ * ```
  */
 export class NetworkError extends Data.TaggedError("NetworkError")<{
 	readonly cause: unknown;
 }> {
-	override get message(): string {
+	get message(): string {
 		if (this.cause instanceof Error) {
 			return `Network error: ${this.cause.message}`;
 		}
@@ -70,39 +126,36 @@ export class NetworkError extends Data.TaggedError("NetworkError")<{
 // ============================================================================
 
 /**
- * Request options for the API client.
+ * API client service interface for making HTTP requests.
  */
-export interface ApiClientRequest {
-	readonly method: string;
-	readonly url: string;
-	readonly body?: unknown;
-	readonly headers?: Record<string, string>;
-	readonly signal?: AbortSignal;
-}
-
-/**
- * API client interface for making HTTP requests.
- */
-export interface ApiClientService {
-	/**
-	 * Make an HTTP request to the API.
-	 */
+export type ApiClientService = {
 	readonly request: <T>(options: ApiClientRequest) => Effect.Effect<T, ApiError | NetworkError>;
-}
+};
 
 /**
  * Effect Context tag for the API client service.
+ * Use this with Effect.gen for elegant async/await-like syntax.
  *
  * @example
  * ```ts
- * import { ApiClient, makeApiClientLive } from "your-package/effect";
+ * import { ApiClient, makeApiClientLive } from "vercel-api-js/effect";
  * import { Effect } from "effect";
  *
+ * // Using Effect.gen for async generator syntax
  * const program = Effect.gen(function* () {
  *   const client = yield* ApiClient;
- *   return yield* client.request({ method: "GET", url: "/v4/projects" });
+ *
+ *   // Make a request
+ *   const projects = yield* client.request({
+ *     method: "GET",
+ *     url: "/v4/projects"
+ *   });
+ *
+ *   console.log(`Found ${projects.length} projects`);
+ *   return projects;
  * });
  *
+ * // Run the program
  * const result = await program.pipe(
  *   Effect.provide(makeApiClientLive({ token: "your-token" })),
  *   Effect.runPromise
@@ -120,12 +173,12 @@ const DEFAULT_BASE_URL = "https://api.vercel.com";
 /**
  * Create a live implementation of the API client.
  *
- * @param config - Configuration for the API client
+ * @param config - Configuration for the API client (validated at runtime)
  * @returns A Layer that provides the ApiClient service
  *
  * @example
  * ```ts
- * import { makeApiClientLive, ApiService } from "your-package/effect";
+ * import { ApiService, makeApiClientLive } from "vercel-api-js/effect";
  * import { Effect } from "effect";
  *
  * // Create the client layer
@@ -134,8 +187,23 @@ const DEFAULT_BASE_URL = "https://api.vercel.com";
  *   baseUrl: "https://api.vercel.com",
  * });
  *
- * // Use the API
- * const program = ApiService.projects.listProjects();
+ * // Compose multiple API calls with generators
+ * const program = Effect.gen(function* () {
+ *   // Fetch projects
+ *   const projects = yield* ApiService.projects.listProjects();
+ *   console.log(`Found ${projects.projects.length} projects`);
+ *
+ *   // Fetch first project's deployments
+ *   if (projects.projects.length > 0) {
+ *     const projectId = projects.projects[0].id;
+ *     const deployments = yield* ApiService.deployments.listDeployments({
+ *       queryParams: { projectId }
+ *     });
+ *     console.log(`Project has ${deployments.deployments.length} deployments`);
+ *   }
+ *
+ *   return projects;
+ * });
  *
  * // Run with the layer
  * const result = await program.pipe(
@@ -144,9 +212,11 @@ const DEFAULT_BASE_URL = "https://api.vercel.com";
  * );
  * ```
  */
-export const makeApiClientLive = (config: ApiClientConfig = {}): Layer.Layer<ApiClient> => {
+export const makeApiClientLive = (
+	config: Partial<ApiClientConfig> = {},
+): Layer.Layer<ApiClient> => {
 	const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
-	const fetchFn = config.fetchImpl ?? fetch;
+	const fetchFn = fetch;
 
 	return Layer.succeed(
 		ApiClient,
@@ -161,10 +231,10 @@ export const makeApiClientLive = (config: ApiClientConfig = {}): Layer.Layer<Api
 						};
 
 						if (config.token) {
-							(headers as Record<string, string>)["Authorization"] = `Bearer ${config.token}`;
+							(headers as Record<string, string>).Authorization = `Bearer ${config.token}`;
 						}
 
-						// Handle multipart/form-data
+						// Handle multipart/form-data - browser sets boundary automatically
 						if (
 							typeof headers === "object" &&
 							"Content-Type" in headers &&
@@ -186,7 +256,6 @@ export const makeApiClientLive = (config: ApiClientConfig = {}): Layer.Layer<Api
 							method: options.method,
 							headers,
 							body,
-							signal: options.signal,
 						});
 
 						if (!response.ok) {
@@ -196,10 +265,7 @@ export const makeApiClientLive = (config: ApiClientConfig = {}): Layer.Layer<Api
 							} catch {
 								errorPayload = { message: await response.text() };
 							}
-							throw new ApiError({
-								status: response.status,
-								error: errorPayload,
-							});
+							throw new ApiError({ status: response.status, error: errorPayload });
 						}
 
 						const contentType = response.headers.get("content-type");
@@ -220,16 +286,20 @@ export const makeApiClientLive = (config: ApiClientConfig = {}): Layer.Layer<Api
 };
 
 /**
- * Default API client layer (requires VERCEL_TOKEN environment variable).
- * Useful for quick testing or when configuration is handled via environment.
+ * Default API client layer using VERCEL_TOKEN environment variable.
  *
  * @example
  * ```ts
- * import { ApiClientLive, ApiService } from "your-package/effect";
+ * import { ApiClientLive, ApiService } from "vercel-api-js/effect";
  * import { Effect } from "effect";
  *
- * // Reads VERCEL_TOKEN from environment
- * const result = await ApiService.projects.listProjects().pipe(
+ * // Quick one-liner using env var
+ * const program = Effect.gen(function* () {
+ *   const projects = yield* ApiService.projects.listProjects();
+ *   return projects;
+ * });
+ *
+ * const result = await program.pipe(
  *   Effect.provide(ApiClientLive),
  *   Effect.runPromise
  * );
@@ -238,7 +308,7 @@ export const makeApiClientLive = (config: ApiClientConfig = {}): Layer.Layer<Api
 export const ApiClientLive: Layer.Layer<ApiClient> = Layer.sync(ApiClient, () =>
 	ApiClient.of({
 		request: <T>(options: ApiClientRequest): Effect.Effect<T, ApiError | NetworkError> => {
-			const token = typeof process !== "undefined" ? process.env?.["VERCEL_TOKEN"] : undefined;
+			const token = typeof process !== "undefined" ? process.env?.VERCEL_TOKEN : undefined;
 			return makeApiClientLive({ token }).pipe(
 				Layer.build,
 				Effect.map((context) => Context.get(context, ApiClient)),
@@ -254,60 +324,131 @@ export const ApiClientLive: Layer.Layer<ApiClient> = Layer.sync(ApiClient, () =>
 // ============================================================================
 
 /**
- * Run an Effect with the API client configured.
- * Convenience function for one-off API calls.
+ * Run an Effect program with the API client configured.
+ * Best for one-off API calls or scripts.
  *
  * @example
  * ```ts
- * import { runWithClient, ApiService } from "your-package/effect";
+ * import { runWithClient, ApiService } from "vercel-api-js/effect";
+ * import { Effect } from "effect";
  *
+ * // Simple one-off call
  * const projects = await runWithClient(
  *   { token: "your-token" },
  *   ApiService.projects.listProjects()
  * );
+ *
+ * // Complex program with generators
+ * const result = await runWithClient(
+ *   { token: "your-token" },
+ *   Effect.gen(function* () {
+ *     const projects = yield* ApiService.projects.listProjects();
+ *     const teams = yield* ApiService.teams.listTeams();
+ *     return { projects, teams };
+ *   })
+ * );
  * ```
  */
 export const runWithClient = <A, E>(
-	config: ApiClientConfig,
+	config: Partial<ApiClientConfig>,
 	effect: Effect.Effect<A, E, ApiClient>,
 ): Promise<A> => {
 	return effect.pipe(Effect.provide(makeApiClientLive(config)), Effect.runPromise);
 };
 
 /**
- * Create a scoped API client for making multiple requests.
- * Returns an object with methods that automatically use the configured client.
+ * Create a reusable API client for making multiple requests.
+ * Ideal for applications that need to make many API calls.
  *
  * @example
  * ```ts
- * import { createClient, ApiService } from "your-package/effect";
+ * import { createClient, ApiService } from "vercel-api-js/effect";
  * import { Effect } from "effect";
  *
- * const client = createClient({ token: "your-token" });
+ * // Create client once
+ * const vercel = createClient({ token: process.env.VERCEL_TOKEN });
  *
- * // All operations automatically use the configured client
- * const projects = await client.run(ApiService.projects.listProjects());
- * const teams = await client.run(ApiService.teams.listTeams());
+ * // Use throughout your application
+ * async function listAllResources() {
+ *   return vercel.run(
+ *     Effect.gen(function* () {
+ *       // Parallel fetching with Effect.all
+ *       const [projects, teams, domains] = yield* Effect.all([
+ *         ApiService.projects.listProjects(),
+ *         ApiService.teams.listTeams(),
+ *         ApiService.domains.listDomains(),
+ *       ]);
+ *
+ *       return { projects, teams, domains };
+ *     })
+ *   );
+ * }
+ *
+ * // Error handling with generators
+ * async function safeListProjects() {
+ *   return vercel.run(
+ *     Effect.gen(function* () {
+ *       const result = yield* ApiService.projects.listProjects().pipe(
+ *         Effect.catchTag("ApiError", (error) =>
+ *           Effect.gen(function* () {
+ *             if (error.status === 401) {
+ *               console.error("Invalid token");
+ *               return { projects: [] };
+ *             }
+ *             return yield* Effect.fail(error);
+ *           })
+ *         )
+ *       );
+ *       return result;
+ *     })
+ *   );
+ * }
  * ```
  */
-export const createClient = (config: ApiClientConfig) => {
+export const createClient = (config: Partial<ApiClientConfig>) => {
 	const layer = makeApiClientLive(config);
 
 	return {
 		/**
-		 * Run an Effect with this client's configuration.
+		 * Run an Effect program with this client's configuration.
 		 */
 		run: <A, E>(effect: Effect.Effect<A, E, ApiClient>): Promise<A> =>
 			effect.pipe(Effect.provide(layer), Effect.runPromise),
 
 		/**
-		 * Run an Effect with this client's configuration, returning an Exit.
+		 * Run an Effect program, returning an Exit (success or failure).
+		 * Useful when you want to handle errors without throwing.
+		 *
+		 * @example
+		 * ```ts
+		 * const vercel = createClient({ token: "..." });
+		 *
+		 * const exit = await vercel.runExit(
+		 *   Effect.gen(function* () {
+		 *     return yield* ApiService.projects.listProjects();
+		 *   })
+		 * );
+		 *
+		 * if (Exit.isSuccess(exit)) {
+		 *   console.log("Projects:", exit.value);
+		 * } else {
+		 *   console.error("Failed:", exit.cause);
+		 * }
+		 * ```
 		 */
 		runExit: <A, E>(effect: Effect.Effect<A, E, ApiClient>) =>
 			effect.pipe(Effect.provide(layer), Effect.runPromiseExit),
 
 		/**
-		 * Get the Layer for this client (for advanced composition).
+		 * Get the Layer for advanced composition scenarios.
+		 *
+		 * @example
+		 * ```ts
+		 * const vercel = createClient({ token: "..." });
+		 *
+		 * // Compose with other layers
+		 * const AppLayer = Layer.merge(vercel.layer, OtherServiceLayer);
+		 * ```
 		 */
 		layer,
 	};
