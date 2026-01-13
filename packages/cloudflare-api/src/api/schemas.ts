@@ -23867,7 +23867,7 @@ export type EmailSecurityLink = {
 };
 
 /**
- * @example {"action_log":[],"alert_id":"4Njp3P0STMz2c02Q-2022-12-30T02:44:49","client_recipients":["email@example.com"],"delivery_mode":"DIRECT","detection_reasons":["Selector is a source of spam/uce : Smtp-Helo-Server-Ip=<b>127.0.0[dot]186</b>"],"edf_hash":null,"envelope_from":"d1994@example.com","envelope_to":["email@example.com"],"final_disposition":"MALICIOUS","findings":null,"from":"d1994@example.com","from_name":"Sender Name","htmltext_structure_hash":null,"id":"47JJcT1w6GztQV7-email@example.com","is_phish_submission":false,"is_quarantined":false,"message_id":"<4VAZPrAdg7IGNxdt1DWRNu0gvOeL_iZiwP4BQfo4DaE.Yw-woXuugQbeFhBpzwFQtqq_v2v1HOKznoMBqbciQpE@example.com>","postfix_id":"47JJcT1w6GztQV7","postfix_id_outbound":null,"properties":{},"replyto":"email@example.com","sent_date":"2019-11-21T00:22:01","subject":"listen, I highly recommend u to read that email, just to ensure not a thing will take place","threat_categories":["IPReputation","ASNReputation"],"to":["email@example.com"],"to_name":["Recipient Name"],"ts":"2019-11-20T23:22:01","validation":{"comment":null,"dkim":"pass","dmarc":"none","spf":"fail"}}
+ * @example {"action_log":[],"alert_id":"4Njp3P0STMz2c02Q-2022-12-30T02:44:49","client_recipients":["email@example.com"],"delivery_mode":"DIRECT","detection_reasons":["Selector is a source of spam/uce : Smtp-Helo-Server-Ip=<b>127.0.0[dot]186</b>"],"edf_hash":null,"envelope_from":"d1994@example.com","envelope_to":["email@example.com"],"final_disposition":"MALICIOUS","findings":null,"from":"d1994@example.com","from_name":"Sender Name","htmltext_structure_hash":null,"id":"4Njp3P0STMz2c02Q-2022-12-30T02:44:49-email@example.com","is_phish_submission":false,"is_quarantined":false,"message_id":"<4VAZPrAdg7IGNxdt1DWRNu0gvOeL_iZiwP4BQfo4DaE.Yw-woXuugQbeFhBpzwFQtqq_v2v1HOKznoMBqbciQpE@example.com>","postfix_id":"47JJcT1w6GztQV7","postfix_id_outbound":null,"properties":{},"replyto":"email@example.com","sent_date":"2019-11-21T00:22:01","subject":"listen, I highly recommend u to read that email, just to ensure not a thing will take place","threat_categories":["IPReputation","ASNReputation"],"to":["email@example.com"],"to_name":["Recipient Name"],"ts":"2019-11-20T23:22:01","validation":{"comment":null,"dkim":"pass","dmarc":"none","spf":"fail"}}
  */
 export type EmailSecurityMailsearchMessage = {
 	action_log: void;
@@ -23972,6 +23972,24 @@ export type EmailSecurityMessageHeader = {
 	value: string;
 };
 
+export type EmailSecurityMoveResponseItem = {
+	/**
+	 * @format date-time
+	 */
+	completed_timestamp: string;
+	destination?: string | null;
+	/**
+	 * @deprecated true
+	 * @format int32
+	 */
+	item_count: number;
+	message_id?: string | null;
+	operation?: string | null;
+	recipient?: string | null;
+	status?: string | null;
+	success: boolean;
+};
+
 export type EmailSecurityPatternType = "EMAIL" | "DOMAIN" | "IP" | "UNKNOWN";
 
 export type EmailSecurityPhishGuardReport = {
@@ -24047,22 +24065,6 @@ export type EmailSecurityResultInfo = {
 	 * @format int32
 	 */
 	total_count: number;
-};
-
-export type EmailSecurityRetractionResponseItem = {
-	/**
-	 * @format date-time
-	 */
-	completed_timestamp: string;
-	destination?: string | null;
-	/**
-	 * @format int32
-	 */
-	item_count: number;
-	message_id?: string | null;
-	operation?: string | null;
-	recipient?: string | null;
-	status?: string | null;
 };
 
 export type EmailSecurityScannableFolder = "AllItems" | "Inbox";
@@ -41478,6 +41480,7 @@ export type R2DataCatalogCatalogList = {
  */
 export type R2DataCatalogCatalogMaintenanceConfig = {
 	compaction?: R2DataCatalogCatalogCompactionConfig;
+	snapshot_expiration?: R2DataCatalogSnapshotExpirationConfig;
 };
 
 /**
@@ -41496,28 +41499,9 @@ export type R2DataCatalogCatalogMaintenanceConfigResponse = {
 export type R2DataCatalogCatalogMaintenanceState = "enabled" | "disabled";
 
 /**
- * Contains request to update catalog maintenance configuration.
+ * Contains maintenance update parameters.
  */
-export type R2DataCatalogCatalogMaintenanceUpdateRequest = {
-	/**
-	 * Updates compaction configuration (all fields optional).
-	 */
-	compaction?: {
-		/**
-		 * Specifies the state of maintenance operations.
-		 *
-		 * @example enabled
-		 */
-		state?: R2DataCatalogCatalogMaintenanceState;
-		/**
-		 * Sets the target file size for compaction in megabytes.
-		 *
-		 * @default 128
-		 * @example 128
-		 */
-		target_size_mb?: R2DataCatalogCatalogTargetFileSize;
-	};
-};
+export type R2DataCatalogCatalogMaintenanceUpdateRequest = R2DataCatalogMaintenanceUpdateParams;
 
 /**
  * Indicates the status of the catalog.
@@ -41535,11 +41519,38 @@ export type R2DataCatalogCatalogStatus = "active" | "inactive";
 export type R2DataCatalogCatalogTargetFileSize = "64" | "128" | "256" | "512";
 
 /**
+ * Updates compaction configuration (all fields optional).
+ */
+export type R2DataCatalogCompactionUpdateParams = {
+	/**
+	 * Specifies the state of maintenance operations.
+	 *
+	 * @example enabled
+	 */
+	state?: R2DataCatalogCatalogMaintenanceState;
+	/**
+	 * Sets the target file size for compaction in megabytes.
+	 *
+	 * @default 128
+	 * @example 128
+	 */
+	target_size_mb?: R2DataCatalogCatalogTargetFileSize;
+};
+
+/**
  * Shows the credential configuration status.
  *
  * @example present
  */
 export type R2DataCatalogCredentialStatus = "present" | "absent";
+
+/**
+ * Contains maintenance update parameters.
+ */
+export type R2DataCatalogMaintenanceUpdateParams = {
+	compaction?: R2DataCatalogCompactionUpdateParams;
+	snapshot_expiration?: R2DataCatalogSnapshotExpirationUpdateParams;
+};
 
 /**
  * Contains namespace with metadata details.
@@ -41605,6 +41616,57 @@ export type R2DataCatalogNamespaceListResponse = {
 	 * @example MSYxNzU5NzU1NTc4NTA0MTk0JjAxOTliOTliLTJjODgtNzNiMy04ZGJiLTQyMWUwZThmMjc1Nw
 	 */
 	next_page_token?: string | null;
+};
+
+/**
+ * Configures snapshot expiration settings.
+ */
+export type R2DataCatalogSnapshotExpirationConfig = {
+	/**
+	 * Specifies the maximum age for snapshots. The system deletes snapshots older than this age.
+	 * Format: <number><unit> where unit is d (days), h (hours), m (minutes), or s (seconds).
+	 * Examples: "7d" (7 days), "48h" (48 hours), "2880m" (2,880 minutes).
+	 *
+	 * @default 7d
+	 * @example 7d
+	 * @pattern ^\d+(d|h|m|s)$
+	 */
+	max_snapshot_age: string;
+	/**
+	 * Specifies the minimum number of snapshots to retain.
+	 *
+	 * @default 3
+	 * @example 3
+	 * @format int64
+	 * @minimum 1
+	 */
+	min_snapshots_to_keep: number;
+	state: R2DataCatalogCatalogMaintenanceState;
+};
+
+/**
+ * Updates snapshot expiration configuration (all fields optional).
+ */
+export type R2DataCatalogSnapshotExpirationUpdateParams = {
+	/**
+	 * Updates the maximum age for snapshots optionally.
+	 *
+	 * @pattern ^\d+(d|h|m|s)$
+	 */
+	max_snapshot_age?: string;
+	/**
+	 * Updates the minimum number of snapshots to retain optionally.
+	 *
+	 * @format int64
+	 * @minimum 1
+	 */
+	min_snapshots_to_keep?: number;
+	/**
+	 * Specifies the state of maintenance operations.
+	 *
+	 * @example enabled
+	 */
+	state?: R2DataCatalogCatalogMaintenanceState;
 };
 
 /**
@@ -41696,6 +41758,7 @@ export type R2DataCatalogTableListResponse = {
  */
 export type R2DataCatalogTableMaintenanceConfig = {
 	compaction?: R2DataCatalogTableCompactionConfig;
+	snapshot_expiration?: R2DataCatalogSnapshotExpirationConfig;
 };
 
 /**
@@ -41706,28 +41769,9 @@ export type R2DataCatalogTableMaintenanceConfigResponse = {
 };
 
 /**
- * Contains request to update table maintenance configuration.
+ * Contains maintenance update parameters.
  */
-export type R2DataCatalogTableMaintenanceUpdateRequest = {
-	/**
-	 * Updates compaction configuration (all fields optional).
-	 */
-	compaction?: {
-		/**
-		 * Specifies the state of maintenance operations.
-		 *
-		 * @example enabled
-		 */
-		state?: R2DataCatalogCatalogMaintenanceState;
-		/**
-		 * Sets the target file size for compaction in megabytes.
-		 *
-		 * @default 128
-		 * @example 128
-		 */
-		target_size_mb?: R2DataCatalogCatalogTargetFileSize;
-	};
-};
+export type R2DataCatalogTableMaintenanceUpdateRequest = R2DataCatalogMaintenanceUpdateParams;
 
 export type R2SlurperConnectivityResponse = {
 	connectivityStatus?: "success" | "error";
@@ -48077,6 +48121,18 @@ export type RulesetsSetConfigRule = {
 		 */
 		polish?: "off" | "lossless" | "lossy" | "webp";
 		/**
+		 * The request body buffering mode.
+		 *
+		 * @example standard
+		 */
+		request_body_buffering?: "none" | "standard" | "full";
+		/**
+		 * The response body buffering mode.
+		 *
+		 * @example standard
+		 */
+		response_body_buffering?: "none" | "standard";
+		/**
 		 * Whether to enable Rocket Loader.
 		 *
 		 * @example true
@@ -52814,7 +52870,7 @@ export type TeamsDevicesComponentsSchemasUuid = string;
 /**
  * The configuration object containing third-party integration information.
  *
- * @example {"api_url":"https://as123.awmdm.com/API","auth_url":"https://na.uemauth.vmwservices.com/connect/token","client_id":"example client id","client_secret":"example client secret"}
+ * @example {"api_url":"https://as123.awmdm.com/API","auth_url":"https://na.uemauth.workspaceone.com/connect/token","client_id":"example client id","client_secret":"example client secret"}
  */
 export type TeamsDevicesConfigRequest =
 	| TeamsDevicesWorkspaceOneConfigRequest
@@ -52829,7 +52885,7 @@ export type TeamsDevicesConfigRequest =
 /**
  * The configuration object containing third-party integration information.
  *
- * @example {"api_url":"https://as123.awmdm.com/API","auth_url":"https://na.uemauth.vmwservices.com/connect/token","client_id":"example client id"}
+ * @example {"api_url":"https://as123.awmdm.com/API","auth_url":"https://na.uemauth.workspaceone.com/connect/token","client_id":"example client id"}
  */
 export type TeamsDevicesConfigResponse = TeamsDevicesWorkspaceOneConfigResponse;
 
@@ -53060,7 +53116,6 @@ export type TeamsDevicesDeleted = boolean;
 /**
  * The description of the device posture rule.
  *
- * @default
  * @example The rule for admin serial numbers
  * @x-auditable true
  */
@@ -54889,7 +54944,7 @@ export type TeamsDevicesWorkspaceOneConfigRequest = {
 	/**
 	 * The Workspace One Authorization URL depending on your region.
 	 *
-	 * @example https://na.uemauth.vmwservices.com/connect/token
+	 * @example https://na.uemauth.workspaceone.com/connect/token
 	 */
 	auth_url: string;
 	/**
@@ -54920,7 +54975,7 @@ export type TeamsDevicesWorkspaceOneConfigResponse = {
 	/**
 	 * The Workspace One Authorization URL depending on your region.
 	 *
-	 * @example https://na.uemauth.vmwservices.com/connect/token
+	 * @example https://na.uemauth.workspaceone.com/connect/token
 	 */
 	auth_url: string;
 	/**
@@ -63923,6 +63978,35 @@ export type WorkersObservability = {
 		 */
 		persist?: boolean;
 	} | null;
+};
+
+export type WorkersPlacementProvider = {
+	/**
+	 * The cloud provider identifier.
+	 *
+	 * @example aws
+	 */
+	id: string;
+	/**
+	 * List of regions available for this provider.
+	 */
+	regions: WorkersPlacementRegion[];
+};
+
+export type WorkersPlacementRegion = {
+	/**
+	 * The region identifier.
+	 *
+	 * @example us-east-1
+	 */
+	id: string;
+};
+
+export type WorkersPlacementRegionsResponse = {
+	/**
+	 * List of cloud providers with their available regions.
+	 */
+	providers: WorkersPlacementProvider[];
 };
 
 /**

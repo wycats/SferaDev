@@ -89,20 +89,6 @@ import type {
 	CancelDeploymentMutationResponse,
 	CancelDeploymentPathParams,
 	CancelDeploymentQueryParams,
-	CheckDomainPrice400,
-	CheckDomainPrice401,
-	CheckDomainPrice403,
-	CheckDomainPrice404,
-	CheckDomainPrice500,
-	CheckDomainPriceQueryParams,
-	CheckDomainPriceQueryResponse,
-	CheckDomainStatus400,
-	CheckDomainStatus401,
-	CheckDomainStatus403,
-	CheckDomainStatus408,
-	CheckDomainStatus500,
-	CheckDomainStatusQueryParams,
-	CheckDomainStatusQueryResponse,
 	CompleteRollingRelease400,
 	CompleteRollingRelease401,
 	CompleteRollingRelease403,
@@ -209,6 +195,14 @@ import type {
 	CreateLogDrain403,
 	CreateLogDrainMutationResponse,
 	CreateLogDrainQueryParams,
+	CreateNetwork400,
+	CreateNetwork401,
+	CreateNetwork402,
+	CreateNetwork403,
+	CreateNetwork404,
+	CreateNetwork409,
+	CreateNetworkMutationResponse,
+	CreateNetworkQueryParams,
 	CreateOrTransferDomain400,
 	CreateOrTransferDomain401,
 	CreateOrTransferDomain402,
@@ -254,14 +248,6 @@ import type {
 	CreateRecordMutationResponse,
 	CreateRecordPathParams,
 	CreateRecordQueryParams,
-	CreateSecret400,
-	CreateSecret401,
-	CreateSecret402,
-	CreateSecret403,
-	CreateSecret410,
-	CreateSecretMutationResponse,
-	CreateSecretPathParams,
-	CreateSecretQueryParams,
 	CreateSharedEnvVariable400,
 	CreateSharedEnvVariable401,
 	CreateSharedEnvVariable402,
@@ -396,6 +382,15 @@ import type {
 	DeleteIntegrationResource404,
 	DeleteIntegrationResourceMutationResponse,
 	DeleteIntegrationResourcePathParams,
+	DeleteNetwork400,
+	DeleteNetwork401,
+	DeleteNetwork402,
+	DeleteNetwork403,
+	DeleteNetwork404,
+	DeleteNetwork409,
+	DeleteNetworkMutationResponse,
+	DeleteNetworkPathParams,
+	DeleteNetworkQueryParams,
 	DeleteProject400,
 	DeleteProject401,
 	DeleteProject403,
@@ -417,13 +412,6 @@ import type {
 	DeleteRollingReleaseConfigMutationResponse,
 	DeleteRollingReleaseConfigPathParams,
 	DeleteRollingReleaseConfigQueryParams,
-	DeleteSecret400,
-	DeleteSecret401,
-	DeleteSecret403,
-	DeleteSecret410,
-	DeleteSecretMutationResponse,
-	DeleteSecretPathParams,
-	DeleteSecretQueryParams,
 	DeleteSharedEnvVariable400,
 	DeleteSharedEnvVariable401,
 	DeleteSharedEnvVariable402,
@@ -478,7 +466,6 @@ import type {
 	EditRedirectQueryParams,
 	ExchangeSsoToken400,
 	ExchangeSsoToken403,
-	ExchangeSsoToken404,
 	ExchangeSsoToken500,
 	ExchangeSsoTokenMutationResponse,
 	FilterProjectEnvs400,
@@ -891,20 +878,6 @@ import type {
 	GetRuntimeLogsPathParams,
 	GetRuntimeLogsQueryParams,
 	GetRuntimeLogsQueryResponse,
-	GetSecret400,
-	GetSecret401,
-	GetSecret403,
-	GetSecret404,
-	GetSecret410,
-	GetSecretPathParams,
-	GetSecretQueryParams,
-	GetSecretQueryResponse,
-	GetSecrets400,
-	GetSecrets401,
-	GetSecrets403,
-	GetSecrets410,
-	GetSecretsQueryParams,
-	GetSecretsQueryResponse,
 	GetSharedEnvVar400,
 	GetSharedEnvVar401,
 	GetSharedEnvVar403,
@@ -1047,10 +1020,6 @@ import type {
 	ListAuthTokens401,
 	ListAuthTokens403,
 	ListAuthTokensQueryResponse,
-	ListCerts400,
-	ListCerts401,
-	ListCerts403,
-	ListCertsQueryResponse,
 	ListCustomEnvironments400,
 	ListCustomEnvironments401,
 	ListCustomEnvironments403,
@@ -1071,6 +1040,11 @@ import type {
 	ListDeploymentFilesPathParams,
 	ListDeploymentFilesQueryParams,
 	ListDeploymentFilesQueryResponse,
+	ListNetworks400,
+	ListNetworks401,
+	ListNetworks403,
+	ListNetworksQueryParams,
+	ListNetworksQueryResponse,
 	ListPromoteAliases400,
 	ListPromoteAliases401,
 	ListPromoteAliases403,
@@ -1155,12 +1129,6 @@ import type {
 	PostTeamDsyncRolesMutationResponse,
 	PostTeamDsyncRolesPathParams,
 	PostTeamDsyncRolesQueryParams,
-	PurgeAllDataCache400,
-	PurgeAllDataCache401,
-	PurgeAllDataCache403,
-	PurgeAllDataCache404,
-	PurgeAllDataCacheMutationResponse,
-	PurgeAllDataCacheQueryParams,
 	PutFirewallConfig400,
 	PutFirewallConfig401,
 	PutFirewallConfig402,
@@ -1181,6 +1149,12 @@ import type {
 	ReadAccessGroupProjectQueryResponse,
 	ReadAccessGroupQueryParams,
 	ReadAccessGroupQueryResponse,
+	ReadNetwork400,
+	ReadNetwork401,
+	ReadNetwork403,
+	ReadNetworkPathParams,
+	ReadNetworkQueryParams,
+	ReadNetworkQueryResponse,
 	RecordEvents400,
 	RecordEvents401,
 	RecordEvents402,
@@ -1245,13 +1219,6 @@ import type {
 	RemoveTeamMemberMutationResponse,
 	RemoveTeamMemberPathParams,
 	RemoveTeamMemberQueryParams,
-	RenameSecret400,
-	RenameSecret401,
-	RenameSecret403,
-	RenameSecret410,
-	RenameSecretMutationResponse,
-	RenameSecretPathParams,
-	RenameSecretQueryParams,
 	RenewDomain400,
 	RenewDomain401,
 	RenewDomain403,
@@ -1393,11 +1360,6 @@ import type {
 	UpdateCustomEnvironmentMutationResponse,
 	UpdateCustomEnvironmentPathParams,
 	UpdateCustomEnvironmentQueryParams,
-	UpdateDataCacheBillingSettings400,
-	UpdateDataCacheBillingSettings401,
-	UpdateDataCacheBillingSettings403,
-	UpdateDataCacheBillingSettings404,
-	UpdateDataCacheBillingSettingsMutationResponse,
 	UpdateDomainAutoRenew400,
 	UpdateDomainAutoRenew401,
 	UpdateDomainAutoRenew403,
@@ -1472,6 +1434,12 @@ import type {
 	UpdateInvoice409,
 	UpdateInvoiceMutationResponse,
 	UpdateInvoicePathParams,
+	UpdateNetwork400,
+	UpdateNetwork401,
+	UpdateNetwork403,
+	UpdateNetworkMutationResponse,
+	UpdateNetworkPathParams,
+	UpdateNetworkQueryParams,
 	UpdateProject400,
 	UpdateProject401,
 	UpdateProject402,
@@ -1555,6 +1523,7 @@ import type {
 	UpdateStaticIps402,
 	UpdateStaticIps403,
 	UpdateStaticIps404,
+	UpdateStaticIps409,
 	UpdateStaticIps500,
 	UpdateStaticIpsMutationResponse,
 	UpdateStaticIpsPathParams,
@@ -2566,58 +2535,168 @@ export async function rerequestCheck({
 }
 
 /**
- * {@link /data-cache/purge-all}
+ * @description Allows to list Secure Compute networks.
+ * @summary List Secure Compute networks
+ * {@link /v1/connect/networks}
  */
-export async function purgeAllDataCache({
+export async function listNetworks({
 	queryParams,
 	config = {},
 }: {
-	queryParams: PurgeAllDataCacheQueryParams;
+	queryParams?: ListNetworksQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
 
 	const data = await request<
-		PurgeAllDataCacheMutationResponse,
-		ErrorWrapper<
-			PurgeAllDataCache400 | PurgeAllDataCache401 | PurgeAllDataCache403 | PurgeAllDataCache404
-		>,
+		ListNetworksQueryResponse,
+		ErrorWrapper<ListNetworks400 | ListNetworks401 | ListNetworks403>,
 		null,
 		Record<string, string>,
-		PurgeAllDataCacheQueryParams,
+		ListNetworksQueryParams,
 		Record<string, string>
-	>({ method: "DELETE", url: `/data-cache/purge-all`, queryParams, ...requestConfig });
+	>({ method: "GET", url: `/v1/connect/networks`, queryParams, ...requestConfig });
 	return data;
 }
 
 /**
- * {@link /data-cache/billing-settings}
+ * @description Allows to create a Secure Compute network.
+ * @summary Create a Secure Compute network
+ * {@link /v1/connect/networks}
  */
-export async function updateDataCacheBillingSettings({
+export async function createNetwork({
+	queryParams,
 	config = {},
 }: {
+	queryParams?: CreateNetworkQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
 
 	const data = await request<
-		UpdateDataCacheBillingSettingsMutationResponse,
+		CreateNetworkMutationResponse,
 		ErrorWrapper<
-			| UpdateDataCacheBillingSettings400
-			| UpdateDataCacheBillingSettings401
-			| UpdateDataCacheBillingSettings403
-			| UpdateDataCacheBillingSettings404
+			| CreateNetwork400
+			| CreateNetwork401
+			| CreateNetwork402
+			| CreateNetwork403
+			| CreateNetwork404
+			| CreateNetwork409
 		>,
 		null,
 		Record<string, string>,
-		Record<string, string>,
+		CreateNetworkQueryParams,
 		Record<string, string>
 	>({
-		method: "PATCH",
-		url: `/data-cache/billing-settings`,
+		method: "POST",
+		url: `/v1/connect/networks`,
+		queryParams,
 		...requestConfig,
 		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
 	});
+	return data;
+}
+
+/**
+ * @description Allows to delete a Secure Compute network.
+ * @summary Delete a Secure Compute network
+ * {@link /v1/connect/networks/:networkId}
+ */
+export async function deleteNetwork({
+	pathParams: { networkId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: DeleteNetworkPathParams;
+	queryParams?: DeleteNetworkQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!networkId) {
+		throw new Error(`Missing required path parameter: networkId`);
+	}
+	const data = await request<
+		DeleteNetworkMutationResponse,
+		ErrorWrapper<
+			| DeleteNetwork400
+			| DeleteNetwork401
+			| DeleteNetwork402
+			| DeleteNetwork403
+			| DeleteNetwork404
+			| DeleteNetwork409
+		>,
+		null,
+		Record<string, string>,
+		DeleteNetworkQueryParams,
+		DeleteNetworkPathParams
+	>({ method: "DELETE", url: `/v1/connect/networks/${networkId}`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Allows to update a Secure Compute network.
+ * @summary Update a Secure Compute network
+ * {@link /v1/connect/networks/:networkId}
+ */
+export async function updateNetwork({
+	pathParams: { networkId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: UpdateNetworkPathParams;
+	queryParams?: UpdateNetworkQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!networkId) {
+		throw new Error(`Missing required path parameter: networkId`);
+	}
+	const data = await request<
+		UpdateNetworkMutationResponse,
+		ErrorWrapper<UpdateNetwork400 | UpdateNetwork401 | UpdateNetwork403>,
+		null,
+		Record<string, string>,
+		UpdateNetworkQueryParams,
+		UpdateNetworkPathParams
+	>({
+		method: "PATCH",
+		url: `/v1/connect/networks/${networkId}`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Allows to read a Secure Compute network.
+ * @summary Read a Secure Compute network
+ * {@link /v1/connect/networks/:networkId}
+ */
+export async function readNetwork({
+	pathParams: { networkId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ReadNetworkPathParams;
+	queryParams?: ReadNetworkQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!networkId) {
+		throw new Error(`Missing required path parameter: networkId`);
+	}
+	const data = await request<
+		ReadNetworkQueryResponse,
+		ErrorWrapper<ReadNetwork400 | ReadNetwork401 | ReadNetwork403>,
+		null,
+		Record<string, string>,
+		ReadNetworkQueryParams,
+		ReadNetworkPathParams
+	>({ method: "GET", url: `/v1/connect/networks/${networkId}`, queryParams, ...requestConfig });
 	return data;
 }
 
@@ -2844,68 +2923,6 @@ export async function cancelDeployment({
 		CancelDeploymentQueryParams,
 		CancelDeploymentPathParams
 	>({ method: "PATCH", url: `/v12/deployments/${id}/cancel`, queryParams, ...requestConfig });
-	return data;
-}
-
-/**
- * @description This endpoint is deprecated and replaced with the endpoint [Get price data for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-price-data-for-a-domain). Check the price to purchase a domain and how long a single purchase period is.
- * @summary Check the price for a domain (deprecated)
- * {@link /v4/domains/price}
- */
-export async function checkDomainPrice({
-	queryParams,
-	config = {},
-}: {
-	queryParams: CheckDomainPriceQueryParams;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	const data = await request<
-		CheckDomainPriceQueryResponse,
-		ErrorWrapper<
-			| CheckDomainPrice400
-			| CheckDomainPrice401
-			| CheckDomainPrice403
-			| CheckDomainPrice404
-			| CheckDomainPrice500
-		>,
-		null,
-		Record<string, string>,
-		CheckDomainPriceQueryParams,
-		Record<string, string>
-	>({ method: "GET", url: `/v4/domains/price`, queryParams, ...requestConfig });
-	return data;
-}
-
-/**
- * @description This endpoint is deprecated and replaced with the endpoint [Get availability for a domain](https://vercel.com/docs/rest-api/reference/endpoints/domains-registrar/get-availability-for-a-domain). Check if a domain name is available for purchase.
- * @summary Check a Domain Availability (deprecated)
- * {@link /v4/domains/status}
- */
-export async function checkDomainStatus({
-	queryParams,
-	config = {},
-}: {
-	queryParams: CheckDomainStatusQueryParams;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	const data = await request<
-		CheckDomainStatusQueryResponse,
-		ErrorWrapper<
-			| CheckDomainStatus400
-			| CheckDomainStatus401
-			| CheckDomainStatus403
-			| CheckDomainStatus408
-			| CheckDomainStatus500
-		>,
-		null,
-		Record<string, string>,
-		CheckDomainStatusQueryParams,
-		Record<string, string>
-	>({ method: "GET", url: `/v4/domains/status`, queryParams, ...requestConfig });
 	return data;
 }
 
@@ -4185,7 +4202,7 @@ export async function invalidateByTags({
 }
 
 /**
- * @description Marks a cache tag as deleted, causing cache entries associated with that tag to be revalidated in the foreground on the next request. Use this method with caution because one tag can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.
+ * @description Marks a cache tag as deleted, causing cache entries associated with that tag to be revalidated in the foreground on the next request. Use this method with caution because one tag can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. This method is for advanced use cases and is not recommended; prefer using `invalidateByTag` instead.
  * @summary Dangerously delete by tag
  * {@link /v1/edge-cache/dangerously-delete-by-tags}
  */
@@ -4258,7 +4275,7 @@ export async function invalidateBySrcImages({
 }
 
 /**
- * @description Marks a source image as deleted, causing cache entries associated with that source image to be revalidated in the foreground on the next request. Use this method with caution because one source image can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. A good use case for deleting the cache is when the origin has also been deleted, for example it returns a 404 or 410 status code.
+ * @description Marks a source image as deleted, causing cache entries associated with that source image to be revalidated in the foreground on the next request. Use this method with caution because one source image can be associated with many paths and deleting the cache can cause many concurrent requests to the origin leading to cache stampede problem. This method is for advanced use cases and is not recommended; prefer using `invalidateBySrcImage` instead.
  * @summary Dangerously delete by source image
  * {@link /v1/edge-cache/dangerously-delete-by-src-images}
  */
@@ -6097,9 +6114,7 @@ export async function exchangeSsoToken({
 
 	const data = await request<
 		ExchangeSsoTokenMutationResponse,
-		ErrorWrapper<
-			ExchangeSsoToken400 | ExchangeSsoToken403 | ExchangeSsoToken404 | ExchangeSsoToken500
-		>,
+		ErrorWrapper<ExchangeSsoToken400 | ExchangeSsoToken403 | ExchangeSsoToken500>,
 		null,
 		Record<string, string>,
 		Record<string, string>,
@@ -6726,6 +6741,7 @@ export async function updateStaticIps({
 			| UpdateStaticIps402
 			| UpdateStaticIps403
 			| UpdateStaticIps404
+			| UpdateStaticIps409
 			| UpdateStaticIps500
 		>,
 		null,
@@ -9365,27 +9381,6 @@ export async function patchUrlProtectionBypass({
 }
 
 /**
- * {@link /certs}
- */
-export async function listCerts({
-	config = {},
-}: {
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	const data = await request<
-		ListCertsQueryResponse,
-		ErrorWrapper<ListCerts400 | ListCerts401 | ListCerts403>,
-		null,
-		Record<string, string>,
-		Record<string, string>,
-		Record<string, string>
-	>({ method: "GET", url: `/certs`, ...requestConfig });
-	return data;
-}
-
-/**
  * @description Get cert by id
  * @summary Get cert by id
  * {@link /v8/certs/:id}
@@ -9653,165 +9648,6 @@ export async function deleteDeployment({
 	return data;
 }
 
-/**
- * @description Retrieves the active Vercel secrets for the authenticated user or team. By default it returns 20 secrets. The rest can be retrieved using the pagination options. The body will contain an entry for each secret.
- * @summary List secrets
- * {@link /v3/secrets}
- */
-export async function getSecrets({
-	queryParams,
-	config = {},
-}: {
-	queryParams?: GetSecretsQueryParams;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	const data = await request<
-		GetSecretsQueryResponse,
-		ErrorWrapper<GetSecrets400 | GetSecrets401 | GetSecrets403 | GetSecrets410>,
-		null,
-		Record<string, string>,
-		GetSecretsQueryParams,
-		Record<string, string>
-	>({ method: "GET", url: `/v3/secrets`, queryParams, ...requestConfig });
-	return data;
-}
-
-/**
- * @description Allows to create a new secret.
- * @summary Create a new secret
- * {@link /v2/secrets/:name}
- */
-export async function createSecret({
-	pathParams: { name },
-	queryParams,
-	config = {},
-}: {
-	pathParams: CreateSecretPathParams;
-	queryParams?: CreateSecretQueryParams;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	if (!name) {
-		throw new Error(`Missing required path parameter: name`);
-	}
-	const data = await request<
-		CreateSecretMutationResponse,
-		ErrorWrapper<
-			CreateSecret400 | CreateSecret401 | CreateSecret402 | CreateSecret403 | CreateSecret410
-		>,
-		null,
-		Record<string, string>,
-		CreateSecretQueryParams,
-		CreateSecretPathParams
-	>({
-		method: "POST",
-		url: `/v2/secrets/${name}`,
-		queryParams,
-		...requestConfig,
-		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
-	});
-	return data;
-}
-
-/**
- * @description Enables to edit the name of a secret. The name has to be unique to the user or team’s secrets.
- * @summary Change secret name
- * {@link /v2/secrets/:name}
- */
-export async function renameSecret({
-	pathParams: { name },
-	queryParams,
-	config = {},
-}: {
-	pathParams: RenameSecretPathParams;
-	queryParams?: RenameSecretQueryParams;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	if (!name) {
-		throw new Error(`Missing required path parameter: name`);
-	}
-	const data = await request<
-		RenameSecretMutationResponse,
-		ErrorWrapper<RenameSecret400 | RenameSecret401 | RenameSecret403 | RenameSecret410>,
-		null,
-		Record<string, string>,
-		RenameSecretQueryParams,
-		RenameSecretPathParams
-	>({
-		method: "PATCH",
-		url: `/v2/secrets/${name}`,
-		queryParams,
-		...requestConfig,
-		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
-	});
-	return data;
-}
-
-/**
- * @description Retrieves the information for a specific secret by passing either the secret id or name in the URL.
- * @summary Get a single secret
- * {@link /v3/secrets/:idOrName}
- */
-export async function getSecret({
-	pathParams: { idOrName },
-	queryParams,
-	config = {},
-}: {
-	pathParams: GetSecretPathParams;
-	queryParams?: GetSecretQueryParams;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	if (!idOrName) {
-		throw new Error(`Missing required path parameter: idOrName`);
-	}
-	const data = await request<
-		GetSecretQueryResponse,
-		ErrorWrapper<GetSecret400 | GetSecret401 | GetSecret403 | GetSecret404 | GetSecret410>,
-		null,
-		Record<string, string>,
-		GetSecretQueryParams,
-		GetSecretPathParams
-	>({ method: "GET", url: `/v3/secrets/${idOrName}`, queryParams, ...requestConfig });
-	return data;
-}
-
-/**
- * @description This deletes the user or team’s secret defined in the URL.
- * @summary Delete a secret
- * {@link /v2/secrets/:idOrName}
- */
-export async function deleteSecret({
-	pathParams: { idOrName },
-	queryParams,
-	config = {},
-}: {
-	pathParams: DeleteSecretPathParams;
-	queryParams?: DeleteSecretQueryParams;
-	config?: Partial<FetcherConfig> & { client?: typeof client };
-}) {
-	const { client: request = client, ...requestConfig } = config;
-
-	if (!idOrName) {
-		throw new Error(`Missing required path parameter: idOrName`);
-	}
-	const data = await request<
-		DeleteSecretMutationResponse,
-		ErrorWrapper<DeleteSecret400 | DeleteSecret401 | DeleteSecret403 | DeleteSecret410>,
-		null,
-		Record<string, string>,
-		DeleteSecretQueryParams,
-		DeleteSecretPathParams
-	>({ method: "DELETE", url: `/v2/secrets/${idOrName}`, queryParams, ...requestConfig });
-	return data;
-}
-
 export const operationsByPath = {
 	"GET /v1/access-groups/{idOrName}": readAccessGroup,
 	"POST /v1/access-groups/{idOrName}": updateAccessGroup,
@@ -9841,8 +9677,11 @@ export const operationsByPath = {
 	"GET /v1/deployments/{deploymentId}/checks/{checkId}": getCheck,
 	"PATCH /v1/deployments/{deploymentId}/checks/{checkId}": updateCheck,
 	"POST /v1/deployments/{deploymentId}/checks/{checkId}/rerequest": rerequestCheck,
-	"DELETE /data-cache/purge-all": purgeAllDataCache,
-	"PATCH /data-cache/billing-settings": updateDataCacheBillingSettings,
+	"GET /v1/connect/networks": listNetworks,
+	"POST /v1/connect/networks": createNetwork,
+	"DELETE /v1/connect/networks/{networkId}": deleteNetwork,
+	"PATCH /v1/connect/networks/{networkId}": updateNetwork,
+	"GET /v1/connect/networks/{networkId}": readNetwork,
 	"PATCH /v1/data-cache/projects/{projectId}": updateProjectDataCache,
 	"GET /v3/deployments/{idOrUrl}/events": getDeploymentEvents,
 	"PATCH /v1/deployments/{deploymentId}/integrations/{integrationConfigurationId}/resources/{resourceId}/actions/{action}":
@@ -9850,8 +9689,6 @@ export const operationsByPath = {
 	"GET /v13/deployments/{idOrUrl}": getDeployment,
 	"POST /v13/deployments": createDeployment,
 	"PATCH /v12/deployments/{id}/cancel": cancelDeployment,
-	"GET /v4/domains/price": checkDomainPrice,
-	"GET /v4/domains/status": checkDomainStatus,
 	"GET /v4/domains/{domain}/records": getRecords,
 	"POST /v2/domains/{domain}/records": createRecord,
 	"PATCH /v1/domains/records/{recordId}": updateRecord,
@@ -10043,7 +9880,6 @@ export const operationsByPath = {
 	"GET /v4/aliases/{idOrAlias}": getAlias,
 	"DELETE /v2/aliases/{aliasId}": deleteAlias,
 	"PATCH /aliases/{id}/protection-bypass": patchUrlProtectionBypass,
-	"GET /certs": listCerts,
 	"GET /v8/certs/{id}": getCertById,
 	"DELETE /v8/certs/{id}": removeCert,
 	"POST /v8/certs": issueCert,
@@ -10052,11 +9888,6 @@ export const operationsByPath = {
 	"GET /v8/deployments/{id}/files/{fileId}": getDeploymentFileContents,
 	"GET /v6/deployments": getDeployments,
 	"DELETE /v13/deployments/{id}": deleteDeployment,
-	"GET /v3/secrets": getSecrets,
-	"POST /v2/secrets/{name}": createSecret,
-	"PATCH /v2/secrets/{name}": renameSecret,
-	"GET /v3/secrets/{idOrName}": getSecret,
-	"DELETE /v2/secrets/{idOrName}": deleteSecret,
 };
 
 export const operationsByTag = {
@@ -10095,6 +9926,14 @@ export const operationsByTag = {
 		getCheck,
 		updateCheck,
 		rerequestCheck,
+	},
+	connect: {
+		listNetworks,
+		createNetwork,
+		deleteNetwork,
+		updateNetwork,
+		readNetwork,
+		updateStaticIps,
 	},
 	projects: {
 		updateProjectDataCache,
@@ -10148,16 +9987,6 @@ export const operationsByTag = {
 		getConfigurationProducts,
 		createIntegrationStoreDirect,
 	},
-	domains: {
-		checkDomainPrice,
-		checkDomainStatus,
-		getDomainConfig,
-		getDomain,
-		getDomains,
-		createOrTransferDomain,
-		patchDomain,
-		deleteDomain,
-	},
 	dns: {
 		getRecords,
 		createRecord,
@@ -10180,6 +10009,14 @@ export const operationsByTag = {
 		updateDomainNameservers,
 		getContactInfoSchema,
 		getOrder,
+	},
+	domains: {
+		getDomainConfig,
+		getDomain,
+		getDomains,
+		createOrTransferDomain,
+		patchDomain,
+		deleteDomain,
 	},
 	logdrains: {
 		getConfigurableLogDrain,
@@ -10279,9 +10116,6 @@ export const operationsByTag = {
 		addProjectMember,
 		removeProjectMember,
 	},
-	connect: {
-		updateStaticIps,
-	},
 	staticIps: {
 		updateStaticIps,
 	},
@@ -10341,13 +10175,6 @@ export const operationsByTag = {
 		issueCert,
 		uploadCert,
 	},
-	secrets: {
-		getSecrets,
-		createSecret,
-		renameSecret,
-		getSecret,
-		deleteSecret,
-	},
 };
 
 export const tagDictionary = {
@@ -10379,6 +10206,12 @@ export const tagDictionary = {
 		POST: ["createCheck", "rerequestCheck"],
 		GET: ["getAllChecks", "getCheck"],
 		PATCH: ["updateCheck"],
+	},
+	connect: {
+		GET: ["listNetworks", "readNetwork"],
+		POST: ["createNetwork"],
+		DELETE: ["deleteNetwork"],
+		PATCH: ["updateNetwork", "updateStaticIps"],
 	},
 	projects: {
 		PATCH: [
@@ -10436,12 +10269,6 @@ export const tagDictionary = {
 		POST: ["connectIntegrationResourceToProject", "createIntegrationStoreDirect"],
 		DELETE: ["deleteConfiguration"],
 	},
-	domains: {
-		GET: ["checkDomainPrice", "checkDomainStatus", "getDomainConfig", "getDomain", "getDomains"],
-		POST: ["createOrTransferDomain"],
-		PATCH: ["patchDomain"],
-		DELETE: ["deleteDomain"],
-	},
 	dns: {
 		GET: ["getRecords"],
 		POST: ["createRecord"],
@@ -10467,6 +10294,12 @@ export const tagDictionary = {
 			"renewDomain",
 		],
 		PATCH: ["updateDomainAutoRenew", "updateDomainNameservers"],
+	},
+	domains: {
+		GET: ["getDomainConfig", "getDomain", "getDomains"],
+		POST: ["createOrTransferDomain"],
+		PATCH: ["patchDomain"],
+		DELETE: ["deleteDomain"],
 	},
 	logdrains: {
 		GET: ["getConfigurableLogDrain", "getAllLogDrains", "getIntegrationLogDrains"],
@@ -10558,9 +10391,6 @@ export const tagDictionary = {
 		POST: ["addProjectMember"],
 		DELETE: ["removeProjectMember"],
 	},
-	connect: {
-		PATCH: ["updateStaticIps"],
-	},
 	staticIps: {
 		PATCH: ["updateStaticIps"],
 	},
@@ -10610,11 +10440,5 @@ export const tagDictionary = {
 		DELETE: ["removeCert"],
 		POST: ["issueCert"],
 		PUT: ["uploadCert"],
-	},
-	secrets: {
-		GET: ["getSecrets", "getSecret"],
-		POST: ["createSecret"],
-		PATCH: ["renameSecret"],
-		DELETE: ["deleteSecret"],
 	},
 } as const;

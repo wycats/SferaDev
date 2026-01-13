@@ -11,35 +11,8 @@ export const chatDetailPrivacyEnum = {
 	unlisted: "unlisted",
 } as const;
 
-export type ChatDetailPrivacyEnum =
+export type ChatDetailPrivacyEnumKey =
 	(typeof chatDetailPrivacyEnum)[keyof typeof chatDetailPrivacyEnum];
-
-export const messagesTypeEnum = {
-	"added-environment-variables": "added-environment-variables",
-	"added-integration": "added-integration",
-	"deleted-file": "deleted-file",
-	"edited-file": "edited-file",
-	"fix-with-v0": "fix-with-v0",
-	"forked-block": "forked-block",
-	"forked-chat": "forked-chat",
-	message: "message",
-	"moved-file": "moved-file",
-	"open-in-v0": "open-in-v0",
-	refinement: "refinement",
-	"renamed-file": "renamed-file",
-	"replace-src": "replace-src",
-	"reverted-block": "reverted-block",
-	"sync-git": "sync-git",
-} as const;
-
-export type MessagesTypeEnum = (typeof messagesTypeEnum)[keyof typeof messagesTypeEnum];
-
-export const messagesRoleEnum = {
-	assistant: "assistant",
-	user: "user",
-} as const;
-
-export type MessagesRoleEnum = (typeof messagesRoleEnum)[keyof typeof messagesRoleEnum];
 
 export const latestVersionStatusEnum = {
 	completed: "completed",
@@ -47,167 +20,612 @@ export const latestVersionStatusEnum = {
 	pending: "pending",
 } as const;
 
-export type LatestVersionStatusEnum =
+export type LatestVersionStatusEnumKey =
 	(typeof latestVersionStatusEnum)[keyof typeof latestVersionStatusEnum];
 
-export const modelConfigurationModelIdEnum = {
-	"v0-1.5-lg": "v0-1.5-lg",
-	"v0-1.5-md": "v0-1.5-md",
-	"v0-1.5-sm": "v0-1.5-sm",
+export const messagesTypeEnum = {
+	"added-environment-variables": "added-environment-variables",
+	"added-integration": "added-integration",
+	"answered-questions": "answered-questions",
+	"auto-fix-with-v0": "auto-fix-with-v0",
+	"deleted-file": "deleted-file",
+	"edited-file": "edited-file",
+	"fix-cve": "fix-cve",
+	"fix-with-v0": "fix-with-v0",
+	"forked-block": "forked-block",
+	"forked-chat": "forked-chat",
+	message: "message",
+	"moved-file": "moved-file",
+	"open-in-v0": "open-in-v0",
+	"pull-changes": "pull-changes",
+	refinement: "refinement",
+	"renamed-file": "renamed-file",
+	"replace-src": "replace-src",
+	"reverted-block": "reverted-block",
+	"sync-git": "sync-git",
 } as const;
 
-export type ModelConfigurationModelIdEnum =
+export type MessagesTypeEnumKey = (typeof messagesTypeEnum)[keyof typeof messagesTypeEnum];
+
+export const messagesRoleEnum = {
+	assistant: "assistant",
+	user: "user",
+} as const;
+
+export type MessagesRoleEnumKey = (typeof messagesRoleEnum)[keyof typeof messagesRoleEnum];
+
+export const messagesFinishReasonEnum = {
+	"content-filter": "content-filter",
+	error: "error",
+	length: "length",
+	other: "other",
+	stop: "stop",
+	"tool-calls": "tool-calls",
+	unknown: "unknown",
+} as const;
+
+export type MessagesFinishReasonEnumKey =
+	(typeof messagesFinishReasonEnum)[keyof typeof messagesFinishReasonEnum];
+
+export const attachmentsTypeEnum = {
+	figma: "figma",
+	screenshot: "screenshot",
+	zip: "zip",
+} as const;
+
+export type AttachmentsTypeEnumKey = (typeof attachmentsTypeEnum)[keyof typeof attachmentsTypeEnum];
+
+export const modelConfigurationModelIdEnum = {
+	"v0-max": "v0-max",
+	"v0-mini": "v0-mini",
+	"v0-pro": "v0-pro",
+} as const;
+
+export type ModelConfigurationModelIdEnumKey =
 	(typeof modelConfigurationModelIdEnum)[keyof typeof modelConfigurationModelIdEnum];
 
+/**
+ * @description Detailed representation of a chat, including its messages, files, versions, and model configuration.
+ */
 export type ChatDetail = {
 	/**
+	 * @description A unique identifier for the chat.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a chat.
 	 * @type string
 	 */
 	object: "chat";
 	/**
-	 * @type string
-	 */
-	url: string;
-	/**
+	 * @description Indicates whether the chat can be shared via public link.
 	 * @type boolean
 	 */
 	shareable: boolean;
 	/**
+	 * @description Defines the visibility of the chat—private, team-only, or public.
+	 * @type string
+	 */
+	privacy: ChatDetailPrivacyEnumKey;
+	/**
+	 * @description An optional name assigned to the chat by the user.
 	 * @type string | undefined
 	 */
-	privacy?: ChatDetailPrivacyEnum | undefined;
+	name?: string | undefined;
 	/**
+	 * @description Deprecated title field preserved for backward compatibility.
+	 * @deprecated
 	 * @type string | undefined
 	 */
 	title?: string | undefined;
 	/**
+	 * @description The ISO timestamp representing when the chat was created.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The ISO timestamp of the last update to the chat.
 	 * @type string | undefined
 	 */
 	updatedAt?: string | undefined;
 	/**
+	 * @description Indicates whether the chat is marked as a favorite.
 	 * @type boolean
 	 */
 	favorite: boolean;
 	/**
+	 * @description The ID of the user who created the chat.
 	 * @type string
 	 */
 	authorId: string;
 	/**
-	 * @type array
+	 * @description Optional ID of the v0 project associated with this chat.
+	 * @type string | undefined
 	 */
-	messages: {
-		/**
-		 * @type string
-		 */
-		id: string;
-		/**
-		 * @type string
-		 */
-		object: "message";
-		/**
-		 * @type string
-		 */
-		content: string;
-		/**
-		 * @type string
-		 */
-		createdAt: string;
-		/**
-		 * @type string
-		 */
-		type: MessagesTypeEnum;
-		/**
-		 * @type string
-		 */
-		role: MessagesRoleEnum;
-	}[];
+	projectId?: string | undefined;
 	/**
+	 * @description Web URL to view this chat in the browser.
+	 * @type string
+	 */
+	webUrl: string;
+	/**
+	 * @description API URL to access this chat via the API.
+	 * @type string
+	 */
+	apiUrl: string;
+	/**
+	 * @description Full details of the most recent generated version, if available.
 	 * @type object | undefined
 	 */
 	latestVersion?:
 		| {
 				/**
+				 * @description A unique identifier for the version.
 				 * @type string
 				 */
 				id: string;
 				/**
+				 * @description Fixed value identifying this object as a version.
 				 * @type string
 				 */
 				object: "version";
 				/**
+				 * @description The current status of the version generation process.
 				 * @type string
 				 */
-				status: LatestVersionStatusEnum;
+				status: LatestVersionStatusEnumKey;
 				/**
+				 * @description Optional URL for previewing the generated output.
+				 * @type string | undefined
+				 */
+				demoUrl?: string | undefined;
+				/**
+				 * @description URL to retrieve a screenshot of this version.
+				 * @type string | undefined
+				 */
+				screenshotUrl?: string | undefined;
+				/**
+				 * @description The date and time when the version was created, in ISO 8601 format.
+				 * @type string, date-time
+				 */
+				createdAt: string;
+				/**
+				 * @description The date and time when the version was last updated, in ISO 8601 format.
+				 * @type string | undefined, date-time
+				 */
+				updatedAt?: string | undefined;
+				/**
+				 * @description A list of files that were generated or included in this version.
 				 * @type array
 				 */
 				files: {
 					/**
+					 * @description Fixed value identifying this object as a file.
 					 * @type string
 					 */
 					object: "file";
 					/**
+					 * @description The name of the file, including its extension.
 					 * @type string
 					 */
 					name: string;
 					/**
+					 * @description The full contents of the file as a raw string.
 					 * @type string
 					 */
 					content: string;
+					/**
+					 * @description Whether the file is locked to prevent AI from overwriting it during new version generation.
+					 * @type boolean
+					 */
+					locked: boolean;
 				}[];
 		  }
 		| undefined;
 	/**
+	 * @description The canonical URL to access this chat.
+	 * @deprecated
+	 * @type string
+	 */
+	url: string;
+	/**
+	 * @description All messages exchanged in the chat, including user and assistant entries.
+	 * @type array
+	 */
+	messages: {
+		/**
+		 * @description A unique identifier for the message.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description Fixed value identifying this object as a message.
+		 * @type string
+		 */
+		object: "message";
+		/**
+		 * @description The main text content of the message.
+		 * @type string
+		 */
+		content: string;
+		/**
+		 * @description The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.
+		 * @type array | undefined
+		 */
+		experimentalContent?:
+			| (
+					| [0, string[], ...string[]]
+					| [
+							1,
+							{
+								/**
+								 * @type string | undefined
+								 */
+								standard?: string | undefined;
+								/**
+								 * @type string
+								 */
+								def: string;
+								/**
+								 * @type string
+								 */
+								type: string;
+								/**
+								 * @type string
+								 */
+								check: string;
+								/**
+								 * @type string
+								 */
+								clone: string;
+								/**
+								 * @type string
+								 */
+								brand: string;
+								/**
+								 * @type string
+								 */
+								register: string;
+								/**
+								 * @type string
+								 */
+								parse: string;
+								/**
+								 * @type string
+								 */
+								safeParse: string;
+								/**
+								 * @type string
+								 */
+								parseAsync: string;
+								/**
+								 * @type string
+								 */
+								safeParseAsync: string;
+								/**
+								 * @type string
+								 */
+								spa: string;
+								/**
+								 * @type string
+								 */
+								encode: string;
+								/**
+								 * @type string
+								 */
+								decode: string;
+								/**
+								 * @type string
+								 */
+								encodeAsync: string;
+								/**
+								 * @type string
+								 */
+								decodeAsync: string;
+								/**
+								 * @type string
+								 */
+								safeEncode: string;
+								/**
+								 * @type string
+								 */
+								safeDecode: string;
+								/**
+								 * @type string
+								 */
+								safeEncodeAsync: string;
+								/**
+								 * @type string
+								 */
+								safeDecodeAsync: string;
+								/**
+								 * @type string
+								 */
+								refine: string;
+								/**
+								 * @type string
+								 */
+								superRefine: string;
+								/**
+								 * @type string
+								 */
+								overwrite: string;
+								/**
+								 * @type string
+								 */
+								optional: string;
+								/**
+								 * @type string
+								 */
+								nullable: string;
+								/**
+								 * @type string
+								 */
+								nullish: string;
+								/**
+								 * @type string
+								 */
+								nonoptional: string;
+								/**
+								 * @type string
+								 */
+								array: string;
+								/**
+								 * @type string
+								 */
+								or: string;
+								/**
+								 * @type string
+								 */
+								and: string;
+								/**
+								 * @type string
+								 */
+								transform: string;
+								/**
+								 * @type string
+								 */
+								default: string;
+								/**
+								 * @type string
+								 */
+								prefault: string;
+								/**
+								 * @type string
+								 */
+								catch: string;
+								/**
+								 * @type string
+								 */
+								pipe: string;
+								/**
+								 * @type string
+								 */
+								readonly: string;
+								/**
+								 * @type string
+								 */
+								describe: string;
+								/**
+								 * @type string
+								 */
+								meta: string;
+								/**
+								 * @type string
+								 */
+								isOptional: string;
+								/**
+								 * @type string
+								 */
+								isNullable: string;
+								/**
+								 * @type string
+								 */
+								keyof: string;
+								/**
+								 * @type string
+								 */
+								catchall: string;
+								/**
+								 * @type string
+								 */
+								passthrough: string;
+								/**
+								 * @type string
+								 */
+								loose: string;
+								/**
+								 * @type string
+								 */
+								strict: string;
+								/**
+								 * @type string
+								 */
+								strip: string;
+								/**
+								 * @type string
+								 */
+								extend: string;
+								/**
+								 * @type string
+								 */
+								safeExtend: string;
+								/**
+								 * @type string
+								 */
+								merge: string;
+								/**
+								 * @type string
+								 */
+								pick: string;
+								/**
+								 * @type string
+								 */
+								omit: string;
+								/**
+								 * @type string
+								 */
+								partial: string;
+								/**
+								 * @type string
+								 */
+								required: string;
+							},
+							...string[],
+					  ]
+			  )[]
+			| undefined;
+		/**
+		 * @description The ISO timestamp representing when the message was created.
+		 * @type string
+		 */
+		createdAt: string;
+		/**
+		 * @description The ISO timestamp representing when the message was last updated.
+		 * @type string | undefined, date-time
+		 */
+		updatedAt?: string | undefined;
+		/**
+		 * @description Indicates the format or category of the message, such as plain text or code.
+		 * @type string
+		 */
+		type: MessagesTypeEnumKey;
+		/**
+		 * @description Specifies whether the message was sent by the user or the assistant.
+		 * @type string
+		 */
+		role: MessagesRoleEnumKey;
+		/**
+		 * @description The reason why the message generation finished.
+		 * @type string | undefined
+		 */
+		finishReason?: MessagesFinishReasonEnumKey | undefined;
+		/**
+		 * @description API URL to access this message via the API.
+		 * @type string
+		 */
+		apiUrl: string;
+		/**
+		 * @description The ID of the user who sent the message.
+		 * @type null,string
+		 */
+		authorId: string | null;
+		/**
+		 * @description The ID of the parent message.
+		 * @type null,string | undefined
+		 */
+		parentId?: (string | null) | undefined;
+		/**
+		 * @type array | undefined
+		 */
+		attachments?:
+			| {
+					/**
+					 * @description The URL where the attachment file can be accessed.
+					 * @type string
+					 */
+					url: string;
+					/**
+					 * @description The original filename of the attachment.
+					 * @type string | undefined
+					 */
+					name?: string | undefined;
+					/**
+					 * @description The MIME type of the attachment file (e.g., image/png, application/pdf).
+					 * @type string | undefined
+					 */
+					contentType?: string | undefined;
+					/**
+					 * @description The size of the attachment file in bytes.
+					 * @type number
+					 */
+					size: number;
+					/**
+					 * @description The base64-encoded content of the attachment file, if available.
+					 * @type string | undefined
+					 */
+					content?: string | undefined;
+					/**
+					 * @description Optional v0-specific attachment type for enhanced processing.
+					 * @type string | undefined
+					 */
+					type?: AttachmentsTypeEnumKey | undefined;
+			  }[]
+			| undefined;
+	}[];
+	/**
+	 * @description Optional array of files associated with the chat context.
 	 * @type array | undefined
 	 */
 	files?:
 		| {
 				/**
+				 * @description Programming language used in the file (e.g., JavaScript, Python).
 				 * @type string
 				 */
 				lang: string;
 				/**
+				 * @description A key-value map of metadata associated with the file (e.g., path, type).
 				 * @type object
 				 */
 				meta: {
 					[key: string]: string;
 				};
 				/**
+				 * @description The origin or identifier of the file source (e.g., path or upload label).
 				 * @type string
 				 */
 				source: string;
 		  }[]
 		| undefined;
 	/**
+	 * @description Deprecated demo URL used for previewing the chat result.
+	 * @deprecated
 	 * @type string | undefined
 	 */
 	demo?: string | undefined;
 	/**
+	 * @description The main user prompt or instruction that started the chat.
 	 * @type string
 	 */
 	text: string;
 	/**
+	 * @description The configuration used to generate responses in this chat.
+	 * @type object | undefined
+	 */
+	modelConfiguration?:
+		| {
+				/**
+				 * @description Deprecated Model ID field preserved for backward compatibility.
+				 * @deprecated
+				 * @default "v0-pro"
+				 * @type string | undefined
+				 */
+				modelId?: ModelConfigurationModelIdEnumKey | undefined;
+				/**
+				 * @description Enables image generations to generate up to 5 images per version.
+				 * @default false
+				 * @type boolean | undefined
+				 */
+				imageGenerations?: boolean | undefined;
+				/**
+				 * @description Enables thinking to generate a response in multiple steps.
+				 * @default false
+				 * @type boolean | undefined
+				 */
+				thinking?: boolean | undefined;
+		  }
+		| undefined;
+	/**
 	 * @type object
 	 */
-	modelConfiguration: {
+	permissions: {
 		/**
-		 * @type string
+		 * @description If true, the user has write access to the chat.
+		 * @type boolean
 		 */
-		modelId: ModelConfigurationModelIdEnum;
-		/**
-		 * @default false
-		 * @type boolean | undefined
-		 */
-		imageGenerations?: boolean | undefined;
-		/**
-		 * @default false
-		 * @type boolean | undefined
-		 */
-		thinking?: boolean | undefined;
+		write: boolean;
 	};
 };
 
@@ -219,177 +637,795 @@ export const chatSummaryPrivacyEnum = {
 	unlisted: "unlisted",
 } as const;
 
-export type ChatSummaryPrivacyEnum =
+export type ChatSummaryPrivacyEnumKey =
 	(typeof chatSummaryPrivacyEnum)[keyof typeof chatSummaryPrivacyEnum];
 
-export const latestVersionStatusEnum2 = {
-	completed: "completed",
-	failed: "failed",
-	pending: "pending",
-} as const;
-
-export type LatestVersionStatusEnum2 =
-	(typeof latestVersionStatusEnum2)[keyof typeof latestVersionStatusEnum2];
-
+/**
+ * @description Summary of a chat, including metadata like privacy, author, latest version, and URLs.
+ */
 export type ChatSummary = {
 	/**
+	 * @description A unique identifier for the chat.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a chat.
 	 * @type string
 	 */
 	object: "chat";
 	/**
+	 * @description Indicates whether the chat can be shared via public link.
 	 * @type boolean
 	 */
 	shareable: boolean;
 	/**
+	 * @description Defines the visibility of the chat—private, team-only, or public.
 	 * @type string
 	 */
-	privacy: ChatSummaryPrivacyEnum;
+	privacy: ChatSummaryPrivacyEnumKey;
 	/**
+	 * @description An optional name assigned to the chat by the user.
+	 * @type string | undefined
+	 */
+	name?: string | undefined;
+	/**
+	 * @description Deprecated title field preserved for backward compatibility.
+	 * @deprecated
 	 * @type string | undefined
 	 */
 	title?: string | undefined;
 	/**
-	 * @type string
+	 * @description The ISO timestamp representing when the chat was created.
+	 * @type string, date-time
 	 */
-	updatedAt: string;
+	createdAt: string;
 	/**
+	 * @description The ISO timestamp of the last update to the chat.
+	 * @type string | undefined
+	 */
+	updatedAt?: string | undefined;
+	/**
+	 * @description Indicates whether the chat is marked as a favorite.
 	 * @type boolean
 	 */
 	favorite: boolean;
 	/**
+	 * @description The ID of the user who created the chat.
 	 * @type string
 	 */
 	authorId: string;
 	/**
+	 * @description Optional ID of the v0 project associated with this chat.
+	 * @type string | undefined
+	 */
+	projectId?: string | undefined;
+	/**
+	 * @description Web URL to view this chat in the browser.
+	 * @type string
+	 */
+	webUrl: string;
+	/**
+	 * @description API URL to access this chat via the API.
+	 * @type string
+	 */
+	apiUrl: string;
+	/**
+	 * @description The most recent generated version of the chat, if available.
 	 * @type object | undefined
 	 */
 	latestVersion?:
 		| {
 				/**
+				 * @description A unique identifier for the version.
 				 * @type string
 				 */
 				id: string;
 				/**
+				 * @description Fixed value identifying this object as a version.
 				 * @type string
 				 */
 				object: "version";
 				/**
+				 * @description The current status of the version generation process.
 				 * @type string
 				 */
-				status: LatestVersionStatusEnum2;
+				status: LatestVersionStatusEnumKey;
+				/**
+				 * @description Optional URL for previewing the generated output.
+				 * @type string | undefined
+				 */
+				demoUrl?: string | undefined;
+				/**
+				 * @description URL to retrieve a screenshot of this version.
+				 * @type string | undefined
+				 */
+				screenshotUrl?: string | undefined;
+				/**
+				 * @description The date and time when the version was created, in ISO 8601 format.
+				 * @type string, date-time
+				 */
+				createdAt: string;
+				/**
+				 * @description The date and time when the version was last updated, in ISO 8601 format.
+				 * @type string | undefined, date-time
+				 */
+				updatedAt?: string | undefined;
 		  }
 		| undefined;
 };
 
-export type FileDetail = {
+export type DeploymentDetail = {
 	/**
-	 * @type string
-	 */
-	object: "file";
-	/**
-	 * @type string
-	 */
-	name: string;
-	/**
-	 * @type string
-	 */
-	content: string;
-};
-
-export type FileSummary = {
-	/**
-	 * @type string
-	 */
-	object: "file";
-	/**
-	 * @type string
-	 */
-	name: string;
-};
-
-export const modelConfigurationModelIdEnum2 = {
-	"v0-1.5-lg": "v0-1.5-lg",
-	"v0-1.5-md": "v0-1.5-md",
-	"v0-1.5-sm": "v0-1.5-sm",
-} as const;
-
-export type ModelConfigurationModelIdEnum2 =
-	(typeof modelConfigurationModelIdEnum2)[keyof typeof modelConfigurationModelIdEnum2];
-
-export type MessageDetail = {
-	/**
+	 * @description A unique identifier for the deployment.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a deployment.
 	 * @type string
 	 */
-	object: "message";
+	object: "deployment";
 	/**
+	 * @description URL to the deployment inspector.
+	 * @type string
+	 */
+	inspectorUrl: string;
+	/**
+	 * @description The ID of the chat that this deployment is scoped to.
 	 * @type string
 	 */
 	chatId: string;
 	/**
+	 * @description The ID of the project that this deployment is scoped to.
+	 * @type string
+	 */
+	projectId: string;
+	/**
+	 * @description The ID of the version that this deployment is scoped to.
+	 * @type string
+	 */
+	versionId: string;
+	/**
+	 * @description The API endpoint URL for accessing this deployment programmatically.
+	 * @type string, uri
+	 */
+	apiUrl: string;
+	/**
+	 * @description The web URL where the deployment can be viewed or managed.
+	 * @type string, uri
+	 */
+	webUrl: string;
+};
+
+export type DeploymentSummary = {
+	/**
+	 * @description A unique identifier for the deployment.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a deployment.
+	 * @type string
+	 */
+	object: "deployment";
+	/**
+	 * @description URL to the deployment inspector.
+	 * @type string
+	 */
+	inspectorUrl: string;
+	/**
+	 * @description The ID of the chat that this deployment is scoped to.
+	 * @type string
+	 */
+	chatId: string;
+	/**
+	 * @description The ID of the project that this deployment is scoped to.
+	 * @type string
+	 */
+	projectId: string;
+	/**
+	 * @description The ID of the version that this deployment is scoped to.
+	 * @type string
+	 */
+	versionId: string;
+	/**
+	 * @description The API endpoint URL for accessing this deployment programmatically.
+	 * @type string, uri
+	 */
+	apiUrl: string;
+	/**
+	 * @description The web URL where the deployment can be viewed or managed.
+	 * @type string, uri
+	 */
+	webUrl: string;
+};
+
+/**
+ * @description Detailed information for an environment variable including its value.
+ */
+export type EnvironmentVariableDetailSchema = {
+	/**
+	 * @description A unique identifier for the environment variable.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "environment_variable";
+	/**
+	 * @description The name of the environment variable.
+	 * @type string
+	 */
+	key: string;
+	/**
+	 * @description The value of the environment variable.
+	 * @type string
+	 */
+	value: string;
+	/**
+	 * @description Whether the value is decrypted or encrypted.
+	 * @type boolean
+	 */
+	decrypted: boolean;
+	/**
+	 * @description The timestamp when the environment variable was created.
+	 * @type number
+	 */
+	createdAt: number;
+	/**
+	 * @description The timestamp when the environment variable was last updated.
+	 * @type number | undefined
+	 */
+	updatedAt?: number | undefined;
+};
+
+/**
+ * @description Summary information for an environment variable.
+ */
+export type EnvironmentVariableSummarySchema = {
+	/**
+	 * @description A unique identifier for the environment variable.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "environment_variable";
+	/**
+	 * @description The name of the environment variable.
+	 * @type string
+	 */
+	key: string;
+	/**
+	 * @description The value of the environment variable.
+	 * @type string
+	 */
+	value: string;
+	/**
+	 * @description Whether the value is decrypted or encrypted.
+	 * @type boolean
+	 */
+	decrypted: boolean;
+	/**
+	 * @description The timestamp when the environment variable was created.
+	 * @type number
+	 */
+	createdAt: number;
+	/**
+	 * @description The timestamp when the environment variable was last updated.
+	 * @type number | undefined
+	 */
+	updatedAt?: number | undefined;
+};
+
+/**
+ * @description List response containing environment variables.
+ */
+export type EnvironmentVariablesListSchema = {
+	/**
+	 * @description Fixed value identifying this as a list response.
+	 * @type string
+	 */
+	object: "list";
+	/**
+	 * @description Array of environment variable details.
+	 * @type array
+	 */
+	data: {
+		/**
+		 * @description A unique identifier for the environment variable.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description The object type.
+		 * @type string
+		 */
+		object: "environment_variable";
+		/**
+		 * @description The name of the environment variable.
+		 * @type string
+		 */
+		key: string;
+		/**
+		 * @description The value of the environment variable.
+		 * @type string
+		 */
+		value: string;
+		/**
+		 * @description Whether the value is decrypted or encrypted.
+		 * @type boolean
+		 */
+		decrypted: boolean;
+		/**
+		 * @description The timestamp when the environment variable was created.
+		 * @type number
+		 */
+		createdAt: number;
+		/**
+		 * @description The timestamp when the environment variable was last updated.
+		 * @type number | undefined
+		 */
+		updatedAt?: number | undefined;
+	}[];
+};
+
+/**
+ * @description Detailed representation of a file, including its content and lock status.
+ */
+export type FileDetail = {
+	/**
+	 * @description Fixed value identifying this object as a file.
+	 * @type string
+	 */
+	object: "file";
+	/**
+	 * @description The name of the file, including its extension.
+	 * @type string
+	 */
+	name: string;
+	/**
+	 * @description The full contents of the file as a raw string.
+	 * @type string
+	 */
+	content: string;
+	/**
+	 * @description Whether the file is locked to prevent AI from overwriting it during new version generation.
+	 * @type boolean
+	 */
+	locked: boolean;
+};
+
+/**
+ * @description Basic metadata about a file, such as its type and name.
+ */
+export type FileSummary = {
+	/**
+	 * @description Fixed value identifying this object as a file.
+	 * @type string
+	 */
+	object: "file";
+	/**
+	 * @description The name of the file, including its extension.
+	 * @type string
+	 */
+	name: string;
+};
+
+export const hookDetailEventsEnum = {
+	"chat.created": "chat.created",
+	"chat.deleted": "chat.deleted",
+	"chat.updated": "chat.updated",
+	"message.created": "message.created",
+	"message.deleted": "message.deleted",
+	"message.finished": "message.finished",
+	"message.updated": "message.updated",
+} as const;
+
+export type HookDetailEventsEnumKey =
+	(typeof hookDetailEventsEnum)[keyof typeof hookDetailEventsEnum];
+
+/**
+ * @description Full configuration details for a webhook, including its scope and subscription.
+ */
+export type HookDetail = {
+	/**
+	 * @description A unique identifier for the webhook.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a webhook.
+	 * @type string
+	 */
+	object: "hook";
+	/**
+	 * @description A user-defined name to label the webhook.
+	 * @type string
+	 */
+	name: string;
+	/**
+	 * @description List of event types this webhook is subscribed to.
+	 * @type array
+	 */
+	events: HookDetailEventsEnumKey[];
+	/**
+	 * @description Optional ID of the chat that this webhook is scoped to.
+	 * @type string | undefined
+	 */
+	chatId?: string | undefined;
+	/**
+	 * @description Target URL that receives event payloads for this webhook.
 	 * @type string
 	 */
 	url: string;
+};
+
+export const hookEventDetailEventEnum = {
+	"chat.created": "chat.created",
+	"chat.deleted": "chat.deleted",
+	"chat.updated": "chat.updated",
+	"message.created": "message.created",
+	"message.deleted": "message.deleted",
+	"message.finished": "message.finished",
+	"message.updated": "message.updated",
+} as const;
+
+export type HookEventDetailEventEnumKey =
+	(typeof hookEventDetailEventEnum)[keyof typeof hookEventDetailEventEnum];
+
+export const hookEventDetailStatusEnum = {
+	error: "error",
+	pending: "pending",
+	success: "success",
+} as const;
+
+export type HookEventDetailStatusEnumKey =
+	(typeof hookEventDetailStatusEnum)[keyof typeof hookEventDetailStatusEnum];
+
+/**
+ * @description Detailed record of a webhook event, including its type, status, and timestamp.
+ */
+export type HookEventDetail = {
 	/**
-	 * @type array
+	 * @description A unique identifier for the webhook event log entry.
+	 * @type string
 	 */
-	files: {
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a webhook event.
+	 * @type string
+	 */
+	object: "hook_event";
+	/**
+	 * @description The type of event that triggered the webhook.
+	 * @type string
+	 */
+	event: HookEventDetailEventEnumKey;
+	/**
+	 * @description The delivery status of the webhook (e.g., delivered, failed).
+	 * @default "pending"
+	 * @type string | undefined
+	 */
+	status?: HookEventDetailStatusEnumKey | undefined;
+	/**
+	 * @description Timestamp of when the webhook event was triggered.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+};
+
+/**
+ * @description Summary of a webhook, including its ID and display name.
+ */
+export type HookSummary = {
+	/**
+	 * @description A unique identifier for the webhook.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a webhook.
+	 * @type string
+	 */
+	object: "hook";
+	/**
+	 * @description A user-defined name to label the webhook.
+	 * @type string
+	 */
+	name: string;
+};
+
+/**
+ * @description Detailed information about an integration connection to a project.
+ */
+export type IntegrationConnectionDetailSchema = {
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "integration_connection";
+	/**
+	 * @description The unique ID of the integration connection (format: {projectId}_{integrationId}).
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Whether the integration is connected to the project.
+	 * @type boolean
+	 */
+	connected: boolean;
+	/**
+	 * @description Information about the connected integration.
+	 * @type object
+	 */
+	integration: {
 		/**
+		 * @description The ID of the integration.
 		 * @type string
 		 */
-		object: "file";
+		id: string;
 		/**
+		 * @description The object type.
+		 * @type string
+		 */
+		object: "integration";
+		/**
+		 * @description The slug of the integration.
+		 * @type string
+		 */
+		slug: string;
+		/**
+		 * @description The name of the integration.
 		 * @type string
 		 */
 		name: string;
-	}[];
+	};
 	/**
-	 * @type string | undefined
+	 * @description Additional metadata about the integration connection.
+	 * @type object | undefined
 	 */
-	demo?: string | undefined;
+	metadata?:
+		| {
+				[key: string]: unknown;
+		  }
+		| undefined;
+};
+
+/**
+ * @description List response containing integration connections.
+ */
+export type IntegrationConnectionListSchema = {
 	/**
+	 * @description Fixed value identifying this as a list response.
 	 * @type string
 	 */
-	text: string;
+	object: "list";
 	/**
-	 * @type object
+	 * @description Array of integration connection summaries.
+	 * @type array
 	 */
-	modelConfiguration: {
+	data: {
 		/**
+		 * @description The object type.
 		 * @type string
 		 */
-		modelId: ModelConfigurationModelIdEnum2;
+		object: "integration_connection";
 		/**
-		 * @default false
-		 * @type boolean | undefined
+		 * @description The unique ID of the integration connection (format: {projectId}_{integrationId}).
+		 * @type string
 		 */
-		imageGenerations?: boolean | undefined;
+		id: string;
 		/**
-		 * @default false
-		 * @type boolean | undefined
+		 * @description Whether the integration is connected to the project.
+		 * @type boolean
 		 */
-		thinking?: boolean | undefined;
+		connected: boolean;
+		/**
+		 * @description Information about the connected integration.
+		 * @type object
+		 */
+		integration: {
+			/**
+			 * @description The ID of the integration.
+			 * @type string
+			 */
+			id: string;
+			/**
+			 * @description The object type.
+			 * @type string
+			 */
+			object: "integration";
+			/**
+			 * @description The slug of the integration.
+			 * @type string
+			 */
+			slug: string;
+			/**
+			 * @description The name of the integration.
+			 * @type string
+			 */
+			name: string;
+		};
+	}[];
+};
+
+/**
+ * @description Summary information about an integration connection to a project.
+ */
+export type IntegrationConnectionSummarySchema = {
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "integration_connection";
+	/**
+	 * @description The unique ID of the integration connection (format: {projectId}_{integrationId}).
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Whether the integration is connected to the project.
+	 * @type boolean
+	 */
+	connected: boolean;
+	/**
+	 * @description Information about the connected integration.
+	 * @type object
+	 */
+	integration: {
+		/**
+		 * @description The ID of the integration.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description The object type.
+		 * @type string
+		 */
+		object: "integration";
+		/**
+		 * @description The slug of the integration.
+		 * @type string
+		 */
+		slug: string;
+		/**
+		 * @description The name of the integration.
+		 * @type string
+		 */
+		name: string;
 	};
 };
 
-export const messageSummaryTypeEnum = {
+/**
+ * @description Detailed information about an integration.
+ */
+export type IntegrationDetailSchema = {
+	/**
+	 * @description The ID of the integration.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "integration";
+	/**
+	 * @description The slug of the integration.
+	 * @type string
+	 */
+	slug: string;
+	/**
+	 * @description The name of the integration.
+	 * @type string
+	 */
+	name: string;
+	/**
+	 * @description A short description of the integration.
+	 * @type string
+	 */
+	description: string;
+	/**
+	 * @description URL to the integration icon.
+	 * @type string
+	 */
+	iconUrl: string;
+};
+
+/**
+ * @description List of available integrations.
+ */
+export type IntegrationListSchema = {
+	/**
+	 * @description Fixed value identifying this as a list response.
+	 * @type string
+	 */
+	object: "list";
+	/**
+	 * @description Array of integration details.
+	 * @type array
+	 */
+	data: {
+		/**
+		 * @description The ID of the integration.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description The object type.
+		 * @type string
+		 */
+		object: "integration";
+		/**
+		 * @description The slug of the integration.
+		 * @type string
+		 */
+		slug: string;
+		/**
+		 * @description The name of the integration.
+		 * @type string
+		 */
+		name: string;
+		/**
+		 * @description A short description of the integration.
+		 * @type string
+		 */
+		description: string;
+		/**
+		 * @description URL to the integration icon.
+		 * @type string
+		 */
+		iconUrl: string;
+	}[];
+};
+
+/**
+ * @description Basic information about an integration.
+ */
+export type IntegrationSummarySchema = {
+	/**
+	 * @description The ID of the integration.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "integration";
+	/**
+	 * @description The slug of the integration.
+	 * @type string
+	 */
+	slug: string;
+	/**
+	 * @description The name of the integration.
+	 * @type string
+	 */
+	name: string;
+};
+
+export const messageDetailTypeEnum = {
 	"added-environment-variables": "added-environment-variables",
 	"added-integration": "added-integration",
+	"answered-questions": "answered-questions",
+	"auto-fix-with-v0": "auto-fix-with-v0",
 	"deleted-file": "deleted-file",
 	"edited-file": "edited-file",
+	"fix-cve": "fix-cve",
 	"fix-with-v0": "fix-with-v0",
 	"forked-block": "forked-block",
 	"forked-chat": "forked-chat",
 	message: "message",
 	"moved-file": "moved-file",
 	"open-in-v0": "open-in-v0",
+	"pull-changes": "pull-changes",
 	refinement: "refinement",
 	"renamed-file": "renamed-file",
 	"replace-src": "replace-src",
@@ -397,7 +1433,383 @@ export const messageSummaryTypeEnum = {
 	"sync-git": "sync-git",
 } as const;
 
-export type MessageSummaryTypeEnum =
+export type MessageDetailTypeEnumKey =
+	(typeof messageDetailTypeEnum)[keyof typeof messageDetailTypeEnum];
+
+export const messageDetailRoleEnum = {
+	assistant: "assistant",
+	user: "user",
+} as const;
+
+export type MessageDetailRoleEnumKey =
+	(typeof messageDetailRoleEnum)[keyof typeof messageDetailRoleEnum];
+
+export const messageDetailFinishReasonEnum = {
+	"content-filter": "content-filter",
+	error: "error",
+	length: "length",
+	other: "other",
+	stop: "stop",
+	"tool-calls": "tool-calls",
+	unknown: "unknown",
+} as const;
+
+export type MessageDetailFinishReasonEnumKey =
+	(typeof messageDetailFinishReasonEnum)[keyof typeof messageDetailFinishReasonEnum];
+
+/**
+ * @description Detailed message object extending MessageSummary with chat metadata.
+ */
+export type MessageDetail = {
+	/**
+	 * @description A unique identifier for the message.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a message.
+	 * @type string
+	 */
+	object: "message";
+	/**
+	 * @description The main text content of the message.
+	 * @type string
+	 */
+	content: string;
+	/**
+	 * @description The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.
+	 * @type array | undefined
+	 */
+	experimentalContent?:
+		| (
+				| [0, string[], ...string[]]
+				| [
+						1,
+						{
+							/**
+							 * @type string | undefined
+							 */
+							standard?: string | undefined;
+							/**
+							 * @type string
+							 */
+							def: string;
+							/**
+							 * @type string
+							 */
+							type: string;
+							/**
+							 * @type string
+							 */
+							check: string;
+							/**
+							 * @type string
+							 */
+							clone: string;
+							/**
+							 * @type string
+							 */
+							brand: string;
+							/**
+							 * @type string
+							 */
+							register: string;
+							/**
+							 * @type string
+							 */
+							parse: string;
+							/**
+							 * @type string
+							 */
+							safeParse: string;
+							/**
+							 * @type string
+							 */
+							parseAsync: string;
+							/**
+							 * @type string
+							 */
+							safeParseAsync: string;
+							/**
+							 * @type string
+							 */
+							spa: string;
+							/**
+							 * @type string
+							 */
+							encode: string;
+							/**
+							 * @type string
+							 */
+							decode: string;
+							/**
+							 * @type string
+							 */
+							encodeAsync: string;
+							/**
+							 * @type string
+							 */
+							decodeAsync: string;
+							/**
+							 * @type string
+							 */
+							safeEncode: string;
+							/**
+							 * @type string
+							 */
+							safeDecode: string;
+							/**
+							 * @type string
+							 */
+							safeEncodeAsync: string;
+							/**
+							 * @type string
+							 */
+							safeDecodeAsync: string;
+							/**
+							 * @type string
+							 */
+							refine: string;
+							/**
+							 * @type string
+							 */
+							superRefine: string;
+							/**
+							 * @type string
+							 */
+							overwrite: string;
+							/**
+							 * @type string
+							 */
+							optional: string;
+							/**
+							 * @type string
+							 */
+							nullable: string;
+							/**
+							 * @type string
+							 */
+							nullish: string;
+							/**
+							 * @type string
+							 */
+							nonoptional: string;
+							/**
+							 * @type string
+							 */
+							array: string;
+							/**
+							 * @type string
+							 */
+							or: string;
+							/**
+							 * @type string
+							 */
+							and: string;
+							/**
+							 * @type string
+							 */
+							transform: string;
+							/**
+							 * @type string
+							 */
+							default: string;
+							/**
+							 * @type string
+							 */
+							prefault: string;
+							/**
+							 * @type string
+							 */
+							catch: string;
+							/**
+							 * @type string
+							 */
+							pipe: string;
+							/**
+							 * @type string
+							 */
+							readonly: string;
+							/**
+							 * @type string
+							 */
+							describe: string;
+							/**
+							 * @type string
+							 */
+							meta: string;
+							/**
+							 * @type string
+							 */
+							isOptional: string;
+							/**
+							 * @type string
+							 */
+							isNullable: string;
+							/**
+							 * @type string
+							 */
+							keyof: string;
+							/**
+							 * @type string
+							 */
+							catchall: string;
+							/**
+							 * @type string
+							 */
+							passthrough: string;
+							/**
+							 * @type string
+							 */
+							loose: string;
+							/**
+							 * @type string
+							 */
+							strict: string;
+							/**
+							 * @type string
+							 */
+							strip: string;
+							/**
+							 * @type string
+							 */
+							extend: string;
+							/**
+							 * @type string
+							 */
+							safeExtend: string;
+							/**
+							 * @type string
+							 */
+							merge: string;
+							/**
+							 * @type string
+							 */
+							pick: string;
+							/**
+							 * @type string
+							 */
+							omit: string;
+							/**
+							 * @type string
+							 */
+							partial: string;
+							/**
+							 * @type string
+							 */
+							required: string;
+						},
+						...string[],
+				  ]
+		  )[]
+		| undefined;
+	/**
+	 * @description The ISO timestamp representing when the message was created.
+	 * @type string
+	 */
+	createdAt: string;
+	/**
+	 * @description The ISO timestamp representing when the message was last updated.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
+	/**
+	 * @description Indicates the format or category of the message, such as plain text or code.
+	 * @type string
+	 */
+	type: MessageDetailTypeEnumKey;
+	/**
+	 * @description Specifies whether the message was sent by the user or the assistant.
+	 * @type string
+	 */
+	role: MessageDetailRoleEnumKey;
+	/**
+	 * @description The reason why the message generation finished.
+	 * @type string | undefined
+	 */
+	finishReason?: MessageDetailFinishReasonEnumKey | undefined;
+	/**
+	 * @description API URL to access this message via the API.
+	 * @type string
+	 */
+	apiUrl: string;
+	/**
+	 * @description The ID of the user who sent the message.
+	 * @type null,string
+	 */
+	authorId: string | null;
+	/**
+	 * @description The ID of the parent message.
+	 * @type null,string | undefined
+	 */
+	parentId?: (string | null) | undefined;
+	/**
+	 * @type array | undefined
+	 */
+	attachments?:
+		| {
+				/**
+				 * @description The URL where the attachment file can be accessed.
+				 * @type string
+				 */
+				url: string;
+				/**
+				 * @description The original filename of the attachment.
+				 * @type string | undefined
+				 */
+				name?: string | undefined;
+				/**
+				 * @description The MIME type of the attachment file (e.g., image/png, application/pdf).
+				 * @type string | undefined
+				 */
+				contentType?: string | undefined;
+				/**
+				 * @description The size of the attachment file in bytes.
+				 * @type number
+				 */
+				size: number;
+				/**
+				 * @description The base64-encoded content of the attachment file, if available.
+				 * @type string | undefined
+				 */
+				content?: string | undefined;
+				/**
+				 * @description Optional v0-specific attachment type for enhanced processing.
+				 * @type string | undefined
+				 */
+				type?: AttachmentsTypeEnumKey | undefined;
+		  }[]
+		| undefined;
+	/**
+	 * @description The ID of the chat to which this message belongs.
+	 * @type string
+	 */
+	chatId: string;
+};
+
+export const messageSummaryTypeEnum = {
+	"added-environment-variables": "added-environment-variables",
+	"added-integration": "added-integration",
+	"answered-questions": "answered-questions",
+	"auto-fix-with-v0": "auto-fix-with-v0",
+	"deleted-file": "deleted-file",
+	"edited-file": "edited-file",
+	"fix-cve": "fix-cve",
+	"fix-with-v0": "fix-with-v0",
+	"forked-block": "forked-block",
+	"forked-chat": "forked-chat",
+	message: "message",
+	"moved-file": "moved-file",
+	"open-in-v0": "open-in-v0",
+	"pull-changes": "pull-changes",
+	refinement: "refinement",
+	"renamed-file": "renamed-file",
+	"replace-src": "replace-src",
+	"reverted-block": "reverted-block",
+	"sync-git": "sync-git",
+} as const;
+
+export type MessageSummaryTypeEnumKey =
 	(typeof messageSummaryTypeEnum)[keyof typeof messageSummaryTypeEnum];
 
 export const messageSummaryRoleEnum = {
@@ -405,122 +1817,1410 @@ export const messageSummaryRoleEnum = {
 	user: "user",
 } as const;
 
-export type MessageSummaryRoleEnum =
+export type MessageSummaryRoleEnumKey =
 	(typeof messageSummaryRoleEnum)[keyof typeof messageSummaryRoleEnum];
 
+export const messageSummaryFinishReasonEnum = {
+	"content-filter": "content-filter",
+	error: "error",
+	length: "length",
+	other: "other",
+	stop: "stop",
+	"tool-calls": "tool-calls",
+	unknown: "unknown",
+} as const;
+
+export type MessageSummaryFinishReasonEnumKey =
+	(typeof messageSummaryFinishReasonEnum)[keyof typeof messageSummaryFinishReasonEnum];
+
+/**
+ * @description Summary of a single message within a chat, including role, content, type, timestamp, and API URL.
+ */
 export type MessageSummary = {
 	/**
+	 * @description A unique identifier for the message.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a message.
 	 * @type string
 	 */
 	object: "message";
 	/**
+	 * @description The main text content of the message.
 	 * @type string
 	 */
 	content: string;
 	/**
+	 * @description The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.
+	 * @type array | undefined
+	 */
+	experimentalContent?:
+		| (
+				| [0, string[], ...string[]]
+				| [
+						1,
+						{
+							/**
+							 * @type string | undefined
+							 */
+							standard?: string | undefined;
+							/**
+							 * @type string
+							 */
+							def: string;
+							/**
+							 * @type string
+							 */
+							type: string;
+							/**
+							 * @type string
+							 */
+							check: string;
+							/**
+							 * @type string
+							 */
+							clone: string;
+							/**
+							 * @type string
+							 */
+							brand: string;
+							/**
+							 * @type string
+							 */
+							register: string;
+							/**
+							 * @type string
+							 */
+							parse: string;
+							/**
+							 * @type string
+							 */
+							safeParse: string;
+							/**
+							 * @type string
+							 */
+							parseAsync: string;
+							/**
+							 * @type string
+							 */
+							safeParseAsync: string;
+							/**
+							 * @type string
+							 */
+							spa: string;
+							/**
+							 * @type string
+							 */
+							encode: string;
+							/**
+							 * @type string
+							 */
+							decode: string;
+							/**
+							 * @type string
+							 */
+							encodeAsync: string;
+							/**
+							 * @type string
+							 */
+							decodeAsync: string;
+							/**
+							 * @type string
+							 */
+							safeEncode: string;
+							/**
+							 * @type string
+							 */
+							safeDecode: string;
+							/**
+							 * @type string
+							 */
+							safeEncodeAsync: string;
+							/**
+							 * @type string
+							 */
+							safeDecodeAsync: string;
+							/**
+							 * @type string
+							 */
+							refine: string;
+							/**
+							 * @type string
+							 */
+							superRefine: string;
+							/**
+							 * @type string
+							 */
+							overwrite: string;
+							/**
+							 * @type string
+							 */
+							optional: string;
+							/**
+							 * @type string
+							 */
+							nullable: string;
+							/**
+							 * @type string
+							 */
+							nullish: string;
+							/**
+							 * @type string
+							 */
+							nonoptional: string;
+							/**
+							 * @type string
+							 */
+							array: string;
+							/**
+							 * @type string
+							 */
+							or: string;
+							/**
+							 * @type string
+							 */
+							and: string;
+							/**
+							 * @type string
+							 */
+							transform: string;
+							/**
+							 * @type string
+							 */
+							default: string;
+							/**
+							 * @type string
+							 */
+							prefault: string;
+							/**
+							 * @type string
+							 */
+							catch: string;
+							/**
+							 * @type string
+							 */
+							pipe: string;
+							/**
+							 * @type string
+							 */
+							readonly: string;
+							/**
+							 * @type string
+							 */
+							describe: string;
+							/**
+							 * @type string
+							 */
+							meta: string;
+							/**
+							 * @type string
+							 */
+							isOptional: string;
+							/**
+							 * @type string
+							 */
+							isNullable: string;
+							/**
+							 * @type string
+							 */
+							keyof: string;
+							/**
+							 * @type string
+							 */
+							catchall: string;
+							/**
+							 * @type string
+							 */
+							passthrough: string;
+							/**
+							 * @type string
+							 */
+							loose: string;
+							/**
+							 * @type string
+							 */
+							strict: string;
+							/**
+							 * @type string
+							 */
+							strip: string;
+							/**
+							 * @type string
+							 */
+							extend: string;
+							/**
+							 * @type string
+							 */
+							safeExtend: string;
+							/**
+							 * @type string
+							 */
+							merge: string;
+							/**
+							 * @type string
+							 */
+							pick: string;
+							/**
+							 * @type string
+							 */
+							omit: string;
+							/**
+							 * @type string
+							 */
+							partial: string;
+							/**
+							 * @type string
+							 */
+							required: string;
+						},
+						...string[],
+				  ]
+		  )[]
+		| undefined;
+	/**
+	 * @description The ISO timestamp representing when the message was created.
 	 * @type string
 	 */
 	createdAt: string;
 	/**
-	 * @type string
+	 * @description The ISO timestamp representing when the message was last updated.
+	 * @type string | undefined, date-time
 	 */
-	type: MessageSummaryTypeEnum;
+	updatedAt?: string | undefined;
 	/**
+	 * @description Indicates the format or category of the message, such as plain text or code.
 	 * @type string
 	 */
-	role: MessageSummaryRoleEnum;
+	type: MessageSummaryTypeEnumKey;
+	/**
+	 * @description Specifies whether the message was sent by the user or the assistant.
+	 * @type string
+	 */
+	role: MessageSummaryRoleEnumKey;
+	/**
+	 * @description The reason why the message generation finished.
+	 * @type string | undefined
+	 */
+	finishReason?: MessageSummaryFinishReasonEnumKey | undefined;
+	/**
+	 * @description API URL to access this message via the API.
+	 * @type string
+	 */
+	apiUrl: string;
+	/**
+	 * @description The ID of the user who sent the message.
+	 * @type null,string
+	 */
+	authorId: string | null;
+	/**
+	 * @description The ID of the parent message.
+	 * @type null,string | undefined
+	 */
+	parentId?: (string | null) | undefined;
+	/**
+	 * @type array | undefined
+	 */
+	attachments?:
+		| {
+				/**
+				 * @description The URL where the attachment file can be accessed.
+				 * @type string
+				 */
+				url: string;
+				/**
+				 * @description The original filename of the attachment.
+				 * @type string | undefined
+				 */
+				name?: string | undefined;
+				/**
+				 * @description The MIME type of the attachment file (e.g., image/png, application/pdf).
+				 * @type string | undefined
+				 */
+				contentType?: string | undefined;
+				/**
+				 * @description The size of the attachment file in bytes.
+				 * @type number
+				 */
+				size: number;
+				/**
+				 * @description The base64-encoded content of the attachment file, if available.
+				 * @type string | undefined
+				 */
+				content?: string | undefined;
+				/**
+				 * @description Optional v0-specific attachment type for enhanced processing.
+				 * @type string | undefined
+				 */
+				type?: AttachmentsTypeEnumKey | undefined;
+		  }[]
+		| undefined;
 };
 
+export const dataTypeEnum = {
+	"added-environment-variables": "added-environment-variables",
+	"added-integration": "added-integration",
+	"answered-questions": "answered-questions",
+	"auto-fix-with-v0": "auto-fix-with-v0",
+	"deleted-file": "deleted-file",
+	"edited-file": "edited-file",
+	"fix-cve": "fix-cve",
+	"fix-with-v0": "fix-with-v0",
+	"forked-block": "forked-block",
+	"forked-chat": "forked-chat",
+	message: "message",
+	"moved-file": "moved-file",
+	"open-in-v0": "open-in-v0",
+	"pull-changes": "pull-changes",
+	refinement: "refinement",
+	"renamed-file": "renamed-file",
+	"replace-src": "replace-src",
+	"reverted-block": "reverted-block",
+	"sync-git": "sync-git",
+} as const;
+
+export type DataTypeEnumKey = (typeof dataTypeEnum)[keyof typeof dataTypeEnum];
+
+export const dataRoleEnum = {
+	assistant: "assistant",
+	user: "user",
+} as const;
+
+export type DataRoleEnumKey = (typeof dataRoleEnum)[keyof typeof dataRoleEnum];
+
+export const dataFinishReasonEnum = {
+	"content-filter": "content-filter",
+	error: "error",
+	length: "length",
+	other: "other",
+	stop: "stop",
+	"tool-calls": "tool-calls",
+	unknown: "unknown",
+} as const;
+
+export type DataFinishReasonEnumKey =
+	(typeof dataFinishReasonEnum)[keyof typeof dataFinishReasonEnum];
+
+/**
+ * @description List response containing multiple message summaries with cursor-based pagination.
+ */
+export type MessageSummaryList = {
+	/**
+	 * @description Fixed value identifying this as a list response.
+	 * @type string
+	 */
+	object: "list";
+	/**
+	 * @description Array of message summaries in this page of results.
+	 * @type array
+	 */
+	data: {
+		/**
+		 * @description A unique identifier for the message.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description Fixed value identifying this object as a message.
+		 * @type string
+		 */
+		object: "message";
+		/**
+		 * @description The main text content of the message.
+		 * @type string
+		 */
+		content: string;
+		/**
+		 * @description The parsed content of the message as an array structure containing AST nodes. This is an experimental field that may change.
+		 * @type array | undefined
+		 */
+		experimentalContent?:
+			| (
+					| [0, string[], ...string[]]
+					| [
+							1,
+							{
+								/**
+								 * @type string | undefined
+								 */
+								standard?: string | undefined;
+								/**
+								 * @type string
+								 */
+								def: string;
+								/**
+								 * @type string
+								 */
+								type: string;
+								/**
+								 * @type string
+								 */
+								check: string;
+								/**
+								 * @type string
+								 */
+								clone: string;
+								/**
+								 * @type string
+								 */
+								brand: string;
+								/**
+								 * @type string
+								 */
+								register: string;
+								/**
+								 * @type string
+								 */
+								parse: string;
+								/**
+								 * @type string
+								 */
+								safeParse: string;
+								/**
+								 * @type string
+								 */
+								parseAsync: string;
+								/**
+								 * @type string
+								 */
+								safeParseAsync: string;
+								/**
+								 * @type string
+								 */
+								spa: string;
+								/**
+								 * @type string
+								 */
+								encode: string;
+								/**
+								 * @type string
+								 */
+								decode: string;
+								/**
+								 * @type string
+								 */
+								encodeAsync: string;
+								/**
+								 * @type string
+								 */
+								decodeAsync: string;
+								/**
+								 * @type string
+								 */
+								safeEncode: string;
+								/**
+								 * @type string
+								 */
+								safeDecode: string;
+								/**
+								 * @type string
+								 */
+								safeEncodeAsync: string;
+								/**
+								 * @type string
+								 */
+								safeDecodeAsync: string;
+								/**
+								 * @type string
+								 */
+								refine: string;
+								/**
+								 * @type string
+								 */
+								superRefine: string;
+								/**
+								 * @type string
+								 */
+								overwrite: string;
+								/**
+								 * @type string
+								 */
+								optional: string;
+								/**
+								 * @type string
+								 */
+								nullable: string;
+								/**
+								 * @type string
+								 */
+								nullish: string;
+								/**
+								 * @type string
+								 */
+								nonoptional: string;
+								/**
+								 * @type string
+								 */
+								array: string;
+								/**
+								 * @type string
+								 */
+								or: string;
+								/**
+								 * @type string
+								 */
+								and: string;
+								/**
+								 * @type string
+								 */
+								transform: string;
+								/**
+								 * @type string
+								 */
+								default: string;
+								/**
+								 * @type string
+								 */
+								prefault: string;
+								/**
+								 * @type string
+								 */
+								catch: string;
+								/**
+								 * @type string
+								 */
+								pipe: string;
+								/**
+								 * @type string
+								 */
+								readonly: string;
+								/**
+								 * @type string
+								 */
+								describe: string;
+								/**
+								 * @type string
+								 */
+								meta: string;
+								/**
+								 * @type string
+								 */
+								isOptional: string;
+								/**
+								 * @type string
+								 */
+								isNullable: string;
+								/**
+								 * @type string
+								 */
+								keyof: string;
+								/**
+								 * @type string
+								 */
+								catchall: string;
+								/**
+								 * @type string
+								 */
+								passthrough: string;
+								/**
+								 * @type string
+								 */
+								loose: string;
+								/**
+								 * @type string
+								 */
+								strict: string;
+								/**
+								 * @type string
+								 */
+								strip: string;
+								/**
+								 * @type string
+								 */
+								extend: string;
+								/**
+								 * @type string
+								 */
+								safeExtend: string;
+								/**
+								 * @type string
+								 */
+								merge: string;
+								/**
+								 * @type string
+								 */
+								pick: string;
+								/**
+								 * @type string
+								 */
+								omit: string;
+								/**
+								 * @type string
+								 */
+								partial: string;
+								/**
+								 * @type string
+								 */
+								required: string;
+							},
+							...string[],
+					  ]
+			  )[]
+			| undefined;
+		/**
+		 * @description The ISO timestamp representing when the message was created.
+		 * @type string
+		 */
+		createdAt: string;
+		/**
+		 * @description The ISO timestamp representing when the message was last updated.
+		 * @type string | undefined, date-time
+		 */
+		updatedAt?: string | undefined;
+		/**
+		 * @description Indicates the format or category of the message, such as plain text or code.
+		 * @type string
+		 */
+		type: DataTypeEnumKey;
+		/**
+		 * @description Specifies whether the message was sent by the user or the assistant.
+		 * @type string
+		 */
+		role: DataRoleEnumKey;
+		/**
+		 * @description The reason why the message generation finished.
+		 * @type string | undefined
+		 */
+		finishReason?: DataFinishReasonEnumKey | undefined;
+		/**
+		 * @description API URL to access this message via the API.
+		 * @type string
+		 */
+		apiUrl: string;
+		/**
+		 * @description The ID of the user who sent the message.
+		 * @type null,string
+		 */
+		authorId: string | null;
+		/**
+		 * @description The ID of the parent message.
+		 * @type null,string | undefined
+		 */
+		parentId?: (string | null) | undefined;
+		/**
+		 * @type array | undefined
+		 */
+		attachments?:
+			| {
+					/**
+					 * @description The URL where the attachment file can be accessed.
+					 * @type string
+					 */
+					url: string;
+					/**
+					 * @description The original filename of the attachment.
+					 * @type string | undefined
+					 */
+					name?: string | undefined;
+					/**
+					 * @description The MIME type of the attachment file (e.g., image/png, application/pdf).
+					 * @type string | undefined
+					 */
+					contentType?: string | undefined;
+					/**
+					 * @description The size of the attachment file in bytes.
+					 * @type number
+					 */
+					size: number;
+					/**
+					 * @description The base64-encoded content of the attachment file, if available.
+					 * @type string | undefined
+					 */
+					content?: string | undefined;
+					/**
+					 * @description Optional v0-specific attachment type for enhanced processing.
+					 * @type string | undefined
+					 */
+					type?: AttachmentsTypeEnumKey | undefined;
+			  }[]
+			| undefined;
+	}[];
+	/**
+	 * @description Pagination metadata for navigating through multiple pages of results.
+	 * @type object
+	 */
+	pagination: {
+		/**
+		 * @description Indicates if there are more results available beyond this page.
+		 * @type boolean
+		 */
+		hasMore: boolean;
+		/**
+		 * @description Cursor for fetching the next page of results.
+		 * @type string | undefined
+		 */
+		nextCursor?: string | undefined;
+		/**
+		 * @description API URL for retrieving the next page of results.
+		 * @type string | undefined
+		 */
+		nextUrl?: string | undefined;
+	};
+};
+
+/**
+ * @description User preference for notification delivery methods.
+ */
+export type NotificationPreferenceSchema = {
+	/**
+	 * @description Whether the user wants to receive live activities.
+	 * @type boolean
+	 */
+	liveActivity: boolean;
+	/**
+	 * @description Whether the user wants to receive push notifications.
+	 * @type boolean
+	 */
+	pushNotifications: boolean;
+};
+
+/**
+ * @description Detailed information about a marketplace or store product.
+ */
+export type ProductDetailSchema = {
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "product";
+	/**
+	 * @description The unique ID of the product.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description The URL-friendly slug of the product.
+	 * @type string
+	 */
+	slug: string;
+	/**
+	 * @description The name of the product.
+	 * @type string
+	 */
+	name: string;
+	/**
+	 * @description A short description of the product.
+	 * @type string
+	 */
+	description: string;
+	/**
+	 * @description URL to the product icon.
+	 * @type string
+	 */
+	iconUrl: string;
+	/**
+	 * @description Background color for the product icon.
+	 * @type string | undefined
+	 */
+	iconBackgroundColor?: string | undefined;
+};
+
+/**
+ * @description List of available marketplace and store products.
+ */
+export type ProductListSchema = {
+	/**
+	 * @description Fixed value identifying this as a list response.
+	 * @type string
+	 */
+	object: "list";
+	/**
+	 * @description Array of product summaries.
+	 * @type array
+	 */
+	data: {
+		/**
+		 * @description The object type.
+		 * @type string
+		 */
+		object: "product";
+		/**
+		 * @description The unique ID of the product.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description The URL-friendly slug of the product.
+		 * @type string
+		 */
+		slug: string;
+		/**
+		 * @description The name of the product.
+		 * @type string
+		 */
+		name: string;
+		/**
+		 * @description A short description of the product.
+		 * @type string
+		 */
+		description: string;
+		/**
+		 * @description URL to the product icon.
+		 * @type string
+		 */
+		iconUrl: string;
+	}[];
+};
+
+/**
+ * @description Summary information about a marketplace or store product.
+ */
+export type ProductSummarySchema = {
+	/**
+	 * @description The object type.
+	 * @type string
+	 */
+	object: "product";
+	/**
+	 * @description The unique ID of the product.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description The URL-friendly slug of the product.
+	 * @type string
+	 */
+	slug: string;
+	/**
+	 * @description The name of the product.
+	 * @type string
+	 */
+	name: string;
+	/**
+	 * @description A short description of the product.
+	 * @type string
+	 */
+	description: string;
+	/**
+	 * @description URL to the product icon.
+	 * @type string
+	 */
+	iconUrl: string;
+};
+
+export const projectDetailPrivacyEnum = {
+	private: "private",
+	team: "team",
+} as const;
+
+export type ProjectDetailPrivacyEnumKey =
+	(typeof projectDetailPrivacyEnum)[keyof typeof projectDetailPrivacyEnum];
+
+export const chatsPrivacyEnum = {
+	private: "private",
+	public: "public",
+	team: "team",
+	"team-edit": "team-edit",
+	unlisted: "unlisted",
+} as const;
+
+export type ChatsPrivacyEnumKey = (typeof chatsPrivacyEnum)[keyof typeof chatsPrivacyEnum];
+
+/**
+ * @description Full representation of a project, including its associated chats.
+ */
 export type ProjectDetail = {
 	/**
+	 * @description A unique identifier for the project.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a project.
 	 * @type string
 	 */
 	object: "project";
 	/**
+	 * @description The name of the project as defined by the user.
 	 * @type string
 	 */
 	name: string;
 	/**
+	 * @description The privacy setting for the project - either private or team.
+	 * @type string
+	 */
+	privacy: ProjectDetailPrivacyEnumKey;
+	/**
+	 * @description Optional ID of the linked Vercel project, if connected.
 	 * @type string | undefined
 	 */
 	vercelProjectId?: string | undefined;
+	/**
+	 * @description The ISO timestamp representing when the project was created.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The ISO timestamp of the most recent update, if available.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
+	/**
+	 * @description The API endpoint URL for accessing this project programmatically.
+	 * @type string, uri
+	 */
+	apiUrl: string;
+	/**
+	 * @description The web URL where the project can be viewed or managed.
+	 * @type string, uri
+	 */
+	webUrl: string;
+	/**
+	 * @description The description of the project.
+	 * @type string | undefined
+	 */
+	description?: string | undefined;
+	/**
+	 * @description The instructions for the project.
+	 * @type string | undefined
+	 */
+	instructions?: string | undefined;
+	/**
+	 * @description List of all chats that are associated with this project.
+	 * @type array
+	 */
+	chats: {
+		/**
+		 * @description A unique identifier for the chat.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description Fixed value identifying this object as a chat.
+		 * @type string
+		 */
+		object: "chat";
+		/**
+		 * @description Indicates whether the chat can be shared via public link.
+		 * @type boolean
+		 */
+		shareable: boolean;
+		/**
+		 * @description Defines the visibility of the chat—private, team-only, or public.
+		 * @type string
+		 */
+		privacy: ChatsPrivacyEnumKey;
+		/**
+		 * @description An optional name assigned to the chat by the user.
+		 * @type string | undefined
+		 */
+		name?: string | undefined;
+		/**
+		 * @description Deprecated title field preserved for backward compatibility.
+		 * @deprecated
+		 * @type string | undefined
+		 */
+		title?: string | undefined;
+		/**
+		 * @description The ISO timestamp representing when the chat was created.
+		 * @type string, date-time
+		 */
+		createdAt: string;
+		/**
+		 * @description The ISO timestamp of the last update to the chat.
+		 * @type string | undefined
+		 */
+		updatedAt?: string | undefined;
+		/**
+		 * @description Indicates whether the chat is marked as a favorite.
+		 * @type boolean
+		 */
+		favorite: boolean;
+		/**
+		 * @description The ID of the user who created the chat.
+		 * @type string
+		 */
+		authorId: string;
+		/**
+		 * @description Optional ID of the v0 project associated with this chat.
+		 * @type string | undefined
+		 */
+		projectId?: string | undefined;
+		/**
+		 * @description Web URL to view this chat in the browser.
+		 * @type string
+		 */
+		webUrl: string;
+		/**
+		 * @description API URL to access this chat via the API.
+		 * @type string
+		 */
+		apiUrl: string;
+		/**
+		 * @description The most recent generated version of the chat, if available.
+		 * @type object | undefined
+		 */
+		latestVersion?:
+			| {
+					/**
+					 * @description A unique identifier for the version.
+					 * @type string
+					 */
+					id: string;
+					/**
+					 * @description Fixed value identifying this object as a version.
+					 * @type string
+					 */
+					object: "version";
+					/**
+					 * @description The current status of the version generation process.
+					 * @type string
+					 */
+					status: LatestVersionStatusEnumKey;
+					/**
+					 * @description Optional URL for previewing the generated output.
+					 * @type string | undefined
+					 */
+					demoUrl?: string | undefined;
+					/**
+					 * @description URL to retrieve a screenshot of this version.
+					 * @type string | undefined
+					 */
+					screenshotUrl?: string | undefined;
+					/**
+					 * @description The date and time when the version was created, in ISO 8601 format.
+					 * @type string, date-time
+					 */
+					createdAt: string;
+					/**
+					 * @description The date and time when the version was last updated, in ISO 8601 format.
+					 * @type string | undefined, date-time
+					 */
+					updatedAt?: string | undefined;
+			  }
+			| undefined;
+	}[];
 };
 
+export const projectSummaryPrivacyEnum = {
+	private: "private",
+	team: "team",
+} as const;
+
+export type ProjectSummaryPrivacyEnumKey =
+	(typeof projectSummaryPrivacyEnum)[keyof typeof projectSummaryPrivacyEnum];
+
+/**
+ * @description Summary of a project, including metadata, timestamps, and optional Vercel linkage.
+ */
 export type ProjectSummary = {
 	/**
+	 * @description A unique identifier for the project.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a project.
 	 * @type string
 	 */
 	object: "project";
 	/**
+	 * @description The name of the project as defined by the user.
 	 * @type string
 	 */
 	name: string;
 	/**
+	 * @description The privacy setting for the project - either private or team.
+	 * @type string
+	 */
+	privacy: ProjectSummaryPrivacyEnumKey;
+	/**
+	 * @description Optional ID of the linked Vercel project, if connected.
 	 * @type string | undefined
 	 */
 	vercelProjectId?: string | undefined;
+	/**
+	 * @description The ISO timestamp representing when the project was created.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The ISO timestamp of the most recent update, if available.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
+	/**
+	 * @description The API endpoint URL for accessing this project programmatically.
+	 * @type string, uri
+	 */
+	apiUrl: string;
+	/**
+	 * @description The web URL where the project can be viewed or managed.
+	 * @type string, uri
+	 */
+	webUrl: string;
 };
 
+/**
+ * @description Basic information about a workspace or identity context for projects and chats.
+ */
 export type ScopeSummary = {
 	/**
+	 * @description A unique identifier for the scope (e.g., user or team workspace).
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a scope.
 	 * @type string
 	 */
 	object: "scope";
 	/**
+	 * @description An optional human-readable name for the scope.
 	 * @type string | undefined
 	 */
 	name?: string | undefined;
 };
 
-export type UserDetail = {
+export const searchResultItemObjectEnum = {
+	chat: "chat",
+	project: "project",
+} as const;
+
+export type SearchResultItemObjectEnumKey =
+	(typeof searchResultItemObjectEnum)[keyof typeof searchResultItemObjectEnum];
+
+/**
+ * @description Generic result returned from a search query, representing either a chat or a project.
+ */
+export type SearchResultItem = {
 	/**
+	 * @description The unique ID of the item returned in the search result.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Type of item returned, either \'chat\' or \'project\'.
+	 * @type string
+	 */
+	object: SearchResultItemObjectEnumKey;
+	/**
+	 * @description The display name of the item.
+	 * @type string
+	 */
+	name: string;
+	/**
+	 * @description The ISO timestamp representing when the item was created.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The ISO timestamp of the last update to the item.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
+	/**
+	 * @description API endpoint for accessing the item programmatically.
+	 * @type string
+	 */
+	apiUrl: string;
+	/**
+	 * @description Web URL for viewing the item in the interface.
+	 * @type string
+	 */
+	webUrl: string;
+};
+
+export type UserDetailSchema = {
+	/**
+	 * @description A unique identifier for the user.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a user.
 	 * @type string
 	 */
 	object: "user";
 	/**
+	 * @description Optional full name of the user.
 	 * @type string | undefined
 	 */
 	name?: string | undefined;
 	/**
+	 * @description The user\'s email address.
 	 * @type string
 	 */
 	email: string;
 	/**
+	 * @description URL to the user\'s avatar image.
 	 * @type string
 	 */
 	avatar: string;
+	/**
+	 * @description The ISO timestamp representing when the user was created.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The ISO timestamp of the last update to the user.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
 };
 
-export type VercelProjectDetail = {
+/**
+ * @description Response schema for updating user preferences.
+ */
+export type UserPreferencesPostResponseSchema = {
 	/**
+	 * @description Object type identifier.
+	 * @type string
+	 */
+	object: "user_preferences";
+	/**
+	 * @description The updated preferences if successful, or null if failed.
+	 */
+	preferences: {
+		/**
+		 * @description The user\'s preferred method for receiving notifications.
+		 * @type object
+		 */
+		notifications: {
+			/**
+			 * @description Whether the user wants to receive live activities.
+			 * @type boolean
+			 */
+			liveActivity: boolean;
+			/**
+			 * @description Whether the user wants to receive push notifications.
+			 * @type boolean
+			 */
+			pushNotifications: boolean;
+		};
+	} | null;
+};
+
+/**
+ * @description Response schema for retrieving user preferences.
+ */
+export type UserPreferencesResponseSchema = {
+	/**
+	 * @description Object type identifier.
+	 * @type string
+	 */
+	object: "user_preferences";
+	/**
+	 * @description The user\'s current preferences, or null if errored.
+	 */
+	preferences: {
+		/**
+		 * @description The user\'s preferred method for receiving notifications.
+		 * @type object
+		 */
+		notifications: {
+			/**
+			 * @description Whether the user wants to receive live activities.
+			 * @type boolean
+			 */
+			liveActivity: boolean;
+			/**
+			 * @description Whether the user wants to receive push notifications.
+			 * @type boolean
+			 */
+			pushNotifications: boolean;
+		};
+	} | null;
+};
+
+/**
+ * @description User preferences configuration including notification settings.
+ */
+export type UserPreferencesSchema = {
+	/**
+	 * @description The user\'s preferred method for receiving notifications.
+	 * @type object
+	 */
+	notifications: {
+		/**
+		 * @description Whether the user wants to receive live activities.
+		 * @type boolean
+		 */
+		liveActivity: boolean;
+		/**
+		 * @description Whether the user wants to receive push notifications.
+		 * @type boolean
+		 */
+		pushNotifications: boolean;
+	};
+};
+
+/**
+ * @description Details of the authenticated user, including profile and contact information.
+ */
+export type UserSummarySchema = {
+	/**
+	 * @description A unique identifier for the user.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a user.
+	 * @type string
+	 */
+	object: "user";
+	/**
+	 * @description Optional full name of the user.
+	 * @type string | undefined
+	 */
+	name?: string | undefined;
+	/**
+	 * @description The user\'s email address.
+	 * @type string
+	 */
+	email: string;
+	/**
+	 * @description URL to the user\'s avatar image.
+	 * @type string
+	 */
+	avatar: string;
+	/**
+	 * @description The ISO timestamp representing when the user was created.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The ISO timestamp of the last update to the user.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
+};
+
+export type VercelProjectDetail = {
+	/**
+	 * @description A unique identifier for the linked Vercel project.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a Vercel project.
 	 * @type string
 	 */
 	object: "vercel_project";
 	/**
+	 * @description The name of the Vercel project.
+	 * @type string
+	 */
+	name: string;
+};
+
+/**
+ * @description Basic metadata about a Vercel project connected to a v0 project.
+ */
+export type VercelProjectSummary = {
+	/**
+	 * @description A unique identifier for the linked Vercel project.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description Fixed value identifying this object as a Vercel project.
+	 * @type string
+	 */
+	object: "vercel_project";
+	/**
+	 * @description The name of the Vercel project.
 	 * @type string
 	 */
 	name: string;
@@ -532,38 +3232,73 @@ export const versionDetailStatusEnum = {
 	pending: "pending",
 } as const;
 
-export type VersionDetailStatusEnum =
+export type VersionDetailStatusEnumKey =
 	(typeof versionDetailStatusEnum)[keyof typeof versionDetailStatusEnum];
 
+/**
+ * @description Detailed version data including file contents.
+ */
 export type VersionDetail = {
 	/**
+	 * @description A unique identifier for the version.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a version.
 	 * @type string
 	 */
 	object: "version";
 	/**
+	 * @description The current status of the version generation process.
 	 * @type string
 	 */
-	status: VersionDetailStatusEnum;
+	status: VersionDetailStatusEnumKey;
 	/**
+	 * @description Optional URL for previewing the generated output.
+	 * @type string | undefined
+	 */
+	demoUrl?: string | undefined;
+	/**
+	 * @description URL to retrieve a screenshot of this version.
+	 * @type string | undefined
+	 */
+	screenshotUrl?: string | undefined;
+	/**
+	 * @description The date and time when the version was created, in ISO 8601 format.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The date and time when the version was last updated, in ISO 8601 format.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
+	/**
+	 * @description A list of files that were generated or included in this version.
 	 * @type array
 	 */
 	files: {
 		/**
+		 * @description Fixed value identifying this object as a file.
 		 * @type string
 		 */
 		object: "file";
 		/**
+		 * @description The name of the file, including its extension.
 		 * @type string
 		 */
 		name: string;
 		/**
+		 * @description The full contents of the file as a raw string.
 		 * @type string
 		 */
 		content: string;
+		/**
+		 * @description Whether the file is locked to prevent AI from overwriting it during new version generation.
+		 * @type boolean
+		 */
+		locked: boolean;
 	}[];
 };
 
@@ -573,22 +3308,257 @@ export const versionSummaryStatusEnum = {
 	pending: "pending",
 } as const;
 
-export type VersionSummaryStatusEnum =
+export type VersionSummaryStatusEnumKey =
 	(typeof versionSummaryStatusEnum)[keyof typeof versionSummaryStatusEnum];
 
+/**
+ * @description Summary of a generated version of a chat, including its status and optional demo link.
+ */
 export type VersionSummary = {
 	/**
+	 * @description A unique identifier for the version.
 	 * @type string
 	 */
 	id: string;
 	/**
+	 * @description Fixed value identifying this object as a version.
 	 * @type string
 	 */
 	object: "version";
 	/**
+	 * @description The current status of the version generation process.
 	 * @type string
 	 */
-	status: VersionSummaryStatusEnum;
+	status: VersionSummaryStatusEnumKey;
+	/**
+	 * @description Optional URL for previewing the generated output.
+	 * @type string | undefined
+	 */
+	demoUrl?: string | undefined;
+	/**
+	 * @description URL to retrieve a screenshot of this version.
+	 * @type string | undefined
+	 */
+	screenshotUrl?: string | undefined;
+	/**
+	 * @description The date and time when the version was created, in ISO 8601 format.
+	 * @type string, date-time
+	 */
+	createdAt: string;
+	/**
+	 * @description The date and time when the version was last updated, in ISO 8601 format.
+	 * @type string | undefined, date-time
+	 */
+	updatedAt?: string | undefined;
+};
+
+export const dataStatusEnum = {
+	completed: "completed",
+	failed: "failed",
+	pending: "pending",
+} as const;
+
+export type DataStatusEnumKey = (typeof dataStatusEnum)[keyof typeof dataStatusEnum];
+
+/**
+ * @description List response containing multiple version summaries with cursor-based pagination.
+ */
+export type VersionSummaryList = {
+	/**
+	 * @description Fixed value identifying this as a list response.
+	 * @type string
+	 */
+	object: "list";
+	/**
+	 * @description Array of version summaries in this page of results.
+	 * @type array
+	 */
+	data: {
+		/**
+		 * @description A unique identifier for the version.
+		 * @type string
+		 */
+		id: string;
+		/**
+		 * @description Fixed value identifying this object as a version.
+		 * @type string
+		 */
+		object: "version";
+		/**
+		 * @description The current status of the version generation process.
+		 * @type string
+		 */
+		status: DataStatusEnumKey;
+		/**
+		 * @description Optional URL for previewing the generated output.
+		 * @type string | undefined
+		 */
+		demoUrl?: string | undefined;
+		/**
+		 * @description URL to retrieve a screenshot of this version.
+		 * @type string | undefined
+		 */
+		screenshotUrl?: string | undefined;
+		/**
+		 * @description The date and time when the version was created, in ISO 8601 format.
+		 * @type string, date-time
+		 */
+		createdAt: string;
+		/**
+		 * @description The date and time when the version was last updated, in ISO 8601 format.
+		 * @type string | undefined, date-time
+		 */
+		updatedAt?: string | undefined;
+	}[];
+	/**
+	 * @description Pagination metadata for navigating through multiple pages of results.
+	 * @type object
+	 */
+	pagination: {
+		/**
+		 * @description Indicates if there are more results available beyond this page.
+		 * @type boolean
+		 */
+		hasMore: boolean;
+		/**
+		 * @description Cursor for fetching the next page of results.
+		 * @type string | undefined
+		 */
+		nextCursor?: string | undefined;
+		/**
+		 * @description API URL for retrieving the next page of results.
+		 * @type string | undefined
+		 */
+		nextUrl?: string | undefined;
+	};
+};
+
+export type UnauthorizedError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "unauthorized_error";
+	};
+};
+
+export type ForbiddenError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "forbidden_error";
+	};
+};
+
+export type NotFoundError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "not_found_error";
+	};
+};
+
+export type ConflictError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "conflict_error";
+	};
+};
+
+export type PayloadTooLargeError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "payload_too_large_error";
+	};
+};
+
+export type UnprocessableEntityError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "unprocessable_entity_error";
+	};
+};
+
+export type TooManyRequestsError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "too_many_requests_error";
+	};
+};
+
+export type InternalServerError = {
+	/**
+	 * @type object
+	 */
+	error: {
+		/**
+		 * @type string
+		 */
+		message: string;
+		/**
+		 * @type string
+		 */
+		type: "internal_server_error";
+	};
 };
 
 /**
@@ -651,25 +3621,33 @@ export type ChatsCreateMutation = {
 		| ChatsCreate500;
 };
 
+export const chatsFindQueryParamsIsFavoriteEnum = {
+	true: "true",
+	false: "false",
+} as const;
+
+export type ChatsFindQueryParamsIsFavoriteEnumKey =
+	(typeof chatsFindQueryParamsIsFavoriteEnum)[keyof typeof chatsFindQueryParamsIsFavoriteEnum];
+
 export type ChatsFindQueryParams = {
 	/**
-	 * @description Query parameter \"limit\"
+	 * @description Specifies the maximum number of chat records to return in a single response. Useful for paginating results when there are many chats.
 	 * @maxLength 60
 	 * @default 60
 	 * @type number | undefined
 	 */
 	limit?: number | undefined;
 	/**
-	 * @description Query parameter \"offset\"
+	 * @description Determines the starting point for pagination. Used in conjunction with limit to retrieve a specific page of chat results.
 	 * @default 0
 	 * @type number | undefined
 	 */
 	offset?: number | undefined;
 	/**
-	 * @description If true, only favorites will be returned. If false, unfavorited chats will be returned. If not provided, all chats will be returned.
-	 * @type boolean | undefined
+	 * @description Filters chats by their \"favorite\" status. Accepts `\"true\"` or `\"false\"` (as strings, not booleans).\n\n- `\"true\"`: returns only chats marked as favorites.\n- `\"false\"`: returns only non-favorite chats.
+	 * @type string | undefined
 	 */
-	isFavorite?: boolean | undefined;
+	isFavorite?: ChatsFindQueryParamsIsFavoriteEnumKey | undefined;
 };
 
 /**
@@ -736,66 +3714,66 @@ export type ChatsFindQuery = {
 /**
  * @description Success
  */
-export type ChatsInitCreate200 = unknown;
+export type ChatsInit200 = unknown;
 
 /**
  * @description Unauthorized
  */
-export type ChatsInitCreate401 = unknown;
+export type ChatsInit401 = unknown;
 
 /**
  * @description Forbidden
  */
-export type ChatsInitCreate403 = unknown;
+export type ChatsInit403 = unknown;
 
 /**
  * @description Not Found
  */
-export type ChatsInitCreate404 = unknown;
+export type ChatsInit404 = unknown;
 
 /**
  * @description Conflict
  */
-export type ChatsInitCreate409 = unknown;
+export type ChatsInit409 = unknown;
 
 /**
  * @description Payload Too Large
  */
-export type ChatsInitCreate413 = unknown;
+export type ChatsInit413 = unknown;
 
 /**
  * @description Unprocessable Entity
  */
-export type ChatsInitCreate422 = unknown;
+export type ChatsInit422 = unknown;
 
 /**
  * @description Too Many Requests
  */
-export type ChatsInitCreate429 = unknown;
+export type ChatsInit429 = unknown;
 
 /**
  * @description Internal Server Error
  */
-export type ChatsInitCreate500 = unknown;
+export type ChatsInit500 = unknown;
 
-export type ChatsInitCreateMutationResponse = ChatsInitCreate200;
+export type ChatsInitMutationResponse = ChatsInit200;
 
-export type ChatsInitCreateMutation = {
-	Response: ChatsInitCreate200;
+export type ChatsInitMutation = {
+	Response: ChatsInit200;
 	Errors:
-		| ChatsInitCreate401
-		| ChatsInitCreate403
-		| ChatsInitCreate404
-		| ChatsInitCreate409
-		| ChatsInitCreate413
-		| ChatsInitCreate422
-		| ChatsInitCreate429
-		| ChatsInitCreate500;
+		| ChatsInit401
+		| ChatsInit403
+		| ChatsInit404
+		| ChatsInit409
+		| ChatsInit413
+		| ChatsInit422
+		| ChatsInit429
+		| ChatsInit500;
 };
 
 export type ChatsDeletePathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat to delete. This must be passed as a path parameter in the URL.
 	 * @type string
 	 */
 	chatId: string;
@@ -864,7 +3842,7 @@ export type ChatsDeleteMutation = {
 
 export type ChatsGetByIdPathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat to retrieve. Must be provided as a path parameter.
 	 * @type string
 	 */
 	chatId: string;
@@ -933,7 +3911,7 @@ export type ChatsGetByIdQuery = {
 
 export type ChatsUpdatePathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat to update. Provided as a path parameter.
 	 * @type string
 	 */
 	chatId: string;
@@ -1002,7 +3980,7 @@ export type ChatsUpdateMutation = {
 
 export type ChatsFavoritePathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat to update. Provided as a path parameter.
 	 * @type string
 	 */
 	chatId: string;
@@ -1071,7 +4049,7 @@ export type ChatsFavoriteMutation = {
 
 export type ChatsForkPathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat to fork. Provided as a path parameter.
 	 * @type string
 	 */
 	chatId: string;
@@ -1140,7 +4118,7 @@ export type ChatsForkMutation = {
 
 export type ProjectsGetByChatIdPathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The ID of the chat to retrieve the associated project for.
 	 * @type string
 	 */
 	chatId: string;
@@ -1207,9 +4185,95 @@ export type ProjectsGetByChatIdQuery = {
 		| ProjectsGetByChatId500;
 };
 
+export type ChatsFindMessagesPathParams = {
+	/**
+	 * @description The unique identifier of the chat to retrieve messages for. Provided as a path parameter.
+	 * @type string
+	 */
+	chatId: string;
+};
+
+export type ChatsFindMessagesQueryParams = {
+	/**
+	 * @description Specifies the maximum number of message records to return in a single response. Useful for paginating results when there are many messages.
+	 * @minLength 1
+	 * @maxLength 150
+	 * @default 20
+	 * @type number | undefined
+	 */
+	limit?: number | undefined;
+	/**
+	 * @description Base64 encoded cursor containing pagination data
+	 * @type string | undefined
+	 */
+	cursor?: string | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ChatsFindMessages200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ChatsFindMessages401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ChatsFindMessages403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ChatsFindMessages404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ChatsFindMessages409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ChatsFindMessages413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ChatsFindMessages422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ChatsFindMessages429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ChatsFindMessages500 = unknown;
+
+export type ChatsFindMessagesQueryResponse = ChatsFindMessages200;
+
+export type ChatsFindMessagesQuery = {
+	Response: ChatsFindMessages200;
+	PathParams: ChatsFindMessagesPathParams;
+	QueryParams: ChatsFindMessagesQueryParams;
+	Errors:
+		| ChatsFindMessages401
+		| ChatsFindMessages403
+		| ChatsFindMessages404
+		| ChatsFindMessages409
+		| ChatsFindMessages413
+		| ChatsFindMessages422
+		| ChatsFindMessages429
+		| ChatsFindMessages500;
+};
+
 export type ChatsSendMessagePathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat to send the message to. Provided as a path parameter.
 	 * @type string
 	 */
 	chatId: string;
@@ -1276,83 +4340,444 @@ export type ChatsSendMessageMutation = {
 		| ChatsSendMessage500;
 };
 
-export type ChatsGetMetadataPathParams = {
+export type ChatsGetMessagePathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat containing the message. Provided as a path parameter.
 	 * @type string
 	 */
 	chatId: string;
+	/**
+	 * @description The unique identifier of the message to retrieve. Provided as a path parameter.
+	 * @type string
+	 */
+	messageId: string;
 };
 
 /**
  * @description Success
  */
-export type ChatsGetMetadata200 = unknown;
+export type ChatsGetMessage200 = unknown;
 
 /**
  * @description Unauthorized
  */
-export type ChatsGetMetadata401 = unknown;
+export type ChatsGetMessage401 = unknown;
 
 /**
  * @description Forbidden
  */
-export type ChatsGetMetadata403 = unknown;
+export type ChatsGetMessage403 = unknown;
 
 /**
  * @description Not Found
  */
-export type ChatsGetMetadata404 = unknown;
+export type ChatsGetMessage404 = unknown;
 
 /**
  * @description Conflict
  */
-export type ChatsGetMetadata409 = unknown;
+export type ChatsGetMessage409 = unknown;
 
 /**
  * @description Payload Too Large
  */
-export type ChatsGetMetadata413 = unknown;
+export type ChatsGetMessage413 = unknown;
 
 /**
  * @description Unprocessable Entity
  */
-export type ChatsGetMetadata422 = unknown;
+export type ChatsGetMessage422 = unknown;
 
 /**
  * @description Too Many Requests
  */
-export type ChatsGetMetadata429 = unknown;
+export type ChatsGetMessage429 = unknown;
 
 /**
  * @description Internal Server Error
  */
-export type ChatsGetMetadata500 = unknown;
+export type ChatsGetMessage500 = unknown;
 
-export type ChatsGetMetadataQueryResponse = ChatsGetMetadata200;
+export type ChatsGetMessageQueryResponse = ChatsGetMessage200;
 
-export type ChatsGetMetadataQuery = {
-	Response: ChatsGetMetadata200;
-	PathParams: ChatsGetMetadataPathParams;
+export type ChatsGetMessageQuery = {
+	Response: ChatsGetMessage200;
+	PathParams: ChatsGetMessagePathParams;
 	Errors:
-		| ChatsGetMetadata401
-		| ChatsGetMetadata403
-		| ChatsGetMetadata404
-		| ChatsGetMetadata409
-		| ChatsGetMetadata413
-		| ChatsGetMetadata422
-		| ChatsGetMetadata429
-		| ChatsGetMetadata500;
+		| ChatsGetMessage401
+		| ChatsGetMessage403
+		| ChatsGetMessage404
+		| ChatsGetMessage409
+		| ChatsGetMessage413
+		| ChatsGetMessage422
+		| ChatsGetMessage429
+		| ChatsGetMessage500;
 };
 
-export type ChatsResumePathParams = {
+export type ChatsFindVersionsPathParams = {
 	/**
-	 * @description Path parameter \"chatId\"
+	 * @description The unique identifier of the chat to retrieve versions for. Provided as a path parameter.
+	 * @type string
+	 */
+	chatId: string;
+};
+
+export type ChatsFindVersionsQueryParams = {
+	/**
+	 * @description Specifies the maximum number of version records to return in a single response. Useful for paginating results when there are many versions.
+	 * @minLength 1
+	 * @maxLength 150
+	 * @default 20
+	 * @type number | undefined
+	 */
+	limit?: number | undefined;
+	/**
+	 * @description Base64 encoded cursor containing pagination data
+	 * @type string | undefined
+	 */
+	cursor?: string | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ChatsFindVersions200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ChatsFindVersions401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ChatsFindVersions403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ChatsFindVersions404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ChatsFindVersions409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ChatsFindVersions413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ChatsFindVersions422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ChatsFindVersions429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ChatsFindVersions500 = unknown;
+
+export type ChatsFindVersionsQueryResponse = ChatsFindVersions200;
+
+export type ChatsFindVersionsQuery = {
+	Response: ChatsFindVersions200;
+	PathParams: ChatsFindVersionsPathParams;
+	QueryParams: ChatsFindVersionsQueryParams;
+	Errors:
+		| ChatsFindVersions401
+		| ChatsFindVersions403
+		| ChatsFindVersions404
+		| ChatsFindVersions409
+		| ChatsFindVersions413
+		| ChatsFindVersions422
+		| ChatsFindVersions429
+		| ChatsFindVersions500;
+};
+
+export type ChatsGetVersionPathParams = {
+	/**
+	 * @description The unique identifier of the chat containing the version. Provided as a path parameter.
 	 * @type string
 	 */
 	chatId: string;
 	/**
-	 * @description Path parameter \"messageId\"
+	 * @description The unique identifier of the version to retrieve. Provided as a path parameter.
+	 * @type string
+	 */
+	versionId: string;
+};
+
+export const chatsGetVersionQueryParamsIncludeDefaultFilesEnum = {
+	true: "true",
+	false: "false",
+} as const;
+
+export type ChatsGetVersionQueryParamsIncludeDefaultFilesEnumKey =
+	(typeof chatsGetVersionQueryParamsIncludeDefaultFilesEnum)[keyof typeof chatsGetVersionQueryParamsIncludeDefaultFilesEnum];
+
+export type ChatsGetVersionQueryParams = {
+	/**
+	 * @description When true, includes all default files (package.json, configuration files, etc.) that would be part of a ZIP download. When false or omitted, returns only the generated source files.
+	 * @type string | undefined
+	 */
+	includeDefaultFiles?: ChatsGetVersionQueryParamsIncludeDefaultFilesEnumKey | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ChatsGetVersion200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ChatsGetVersion401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ChatsGetVersion403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ChatsGetVersion404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ChatsGetVersion409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ChatsGetVersion413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ChatsGetVersion422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ChatsGetVersion429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ChatsGetVersion500 = unknown;
+
+export type ChatsGetVersionQueryResponse = ChatsGetVersion200;
+
+export type ChatsGetVersionQuery = {
+	Response: ChatsGetVersion200;
+	PathParams: ChatsGetVersionPathParams;
+	QueryParams: ChatsGetVersionQueryParams;
+	Errors:
+		| ChatsGetVersion401
+		| ChatsGetVersion403
+		| ChatsGetVersion404
+		| ChatsGetVersion409
+		| ChatsGetVersion413
+		| ChatsGetVersion422
+		| ChatsGetVersion429
+		| ChatsGetVersion500;
+};
+
+export type ChatsUpdateVersionPathParams = {
+	/**
+	 * @description The unique identifier of the chat containing the version to update. Provided as a path parameter.
+	 * @type string
+	 */
+	chatId: string;
+	/**
+	 * @description The unique identifier of the version (block) to update. Provided as a path parameter.
+	 * @type string
+	 */
+	versionId: string;
+};
+
+/**
+ * @description Success
+ */
+export type ChatsUpdateVersion200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ChatsUpdateVersion401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ChatsUpdateVersion403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ChatsUpdateVersion404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ChatsUpdateVersion409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ChatsUpdateVersion413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ChatsUpdateVersion422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ChatsUpdateVersion429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ChatsUpdateVersion500 = unknown;
+
+export type ChatsUpdateVersionMutationResponse = ChatsUpdateVersion200;
+
+export type ChatsUpdateVersionMutation = {
+	Response: ChatsUpdateVersion200;
+	PathParams: ChatsUpdateVersionPathParams;
+	Errors:
+		| ChatsUpdateVersion401
+		| ChatsUpdateVersion403
+		| ChatsUpdateVersion404
+		| ChatsUpdateVersion409
+		| ChatsUpdateVersion413
+		| ChatsUpdateVersion422
+		| ChatsUpdateVersion429
+		| ChatsUpdateVersion500;
+};
+
+export type ChatsDownloadVersionPathParams = {
+	/**
+	 * @description The unique identifier of the chat containing the version. Provided as a path parameter.
+	 * @type string
+	 */
+	chatId: string;
+	/**
+	 * @description The unique identifier of the version to download. Provided as a path parameter.
+	 * @type string
+	 */
+	versionId: string;
+};
+
+export const chatsDownloadVersionQueryParamsFormatEnum = {
+	zip: "zip",
+	tarball: "tarball",
+} as const;
+
+export type ChatsDownloadVersionQueryParamsFormatEnumKey =
+	(typeof chatsDownloadVersionQueryParamsFormatEnum)[keyof typeof chatsDownloadVersionQueryParamsFormatEnum];
+
+export const chatsDownloadVersionQueryParamsIncludeDefaultFilesEnum = {
+	true: "true",
+	false: "false",
+} as const;
+
+export type ChatsDownloadVersionQueryParamsIncludeDefaultFilesEnumKey =
+	(typeof chatsDownloadVersionQueryParamsIncludeDefaultFilesEnum)[keyof typeof chatsDownloadVersionQueryParamsIncludeDefaultFilesEnum];
+
+export type ChatsDownloadVersionQueryParams = {
+	/**
+	 * @description The archive format for the download. Choose \"zip\" for broad compatibility or \"tarball\" for Unix/Linux systems.
+	 * @default "zip"
+	 * @type string | undefined
+	 */
+	format?: ChatsDownloadVersionQueryParamsFormatEnumKey | undefined;
+	/**
+	 * @description When true, includes all default files (package.json, configuration files, etc.) that would be part of a complete deployment. When false or omitted, returns only the generated source files.
+	 * @type string | undefined
+	 */
+	includeDefaultFiles?: ChatsDownloadVersionQueryParamsIncludeDefaultFilesEnumKey | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ChatsDownloadVersion200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ChatsDownloadVersion401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ChatsDownloadVersion403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ChatsDownloadVersion404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ChatsDownloadVersion409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ChatsDownloadVersion413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ChatsDownloadVersion422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ChatsDownloadVersion429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ChatsDownloadVersion500 = unknown;
+
+export type ChatsDownloadVersionQueryResponse = ChatsDownloadVersion200;
+
+export type ChatsDownloadVersionQuery = {
+	Response: ChatsDownloadVersion200;
+	PathParams: ChatsDownloadVersionPathParams;
+	QueryParams: ChatsDownloadVersionQueryParams;
+	Errors:
+		| ChatsDownloadVersion401
+		| ChatsDownloadVersion403
+		| ChatsDownloadVersion404
+		| ChatsDownloadVersion409
+		| ChatsDownloadVersion413
+		| ChatsDownloadVersion422
+		| ChatsDownloadVersion429
+		| ChatsDownloadVersion500;
+};
+
+export type ChatsResumePathParams = {
+	/**
+	 * @description The unique identifier of the chat containing the message to resume. Provided as a path parameter.
+	 * @type string
+	 */
+	chatId: string;
+	/**
+	 * @description The identifier of the specific message to resume. Provided as a path parameter.
 	 * @type string
 	 */
 	messageId: string;
@@ -1419,7 +4844,146 @@ export type ChatsResumeMutation = {
 		| ChatsResume500;
 };
 
-export type DeploymentsFindLogsPathParams = {
+export type DeploymentsFindQueryParams = {
+	/**
+	 * @description The ID of the project to find deployments for
+	 * @type string
+	 */
+	projectId: string;
+	/**
+	 * @description The ID of the chat to find deployments for
+	 * @type string
+	 */
+	chatId: string;
+	/**
+	 * @description The ID of the version to find deployments for
+	 * @type string
+	 */
+	versionId: string;
+};
+
+/**
+ * @description Success
+ */
+export type DeploymentsFind200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type DeploymentsFind401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type DeploymentsFind403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type DeploymentsFind404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type DeploymentsFind409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type DeploymentsFind413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type DeploymentsFind422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type DeploymentsFind429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type DeploymentsFind500 = unknown;
+
+export type DeploymentsFindQueryResponse = DeploymentsFind200;
+
+export type DeploymentsFindQuery = {
+	Response: DeploymentsFind200;
+	QueryParams: DeploymentsFindQueryParams;
+	Errors:
+		| DeploymentsFind401
+		| DeploymentsFind403
+		| DeploymentsFind404
+		| DeploymentsFind409
+		| DeploymentsFind413
+		| DeploymentsFind422
+		| DeploymentsFind429
+		| DeploymentsFind500;
+};
+
+/**
+ * @description Success
+ */
+export type DeploymentsCreate200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type DeploymentsCreate401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type DeploymentsCreate403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type DeploymentsCreate404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type DeploymentsCreate409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type DeploymentsCreate413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type DeploymentsCreate422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type DeploymentsCreate429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type DeploymentsCreate500 = unknown;
+
+export type DeploymentsCreateMutationResponse = DeploymentsCreate200;
+
+export type DeploymentsCreateMutation = {
+	Response: DeploymentsCreate200;
+	Errors:
+		| DeploymentsCreate401
+		| DeploymentsCreate403
+		| DeploymentsCreate404
+		| DeploymentsCreate409
+		| DeploymentsCreate413
+		| DeploymentsCreate422
+		| DeploymentsCreate429
+		| DeploymentsCreate500;
+};
+
+export type DeploymentsGetByIdPathParams = {
 	/**
 	 * @description Path parameter \"deploymentId\"
 	 * @type string
@@ -1427,9 +4991,147 @@ export type DeploymentsFindLogsPathParams = {
 	deploymentId: string;
 };
 
+/**
+ * @description Success
+ */
+export type DeploymentsGetById200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type DeploymentsGetById401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type DeploymentsGetById403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type DeploymentsGetById404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type DeploymentsGetById409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type DeploymentsGetById413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type DeploymentsGetById422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type DeploymentsGetById429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type DeploymentsGetById500 = unknown;
+
+export type DeploymentsGetByIdQueryResponse = DeploymentsGetById200;
+
+export type DeploymentsGetByIdQuery = {
+	Response: DeploymentsGetById200;
+	PathParams: DeploymentsGetByIdPathParams;
+	Errors:
+		| DeploymentsGetById401
+		| DeploymentsGetById403
+		| DeploymentsGetById404
+		| DeploymentsGetById409
+		| DeploymentsGetById413
+		| DeploymentsGetById422
+		| DeploymentsGetById429
+		| DeploymentsGetById500;
+};
+
+export type DeploymentsDeletePathParams = {
+	/**
+	 * @description Path parameter \"deploymentId\"
+	 * @type string
+	 */
+	deploymentId: string;
+};
+
+/**
+ * @description Success
+ */
+export type DeploymentsDelete200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type DeploymentsDelete401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type DeploymentsDelete403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type DeploymentsDelete404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type DeploymentsDelete409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type DeploymentsDelete413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type DeploymentsDelete422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type DeploymentsDelete429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type DeploymentsDelete500 = unknown;
+
+export type DeploymentsDeleteMutationResponse = DeploymentsDelete200;
+
+export type DeploymentsDeleteMutation = {
+	Response: DeploymentsDelete200;
+	PathParams: DeploymentsDeletePathParams;
+	Errors:
+		| DeploymentsDelete401
+		| DeploymentsDelete403
+		| DeploymentsDelete404
+		| DeploymentsDelete409
+		| DeploymentsDelete413
+		| DeploymentsDelete422
+		| DeploymentsDelete429
+		| DeploymentsDelete500;
+};
+
+export type DeploymentsFindLogsPathParams = {
+	/**
+	 * @description The unique identifier of the deployment to retrieve logs for. Provided as a path parameter.
+	 * @type string
+	 */
+	deploymentId: string;
+};
+
 export type DeploymentsFindLogsQueryParams = {
 	/**
-	 * @description Query parameter \"since\"
+	 * @description A UNIX timestamp (in seconds) used to filter logs. Returns only log entries generated after the specified time.
 	 * @type number | undefined
 	 */
 	since?: number | undefined;
@@ -1499,7 +5201,7 @@ export type DeploymentsFindLogsQuery = {
 
 export type DeploymentsFindErrorsPathParams = {
 	/**
-	 * @description Path parameter \"deploymentId\"
+	 * @description The unique identifier of the deployment to inspect for errors. Provided as a path parameter.
 	 * @type string
 	 */
 	deploymentId: string;
@@ -1564,6 +5266,333 @@ export type DeploymentsFindErrorsQuery = {
 		| DeploymentsFindErrors422
 		| DeploymentsFindErrors429
 		| DeploymentsFindErrors500;
+};
+
+/**
+ * @description Success
+ */
+export type HooksFind200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type HooksFind401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type HooksFind403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type HooksFind404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type HooksFind409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type HooksFind413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type HooksFind422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type HooksFind429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type HooksFind500 = unknown;
+
+export type HooksFindQueryResponse = HooksFind200;
+
+export type HooksFindQuery = {
+	Response: HooksFind200;
+	Errors:
+		| HooksFind401
+		| HooksFind403
+		| HooksFind404
+		| HooksFind409
+		| HooksFind413
+		| HooksFind422
+		| HooksFind429
+		| HooksFind500;
+};
+
+/**
+ * @description Success
+ */
+export type HooksCreate200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type HooksCreate401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type HooksCreate403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type HooksCreate404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type HooksCreate409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type HooksCreate413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type HooksCreate422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type HooksCreate429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type HooksCreate500 = unknown;
+
+export type HooksCreateMutationResponse = HooksCreate200;
+
+export type HooksCreateMutation = {
+	Response: HooksCreate200;
+	Errors:
+		| HooksCreate401
+		| HooksCreate403
+		| HooksCreate404
+		| HooksCreate409
+		| HooksCreate413
+		| HooksCreate422
+		| HooksCreate429
+		| HooksCreate500;
+};
+
+export type HooksGetByIdPathParams = {
+	/**
+	 * @description The unique identifier of the hook to retrieve.
+	 * @type string
+	 */
+	hookId: string;
+};
+
+/**
+ * @description Success
+ */
+export type HooksGetById200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type HooksGetById401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type HooksGetById403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type HooksGetById404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type HooksGetById409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type HooksGetById413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type HooksGetById422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type HooksGetById429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type HooksGetById500 = unknown;
+
+export type HooksGetByIdQueryResponse = HooksGetById200;
+
+export type HooksGetByIdQuery = {
+	Response: HooksGetById200;
+	PathParams: HooksGetByIdPathParams;
+	Errors:
+		| HooksGetById401
+		| HooksGetById403
+		| HooksGetById404
+		| HooksGetById409
+		| HooksGetById413
+		| HooksGetById422
+		| HooksGetById429
+		| HooksGetById500;
+};
+
+export type HooksUpdatePathParams = {
+	/**
+	 * @description The ID of the webhook to update. Provided as a path parameter.
+	 * @type string
+	 */
+	hookId: string;
+};
+
+/**
+ * @description Success
+ */
+export type HooksUpdate200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type HooksUpdate401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type HooksUpdate403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type HooksUpdate404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type HooksUpdate409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type HooksUpdate413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type HooksUpdate422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type HooksUpdate429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type HooksUpdate500 = unknown;
+
+export type HooksUpdateMutationResponse = HooksUpdate200;
+
+export type HooksUpdateMutation = {
+	Response: HooksUpdate200;
+	PathParams: HooksUpdatePathParams;
+	Errors:
+		| HooksUpdate401
+		| HooksUpdate403
+		| HooksUpdate404
+		| HooksUpdate409
+		| HooksUpdate413
+		| HooksUpdate422
+		| HooksUpdate429
+		| HooksUpdate500;
+};
+
+export type HooksDeletePathParams = {
+	/**
+	 * @description The ID of the webhook to delete. Provided as a path parameter.
+	 * @type string
+	 */
+	hookId: string;
+};
+
+/**
+ * @description Success
+ */
+export type HooksDelete200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type HooksDelete401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type HooksDelete403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type HooksDelete404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type HooksDelete409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type HooksDelete413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type HooksDelete422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type HooksDelete429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type HooksDelete500 = unknown;
+
+export type HooksDeleteMutationResponse = HooksDelete200;
+
+export type HooksDeleteMutation = {
+	Response: HooksDelete200;
+	PathParams: HooksDeletePathParams;
+	Errors:
+		| HooksDelete401
+		| HooksDelete403
+		| HooksDelete404
+		| HooksDelete409
+		| HooksDelete413
+		| HooksDelete422
+		| HooksDelete429
+		| HooksDelete500;
 };
 
 /**
@@ -1806,9 +5835,216 @@ export type ProjectsCreateMutation = {
 		| ProjectsCreate500;
 };
 
+export type ProjectsGetByIdPathParams = {
+	/**
+	 * @description The unique identifier of the project to retrieve.
+	 * @type string
+	 */
+	projectId: string;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsGetById200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsGetById401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsGetById403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsGetById404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsGetById409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsGetById413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsGetById422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsGetById429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsGetById500 = unknown;
+
+export type ProjectsGetByIdQueryResponse = ProjectsGetById200;
+
+export type ProjectsGetByIdQuery = {
+	Response: ProjectsGetById200;
+	PathParams: ProjectsGetByIdPathParams;
+	Errors:
+		| ProjectsGetById401
+		| ProjectsGetById403
+		| ProjectsGetById404
+		| ProjectsGetById409
+		| ProjectsGetById413
+		| ProjectsGetById422
+		| ProjectsGetById429
+		| ProjectsGetById500;
+};
+
+export type ProjectsUpdatePathParams = {
+	/**
+	 * @description The unique identifier of the project to update. Provided as a path parameter.
+	 * @type string
+	 */
+	projectId: string;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsUpdate200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsUpdate401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsUpdate403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsUpdate404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsUpdate409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsUpdate413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsUpdate422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsUpdate429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsUpdate500 = unknown;
+
+export type ProjectsUpdateMutationResponse = ProjectsUpdate200;
+
+export type ProjectsUpdateMutation = {
+	Response: ProjectsUpdate200;
+	PathParams: ProjectsUpdatePathParams;
+	Errors:
+		| ProjectsUpdate401
+		| ProjectsUpdate403
+		| ProjectsUpdate404
+		| ProjectsUpdate409
+		| ProjectsUpdate413
+		| ProjectsUpdate422
+		| ProjectsUpdate429
+		| ProjectsUpdate500;
+};
+
+export type ProjectsDeletePathParams = {
+	/**
+	 * @description The unique identifier of the project to delete. This must be passed as a path parameter in the URL.
+	 * @type string
+	 */
+	projectId: string;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsDelete200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsDelete401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsDelete403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsDelete404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsDelete409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsDelete413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsDelete422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsDelete429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsDelete500 = unknown;
+
+export type ProjectsDeleteMutationResponse = ProjectsDelete200;
+
+export type ProjectsDeleteMutation = {
+	Response: ProjectsDelete200;
+	PathParams: ProjectsDeletePathParams;
+	Errors:
+		| ProjectsDelete401
+		| ProjectsDelete403
+		| ProjectsDelete404
+		| ProjectsDelete409
+		| ProjectsDelete413
+		| ProjectsDelete422
+		| ProjectsDelete429
+		| ProjectsDelete500;
+};
+
 export type ProjectsAssignPathParams = {
 	/**
-	 * @description Path parameter \"projectId\"
+	 * @description The ID of the project to assign.
 	 * @type string
 	 */
 	projectId: string;
@@ -1875,9 +6111,427 @@ export type ProjectsAssignMutation = {
 		| ProjectsAssign500;
 };
 
+export type ProjectsFindEnvVarsPathParams = {
+	/**
+	 * @description The unique identifier of the project whose environment variables should be retrieved.
+	 * @type string
+	 */
+	projectId: string;
+};
+
+export const projectsFindEnvVarsQueryParamsDecryptedEnum = {
+	true: "true",
+	false: "false",
+} as const;
+
+export type ProjectsFindEnvVarsQueryParamsDecryptedEnumKey =
+	(typeof projectsFindEnvVarsQueryParamsDecryptedEnum)[keyof typeof projectsFindEnvVarsQueryParamsDecryptedEnum];
+
+export type ProjectsFindEnvVarsQueryParams = {
+	/**
+	 * @description Whether to return decrypted values. Defaults to false (encrypted).
+	 * @type string | undefined
+	 */
+	decrypted?: ProjectsFindEnvVarsQueryParamsDecryptedEnumKey | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsFindEnvVars200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsFindEnvVars401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsFindEnvVars403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsFindEnvVars404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsFindEnvVars409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsFindEnvVars413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsFindEnvVars422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsFindEnvVars429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsFindEnvVars500 = unknown;
+
+export type ProjectsFindEnvVarsQueryResponse = ProjectsFindEnvVars200;
+
+export type ProjectsFindEnvVarsQuery = {
+	Response: ProjectsFindEnvVars200;
+	PathParams: ProjectsFindEnvVarsPathParams;
+	QueryParams: ProjectsFindEnvVarsQueryParams;
+	Errors:
+		| ProjectsFindEnvVars401
+		| ProjectsFindEnvVars403
+		| ProjectsFindEnvVars404
+		| ProjectsFindEnvVars409
+		| ProjectsFindEnvVars413
+		| ProjectsFindEnvVars422
+		| ProjectsFindEnvVars429
+		| ProjectsFindEnvVars500;
+};
+
+export type ProjectsCreateEnvVarsPathParams = {
+	/**
+	 * @description The unique identifier of the project where environment variables should be created.
+	 * @type string
+	 */
+	projectId: string;
+};
+
+export const projectsCreateEnvVarsQueryParamsDecryptedEnum = {
+	true: "true",
+	false: "false",
+} as const;
+
+export type ProjectsCreateEnvVarsQueryParamsDecryptedEnumKey =
+	(typeof projectsCreateEnvVarsQueryParamsDecryptedEnum)[keyof typeof projectsCreateEnvVarsQueryParamsDecryptedEnum];
+
+export type ProjectsCreateEnvVarsQueryParams = {
+	/**
+	 * @description Whether to return decrypted values. Defaults to false (encrypted).
+	 * @type string | undefined
+	 */
+	decrypted?: ProjectsCreateEnvVarsQueryParamsDecryptedEnumKey | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsCreateEnvVars200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsCreateEnvVars401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsCreateEnvVars403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsCreateEnvVars404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsCreateEnvVars409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsCreateEnvVars413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsCreateEnvVars422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsCreateEnvVars429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsCreateEnvVars500 = unknown;
+
+export type ProjectsCreateEnvVarsMutationResponse = ProjectsCreateEnvVars200;
+
+export type ProjectsCreateEnvVarsMutation = {
+	Response: ProjectsCreateEnvVars200;
+	PathParams: ProjectsCreateEnvVarsPathParams;
+	QueryParams: ProjectsCreateEnvVarsQueryParams;
+	Errors:
+		| ProjectsCreateEnvVars401
+		| ProjectsCreateEnvVars403
+		| ProjectsCreateEnvVars404
+		| ProjectsCreateEnvVars409
+		| ProjectsCreateEnvVars413
+		| ProjectsCreateEnvVars422
+		| ProjectsCreateEnvVars429
+		| ProjectsCreateEnvVars500;
+};
+
+export type ProjectsUpdateEnvVarsPathParams = {
+	/**
+	 * @description The unique identifier of the project whose environment variables should be updated.
+	 * @type string
+	 */
+	projectId: string;
+};
+
+export const projectsUpdateEnvVarsQueryParamsDecryptedEnum = {
+	true: "true",
+	false: "false",
+} as const;
+
+export type ProjectsUpdateEnvVarsQueryParamsDecryptedEnumKey =
+	(typeof projectsUpdateEnvVarsQueryParamsDecryptedEnum)[keyof typeof projectsUpdateEnvVarsQueryParamsDecryptedEnum];
+
+export type ProjectsUpdateEnvVarsQueryParams = {
+	/**
+	 * @description Whether to return decrypted values. Defaults to false (encrypted).
+	 * @type string | undefined
+	 */
+	decrypted?: ProjectsUpdateEnvVarsQueryParamsDecryptedEnumKey | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsUpdateEnvVars200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsUpdateEnvVars401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsUpdateEnvVars403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsUpdateEnvVars404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsUpdateEnvVars409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsUpdateEnvVars413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsUpdateEnvVars422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsUpdateEnvVars429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsUpdateEnvVars500 = unknown;
+
+export type ProjectsUpdateEnvVarsMutationResponse = ProjectsUpdateEnvVars200;
+
+export type ProjectsUpdateEnvVarsMutation = {
+	Response: ProjectsUpdateEnvVars200;
+	PathParams: ProjectsUpdateEnvVarsPathParams;
+	QueryParams: ProjectsUpdateEnvVarsQueryParams;
+	Errors:
+		| ProjectsUpdateEnvVars401
+		| ProjectsUpdateEnvVars403
+		| ProjectsUpdateEnvVars404
+		| ProjectsUpdateEnvVars409
+		| ProjectsUpdateEnvVars413
+		| ProjectsUpdateEnvVars422
+		| ProjectsUpdateEnvVars429
+		| ProjectsUpdateEnvVars500;
+};
+
+export type ProjectsDeleteEnvVarsPathParams = {
+	/**
+	 * @description The unique identifier of the project whose environment variables should be deleted.
+	 * @type string
+	 */
+	projectId: string;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsDeleteEnvVars200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsDeleteEnvVars401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsDeleteEnvVars403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsDeleteEnvVars404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsDeleteEnvVars409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsDeleteEnvVars413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsDeleteEnvVars422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsDeleteEnvVars429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsDeleteEnvVars500 = unknown;
+
+export type ProjectsDeleteEnvVarsMutationResponse = ProjectsDeleteEnvVars200;
+
+export type ProjectsDeleteEnvVarsMutation = {
+	Response: ProjectsDeleteEnvVars200;
+	PathParams: ProjectsDeleteEnvVarsPathParams;
+	Errors:
+		| ProjectsDeleteEnvVars401
+		| ProjectsDeleteEnvVars403
+		| ProjectsDeleteEnvVars404
+		| ProjectsDeleteEnvVars409
+		| ProjectsDeleteEnvVars413
+		| ProjectsDeleteEnvVars422
+		| ProjectsDeleteEnvVars429
+		| ProjectsDeleteEnvVars500;
+};
+
+export type ProjectsGetEnvVarPathParams = {
+	/**
+	 * @description The unique identifier of the project that owns the environment variable.
+	 * @type string
+	 */
+	projectId: string;
+	/**
+	 * @description The unique identifier of the environment variable to retrieve.
+	 * @type string
+	 */
+	environmentVariableId: string;
+};
+
+export const projectsGetEnvVarQueryParamsDecryptedEnum = {
+	true: "true",
+	false: "false",
+} as const;
+
+export type ProjectsGetEnvVarQueryParamsDecryptedEnumKey =
+	(typeof projectsGetEnvVarQueryParamsDecryptedEnum)[keyof typeof projectsGetEnvVarQueryParamsDecryptedEnum];
+
+export type ProjectsGetEnvVarQueryParams = {
+	/**
+	 * @description Whether to return decrypted values. Defaults to false (encrypted).
+	 * @type string | undefined
+	 */
+	decrypted?: ProjectsGetEnvVarQueryParamsDecryptedEnumKey | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ProjectsGetEnvVar200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ProjectsGetEnvVar401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ProjectsGetEnvVar403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ProjectsGetEnvVar404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ProjectsGetEnvVar409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ProjectsGetEnvVar413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ProjectsGetEnvVar422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ProjectsGetEnvVar429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ProjectsGetEnvVar500 = unknown;
+
+export type ProjectsGetEnvVarQueryResponse = ProjectsGetEnvVar200;
+
+export type ProjectsGetEnvVarQuery = {
+	Response: ProjectsGetEnvVar200;
+	PathParams: ProjectsGetEnvVarPathParams;
+	QueryParams: ProjectsGetEnvVarQueryParams;
+	Errors:
+		| ProjectsGetEnvVar401
+		| ProjectsGetEnvVar403
+		| ProjectsGetEnvVar404
+		| ProjectsGetEnvVar409
+		| ProjectsGetEnvVar413
+		| ProjectsGetEnvVar422
+		| ProjectsGetEnvVar429
+		| ProjectsGetEnvVar500;
+};
+
 export type RateLimitsFindQueryParams = {
 	/**
-	 * @description Query parameter \"scope\"
+	 * @description The context or namespace to check rate limits for (e.g., a project slug or feature area).
 	 * @type string | undefined
 	 */
 	scope?: string | undefined;
@@ -2006,7 +6660,7 @@ export type UserGetQuery = {
 
 export type UserGetBillingQueryParams = {
 	/**
-	 * @description Query parameter \"scope\"
+	 * @description Filters billing data by a specific scope, such as a project ID or slug.
 	 * @type string | undefined
 	 */
 	scope?: string | undefined;
@@ -2191,4 +6845,106 @@ export type UserGetScopesQuery = {
 		| UserGetScopes422
 		| UserGetScopes429
 		| UserGetScopes500;
+};
+
+export type ReportsGetUsageQueryParams = {
+	/**
+	 * @description Query parameter \"startDate\"
+	 * @type string | undefined, date-time
+	 */
+	startDate?: string | undefined;
+	/**
+	 * @description Query parameter \"endDate\"
+	 * @type string | undefined, date-time
+	 */
+	endDate?: string | undefined;
+	/**
+	 * @description Query parameter \"chatId\"
+	 * @type string | undefined
+	 */
+	chatId?: string | undefined;
+	/**
+	 * @description Query parameter \"messageId\"
+	 * @type string | undefined
+	 */
+	messageId?: string | undefined;
+	/**
+	 * @description Query parameter \"userId\"
+	 * @type string | undefined
+	 */
+	userId?: string | undefined;
+	/**
+	 * @description Query parameter \"limit\"
+	 * @minLength 1
+	 * @maxLength 150
+	 * @default 20
+	 * @type number | undefined
+	 */
+	limit?: number | undefined;
+	/**
+	 * @description Base64 encoded cursor containing pagination data
+	 * @type string | undefined
+	 */
+	cursor?: string | undefined;
+};
+
+/**
+ * @description Success
+ */
+export type ReportsGetUsage200 = unknown;
+
+/**
+ * @description Unauthorized
+ */
+export type ReportsGetUsage401 = unknown;
+
+/**
+ * @description Forbidden
+ */
+export type ReportsGetUsage403 = unknown;
+
+/**
+ * @description Not Found
+ */
+export type ReportsGetUsage404 = unknown;
+
+/**
+ * @description Conflict
+ */
+export type ReportsGetUsage409 = unknown;
+
+/**
+ * @description Payload Too Large
+ */
+export type ReportsGetUsage413 = unknown;
+
+/**
+ * @description Unprocessable Entity
+ */
+export type ReportsGetUsage422 = unknown;
+
+/**
+ * @description Too Many Requests
+ */
+export type ReportsGetUsage429 = unknown;
+
+/**
+ * @description Internal Server Error
+ */
+export type ReportsGetUsage500 = unknown;
+
+export type ReportsGetUsageQueryResponse = ReportsGetUsage200;
+
+export type ReportsGetUsageQuery = {
+	Response: ReportsGetUsage200;
+	QueryParams: ReportsGetUsageQueryParams;
+	Errors:
+		| ReportsGetUsage401
+		| ReportsGetUsage403
+		| ReportsGetUsage404
+		| ReportsGetUsage409
+		| ReportsGetUsage413
+		| ReportsGetUsage422
+		| ReportsGetUsage429
+		| ReportsGetUsage500;
 };

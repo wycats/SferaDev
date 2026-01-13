@@ -107,8 +107,7 @@ export const serverGenerator: ReturnType<typeof createReactGenerator<PluginMcp>>
 										zod.schemas.pathParams?.name
 									) {
 										return `
-                      // @ts-ignore: Type instantiation is excessively deep and possibly infinite
-                      server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, ${params.toObjectValue()}, async (${params.toObject()}) => {
+                                            server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, ${params.toObjectValue()}, async (${params.toObject()}) => {
                         try {
                           return await ${mcp.name}(${clientParams.toObject()})
                         } catch (error) {
@@ -118,8 +117,7 @@ export const serverGenerator: ReturnType<typeof createReactGenerator<PluginMcp>>
 									}
 
 									return `
-                    // @ts-ignore: Type instantiation is excessively deep and possibly infinite
-                    server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, async () => {
+                                        server.tool(${JSON.stringify(tool.name)}, ${JSON.stringify(tool.description)}, async () => {
                       try {
                         return await ${mcp.name}(${clientParams.toObject()})
                       } catch (error) {

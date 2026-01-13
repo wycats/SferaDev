@@ -88,7 +88,6 @@ export type AccessToken = {
 	locale?: string;
 	phone_number?: string;
 	phone_number_verified?: boolean;
-	address?: AddressClaimSet;
 	/**
 	 * @format int64
 	 */
@@ -96,6 +95,9 @@ export type AccessToken = {
 	claims_locales?: string;
 	acr?: string;
 	s_hash?: string;
+	address?: {
+		[key: string]: any;
+	};
 	/**
 	 * @uniqueItems true
 	 */
@@ -111,15 +113,6 @@ export type AccessToken = {
 	authorization?: Authorization;
 	cnf?: Confirmation;
 	scope?: string;
-};
-
-export type AddressClaimSet = {
-	formatted?: string;
-	street_address?: string;
-	locality?: string;
-	region?: string;
-	postal_code?: string;
-	country?: string;
 };
 
 export type AdminEventRepresentation = {
@@ -336,6 +329,7 @@ export type CertificateRepresentation = {
 	publicKey?: string;
 	certificate?: string;
 	kid?: string;
+	jwks?: string;
 };
 
 export type ClaimRepresentation = {
@@ -360,6 +354,7 @@ export type ClientInitialAccessCreatePresentation = {
 	 * @format int32
 	 */
 	count?: number;
+	webOrigins?: string[];
 };
 
 export type ClientInitialAccessPresentation = {
@@ -810,7 +805,6 @@ export type IDToken = {
 	locale?: string;
 	phone_number?: string;
 	phone_number_verified?: boolean;
-	address?: AddressClaimSet;
 	/**
 	 * @format int64
 	 */
@@ -818,6 +812,9 @@ export type IDToken = {
 	claims_locales?: string;
 	acr?: string;
 	s_hash?: string;
+	address?: {
+		[key: string]: any;
+	};
 };
 
 export type IdentityProviderMapperRepresentation = {
@@ -860,6 +857,7 @@ export type IdentityProviderRepresentation = {
 	config?: {
 		[key: string]: string;
 	};
+	types?: string[];
 	/**
 	 * @deprecated true
 	 */
@@ -1107,6 +1105,24 @@ export type OAuthClientRepresentation = {
 export type OrganizationDomainRepresentation = {
 	name?: string;
 	verified?: boolean;
+};
+
+export type OrganizationInvitationRepresentation = {
+	id?: string;
+	organizationId?: string;
+	email?: string;
+	firstName?: string;
+	lastName?: string;
+	/**
+	 * @format int32
+	 */
+	sentDate?: number;
+	/**
+	 * @format int32
+	 */
+	expiresAt?: number;
+	status?: Status;
+	inviteLink?: string;
 };
 
 export type OrganizationRepresentation = {
@@ -1789,6 +1805,8 @@ export type SocialLinkRepresentation = {
 	socialUsername?: string;
 };
 
+export type Status = "EXPIRED" | "PENDING";
+
 export type UPAttribute = {
 	name?: string;
 	displayName?: string;
@@ -2013,30 +2031,32 @@ export type UserSessionRepresentation = {
 	transientUser?: boolean;
 };
 
-export type WorkflowConditionRepresentation = {
-	uses?: string;
-	id?: string;
-	config?: MultivaluedHashMapStringString;
+export type WorkflowConcurrencyRepresentation = {
+	["cancel-in-progress"]?: string;
+	["restart-in-progress"]?: string;
 };
 
 export type WorkflowRepresentation = {
 	id?: string;
 	name?: string;
-	uses?: string;
 	enabled?: boolean;
-	on?: void;
-	["reset-on"]?: void;
-	recurring?: boolean;
-	["if"]?: WorkflowConditionRepresentation[];
+	on?: string;
+	schedule?: WorkflowScheduleRepresentation;
+	concurrency?: WorkflowConcurrencyRepresentation;
+	["if"]?: string;
 	steps?: WorkflowStepRepresentation[];
 	state?: WorkflowStateRepresentation;
 	["with"]?: MultivaluedHashMapStringString;
-	onValues?: string[];
-	onEventsReset?: string[];
+	cancelInProgress?: string;
+	restartInProgress?: string;
 };
 
-export type WorkflowSetRepresentation = {
-	workflows?: WorkflowRepresentation[];
+export type WorkflowScheduleRepresentation = {
+	after?: string;
+	/**
+	 * @format int32
+	 */
+	["batch-size"]?: number;
 };
 
 export type WorkflowStateRepresentation = {
@@ -2044,9 +2064,12 @@ export type WorkflowStateRepresentation = {
 };
 
 export type WorkflowStepRepresentation = {
-	id?: string;
 	uses?: string;
 	after?: string;
-	priority?: string;
+	/**
+	 * @format int64
+	 */
+	["scheduled-at"]?: number;
+	id?: string;
 	config?: MultivaluedHashMapStringString;
 };

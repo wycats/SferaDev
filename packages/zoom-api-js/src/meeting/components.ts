@@ -4859,7 +4859,7 @@ export type ChangeDeviceAssociationVariables = {
 } & FetcherExtraProps;
 
 /**
- * Change a device's association from one Zoom Room to another. **Prerequisites:** Device must be enrolled in ZDM (Zoom Device Management).
+ * Change a device's association from one Zoom Room to another. **Prerequisites** Device must be enrolled in ZDM (Zoom Device Management). \n\n**Note** Currently, only Poly TC10’s may make Zoom Room assignments.
  *
  * **[Scopes](https://developers.zoom.us/docs/integrations/oauth-scopes-overview/):** `device:write:admin`
  *
@@ -7899,6 +7899,12 @@ export type MeetingResponse = {
 	 */
 	uuid?: string;
 	/**
+	 * The URL that registrants can use to register for a meeting. This field is only returned for meetings that have enabled registration.
+	 *
+	 * @example https://example.com/meeting/register/7ksAkRCoEpt1Jm0wa-E6lICLur9e7Lde5oW6
+	 */
+	registration_url?: string;
+	/**
 	 * The meeting description.
 	 *
 	 * @maxLength 2000
@@ -8098,6 +8104,14 @@ export type MeetingResponse = {
 	 * Meeting settings.
 	 */
 	settings?: {
+		/**
+		 * Add additional meeting [data center regions](https://support.zoom.us/hc/en-us/articles/360042411451-Selecting-data-center-regions-for-hosted-meetings-and-webinars). Provide this value as an array of [country codes](/docs/api/references/abbreviations/#countries) for the countries available as data center regions in the [**Account Profile**](https://zoom.us/account/setting) interface but have been opted out of in the [user settings](https://zoom.us/profile).
+		 *
+		 * For example, the data center regions selected in your [**Account Profile**](https://zoom.us/account) are `Europe`, `Hong Kong SAR`, `Australia`, `India`, `Japan`, `China`, `United States`, and `Canada`. However, in the [**My Profile**](https://zoom.us/profile) settings, you did **not** select `India` and `Japan` for meeting and webinar traffic routing.
+		 *
+		 * To include `India` and `Japan` as additional data centers, use the `[IN, TY]` value for this field.
+		 */
+		additional_data_center_regions?: string[];
 		/**
 		 * Allow attendees to join the meeting from multiple devices. This setting only works for meetings that require [registration](https://support.zoom.us/hc/en-us/articles/211579443-Setting-up-registration-for-a-meeting).
 		 *
@@ -8949,6 +8963,14 @@ export type MeetingResponse = {
 	 * @example waiting
 	 */
 	status?: "waiting" | "started";
+	/**
+	 * The account admin meeting template ID used to schedule a meeting using a [meeting template](https://support.zoom.us/hc/en-us/articles/360036559151-Meeting-templates). For a list of account admin-provided meeting templates, use the [**List meeting templates**](/docs/api-reference/zoom-api/methods#operation/listMeetingTemplates) API.
+	 * * At this time, this field **only** accepts account admin meeting template IDs.
+	 * * To enable the account admin meeting templates feature, [contact Zoom support](https://support.zoom.us/hc/en-us).
+	 *
+	 * @example Dv4YdINdTk+Z5RToadh5ug==
+	 */
+	template_id?: string;
 	/**
 	 * The timezone to format the meeting start time.
 	 *
@@ -11244,6 +11266,14 @@ export type MeetingCreateResponse = {
 	 */
 	settings?: {
 		/**
+		 * Add additional meeting [data center regions](https://support.zoom.us/hc/en-us/articles/360042411451-Selecting-data-center-regions-for-hosted-meetings-and-webinars). Provide this value as an array of [country codes](/docs/api/references/abbreviations/#countries) for the countries available as data center regions in the [**Account Profile**](https://zoom.us/account/setting) interface but have been opted out of in the [user settings](https://zoom.us/profile).
+		 *
+		 * For example, the data center regions selected in your [**Account Profile**](https://zoom.us/account) are `Europe`, `Hong Kong SAR`, `Australia`, `India`, `Japan`, `China`, `United States`, and `Canada`. However, in the [**My Profile**](https://zoom.us/profile) settings, you did **not** select `India` and `Japan` for meeting and webinar traffic routing.
+		 *
+		 * To include `India` and `Japan` as additional data centers, use the `[IN, TY]` value for this field.
+		 */
+		additional_data_center_regions?: string[];
+		/**
 		 * Allow attendees to join the meeting from multiple devices. This setting only works for meetings that require [registration](https://support.zoom.us/hc/en-us/articles/211579443-Setting-up-registration-for-a-meeting).
 		 *
 		 * @example true
@@ -12078,6 +12108,14 @@ export type MeetingCreateResponse = {
 	 * @example waiting
 	 */
 	status?: "waiting" | "started";
+	/**
+	 * The account admin meeting template ID used to schedule a meeting using a [meeting template](https://support.zoom.us/hc/en-us/articles/360036559151-Meeting-templates). For a list of account admin-provided meeting templates, use the [**List meeting templates**](/docs/api-reference/zoom-api/methods#operation/listMeetingTemplates) API.
+	 * * At this time, this field **only** accepts account admin meeting template IDs.
+	 * * To enable the account admin meeting templates feature, [contact Zoom support](https://support.zoom.us/hc/en-us).
+	 *
+	 * @example Dv4YdINdTk+Z5RToadh5ug==
+	 */
+	template_id?: string;
 	/**
 	 * Timezone to format `start_time`.
 	 *
@@ -20006,19 +20044,26 @@ export type ListmeetingsummariesQueryParams = {
 	 */
 	next_page_token?: string;
 	/**
-	 * The start date, in `yyyy-MM-dd'T'HH:mm:ss'Z'` UTC format, used to retrieve the meeting summaries' creation date range.
+	 * The start date, in `yyyy-MM-dd'T'HH:mm:ss'Z'` UTC format. The time field used for filtering is specified by `time_filter_field`.
 	 *
 	 * @format date-time
 	 * @example 2023-10-19T07:00:00Z
 	 */
 	from?: string;
 	/**
-	 * The end date, in `yyyy-MM-dd'T'HH:mm:ss'Z'` UTC format, used to retrieve the meeting summaries' creation date range.
+	 * The end date, in `yyyy-MM-dd'T'HH:mm:ss'Z'` UTC format. The time field used for filtering is specified by `time_filter_field`.
 	 *
 	 * @format date-time
 	 * @example 2023-10-20T07:00:00Z
 	 */
 	to?: string;
+	/**
+	 * Which summary time field to use to filter results by the `from` and `to` parameters.
+	 *
+	 * @example summary_created_time
+	 * @default summary_start_time
+	 */
+	time_filter_field?: "summary_start_time" | "summary_created_time";
 };
 
 export type ListmeetingsummariesError = Fetcher.ErrorWrapper<undefined>;
@@ -23460,20 +23505,14 @@ export type WebinarCreateResponse = {
 	 */
 	id?: number;
 	/**
-	 * Specify whether or not registrants of this webinar should receive confirmation emails.
-	 *
-	 * @example true
-	 */
-	registrants_confirmation_email?: boolean;
-	/**
-	 * Unique identifier of the webinar template. Use this field only if you would like to [schedule the webinar using an existing template](https://support.zoom.us/hc/en-us/articles/115001079746-Webinar-Templates#schedule). The value of this field can be retrieved from [**List webinar templates**](/docs/api/rest/reference/zoom-api/methods#operation/listWebinarTemplates) API.
+	 * The webinar template's unique identifier. Use this field only if you would like to [schedule the webinar using an existing template](https://support.zoom.us/hc/en-us/articles/115001079746-Webinar-Templates#schedule). The value of this field can be retrieved from [**List webinar templates**](/docs/api/rest/reference/zoom-api/methods#operation/listWebinarTemplates) API.
 	 * You must provide the user ID of the host instead of the email address in the `userId` path parameter in order to use a template for scheduling a Webinar.
 	 *
 	 * @example ull6574eur
 	 */
 	template_id?: string;
 	/**
-	 * Unique identifier of a webinar. Each webinar instance will generate its own UUID. Ror example, after a webinar ends, a new UUID will be generated for the next instance of the Webinar). Once a Webinar ends, the value of the UUID for the same webinar will be different from when it was scheduled.
+	 * A webinar's unique identifier. Each webinar instance will generate its own UUID. Ror example, after a webinar ends, a new UUID is generated for the next instance of the webinar. Once a webinar ends, the value of the UUID for the same webinar will be different from when it was scheduled.
 	 *
 	 * @example Bznyg8KZTdCVbQxvS/oZ7w==
 	 */
@@ -23485,7 +23524,7 @@ export type WebinarCreateResponse = {
 	 */
 	agenda?: string;
 	/**
-	 * Create time.
+	 * Creation time.
 	 *
 	 * @format date-time
 	 * @example 2022-03-26T07:18:32Z
@@ -23498,7 +23537,13 @@ export type WebinarCreateResponse = {
 	 */
 	duration?: number;
 	/**
-	 * URL to join the webinar. Only share this URL with the users who should be invited to the Webinar.
+	 * The URL that registrants can use to register for a webinar. This field is only returned for webinars that have enabled registration.
+	 *
+	 * @example https://example.com/webinar/register/7ksAkRCoEpt1Jm0wa-E6lICLur9e7Lde5oW6
+	 */
+	registration_url?: string;
+	/**
+	 * URL to join the webinar. Only share this URL with the users who should be invited to the webinar.
 	 *
 	 * @example https://example.com/j/11111
 	 */
@@ -23514,7 +23559,7 @@ export type WebinarCreateResponse = {
 		 */
 		duration?: number;
 		/**
-		 * Occurrence ID: Unique Identifier that identifies an occurrence of a recurring webinar. [Recurring webinars](https://support.zoom.us/hc/en-us/articles/216354763-How-to-Schedule-A-Recurring-Webinar) can have a maximum of 50 occurrences.
+		 * Occurrence ID: a unique identifier that identifies an occurrence of a recurring webinar. [Recurring webinars](https://support.zoom.us/hc/en-us/articles/216354763-How-to-Schedule-A-Recurring-Webinar) can have a maximum of 50 occurrences.
 		 *
 		 * @example 1648194360000
 		 */
@@ -23559,14 +23604,14 @@ export type WebinarCreateResponse = {
 	 */
 	recurrence?: {
 		/**
-		 * Select a date when the webinar will recur before it is canceled. Should be in UTC time, such as 2017-11-25T12:00:00Z. Can't be used with `end_times`.
+		 * A date when the webinar will recur before it is canceled. Should be in UTC time, such as 2017-11-25T12:00:00Z. Can't be used with `end_times`.
 		 *
 		 * @format date-time
 		 * @example 2022-04-02T15:59:00Z
 		 */
 		end_date_time?: string;
 		/**
-		 * Select how many times the webinar will recur before it is canceled. The maximum number of recurring is 60. Can't be used with `end_date_time`.
+		 * How many times the webinar will recur before it is canceled. The maximum number of recurring is 60. Can't be used with `end_date_time`.
 		 *
 		 * @maximum 60
 		 * @example 7
@@ -23645,6 +23690,14 @@ export type WebinarCreateResponse = {
 	 * Webinar settings.
 	 */
 	settings?: {
+		/**
+		 * Add additional webinar [data center regions](https://support.zoom.us/hc/en-us/articles/360042411451-Selecting-data-center-regions-for-hosted-meetings-and-webinars). Provide this value as an array of [country codes](/docs/api/references/abbreviations/#countries) for the countries available as data center regions in the [**Account Profile**](https://zoom.us/account/setting) interface but have been opted out of in the [user settings](https://zoom.us/profile).
+		 *
+		 * For example, the data center regions selected in your [**Account Profile**](https://zoom.us/account) are `Europe`, `Hong Kong SAR`, `Australia`, `India`, `Japan`, `China`, `United States`, and `Canada`. However, in the [**My Profile**](https://zoom.us/profile) settings, you did **not** select `India` and `Japan` for meeting and webinar traffic routing.
+		 *
+		 * To include `India` and `Japan` as additional data centers, use the `[IN, TY]` value for this field.
+		 */
+		additional_data_center_regions?: string[];
 		/**
 		 * Allow attendees to join from multiple devices.
 		 *
@@ -24156,6 +24209,12 @@ export type WebinarCreateResponse = {
 		 */
 		show_share_button?: boolean;
 		/**
+		 * Whether to show the webinar's join information on the registration confirmation page. This setting is only applied to webinars with registration enabled.
+		 *
+		 * @example true
+		 */
+		show_join_info?: boolean;
+		/**
 		 * Survey url for post webinar survey.
 		 *
 		 * @example https://example.com
@@ -24235,6 +24294,15 @@ export type WebinarCreateResponse = {
 		 * @example value1
 		 */
 		value?: string;
+		/**
+		 * Whether the [tracking field](https://support.zoom.us/hc/en-us/articles/115000293426-Scheduling-Tracking-Fields) is visible in the webinar scheduling options in the Zoom Web Portal or not.
+		 *
+		 * * `true` - Tracking field is visible.
+		 * * `false` - Tracking field is not visible to the users in the webinar options in the Zoom Web Portal but the field was used while scheduling this webinar via API. An invisible tracking field can be used by users while scheduling webinars via API only.
+		 *
+		 * @example true
+		 */
+		visible?: boolean;
 	}[];
 	/**
 	 * Webinar types.
@@ -24427,6 +24495,14 @@ export type WebinarCreateRequestBody = {
 	 * Create webinar settings.
 	 */
 	settings?: {
+		/**
+		 * Add additional webinar [data center regions](https://support.zoom.us/hc/en-us/articles/360042411451-Selecting-data-center-regions-for-hosted-meetings-and-webinars). Provide this value as an array of [country codes](/docs/api/references/abbreviations/#countries) for the countries available as data center regions in the [**Account Profile**](https://zoom.us/account/setting) interface but have been opted out of in the [user settings](https://zoom.us/profile).
+		 *
+		 * For example, the data center regions selected in your [**Account Profile**](https://zoom.us/account) are `Europe`, `Hong Kong SAR`, `Australia`, `India`, `Japan`, `China`, `United States`, and `Canada`. However, in the [**My Profile**](https://zoom.us/profile) settings, you did **not** select `India` and `Japan` for meeting and webinar traffic routing.
+		 *
+		 * To include `India` and `Japan` as additional data centers, use the `[IN, TY]` value for this field.
+		 */
+		additional_data_center_regions?: string[];
 		/**
 		 * Allow attendees to join from multiple devices.
 		 *
@@ -24856,6 +24932,12 @@ export type WebinarCreateRequestBody = {
 			enable?: boolean;
 		};
 		/**
+		 * Send confirmation email to registrants.
+		 *
+		 * @example true
+		 */
+		registrants_confirmation_email?: boolean;
+		/**
 		 * Send email notifications to registrants about approval, cancellation, denial of the registration. The value of this field must be set to true in order to use the `registrants_confirmation_email` field.
 		 *
 		 * @example true
@@ -24893,6 +24975,12 @@ export type WebinarCreateRequestBody = {
 		 * @example true
 		 */
 		show_share_button?: boolean;
+		/**
+		 * Whether to show the webinar's join information on the registration confirmation page. This setting is only applied to webinars with registration enabled.
+		 *
+		 * @example true
+		 */
+		show_join_info?: boolean;
 		/**
 		 * Survey URL for post webinar survey.
 		 *
@@ -25114,6 +25202,13 @@ export type WebinarResponse = {
 	 */
 	id?: number;
 	/**
+	 * The webinar template's unique identifier. Use this field only if you would like to [schedule the webinar using an existing template](https://support.zoom.us/hc/en-us/articles/115001079746-Webinar-Templates#schedule). The value of this field can be retrieved from [**List webinar templates**](/docs/api/rest/reference/zoom-api/methods#operation/listWebinarTemplates) API.
+	 * You must provide the user ID of the host instead of the email address in the `userId` path parameter in order to use a template for scheduling a webinar.
+	 *
+	 * @example ull6574eur
+	 */
+	template_id?: string;
+	/**
 	 * Unique webinar ID. Each webinar instance generates its own webinar UUID. After a webinar ends, a new UUID is generated for the next instance of the webinar. Retrieve a list of UUIDs from past webinar instances using the [**List past webinar instances**](/docs/api-reference/zoom-api/methods#operation/pastWebinars) API. [Double encode](/docs/api/using-zoom-apis/#meeting-id-and-uuid) your UUID when using it for API calls if the UUID begins with a `/` or contains `//` in it.
 	 *
 	 * @example m3WqMkvuRXyYqH+eKWhk9w==
@@ -25138,6 +25233,12 @@ export type WebinarResponse = {
 	 * @example 60
 	 */
 	duration?: number;
+	/**
+	 * The URL that registrants can use to register for a webinar. This field is only returned for webinars that have enabled registration.
+	 *
+	 * @example https://example.com/webinar/register/7ksAkRCoEpt1Jm0wa-E6lICLur9e7Lde5oW6
+	 */
+	registration_url?: string;
 	/**
 	 * URL to join the webinar. Only share this URL with the users who should be invited to the webinar.
 	 *
@@ -25213,7 +25314,7 @@ export type WebinarResponse = {
 		 */
 		end_date_time?: string;
 		/**
-		 * Select how many times the webinar will recur before it is canceled. The maximum number of recurring is 60. Cannot be used with `end_date_time`.
+		 * How many times the webinar will recur before it is canceled. The maximum number of recurring is 60. Cannot be used with `end_date_time`.
 		 *
 		 * @maximum 60
 		 * @example 7
@@ -25292,6 +25393,14 @@ export type WebinarResponse = {
 	 * Webinar settings.
 	 */
 	settings?: {
+		/**
+		 * Add more webinar [data center regions](https://support.zoom.us/hc/en-us/articles/360042411451-Selecting-data-center-regions-for-hosted-meetings-and-webinars). Provide this value as an array of [country codes](/docs/api/references/abbreviations/#countries) for the countries available as data center regions in the [**Account Profile**](https://zoom.us/account/setting) interface but have been opted out of in the [user settings](https://zoom.us/profile).
+		 *
+		 * For example, the data center regions selected in your [**Account Profile**](https://zoom.us/account) are `Europe`, `Hong Kong SAR`, `Australia`, `India`, `Japan`, `China`, `United States`, and `Canada`. However, in the [**My Profile**](https://zoom.us/profile) settings, you did **not** select `India` and `Japan` for meeting and webinar traffic routing.
+		 *
+		 * To include `India` and `Japan` as additional data centers, use the `[IN, TY]` value for this field.
+		 */
+		additional_data_center_regions?: string[];
 		/**
 		 * Allow attendees to join from multiple devices.
 		 *
@@ -25803,6 +25912,12 @@ export type WebinarResponse = {
 		 */
 		show_share_button?: boolean;
 		/**
+		 * Whether to show the webinar's join information on the registration confirmation page. This setting is only applied to webinars with registration enabled.
+		 *
+		 * @example true
+		 */
+		show_join_info?: boolean;
+		/**
 		 * Survey URL for post webinar survey.
 		 *
 		 * @example https://example.com
@@ -25881,6 +25996,15 @@ export type WebinarResponse = {
 		 * @example value1
 		 */
 		value?: string;
+		/**
+		 * Whether the [tracking field](https://support.zoom.us/hc/en-us/articles/115000293426-Scheduling-Tracking-Fields) is visible in the webinar scheduling options in the Zoom Web Portal or not.
+		 *
+		 * * `true` - Tracking field is visible.
+		 * * `false` - Tracking field is not visible to the users in the webinar options in the Zoom Web Portal but the field was used while scheduling this webinar via API. An invisible tracking field can be used by users while scheduling webinars via API only.
+		 *
+		 * @example true
+		 */
+		visible?: boolean;
 	}[];
 	/**
 	 * Webinar types.
@@ -26184,6 +26308,14 @@ export type WebinarUpdateRequestBody = {
 	 */
 	settings?: {
 		/**
+		 * Add more webinar [data center regions](https://support.zoom.us/hc/en-us/articles/360042411451-Selecting-data-center-regions-for-hosted-meetings-and-webinars). Provide this value as an array of [country codes](/docs/api/references/abbreviations/#countries) for the countries available as data center regions in the [**Account Profile**](https://zoom.us/account/setting) interface but have been opted out of in the [user settings](https://zoom.us/profile).
+		 *
+		 * For example, the data center regions selected in your [**Account Profile**](https://zoom.us/account) are `Europe`, `Hong Kong SAR`, `Australia`, `India`, `Japan`, `China`, `United States`, and `Canada`. However, in the [**My Profile**](https://zoom.us/profile) settings, you did **not** select `India` and `Japan` for meeting and webinar traffic routing.
+		 *
+		 * To include `India` and `Japan` as additional data centers, use the `[IN, TY]` value for this field.
+		 */
+		additional_data_center_regions?: string[];
+		/**
 		 * Allow attendees to join from multiple devices.
 		 *
 		 * @example true
@@ -26256,12 +26388,6 @@ export type WebinarUpdateRequestBody = {
 		 * @example example.com
 		 */
 		authentication_domains?: string;
-		/**
-		 * Authentication name set in the [authentication profile](https://support.zoom.us/hc/en-us/articles/360037117472-Authentication-Profiles-for-Meetings-and-Webinars#h_5c0df2e1-cfd2-469f-bb4a-c77d7c0cca6f).
-		 *
-		 * @example Sign in to Zoom
-		 */
-		authentication_name?: string;
 		/**
 		 * Webinar authentication option ID.
 		 *
@@ -26664,6 +26790,12 @@ export type WebinarUpdateRequestBody = {
 		 * @example true
 		 */
 		show_share_button?: boolean;
+		/**
+		 * Whether to show the webinar's join information on the registration confirmation page. This setting is only applied to webinars with registration enabled.
+		 *
+		 * @example true
+		 */
+		show_join_info?: boolean;
 		/**
 		 * Survey url for post webinar survey
 		 *

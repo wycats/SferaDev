@@ -25,6 +25,17 @@ import type {
 	ChatsDelete500,
 	ChatsDeleteMutationResponse,
 	ChatsDeletePathParams,
+	ChatsDownloadVersion401,
+	ChatsDownloadVersion403,
+	ChatsDownloadVersion404,
+	ChatsDownloadVersion409,
+	ChatsDownloadVersion413,
+	ChatsDownloadVersion422,
+	ChatsDownloadVersion429,
+	ChatsDownloadVersion500,
+	ChatsDownloadVersionPathParams,
+	ChatsDownloadVersionQueryParams,
+	ChatsDownloadVersionQueryResponse,
 	ChatsFavorite401,
 	ChatsFavorite403,
 	ChatsFavorite404,
@@ -43,8 +54,30 @@ import type {
 	ChatsFind422,
 	ChatsFind429,
 	ChatsFind500,
+	ChatsFindMessages401,
+	ChatsFindMessages403,
+	ChatsFindMessages404,
+	ChatsFindMessages409,
+	ChatsFindMessages413,
+	ChatsFindMessages422,
+	ChatsFindMessages429,
+	ChatsFindMessages500,
+	ChatsFindMessagesPathParams,
+	ChatsFindMessagesQueryParams,
+	ChatsFindMessagesQueryResponse,
 	ChatsFindQueryParams,
 	ChatsFindQueryResponse,
+	ChatsFindVersions401,
+	ChatsFindVersions403,
+	ChatsFindVersions404,
+	ChatsFindVersions409,
+	ChatsFindVersions413,
+	ChatsFindVersions422,
+	ChatsFindVersions429,
+	ChatsFindVersions500,
+	ChatsFindVersionsPathParams,
+	ChatsFindVersionsQueryParams,
+	ChatsFindVersionsQueryResponse,
 	ChatsFork401,
 	ChatsFork403,
 	ChatsFork404,
@@ -65,25 +98,36 @@ import type {
 	ChatsGetById500,
 	ChatsGetByIdPathParams,
 	ChatsGetByIdQueryResponse,
-	ChatsGetMetadata401,
-	ChatsGetMetadata403,
-	ChatsGetMetadata404,
-	ChatsGetMetadata409,
-	ChatsGetMetadata413,
-	ChatsGetMetadata422,
-	ChatsGetMetadata429,
-	ChatsGetMetadata500,
-	ChatsGetMetadataPathParams,
-	ChatsGetMetadataQueryResponse,
-	ChatsInitCreate401,
-	ChatsInitCreate403,
-	ChatsInitCreate404,
-	ChatsInitCreate409,
-	ChatsInitCreate413,
-	ChatsInitCreate422,
-	ChatsInitCreate429,
-	ChatsInitCreate500,
-	ChatsInitCreateMutationResponse,
+	ChatsGetMessage401,
+	ChatsGetMessage403,
+	ChatsGetMessage404,
+	ChatsGetMessage409,
+	ChatsGetMessage413,
+	ChatsGetMessage422,
+	ChatsGetMessage429,
+	ChatsGetMessage500,
+	ChatsGetMessagePathParams,
+	ChatsGetMessageQueryResponse,
+	ChatsGetVersion401,
+	ChatsGetVersion403,
+	ChatsGetVersion404,
+	ChatsGetVersion409,
+	ChatsGetVersion413,
+	ChatsGetVersion422,
+	ChatsGetVersion429,
+	ChatsGetVersion500,
+	ChatsGetVersionPathParams,
+	ChatsGetVersionQueryParams,
+	ChatsGetVersionQueryResponse,
+	ChatsInit401,
+	ChatsInit403,
+	ChatsInit404,
+	ChatsInit409,
+	ChatsInit413,
+	ChatsInit422,
+	ChatsInit429,
+	ChatsInit500,
+	ChatsInitMutationResponse,
 	ChatsResume401,
 	ChatsResume403,
 	ChatsResume404,
@@ -114,6 +158,43 @@ import type {
 	ChatsUpdate500,
 	ChatsUpdateMutationResponse,
 	ChatsUpdatePathParams,
+	ChatsUpdateVersion401,
+	ChatsUpdateVersion403,
+	ChatsUpdateVersion404,
+	ChatsUpdateVersion409,
+	ChatsUpdateVersion413,
+	ChatsUpdateVersion422,
+	ChatsUpdateVersion429,
+	ChatsUpdateVersion500,
+	ChatsUpdateVersionMutationResponse,
+	ChatsUpdateVersionPathParams,
+	DeploymentsCreate401,
+	DeploymentsCreate403,
+	DeploymentsCreate404,
+	DeploymentsCreate409,
+	DeploymentsCreate413,
+	DeploymentsCreate422,
+	DeploymentsCreate429,
+	DeploymentsCreate500,
+	DeploymentsCreateMutationResponse,
+	DeploymentsDelete401,
+	DeploymentsDelete403,
+	DeploymentsDelete404,
+	DeploymentsDelete409,
+	DeploymentsDelete413,
+	DeploymentsDelete422,
+	DeploymentsDelete429,
+	DeploymentsDelete500,
+	DeploymentsDeleteMutationResponse,
+	DeploymentsDeletePathParams,
+	DeploymentsFind401,
+	DeploymentsFind403,
+	DeploymentsFind404,
+	DeploymentsFind409,
+	DeploymentsFind413,
+	DeploymentsFind422,
+	DeploymentsFind429,
+	DeploymentsFind500,
 	DeploymentsFindErrors401,
 	DeploymentsFindErrors403,
 	DeploymentsFindErrors404,
@@ -135,6 +216,66 @@ import type {
 	DeploymentsFindLogsPathParams,
 	DeploymentsFindLogsQueryParams,
 	DeploymentsFindLogsQueryResponse,
+	DeploymentsFindQueryParams,
+	DeploymentsFindQueryResponse,
+	DeploymentsGetById401,
+	DeploymentsGetById403,
+	DeploymentsGetById404,
+	DeploymentsGetById409,
+	DeploymentsGetById413,
+	DeploymentsGetById422,
+	DeploymentsGetById429,
+	DeploymentsGetById500,
+	DeploymentsGetByIdPathParams,
+	DeploymentsGetByIdQueryResponse,
+	HooksCreate401,
+	HooksCreate403,
+	HooksCreate404,
+	HooksCreate409,
+	HooksCreate413,
+	HooksCreate422,
+	HooksCreate429,
+	HooksCreate500,
+	HooksCreateMutationResponse,
+	HooksDelete401,
+	HooksDelete403,
+	HooksDelete404,
+	HooksDelete409,
+	HooksDelete413,
+	HooksDelete422,
+	HooksDelete429,
+	HooksDelete500,
+	HooksDeleteMutationResponse,
+	HooksDeletePathParams,
+	HooksFind401,
+	HooksFind403,
+	HooksFind404,
+	HooksFind409,
+	HooksFind413,
+	HooksFind422,
+	HooksFind429,
+	HooksFind500,
+	HooksFindQueryResponse,
+	HooksGetById401,
+	HooksGetById403,
+	HooksGetById404,
+	HooksGetById409,
+	HooksGetById413,
+	HooksGetById422,
+	HooksGetById429,
+	HooksGetById500,
+	HooksGetByIdPathParams,
+	HooksGetByIdQueryResponse,
+	HooksUpdate401,
+	HooksUpdate403,
+	HooksUpdate404,
+	HooksUpdate409,
+	HooksUpdate413,
+	HooksUpdate422,
+	HooksUpdate429,
+	HooksUpdate500,
+	HooksUpdateMutationResponse,
+	HooksUpdatePathParams,
 	IntegrationsVercelProjectsCreate401,
 	IntegrationsVercelProjectsCreate403,
 	IntegrationsVercelProjectsCreate404,
@@ -171,7 +312,38 @@ import type {
 	ProjectsCreate422,
 	ProjectsCreate429,
 	ProjectsCreate500,
+	ProjectsCreateEnvVars401,
+	ProjectsCreateEnvVars403,
+	ProjectsCreateEnvVars404,
+	ProjectsCreateEnvVars409,
+	ProjectsCreateEnvVars413,
+	ProjectsCreateEnvVars422,
+	ProjectsCreateEnvVars429,
+	ProjectsCreateEnvVars500,
+	ProjectsCreateEnvVarsMutationResponse,
+	ProjectsCreateEnvVarsPathParams,
+	ProjectsCreateEnvVarsQueryParams,
 	ProjectsCreateMutationResponse,
+	ProjectsDelete401,
+	ProjectsDelete403,
+	ProjectsDelete404,
+	ProjectsDelete409,
+	ProjectsDelete413,
+	ProjectsDelete422,
+	ProjectsDelete429,
+	ProjectsDelete500,
+	ProjectsDeleteEnvVars401,
+	ProjectsDeleteEnvVars403,
+	ProjectsDeleteEnvVars404,
+	ProjectsDeleteEnvVars409,
+	ProjectsDeleteEnvVars413,
+	ProjectsDeleteEnvVars422,
+	ProjectsDeleteEnvVars429,
+	ProjectsDeleteEnvVars500,
+	ProjectsDeleteEnvVarsMutationResponse,
+	ProjectsDeleteEnvVarsPathParams,
+	ProjectsDeleteMutationResponse,
+	ProjectsDeletePathParams,
 	ProjectsFind401,
 	ProjectsFind403,
 	ProjectsFind404,
@@ -180,6 +352,17 @@ import type {
 	ProjectsFind422,
 	ProjectsFind429,
 	ProjectsFind500,
+	ProjectsFindEnvVars401,
+	ProjectsFindEnvVars403,
+	ProjectsFindEnvVars404,
+	ProjectsFindEnvVars409,
+	ProjectsFindEnvVars413,
+	ProjectsFindEnvVars422,
+	ProjectsFindEnvVars429,
+	ProjectsFindEnvVars500,
+	ProjectsFindEnvVarsPathParams,
+	ProjectsFindEnvVarsQueryParams,
+	ProjectsFindEnvVarsQueryResponse,
 	ProjectsFindQueryResponse,
 	ProjectsGetByChatId401,
 	ProjectsGetByChatId403,
@@ -191,6 +374,48 @@ import type {
 	ProjectsGetByChatId500,
 	ProjectsGetByChatIdPathParams,
 	ProjectsGetByChatIdQueryResponse,
+	ProjectsGetById401,
+	ProjectsGetById403,
+	ProjectsGetById404,
+	ProjectsGetById409,
+	ProjectsGetById413,
+	ProjectsGetById422,
+	ProjectsGetById429,
+	ProjectsGetById500,
+	ProjectsGetByIdPathParams,
+	ProjectsGetByIdQueryResponse,
+	ProjectsGetEnvVar401,
+	ProjectsGetEnvVar403,
+	ProjectsGetEnvVar404,
+	ProjectsGetEnvVar409,
+	ProjectsGetEnvVar413,
+	ProjectsGetEnvVar422,
+	ProjectsGetEnvVar429,
+	ProjectsGetEnvVar500,
+	ProjectsGetEnvVarPathParams,
+	ProjectsGetEnvVarQueryParams,
+	ProjectsGetEnvVarQueryResponse,
+	ProjectsUpdate401,
+	ProjectsUpdate403,
+	ProjectsUpdate404,
+	ProjectsUpdate409,
+	ProjectsUpdate413,
+	ProjectsUpdate422,
+	ProjectsUpdate429,
+	ProjectsUpdate500,
+	ProjectsUpdateEnvVars401,
+	ProjectsUpdateEnvVars403,
+	ProjectsUpdateEnvVars404,
+	ProjectsUpdateEnvVars409,
+	ProjectsUpdateEnvVars413,
+	ProjectsUpdateEnvVars422,
+	ProjectsUpdateEnvVars429,
+	ProjectsUpdateEnvVars500,
+	ProjectsUpdateEnvVarsMutationResponse,
+	ProjectsUpdateEnvVarsPathParams,
+	ProjectsUpdateEnvVarsQueryParams,
+	ProjectsUpdateMutationResponse,
+	ProjectsUpdatePathParams,
 	RateLimitsFind401,
 	RateLimitsFind403,
 	RateLimitsFind404,
@@ -201,6 +426,16 @@ import type {
 	RateLimitsFind500,
 	RateLimitsFindQueryParams,
 	RateLimitsFindQueryResponse,
+	ReportsGetUsage401,
+	ReportsGetUsage403,
+	ReportsGetUsage404,
+	ReportsGetUsage409,
+	ReportsGetUsage413,
+	ReportsGetUsage422,
+	ReportsGetUsage429,
+	ReportsGetUsage500,
+	ReportsGetUsageQueryParams,
+	ReportsGetUsageQueryResponse,
 	UserGet401,
 	UserGet403,
 	UserGet404,
@@ -238,10 +473,10 @@ import type {
 	UserGetScopes429,
 	UserGetScopes500,
 	UserGetScopesQueryResponse,
-} from "./types.ts";
+} from "./types";
 
 /**
- * @description Create a new chat
+ * @description Creates a new chat using a user message, optional system context, and model configuration. Useful for prompting the model within the scope of a specific project.
  * @summary Create Chat
  * {@link /chats}
  */
@@ -278,7 +513,7 @@ export async function chatsCreate({
 }
 
 /**
- * @description Find all chats
+ * @description Retrieves a list of existing chats, with support for pagination and filtering by favorite status. Helps manage and navigate chat history.
  * @summary Find Chats
  * {@link /chats}
  */
@@ -286,7 +521,7 @@ export async function chatsFind({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: ChatsFindQueryParams | undefined;
+	queryParams?: ChatsFindQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -312,11 +547,11 @@ export async function chatsFind({
 }
 
 /**
- * @description Initialize a new chat from files
+ * @description Initializes a new chat from source content such as files, repositories, registries, or zip archives. Enables context-rich conversations based on code or assets.
  * @summary Initialize Chat
  * {@link /chats/init}
  */
-export async function chatsInitCreate({
+export async function chatsInit({
 	config = {},
 }: {
 	config?: Partial<FetcherConfig> & { client?: typeof client };
@@ -324,16 +559,16 @@ export async function chatsInitCreate({
 	const { client: request = client, ...requestConfig } = config;
 
 	const data = await request<
-		ChatsInitCreateMutationResponse,
+		ChatsInitMutationResponse,
 		ErrorWrapper<
-			| ChatsInitCreate401
-			| ChatsInitCreate403
-			| ChatsInitCreate404
-			| ChatsInitCreate409
-			| ChatsInitCreate413
-			| ChatsInitCreate422
-			| ChatsInitCreate429
-			| ChatsInitCreate500
+			| ChatsInit401
+			| ChatsInit403
+			| ChatsInit404
+			| ChatsInit409
+			| ChatsInit413
+			| ChatsInit422
+			| ChatsInit429
+			| ChatsInit500
 		>,
 		null,
 		Record<string, string>,
@@ -349,7 +584,7 @@ export async function chatsInitCreate({
 }
 
 /**
- * @description Delete a chat
+ * @description Deletes a specific chat based on the provided chatId. This operation is irreversible and permanently removes the chat and its contents.
  * @summary Delete Chat
  * {@link /chats/:chatId}
  */
@@ -365,7 +600,6 @@ export async function chatsDelete({
 	if (!chatId) {
 		throw new Error(`Missing required path parameter: chatId`);
 	}
-
 	const data = await request<
 		ChatsDeleteMutationResponse,
 		ErrorWrapper<
@@ -387,7 +621,7 @@ export async function chatsDelete({
 }
 
 /**
- * @description Get a chat
+ * @description Retrieves the full details of a specific chat using its `chatId`. Includes messages, metadata, and associated configuration.
  * @summary Get Chat
  * {@link /chats/:chatId}
  */
@@ -403,7 +637,6 @@ export async function chatsGetById({
 	if (!chatId) {
 		throw new Error(`Missing required path parameter: chatId`);
 	}
-
 	const data = await request<
 		ChatsGetByIdQueryResponse,
 		ErrorWrapper<
@@ -425,7 +658,7 @@ export async function chatsGetById({
 }
 
 /**
- * @description Update a chat
+ * @description Updates the metadata of an existing chat using its `chatId`. Supports changes to the chat name and privacy setting.
  * @summary Update Chat
  * {@link /chats/:chatId}
  */
@@ -441,7 +674,6 @@ export async function chatsUpdate({
 	if (!chatId) {
 		throw new Error(`Missing required path parameter: chatId`);
 	}
-
 	const data = await request<
 		ChatsUpdateMutationResponse,
 		ErrorWrapper<
@@ -468,7 +700,7 @@ export async function chatsUpdate({
 }
 
 /**
- * @description Favorite a chat
+ * @description Marks or unmarks a chat as a favorite using its `chatId`. This helps with organizing and quickly accessing important chats.
  * @summary Favorite Chat
  * {@link /chats/:chatId/favorite}
  */
@@ -484,7 +716,6 @@ export async function chatsFavorite({
 	if (!chatId) {
 		throw new Error(`Missing required path parameter: chatId`);
 	}
-
 	const data = await request<
 		ChatsFavoriteMutationResponse,
 		ErrorWrapper<
@@ -511,7 +742,7 @@ export async function chatsFavorite({
 }
 
 /**
- * @description Fork a version in a chat
+ * @description Creates a new chat fork (duplicate) from a specific version within an existing chat. Useful for branching off alternate directions without modifying the original conversation.
  * @summary Fork Chat
  * {@link /chats/:chatId/fork}
  */
@@ -527,7 +758,6 @@ export async function chatsFork({
 	if (!chatId) {
 		throw new Error(`Missing required path parameter: chatId`);
 	}
-
 	const data = await request<
 		ChatsForkMutationResponse,
 		ErrorWrapper<
@@ -554,7 +784,7 @@ export async function chatsFork({
 }
 
 /**
- * @description Get the project for a chat
+ * @description Retrieves the v0 project associated with a given chat. Useful for determining the context or scope of a chat session.
  * @summary Get Project by Chat ID
  * {@link /chats/:chatId/project}
  */
@@ -570,7 +800,6 @@ export async function projectsGetByChatId({
 	if (!chatId) {
 		throw new Error(`Missing required path parameter: chatId`);
 	}
-
 	const data = await request<
 		ProjectsGetByChatIdQueryResponse,
 		ErrorWrapper<
@@ -592,8 +821,47 @@ export async function projectsGetByChatId({
 }
 
 /**
- * @description Create a new message in a chat
- * @summary Create Message
+ * @description Retrieves a list of all messages for a specific chat, ordered by creation date (newest first). Supports cursor-based pagination and includes message content, role, and type information.
+ * @summary Find Chat Messages
+ * {@link /chats/:chatId/messages}
+ */
+export async function chatsFindMessages({
+	pathParams: { chatId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ChatsFindMessagesPathParams;
+	queryParams?: ChatsFindMessagesQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!chatId) {
+		throw new Error(`Missing required path parameter: chatId`);
+	}
+	const data = await request<
+		ChatsFindMessagesQueryResponse,
+		ErrorWrapper<
+			| ChatsFindMessages401
+			| ChatsFindMessages403
+			| ChatsFindMessages404
+			| ChatsFindMessages409
+			| ChatsFindMessages413
+			| ChatsFindMessages422
+			| ChatsFindMessages429
+			| ChatsFindMessages500
+		>,
+		null,
+		Record<string, string>,
+		ChatsFindMessagesQueryParams,
+		ChatsFindMessagesPathParams
+	>({ method: "GET", url: `/chats/${chatId}/messages`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Creates a new message in an existing chat. Triggers a model response using the provided prompt, with optional attachments and configuration settings.
+ * @summary Send Message
  * {@link /chats/:chatId/messages}
  */
 export async function chatsSendMessage({
@@ -608,7 +876,6 @@ export async function chatsSendMessage({
 	if (!chatId) {
 		throw new Error(`Missing required path parameter: chatId`);
 	}
-
 	const data = await request<
 		ChatsSendMessageMutationResponse,
 		ErrorWrapper<
@@ -635,15 +902,15 @@ export async function chatsSendMessage({
 }
 
 /**
- * @description Get the metadata for a chat
- * @summary Get Chat Metadata
- * {@link /chats/:chatId/metadata}
+ * @description Retrieves detailed information about a specific message within a chat, including content, files, model configuration, and demo URLs.
+ * @summary Get Chat Message
+ * {@link /chats/:chatId/messages/:messageId}
  */
-export async function chatsGetMetadata({
-	pathParams: { chatId },
+export async function chatsGetMessage({
+	pathParams: { chatId, messageId },
 	config = {},
 }: {
-	pathParams: ChatsGetMetadataPathParams;
+	pathParams: ChatsGetMessagePathParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -652,29 +919,213 @@ export async function chatsGetMetadata({
 		throw new Error(`Missing required path parameter: chatId`);
 	}
 
+	if (!messageId) {
+		throw new Error(`Missing required path parameter: messageId`);
+	}
 	const data = await request<
-		ChatsGetMetadataQueryResponse,
+		ChatsGetMessageQueryResponse,
 		ErrorWrapper<
-			| ChatsGetMetadata401
-			| ChatsGetMetadata403
-			| ChatsGetMetadata404
-			| ChatsGetMetadata409
-			| ChatsGetMetadata413
-			| ChatsGetMetadata422
-			| ChatsGetMetadata429
-			| ChatsGetMetadata500
+			| ChatsGetMessage401
+			| ChatsGetMessage403
+			| ChatsGetMessage404
+			| ChatsGetMessage409
+			| ChatsGetMessage413
+			| ChatsGetMessage422
+			| ChatsGetMessage429
+			| ChatsGetMessage500
 		>,
 		null,
 		Record<string, string>,
 		Record<string, string>,
-		ChatsGetMetadataPathParams
-	>({ method: "GET", url: `/chats/${chatId}/metadata`, ...requestConfig });
+		ChatsGetMessagePathParams
+	>({ method: "GET", url: `/chats/${chatId}/messages/${messageId}`, ...requestConfig });
 	return data;
 }
 
 /**
- * @description Resume a chat message
- * @summary Resume Chat Message
+ * @description Retrieves a list of all versions (iterations) for a specific chat, ordered by creation date (newest first). Supports cursor-based pagination and includes version status and demo URLs.
+ * @summary Find Chat Versions
+ * {@link /chats/:chatId/versions}
+ */
+export async function chatsFindVersions({
+	pathParams: { chatId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ChatsFindVersionsPathParams;
+	queryParams?: ChatsFindVersionsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!chatId) {
+		throw new Error(`Missing required path parameter: chatId`);
+	}
+	const data = await request<
+		ChatsFindVersionsQueryResponse,
+		ErrorWrapper<
+			| ChatsFindVersions401
+			| ChatsFindVersions403
+			| ChatsFindVersions404
+			| ChatsFindVersions409
+			| ChatsFindVersions413
+			| ChatsFindVersions422
+			| ChatsFindVersions429
+			| ChatsFindVersions500
+		>,
+		null,
+		Record<string, string>,
+		ChatsFindVersionsQueryParams,
+		ChatsFindVersionsPathParams
+	>({ method: "GET", url: `/chats/${chatId}/versions`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Retrieves detailed information about a specific version of a chat, including all files with their content and lock status.
+ * @summary Get Chat Version
+ * {@link /chats/:chatId/versions/:versionId}
+ */
+export async function chatsGetVersion({
+	pathParams: { chatId, versionId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ChatsGetVersionPathParams;
+	queryParams?: ChatsGetVersionQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!chatId) {
+		throw new Error(`Missing required path parameter: chatId`);
+	}
+
+	if (!versionId) {
+		throw new Error(`Missing required path parameter: versionId`);
+	}
+	const data = await request<
+		ChatsGetVersionQueryResponse,
+		ErrorWrapper<
+			| ChatsGetVersion401
+			| ChatsGetVersion403
+			| ChatsGetVersion404
+			| ChatsGetVersion409
+			| ChatsGetVersion413
+			| ChatsGetVersion422
+			| ChatsGetVersion429
+			| ChatsGetVersion500
+		>,
+		null,
+		Record<string, string>,
+		ChatsGetVersionQueryParams,
+		ChatsGetVersionPathParams
+	>({
+		method: "GET",
+		url: `/chats/${chatId}/versions/${versionId}`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Updates the source files of a specific chat version (block) manually. This allows editing generated files directly through the API.
+ * @summary Update Chat Version Files
+ * {@link /chats/:chatId/versions/:versionId}
+ */
+export async function chatsUpdateVersion({
+	pathParams: { chatId, versionId },
+	config = {},
+}: {
+	pathParams: ChatsUpdateVersionPathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!chatId) {
+		throw new Error(`Missing required path parameter: chatId`);
+	}
+
+	if (!versionId) {
+		throw new Error(`Missing required path parameter: versionId`);
+	}
+	const data = await request<
+		ChatsUpdateVersionMutationResponse,
+		ErrorWrapper<
+			| ChatsUpdateVersion401
+			| ChatsUpdateVersion403
+			| ChatsUpdateVersion404
+			| ChatsUpdateVersion409
+			| ChatsUpdateVersion413
+			| ChatsUpdateVersion422
+			| ChatsUpdateVersion429
+			| ChatsUpdateVersion500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		ChatsUpdateVersionPathParams
+	>({
+		method: "PATCH",
+		url: `/chats/${chatId}/versions/${versionId}`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Download all files for a specific chat version as a zip or tarball archive. Use includeDefaultFiles=true to include all deployment files (package.json, configuration files, etc.) or false/omitted to return only the generated source files.
+ * @summary Download version files
+ * {@link /chats/:chatId/versions/:versionId/download}
+ */
+export async function chatsDownloadVersion({
+	pathParams: { chatId, versionId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ChatsDownloadVersionPathParams;
+	queryParams?: ChatsDownloadVersionQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!chatId) {
+		throw new Error(`Missing required path parameter: chatId`);
+	}
+
+	if (!versionId) {
+		throw new Error(`Missing required path parameter: versionId`);
+	}
+	const data = await request<
+		ChatsDownloadVersionQueryResponse,
+		ErrorWrapper<
+			| ChatsDownloadVersion401
+			| ChatsDownloadVersion403
+			| ChatsDownloadVersion404
+			| ChatsDownloadVersion409
+			| ChatsDownloadVersion413
+			| ChatsDownloadVersion422
+			| ChatsDownloadVersion429
+			| ChatsDownloadVersion500
+		>,
+		null,
+		Record<string, string>,
+		ChatsDownloadVersionQueryParams,
+		ChatsDownloadVersionPathParams
+	>({
+		method: "GET",
+		url: `/chats/${chatId}/versions/${versionId}/download`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Resumes processing of a previously interrupted or incomplete message in a chat. Useful for continuing generation when a message was paused or stopped.
+ * @summary Resume Message
  * {@link /chats/:chatId/messages/:messageId/resume}
  */
 export async function chatsResume({
@@ -693,7 +1144,6 @@ export async function chatsResume({
 	if (!messageId) {
 		throw new Error(`Missing required path parameter: messageId`);
 	}
-
 	const data = await request<
 		ChatsResumeMutationResponse,
 		ErrorWrapper<
@@ -715,7 +1165,152 @@ export async function chatsResume({
 }
 
 /**
- * @description Find logs for a deployment
+ * @description Find deployments by project and chat IDs. This will return a list of deployments for the given project and chat IDs.
+ * @summary Find Deployments
+ * {@link /deployments}
+ */
+export async function deploymentsFind({
+	queryParams,
+	config = {},
+}: {
+	queryParams: DeploymentsFindQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		DeploymentsFindQueryResponse,
+		ErrorWrapper<
+			| DeploymentsFind401
+			| DeploymentsFind403
+			| DeploymentsFind404
+			| DeploymentsFind409
+			| DeploymentsFind413
+			| DeploymentsFind422
+			| DeploymentsFind429
+			| DeploymentsFind500
+		>,
+		null,
+		Record<string, string>,
+		DeploymentsFindQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/deployments`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Create a new deployment for a specific chat and version. This will trigger a deployment to Vercel.
+ * @summary Create Deployment
+ * {@link /deployments}
+ */
+export async function deploymentsCreate({
+	config = {},
+}: {
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		DeploymentsCreateMutationResponse,
+		ErrorWrapper<
+			| DeploymentsCreate401
+			| DeploymentsCreate403
+			| DeploymentsCreate404
+			| DeploymentsCreate409
+			| DeploymentsCreate413
+			| DeploymentsCreate422
+			| DeploymentsCreate429
+			| DeploymentsCreate500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/deployments`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Get a deployment by ID. This will return the details of the deployment, including the inspector URL, chat ID, project ID, version ID, API URL, and web URL.
+ * @summary Get Deployment
+ * {@link /deployments/:deploymentId}
+ */
+export async function deploymentsGetById({
+	pathParams: { deploymentId },
+	config = {},
+}: {
+	pathParams: DeploymentsGetByIdPathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!deploymentId) {
+		throw new Error(`Missing required path parameter: deploymentId`);
+	}
+	const data = await request<
+		DeploymentsGetByIdQueryResponse,
+		ErrorWrapper<
+			| DeploymentsGetById401
+			| DeploymentsGetById403
+			| DeploymentsGetById404
+			| DeploymentsGetById409
+			| DeploymentsGetById413
+			| DeploymentsGetById422
+			| DeploymentsGetById429
+			| DeploymentsGetById500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		DeploymentsGetByIdPathParams
+	>({ method: "GET", url: `/deployments/${deploymentId}`, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Delete a deployment by ID. This will delete the deployment from Vercel.
+ * @summary Delete Deployment
+ * {@link /deployments/:deploymentId}
+ */
+export async function deploymentsDelete({
+	pathParams: { deploymentId },
+	config = {},
+}: {
+	pathParams: DeploymentsDeletePathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!deploymentId) {
+		throw new Error(`Missing required path parameter: deploymentId`);
+	}
+	const data = await request<
+		DeploymentsDeleteMutationResponse,
+		ErrorWrapper<
+			| DeploymentsDelete401
+			| DeploymentsDelete403
+			| DeploymentsDelete404
+			| DeploymentsDelete409
+			| DeploymentsDelete413
+			| DeploymentsDelete422
+			| DeploymentsDelete429
+			| DeploymentsDelete500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		DeploymentsDeletePathParams
+	>({ method: "DELETE", url: `/deployments/${deploymentId}`, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Retrieves logs for a specific deployment. Supports filtering by timestamp to fetch only recent logs.
  * @summary Find Deployment Logs
  * {@link /deployments/:deploymentId/logs}
  */
@@ -725,7 +1320,7 @@ export async function deploymentsFindLogs({
 	config = {},
 }: {
 	pathParams: DeploymentsFindLogsPathParams;
-	queryParams?: DeploymentsFindLogsQueryParams | undefined;
+	queryParams?: DeploymentsFindLogsQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -733,7 +1328,6 @@ export async function deploymentsFindLogs({
 	if (!deploymentId) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
-
 	const data = await request<
 		DeploymentsFindLogsQueryResponse,
 		ErrorWrapper<
@@ -755,7 +1349,7 @@ export async function deploymentsFindLogs({
 }
 
 /**
- * @description Find errors for a deployment
+ * @description Retrieves a list of errors that occurred during a specific deployment. Useful for diagnosing and debugging deployment issues.
  * @summary Find Deployment Errors
  * {@link /deployments/:deploymentId/errors}
  */
@@ -771,7 +1365,6 @@ export async function deploymentsFindErrors({
 	if (!deploymentId) {
 		throw new Error(`Missing required path parameter: deploymentId`);
 	}
-
 	const data = await request<
 		DeploymentsFindErrorsQueryResponse,
 		ErrorWrapper<
@@ -793,7 +1386,192 @@ export async function deploymentsFindErrors({
 }
 
 /**
- * @description Find all Vercel projects
+ * @description Retrieves a list of existing hooks in your workspace. Useful for managing active webhooks tied to chat events or deployments.
+ * @summary Find Hooks
+ * {@link /hooks}
+ */
+export async function hooksFind({
+	config = {},
+}: {
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		HooksFindQueryResponse,
+		ErrorWrapper<
+			| HooksFind401
+			| HooksFind403
+			| HooksFind404
+			| HooksFind409
+			| HooksFind413
+			| HooksFind422
+			| HooksFind429
+			| HooksFind500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		Record<string, string>
+	>({ method: "GET", url: `/hooks`, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Creates a new webhook that listens for specific events. Supports optional association with a chat.
+ * @summary Create Hook
+ * {@link /hooks}
+ */
+export async function hooksCreate({
+	config = {},
+}: {
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		HooksCreateMutationResponse,
+		ErrorWrapper<
+			| HooksCreate401
+			| HooksCreate403
+			| HooksCreate404
+			| HooksCreate409
+			| HooksCreate413
+			| HooksCreate422
+			| HooksCreate429
+			| HooksCreate500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		Record<string, string>
+	>({
+		method: "POST",
+		url: `/hooks`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Retrieves the details of a specific webhook using its ID.
+ * @summary Get Hook
+ * {@link /hooks/:hookId}
+ */
+export async function hooksGetById({
+	pathParams: { hookId },
+	config = {},
+}: {
+	pathParams: HooksGetByIdPathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!hookId) {
+		throw new Error(`Missing required path parameter: hookId`);
+	}
+	const data = await request<
+		HooksGetByIdQueryResponse,
+		ErrorWrapper<
+			| HooksGetById401
+			| HooksGetById403
+			| HooksGetById404
+			| HooksGetById409
+			| HooksGetById413
+			| HooksGetById422
+			| HooksGetById429
+			| HooksGetById500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		HooksGetByIdPathParams
+	>({ method: "GET", url: `/hooks/${hookId}`, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Updates the configuration of an existing webhook, including its name, event subscriptions, or target URL.
+ * @summary Update Hook
+ * {@link /hooks/:hookId}
+ */
+export async function hooksUpdate({
+	pathParams: { hookId },
+	config = {},
+}: {
+	pathParams: HooksUpdatePathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!hookId) {
+		throw new Error(`Missing required path parameter: hookId`);
+	}
+	const data = await request<
+		HooksUpdateMutationResponse,
+		ErrorWrapper<
+			| HooksUpdate401
+			| HooksUpdate403
+			| HooksUpdate404
+			| HooksUpdate409
+			| HooksUpdate413
+			| HooksUpdate422
+			| HooksUpdate429
+			| HooksUpdate500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		HooksUpdatePathParams
+	>({
+		method: "PATCH",
+		url: `/hooks/${hookId}`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Deletes a webhook based on its ID. This action is irreversible.
+ * @summary Delete Hook
+ * {@link /hooks/:hookId}
+ */
+export async function hooksDelete({
+	pathParams: { hookId },
+	config = {},
+}: {
+	pathParams: HooksDeletePathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!hookId) {
+		throw new Error(`Missing required path parameter: hookId`);
+	}
+	const data = await request<
+		HooksDeleteMutationResponse,
+		ErrorWrapper<
+			| HooksDelete401
+			| HooksDelete403
+			| HooksDelete404
+			| HooksDelete409
+			| HooksDelete413
+			| HooksDelete422
+			| HooksDelete429
+			| HooksDelete500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		HooksDeletePathParams
+	>({ method: "DELETE", url: `/hooks/${hookId}`, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Retrieves a list of Vercel projects linked to your integration. Useful for associating chats, deployments, or hooks with specific Vercel projects.
  * @summary Find Vercel Projects
  * {@link /integrations/vercel/projects}
  */
@@ -825,7 +1603,7 @@ export async function integrationsVercelProjectsFind({
 }
 
 /**
- * @description Create a new Vercel project
+ * @description Links a Vercel project to an existing v0 project. Enables Vercel-related features and deployment integration within the v0 workspace.
  * @summary Create Vercel Project
  * {@link /integrations/vercel/projects}
  */
@@ -862,7 +1640,7 @@ export async function integrationsVercelProjectsCreate({
 }
 
 /**
- * @description Find all projects
+ * @description Returns a list of all v0 projects in your workspace. Useful for browsing or managing projects across different chats or use cases.
  * @summary Find Projects
  * {@link /projects}
  */
@@ -894,7 +1672,7 @@ export async function projectsFind({
 }
 
 /**
- * @description Create a new project
+ * @description Creates a new v0 project with an optional description, icon, environment variables, and instructions. Projects help organize chats and manage context.
  * @summary Create Project
  * {@link /projects}
  */
@@ -931,7 +1709,123 @@ export async function projectsCreate({
 }
 
 /**
- * @description Assign a project to a chat
+ * @description Retrieves the details of a specific v0 project by its ID.
+ * @summary Get Project by ID
+ * {@link /projects/:projectId}
+ */
+export async function projectsGetById({
+	pathParams: { projectId },
+	config = {},
+}: {
+	pathParams: ProjectsGetByIdPathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		ProjectsGetByIdQueryResponse,
+		ErrorWrapper<
+			| ProjectsGetById401
+			| ProjectsGetById403
+			| ProjectsGetById404
+			| ProjectsGetById409
+			| ProjectsGetById413
+			| ProjectsGetById422
+			| ProjectsGetById429
+			| ProjectsGetById500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		ProjectsGetByIdPathParams
+	>({ method: "GET", url: `/projects/${projectId}`, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Updates the metadata of an existing project using its `projectId`. Supports changes to the project name and privacy setting.
+ * @summary Update Project
+ * {@link /projects/:projectId}
+ */
+export async function projectsUpdate({
+	pathParams: { projectId },
+	config = {},
+}: {
+	pathParams: ProjectsUpdatePathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		ProjectsUpdateMutationResponse,
+		ErrorWrapper<
+			| ProjectsUpdate401
+			| ProjectsUpdate403
+			| ProjectsUpdate404
+			| ProjectsUpdate409
+			| ProjectsUpdate413
+			| ProjectsUpdate422
+			| ProjectsUpdate429
+			| ProjectsUpdate500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		ProjectsUpdatePathParams
+	>({
+		method: "PATCH",
+		url: `/projects/${projectId}`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Deletes a specific project based on the provided projectId. This operation marks the project as deleted and is irreversible.
+ * @summary Delete Project
+ * {@link /projects/:projectId}
+ */
+export async function projectsDelete({
+	pathParams: { projectId },
+	config = {},
+}: {
+	pathParams: ProjectsDeletePathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		ProjectsDeleteMutationResponse,
+		ErrorWrapper<
+			| ProjectsDelete401
+			| ProjectsDelete403
+			| ProjectsDelete404
+			| ProjectsDelete409
+			| ProjectsDelete413
+			| ProjectsDelete422
+			| ProjectsDelete429
+			| ProjectsDelete500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		ProjectsDeletePathParams
+	>({ method: "DELETE", url: `/projects/${projectId}`, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Links an existing v0 project to a specific chat. Helps group conversations under a shared project context.
  * @summary Assign Project to Chat
  * {@link /projects/:projectId/assign}
  */
@@ -947,7 +1841,6 @@ export async function projectsAssign({
 	if (!projectId) {
 		throw new Error(`Missing required path parameter: projectId`);
 	}
-
 	const data = await request<
 		ProjectsAssignMutationResponse,
 		ErrorWrapper<
@@ -974,7 +1867,226 @@ export async function projectsAssign({
 }
 
 /**
- * @description Find the rate limit for a scope
+ * @description Retrieves all environment variables for a given project.
+ * @summary Find Environment Variables
+ * {@link /projects/:projectId/env-vars}
+ */
+export async function projectsFindEnvVars({
+	pathParams: { projectId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ProjectsFindEnvVarsPathParams;
+	queryParams?: ProjectsFindEnvVarsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		ProjectsFindEnvVarsQueryResponse,
+		ErrorWrapper<
+			| ProjectsFindEnvVars401
+			| ProjectsFindEnvVars403
+			| ProjectsFindEnvVars404
+			| ProjectsFindEnvVars409
+			| ProjectsFindEnvVars413
+			| ProjectsFindEnvVars422
+			| ProjectsFindEnvVars429
+			| ProjectsFindEnvVars500
+		>,
+		null,
+		Record<string, string>,
+		ProjectsFindEnvVarsQueryParams,
+		ProjectsFindEnvVarsPathParams
+	>({ method: "GET", url: `/projects/${projectId}/env-vars`, queryParams, ...requestConfig });
+	return data;
+}
+
+/**
+ * @description Creates new environment variables for a given project. This endpoint will fail if any of the specified environment variable keys already exist, unless upsert is set to true.
+ * @summary Create Environment Variables
+ * {@link /projects/:projectId/env-vars}
+ */
+export async function projectsCreateEnvVars({
+	pathParams: { projectId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ProjectsCreateEnvVarsPathParams;
+	queryParams?: ProjectsCreateEnvVarsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		ProjectsCreateEnvVarsMutationResponse,
+		ErrorWrapper<
+			| ProjectsCreateEnvVars401
+			| ProjectsCreateEnvVars403
+			| ProjectsCreateEnvVars404
+			| ProjectsCreateEnvVars409
+			| ProjectsCreateEnvVars413
+			| ProjectsCreateEnvVars422
+			| ProjectsCreateEnvVars429
+			| ProjectsCreateEnvVars500
+		>,
+		null,
+		Record<string, string>,
+		ProjectsCreateEnvVarsQueryParams,
+		ProjectsCreateEnvVarsPathParams
+	>({
+		method: "POST",
+		url: `/projects/${projectId}/env-vars`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Updates multiple environment variables for a given project. Only the value of each environment variable can be updated.
+ * @summary Update Environment Variables
+ * {@link /projects/:projectId/env-vars}
+ */
+export async function projectsUpdateEnvVars({
+	pathParams: { projectId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ProjectsUpdateEnvVarsPathParams;
+	queryParams?: ProjectsUpdateEnvVarsQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		ProjectsUpdateEnvVarsMutationResponse,
+		ErrorWrapper<
+			| ProjectsUpdateEnvVars401
+			| ProjectsUpdateEnvVars403
+			| ProjectsUpdateEnvVars404
+			| ProjectsUpdateEnvVars409
+			| ProjectsUpdateEnvVars413
+			| ProjectsUpdateEnvVars422
+			| ProjectsUpdateEnvVars429
+			| ProjectsUpdateEnvVars500
+		>,
+		null,
+		Record<string, string>,
+		ProjectsUpdateEnvVarsQueryParams,
+		ProjectsUpdateEnvVarsPathParams
+	>({
+		method: "PATCH",
+		url: `/projects/${projectId}/env-vars`,
+		queryParams,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Deletes multiple environment variables for a given project by their IDs.
+ * @summary Delete Environment Variables
+ * {@link /projects/:projectId/env-vars/delete}
+ */
+export async function projectsDeleteEnvVars({
+	pathParams: { projectId },
+	config = {},
+}: {
+	pathParams: ProjectsDeleteEnvVarsPathParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+	const data = await request<
+		ProjectsDeleteEnvVarsMutationResponse,
+		ErrorWrapper<
+			| ProjectsDeleteEnvVars401
+			| ProjectsDeleteEnvVars403
+			| ProjectsDeleteEnvVars404
+			| ProjectsDeleteEnvVars409
+			| ProjectsDeleteEnvVars413
+			| ProjectsDeleteEnvVars422
+			| ProjectsDeleteEnvVars429
+			| ProjectsDeleteEnvVars500
+		>,
+		null,
+		Record<string, string>,
+		Record<string, string>,
+		ProjectsDeleteEnvVarsPathParams
+	>({
+		method: "POST",
+		url: `/projects/${projectId}/env-vars/delete`,
+		...requestConfig,
+		headers: { "Content-Type": "applicationJson", ...requestConfig.headers },
+	});
+	return data;
+}
+
+/**
+ * @description Retrieves a specific environment variable for a given project by its ID, including its value.
+ * @summary Get Environment Variable
+ * {@link /projects/:projectId/env-vars/:environmentVariableId}
+ */
+export async function projectsGetEnvVar({
+	pathParams: { projectId, environmentVariableId },
+	queryParams,
+	config = {},
+}: {
+	pathParams: ProjectsGetEnvVarPathParams;
+	queryParams?: ProjectsGetEnvVarQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	if (!projectId) {
+		throw new Error(`Missing required path parameter: projectId`);
+	}
+
+	if (!environmentVariableId) {
+		throw new Error(`Missing required path parameter: environmentVariableId`);
+	}
+	const data = await request<
+		ProjectsGetEnvVarQueryResponse,
+		ErrorWrapper<
+			| ProjectsGetEnvVar401
+			| ProjectsGetEnvVar403
+			| ProjectsGetEnvVar404
+			| ProjectsGetEnvVar409
+			| ProjectsGetEnvVar413
+			| ProjectsGetEnvVar422
+			| ProjectsGetEnvVar429
+			| ProjectsGetEnvVar500
+		>,
+		null,
+		Record<string, string>,
+		ProjectsGetEnvVarQueryParams,
+		ProjectsGetEnvVarPathParams
+	>({
+		method: "GET",
+		url: `/projects/${projectId}/env-vars/${environmentVariableId}`,
+		queryParams,
+		...requestConfig,
+	});
+	return data;
+}
+
+/**
+ * @description Retrieves rate limit information for a given scope. Useful for monitoring usage limits and avoiding throttling.
  * @summary Find Rate Limit
  * {@link /rate-limits}
  */
@@ -982,7 +2094,7 @@ export async function rateLimitsFind({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: RateLimitsFindQueryParams | undefined;
+	queryParams?: RateLimitsFindQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1008,7 +2120,7 @@ export async function rateLimitsFind({
 }
 
 /**
- * @description Get the user
+ * @description Retrieves information about the authenticated user, including their ID, name, email, and account metadata.
  * @summary Get User
  * {@link /user}
  */
@@ -1040,7 +2152,7 @@ export async function userGet({
 }
 
 /**
- * @description Get the billing for the user
+ * @description Fetches billing usage and quota information for the authenticated user. Can be scoped to a specific context (e.g. project or namespace).
  * @summary Get Billing
  * {@link /user/billing}
  */
@@ -1048,7 +2160,7 @@ export async function userGetBilling({
 	queryParams,
 	config = {},
 }: {
-	queryParams?: UserGetBillingQueryParams | undefined;
+	queryParams?: UserGetBillingQueryParams;
 	config?: Partial<FetcherConfig> & { client?: typeof client };
 }) {
 	const { client: request = client, ...requestConfig } = config;
@@ -1074,7 +2186,7 @@ export async function userGetBilling({
 }
 
 /**
- * @description Get the plan for the user
+ * @description Returns the current subscription plan for the authenticated user, including tier details and feature limits.
  * @summary Get Plan
  * {@link /user/plan}
  */
@@ -1106,7 +2218,7 @@ export async function userGetPlan({
 }
 
 /**
- * @description Get all scopes for the user
+ * @description Retrieves all accessible scopes for the authenticated user, such as personal workspaces or shared teams.
  * @summary Get User Scopes
  * {@link /user/scopes}
  */
@@ -1137,56 +2249,137 @@ export async function userGetScopes({
 	return data;
 }
 
+/**
+ * @description Retrieves detailed usage events for the authenticated user or team, including costs, event types, models used, and metadata. Shows the same data as displayed in the usage dashboard. Can be filtered by chatId to show usage for a specific chat, or by userId to show usage for a specific user.
+ * @summary Get Usage Report
+ * {@link /reports/usage}
+ */
+export async function reportsGetUsage({
+	queryParams,
+	config = {},
+}: {
+	queryParams?: ReportsGetUsageQueryParams;
+	config?: Partial<FetcherConfig> & { client?: typeof client };
+}) {
+	const { client: request = client, ...requestConfig } = config;
+
+	const data = await request<
+		ReportsGetUsageQueryResponse,
+		ErrorWrapper<
+			| ReportsGetUsage401
+			| ReportsGetUsage403
+			| ReportsGetUsage404
+			| ReportsGetUsage409
+			| ReportsGetUsage413
+			| ReportsGetUsage422
+			| ReportsGetUsage429
+			| ReportsGetUsage500
+		>,
+		null,
+		Record<string, string>,
+		ReportsGetUsageQueryParams,
+		Record<string, string>
+	>({ method: "GET", url: `/reports/usage`, queryParams, ...requestConfig });
+	return data;
+}
+
 export const operationsByPath = {
 	"POST /chats": chatsCreate,
 	"GET /chats": chatsFind,
-	"POST /chats/init": chatsInitCreate,
+	"POST /chats/init": chatsInit,
 	"DELETE /chats/{chatId}": chatsDelete,
 	"GET /chats/{chatId}": chatsGetById,
 	"PATCH /chats/{chatId}": chatsUpdate,
 	"PUT /chats/{chatId}/favorite": chatsFavorite,
 	"POST /chats/{chatId}/fork": chatsFork,
 	"GET /chats/{chatId}/project": projectsGetByChatId,
+	"GET /chats/{chatId}/messages": chatsFindMessages,
 	"POST /chats/{chatId}/messages": chatsSendMessage,
-	"GET /chats/{chatId}/metadata": chatsGetMetadata,
+	"GET /chats/{chatId}/messages/{messageId}": chatsGetMessage,
+	"GET /chats/{chatId}/versions": chatsFindVersions,
+	"GET /chats/{chatId}/versions/{versionId}": chatsGetVersion,
+	"PATCH /chats/{chatId}/versions/{versionId}": chatsUpdateVersion,
+	"GET /chats/{chatId}/versions/{versionId}/download": chatsDownloadVersion,
 	"POST /chats/{chatId}/messages/{messageId}/resume": chatsResume,
+	"GET /deployments": deploymentsFind,
+	"POST /deployments": deploymentsCreate,
+	"GET /deployments/{deploymentId}": deploymentsGetById,
+	"DELETE /deployments/{deploymentId}": deploymentsDelete,
 	"GET /deployments/{deploymentId}/logs": deploymentsFindLogs,
 	"GET /deployments/{deploymentId}/errors": deploymentsFindErrors,
+	"GET /hooks": hooksFind,
+	"POST /hooks": hooksCreate,
+	"GET /hooks/{hookId}": hooksGetById,
+	"PATCH /hooks/{hookId}": hooksUpdate,
+	"DELETE /hooks/{hookId}": hooksDelete,
 	"GET /integrations/vercel/projects": integrationsVercelProjectsFind,
 	"POST /integrations/vercel/projects": integrationsVercelProjectsCreate,
 	"GET /projects": projectsFind,
 	"POST /projects": projectsCreate,
+	"GET /projects/{projectId}": projectsGetById,
+	"PATCH /projects/{projectId}": projectsUpdate,
+	"DELETE /projects/{projectId}": projectsDelete,
 	"POST /projects/{projectId}/assign": projectsAssign,
+	"GET /projects/{projectId}/env-vars": projectsFindEnvVars,
+	"POST /projects/{projectId}/env-vars": projectsCreateEnvVars,
+	"PATCH /projects/{projectId}/env-vars": projectsUpdateEnvVars,
+	"POST /projects/{projectId}/env-vars/delete": projectsDeleteEnvVars,
+	"GET /projects/{projectId}/env-vars/{environmentVariableId}": projectsGetEnvVar,
 	"GET /rate-limits": rateLimitsFind,
 	"GET /user": userGet,
 	"GET /user/billing": userGetBilling,
 	"GET /user/plan": userGetPlan,
 	"GET /user/scopes": userGetScopes,
+	"GET /reports/usage": reportsGetUsage,
 };
 
 export const operationsByTag = {
 	chats: {
 		chatsCreate,
 		chatsFind,
-		chatsInitCreate,
+		chatsInit,
 		chatsDelete,
 		chatsGetById,
 		chatsUpdate,
 		chatsFavorite,
 		chatsFork,
+		chatsFindMessages,
 		chatsSendMessage,
-		chatsGetMetadata,
+		chatsGetMessage,
+		chatsFindVersions,
+		chatsGetVersion,
+		chatsUpdateVersion,
+		chatsDownloadVersion,
 		chatsResume,
 	},
 	projects: {
 		projectsGetByChatId,
 		projectsFind,
 		projectsCreate,
+		projectsGetById,
+		projectsUpdate,
+		projectsDelete,
 		projectsAssign,
+		projectsFindEnvVars,
+		projectsCreateEnvVars,
+		projectsUpdateEnvVars,
+		projectsDeleteEnvVars,
+		projectsGetEnvVar,
 	},
 	deployments: {
+		deploymentsFind,
+		deploymentsCreate,
+		deploymentsGetById,
+		deploymentsDelete,
 		deploymentsFindLogs,
 		deploymentsFindErrors,
+	},
+	hooks: {
+		hooksFind,
+		hooksCreate,
+		hooksGetById,
+		hooksUpdate,
+		hooksDelete,
 	},
 	integrations: {
 		integrationsVercelProjectsFind,
@@ -1201,22 +2394,49 @@ export const operationsByTag = {
 		userGetPlan,
 		userGetScopes,
 	},
+	reports: {
+		reportsGetUsage,
+	},
 };
 
 export const tagDictionary = {
 	chats: {
-		POST: ["chatsCreate", "chatsInitCreate", "chatsFork", "chatsSendMessage", "chatsResume"],
-		GET: ["chatsFind", "chatsGetById", "chatsGetMetadata"],
+		POST: ["chatsCreate", "chatsInit", "chatsFork", "chatsSendMessage", "chatsResume"],
+		GET: [
+			"chatsFind",
+			"chatsGetById",
+			"chatsFindMessages",
+			"chatsGetMessage",
+			"chatsFindVersions",
+			"chatsGetVersion",
+			"chatsDownloadVersion",
+		],
 		DELETE: ["chatsDelete"],
-		PATCH: ["chatsUpdate"],
+		PATCH: ["chatsUpdate", "chatsUpdateVersion"],
 		PUT: ["chatsFavorite"],
 	},
 	projects: {
-		GET: ["projectsGetByChatId", "projectsFind"],
-		POST: ["projectsCreate", "projectsAssign"],
+		GET: [
+			"projectsGetByChatId",
+			"projectsFind",
+			"projectsGetById",
+			"projectsFindEnvVars",
+			"projectsGetEnvVar",
+		],
+		POST: ["projectsCreate", "projectsAssign", "projectsCreateEnvVars", "projectsDeleteEnvVars"],
+		PATCH: ["projectsUpdate", "projectsUpdateEnvVars"],
+		DELETE: ["projectsDelete"],
 	},
 	deployments: {
-		GET: ["deploymentsFindLogs", "deploymentsFindErrors"],
+		GET: ["deploymentsFind", "deploymentsGetById", "deploymentsFindLogs", "deploymentsFindErrors"],
+		POST: ["deploymentsCreate"],
+		DELETE: ["deploymentsDelete"],
+	},
+	hooks: {
+		GET: ["hooksFind", "hooksGetById"],
+		POST: ["hooksCreate"],
+		PATCH: ["hooksUpdate"],
+		DELETE: ["hooksDelete"],
 	},
 	integrations: {
 		GET: ["integrationsVercelProjectsFind"],
@@ -1227,5 +2447,8 @@ export const tagDictionary = {
 	},
 	user: {
 		GET: ["userGet", "userGetBilling", "userGetPlan", "userGetScopes"],
+	},
+	reports: {
+		GET: ["reportsGetUsage"],
 	},
 } as const;

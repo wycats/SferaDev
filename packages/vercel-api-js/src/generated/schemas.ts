@@ -5,6 +5,59 @@
 
 import { z } from "zod";
 
+export const networkSchema = z.object({
+	awsAccountId: z.string().describe("The ID of the AWS Account in which the network exists."),
+	awsAvailabilityZoneIds: z.optional(
+		z
+			.array(z.string())
+			.describe(
+				"The IDs of the AWS Availability Zones in which the network exists, if specified during creation.",
+			),
+	),
+	awsRegion: z.string().describe("The AWS Region in which the network exists."),
+	cidr: z.string().describe("The CIDR range of the Network."),
+	createdAt: z
+		.number()
+		.describe(
+			"The date at which the Network was created, represented as a UNIX timestamp since EPOCH.",
+		),
+	egressIpAddresses: z.optional(z.array(z.string())),
+	hostedZones: z.optional(
+		z
+			.object({
+				count: z
+					.number()
+					.describe("The number of AWS Route53 Hosted Zones associated with the Network."),
+			})
+			.describe("Metadata about any AWS Route53 Hosted Zones associated with the Network."),
+	),
+	id: z.string().describe("The unique identifier of the Network."),
+	name: z.string().describe("The name of the network."),
+	peeringConnections: z.optional(
+		z
+			.object({
+				count: z
+					.number()
+					.describe("The number of AWS Route53 Hosted Zones associated with the Network."),
+			})
+			.describe("Metadata about any AWS Route53 Hosted Zones associated with the Network."),
+	),
+	projects: z.optional(
+		z
+			.object({
+				count: z.number(),
+				ids: z.array(z.string()),
+			})
+			.describe("Metadata about any projects associated with the Network."),
+	),
+	region: z.optional(z.string().describe("The Vercel region in which the Network exists.")),
+	status: z
+		.enum(["create_in_progress", "delete_in_progress", "error", "ready"])
+		.describe("The status of the Network."),
+	teamId: z.string().describe("The unique identifier of the Team that owns the Network."),
+	vpcId: z.optional(z.string().describe("The ID of the VPC which hosts the network.")),
+});
+
 /**
  * @description Enum containing the actions that can be performed against a resource. Group operations are included.
  */
@@ -1060,7 +1113,7 @@ export const userEventSchema = z
 				}),
 				z.object({
 					created: z.optional(
-						z.string().datetime().describe("The date when the Shared Env Var was created."),
+						z.iso.datetime().describe("The date when the Shared Env Var was created."),
 					),
 					key: z.optional(z.string().describe("The name of the Shared Env Var.")),
 					ownerId: z
@@ -1133,7 +1186,7 @@ export const userEventSchema = z
 					oldEnvVar: z.optional(
 						z.object({
 							created: z.optional(
-								z.string().datetime().describe("The date when the Shared Env Var was created."),
+								z.iso.datetime().describe("The date when the Shared Env Var was created."),
 							),
 							key: z.optional(z.string().describe("The name of the Shared Env Var.")),
 							ownerId: z
@@ -1209,7 +1262,7 @@ export const userEventSchema = z
 					newEnvVar: z.optional(
 						z.object({
 							created: z.optional(
-								z.string().datetime().describe("The date when the Shared Env Var was created."),
+								z.iso.datetime().describe("The date when the Shared Env Var was created."),
 							),
 							key: z.optional(z.string().describe("The name of the Shared Env Var.")),
 							ownerId: z
@@ -2423,6 +2476,54 @@ export const userEventSchema = z
 												createdAt: z.number(),
 											}),
 										),
+										history: z.optional(
+											z
+												.array(
+													z
+														.object({
+															action: z
+																.enum(["enabled", "disabled"])
+																.describe("The action that occurred"),
+															timestamp: z.nullable(
+																z
+																	.number()
+																	.describe(
+																		"Unix timestamp (milliseconds) when the change occurred. May be null for events that occurred before history tracking was implemented.",
+																	),
+															),
+															method: z
+																.enum([
+																	"totp",
+																	"passkey",
+																	"user_disabled",
+																	"admin_removal",
+																	"unknown",
+																])
+																.describe(
+																	"Method used for the state change - 'totp': User set up TOTP authenticator - 'passkey': User registered a passkey - 'user_disabled': User disabled their own MFA - 'admin_removal': Admin removed MFA via backoffice - 'unknown': Method unknown (for pre-tracking events)",
+																),
+															actorId: z
+																.string()
+																.describe(
+																	"ID of the actor who made the change - For user actions: the user's own ID - For admin actions: the admin's user ID",
+																),
+															actorType: z.enum(["user", "admin"]).describe("Type of actor"),
+															reason: z.optional(
+																z
+																	.string()
+																	.describe(
+																		'Optional: Additional context or reason e.g., "Account recovery request - ticket #12345"',
+																	),
+															),
+														})
+														.describe(
+															"History of MFA state changes (enabled/disabled events). Most recent events first.",
+														),
+												)
+												.describe(
+													"History of MFA state changes (enabled/disabled events). Most recent events first.",
+												),
+										),
 									})
 									.describe(
 										"MFA configuration. When enabled, the user will be required to provide a second factor of authentication when logging in.",
@@ -2458,6 +2559,14 @@ export const userEventSchema = z
 					integrationName: z.string(),
 					ownerId: z.string(),
 					projectIds: z.optional(z.array(z.string())),
+				}),
+				z.object({
+					integrationId: z.string(),
+					configurationId: z.string(),
+					integrationSlug: z.string(),
+					integrationName: z.string(),
+					ownerId: z.string(),
+					projectIds: z.optional(z.union([z.array(z.string()), z.enum(["all"])])),
 				}),
 				z.object({
 					projectId: z.string(),
@@ -2834,6 +2943,36 @@ export const userEventSchema = z
 					projectName: z.string(),
 					elasticConcurrencyEnabled: z.boolean(),
 					oldElasticConcurrencyEnabled: z.boolean(),
+				}),
+				z.object({
+					projectId: z.string(),
+					projectName: z.string(),
+					next: z.object({
+						skewProtectionBoundaryAt: z.number(),
+					}),
+					previous: z.object({
+						skewProtectionBoundaryAt: z.optional(z.number()),
+					}),
+				}),
+				z.object({
+					projectId: z.string(),
+					projectName: z.string(),
+					next: z.object({
+						skewProtectionMaxAge: z.number(),
+					}),
+					previous: z.object({
+						skewProtectionMaxAge: z.optional(z.number()),
+					}),
+				}),
+				z.object({
+					projectId: z.string(),
+					projectName: z.string(),
+					next: z.object({
+						skewProtectionAllowedDomains: z.optional(z.array(z.string())),
+					}),
+					previous: z.object({
+						skewProtectionAllowedDomains: z.optional(z.array(z.string())),
+					}),
 				}),
 				z.object({
 					projectId: z.string(),
@@ -3601,11 +3740,9 @@ export const userEventSchema = z
 							z.enum([
 								"*",
 								"read:user",
-								"read-write:user",
 								"read:domain",
 								"read-write:domain",
 								"read:team",
-								"read-write:team",
 								"read:billing",
 								"read-write:ai-gateway-api-key",
 								"read:project",
@@ -3630,11 +3767,9 @@ export const userEventSchema = z
 							z.enum([
 								"*",
 								"read:user",
-								"read-write:user",
 								"read:domain",
 								"read-write:domain",
 								"read:team",
-								"read-write:team",
 								"read:billing",
 								"read-write:ai-gateway-api-key",
 								"read:project",
@@ -4292,6 +4427,7 @@ export const teamSchema = z
 			.describe("The membership of the authenticated User in relation to the Team."),
 		createdAt: z.number().describe("UNIX timestamp (in milliseconds) when the Team was created."),
 	})
+	.catchall(z.unknown())
 	.describe("Data representing a Team.");
 
 /**
@@ -5068,6 +5204,53 @@ export const fileTreeSchema = z
 		mode: z.number().describe('The file "mode" indicating file type and permissions.'),
 	})
 	.describe("A deployment file tree entry");
+
+export const vercelBaseErrorSchema = z.object({
+	code: z.string(),
+	message: z.string(),
+});
+
+export const vercelForbiddenErrorSchema = z.object({
+	error: z.unknown().and(
+		z.object({
+			code: z.string(),
+		}),
+	),
+});
+
+export const vercelNotFoundErrorSchema = z.object({
+	error: z.unknown().and(
+		z.object({
+			code: z.string(),
+			message: z.optional(z.string()),
+		}),
+	),
+});
+
+export const vercelBadRequestErrorSchema = z.object({
+	error: z.unknown().and(
+		z.object({
+			code: z.string(),
+			message: z.optional(z.string()),
+		}),
+	),
+});
+
+export const vercelRateLimitErrorSchema = z.object({
+	error: z.unknown().and(
+		z.object({
+			code: z.string(),
+			limit: z.optional(z.unknown()),
+		}),
+	),
+});
+
+export const rateLimitNoticeSchema = z.object({
+	remaining: z.int().min(0),
+	reset: z.int().min(0),
+	resetMs: z.int().min(0),
+	total: z.int().min(0),
+});
 
 export const readAccessGroupPathParamsSchema = z.object({
 	idOrName: z.string(),
@@ -6152,53 +6335,185 @@ export const rerequestCheck404Schema = z.unknown();
 
 export const rerequestCheckMutationResponseSchema = z.lazy(() => rerequestCheck200Schema);
 
-export const purgeAllDataCacheQueryParamsSchema = z.object({
-	projectIdOrName: z.string(),
+export const listNetworksQueryParamsSchema = z.object({
+	includeHostedZones: z
+		.boolean()
+		.default(true)
+		.describe("Whether to include Hosted Zones in the response"),
+	includePeeringConnections: z
+		.boolean()
+		.default(true)
+		.describe("Whether to include VPC Peering connections in the response"),
+	includeProjects: z
+		.boolean()
+		.default(true)
+		.describe("Whether to include projects in the response"),
+	search: z.optional(
+		z.string().max(255).describe("The query to use as a filter for returned networks"),
+	),
+	teamId: z.optional(
+		z.string().describe("The Team identifier to perform the request on behalf of."),
+	),
+	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
 });
 
-export const purgeAllDataCache200Schema = z.unknown();
+export const listNetworks200Schema = z.unknown();
 
 /**
  * @description One of the provided values in the request query is invalid.
  */
-export const purgeAllDataCache400Schema = z.unknown();
+export const listNetworks400Schema = z.unknown();
 
 /**
  * @description The request is not authorized.
  */
-export const purgeAllDataCache401Schema = z.unknown();
+export const listNetworks401Schema = z.unknown();
 
 /**
  * @description You do not have permission to access this resource.
  */
-export const purgeAllDataCache403Schema = z.unknown();
+export const listNetworks403Schema = z.unknown();
 
-export const purgeAllDataCache404Schema = z.unknown();
+export const listNetworksQueryResponseSchema = z.lazy(() => listNetworks200Schema);
 
-export const purgeAllDataCacheMutationResponseSchema = z.lazy(() => purgeAllDataCache200Schema);
+export const createNetworkQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
 
-export const updateDataCacheBillingSettings200Schema = z.unknown();
+export const createNetwork201Schema = z.unknown();
 
 /**
  * @description One of the provided values in the request body is invalid.
  */
-export const updateDataCacheBillingSettings400Schema = z.unknown();
+export const createNetwork400Schema = z.unknown();
 
 /**
  * @description The request is not authorized.
  */
-export const updateDataCacheBillingSettings401Schema = z.unknown();
+export const createNetwork401Schema = z.unknown();
+
+/**
+ * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ */
+export const createNetwork402Schema = z.unknown();
 
 /**
  * @description You do not have permission to access this resource.
  */
-export const updateDataCacheBillingSettings403Schema = z.unknown();
+export const createNetwork403Schema = z.unknown();
 
-export const updateDataCacheBillingSettings404Schema = z.unknown();
+export const createNetwork404Schema = z.unknown();
 
-export const updateDataCacheBillingSettingsMutationResponseSchema = z.lazy(
-	() => updateDataCacheBillingSettings200Schema,
-);
+export const createNetwork409Schema = z.unknown();
+
+export const createNetworkMutationResponseSchema = z.lazy(() => createNetwork201Schema);
+
+export const deleteNetworkPathParamsSchema = z.object({
+	networkId: z.string().describe("The ID of the network to delete"),
+});
+
+export const deleteNetworkQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const deleteNetwork204Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const deleteNetwork400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const deleteNetwork401Schema = z.unknown();
+
+export const deleteNetwork402Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const deleteNetwork403Schema = z.unknown();
+
+export const deleteNetwork404Schema = z.unknown();
+
+export const deleteNetwork409Schema = z.unknown();
+
+export const deleteNetworkMutationResponseSchema = z.lazy(() => deleteNetwork204Schema);
+
+export const updateNetworkPathParamsSchema = z.object({
+	networkId: z.string().describe("The unique identifier of the Secure Compute network"),
+});
+
+export const updateNetworkQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const updateNetwork200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export const updateNetwork400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const updateNetwork401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const updateNetwork403Schema = z.unknown();
+
+export const updateNetworkMutationResponseSchema = z.lazy(() => updateNetwork200Schema);
+
+export const readNetworkPathParamsSchema = z.object({
+	networkId: z.string().describe("The unique identifier of the Secure Compute network"),
+});
+
+export const readNetworkQueryParamsSchema = z
+	.object({
+		teamId: z.optional(
+			z.string().describe("The Team identifier to perform the request on behalf of."),
+		),
+		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
+	})
+	.optional();
+
+export const readNetwork200Schema = z.unknown();
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export const readNetwork400Schema = z.unknown();
+
+/**
+ * @description The request is not authorized.
+ */
+export const readNetwork401Schema = z.unknown();
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export const readNetwork403Schema = z.unknown();
+
+export const readNetworkQueryResponseSchema = z.lazy(() => readNetwork200Schema);
 
 export const updateProjectDataCachePathParamsSchema = z.object({
 	projectId: z.string().describe("The unique project identifier"),
@@ -6450,79 +6765,6 @@ export const cancelDeployment403Schema = z.unknown();
 export const cancelDeployment404Schema = z.unknown();
 
 export const cancelDeploymentMutationResponseSchema = z.lazy(() => cancelDeployment200Schema);
-
-export const checkDomainPriceQueryParamsSchema = z.object({
-	name: z.string().describe("The name of the domain for which the price needs to be checked."),
-	type: z.optional(
-		z
-			.enum(["new", "renewal", "transfer", "redemption"])
-			.describe("In which status of the domain the price needs to be checked."),
-	),
-	teamId: z.optional(
-		z.string().describe("The Team identifier to perform the request on behalf of."),
-	),
-	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
-});
-
-/**
- * @description Successful response which returns the price of the domain and the period.
- */
-export const checkDomainPrice200Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export const checkDomainPrice400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const checkDomainPrice401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const checkDomainPrice403Schema = z.unknown();
-
-export const checkDomainPrice404Schema = z.unknown();
-
-export const checkDomainPrice500Schema = z.unknown();
-
-export const checkDomainPriceQueryResponseSchema = z.lazy(() => checkDomainPrice200Schema);
-
-export const checkDomainStatusQueryParamsSchema = z.object({
-	name: z.string().describe("The name of the domain for which we would like to check the status."),
-	teamId: z.optional(
-		z.string().describe("The Team identifier to perform the request on behalf of."),
-	),
-	slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
-});
-
-/**
- * @description Successful response checking if a Domain\'s name is available.
- */
-export const checkDomainStatus200Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export const checkDomainStatus400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const checkDomainStatus401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const checkDomainStatus403Schema = z.unknown();
-
-export const checkDomainStatus408Schema = z.unknown();
-
-export const checkDomainStatus500Schema = z.unknown();
-
-export const checkDomainStatusQueryResponseSchema = z.lazy(() => checkDomainStatus200Schema);
 
 export const getRecordsPathParamsSchema = z.object({
 	domain: z.string(),
@@ -7682,9 +7924,9 @@ export const deleteConfigurableLogDrainMutationResponseSchema = z.lazy(
 );
 
 export const getAllLogDrainsQueryParamsSchema = z.object({
-	projectId: z.optional(z.string()),
-	includeMetadata: z.boolean().default(false),
+	projectId: z.optional(z.string().regex(/^[a-zA-z0-9_]+$/)),
 	projectIdOrName: z.optional(z.string()),
+	includeMetadata: z.boolean().default(false),
 	teamId: z.optional(
 		z.string().describe("The Team identifier to perform the request on behalf of."),
 	),
@@ -9763,8 +10005,6 @@ export const exchangeSsoToken400Schema = z.unknown();
 
 export const exchangeSsoToken403Schema = z.unknown();
 
-export const exchangeSsoToken404Schema = z.unknown();
-
 export const exchangeSsoToken500Schema = z.unknown();
 
 export const exchangeSsoTokenMutationResponseSchema = z.lazy(() => exchangeSsoToken200Schema);
@@ -10438,6 +10678,8 @@ export const updateStaticIps403Schema = z.unknown();
 
 export const updateStaticIps404Schema = z.unknown();
 
+export const updateStaticIps409Schema = z.unknown();
+
 export const updateStaticIps500Schema = z.unknown();
 
 export const updateStaticIpsMutationResponseSchema = z.lazy(() => updateStaticIps200Schema);
@@ -10639,9 +10881,7 @@ export const removeCustomEnvironmentMutationResponseSchema = z.lazy(
 );
 
 export const getProjectDomainsPathParamsSchema = z.object({
-	idOrName: z
-		.union([z.coerce.number().int(), z.string()])
-		.describe("The unique project identifier or the project name"),
+	idOrName: z.string().describe("The unique project identifier or the project name"),
 });
 
 export const getProjectDomainsQueryParamsSchema = z.object({
@@ -11851,7 +12091,7 @@ export const updateFirewallConfigMutationResponseSchema = z.lazy(
 );
 
 export const getFirewallConfigPathParamsSchema = z.object({
-	configVersion: z.string(),
+	configVersion: z.string().describe("The deployed configVersion for the firewall configuration"),
 });
 
 export const getFirewallConfigQueryParamsSchema = z.object({
@@ -12182,7 +12422,7 @@ export const inviteUserToTeam400Schema = z.unknown();
 export const inviteUserToTeam401Schema = z.unknown();
 
 /**
- * @description The authenticated user must be a team owner to perform the action\nYou do not have permission to access this resource.
+ * @description You do not have permission to access this resource.\nThe authenticated user must be a team owner to perform the action
  */
 export const inviteUserToTeam403Schema = z.unknown();
 
@@ -12191,7 +12431,7 @@ export const inviteUserToTeam503Schema = z.unknown();
 export const inviteUserToTeamMutationResponseSchema = z.lazy(() => inviteUserToTeam200Schema);
 
 export const requestAccessToTeamPathParamsSchema = z.object({
-	teamId: z.string(),
+	teamId: z.string().describe("The unique team identifier"),
 });
 
 /**
@@ -12221,8 +12461,8 @@ export const requestAccessToTeam503Schema = z.unknown();
 export const requestAccessToTeamMutationResponseSchema = z.lazy(() => requestAccessToTeam200Schema);
 
 export const getTeamAccessRequestPathParamsSchema = z.object({
-	userId: z.string(),
-	teamId: z.string(),
+	userId: z.string().describe("The unique user identifier"),
+	teamId: z.string().describe("The unique team identifier"),
 });
 
 /**
@@ -12250,7 +12490,7 @@ export const getTeamAccessRequest404Schema = z.unknown();
 export const getTeamAccessRequestQueryResponseSchema = z.lazy(() => getTeamAccessRequest200Schema);
 
 export const joinTeamPathParamsSchema = z.object({
-	teamId: z.string(),
+	teamId: z.string().describe("The unique team identifier"),
 });
 
 /**
@@ -12278,7 +12518,7 @@ export const joinTeamMutationResponseSchema = z.lazy(() => joinTeam200Schema);
 
 export const updateTeamMemberPathParamsSchema = z.object({
 	uid: z.string().describe("The ID of the member."),
-	teamId: z.string(),
+	teamId: z.string().describe("The unique team identifier"),
 });
 
 /**
@@ -12316,7 +12556,7 @@ export const updateTeamMemberMutationResponseSchema = z.lazy(() => updateTeamMem
 
 export const removeTeamMemberPathParamsSchema = z.object({
 	uid: z.string().describe("The user ID of the member."),
-	teamId: z.string(),
+	teamId: z.string().describe("The unique team identifier"),
 });
 
 export const removeTeamMemberQueryParamsSchema = z
@@ -12552,7 +12792,7 @@ export const deleteTeamMutationResponseSchema = z.lazy(() => deleteTeam200Schema
 
 export const deleteTeamInviteCodePathParamsSchema = z.object({
 	inviteId: z.string().describe("The Team invite code ID."),
-	teamId: z.string(),
+	teamId: z.string().describe("The Team identifier to perform the request on behalf of."),
 });
 
 /**
@@ -13195,22 +13435,6 @@ export const patchUrlProtectionBypassMutationResponseSchema = z.lazy(
 	() => patchUrlProtectionBypass200Schema,
 );
 
-export const listCerts200Schema = z.unknown();
-
-export const listCerts400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const listCerts401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const listCerts403Schema = z.unknown();
-
-export const listCertsQueryResponseSchema = z.lazy(() => listCerts200Schema);
-
 export const getCertByIdPathParamsSchema = z.object({
 	id: z.string().describe("The cert id"),
 });
@@ -13557,198 +13781,3 @@ export const deleteDeployment403Schema = z.unknown();
 export const deleteDeployment404Schema = z.unknown();
 
 export const deleteDeploymentMutationResponseSchema = z.lazy(() => deleteDeployment200Schema);
-
-export const getSecretsQueryParamsSchema = z
-	.object({
-		id: z.optional(z.string().describe("Filter out secrets based on comma separated secret ids.")),
-		projectId: z.optional(z.string().describe("Filter out secrets that belong to a project.")),
-		teamId: z.optional(
-			z.string().describe("The Team identifier to perform the request on behalf of."),
-		),
-		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
-	})
-	.optional();
-
-/**
- * @description Successful response retrieving a list of secrets.
- */
-export const getSecrets200Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export const getSecrets400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const getSecrets401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const getSecrets403Schema = z.unknown();
-
-export const getSecrets410Schema = z.unknown();
-
-export const getSecretsQueryResponseSchema = z.lazy(() => getSecrets200Schema);
-
-export const createSecretPathParamsSchema = z.object({
-	name: z.string(),
-});
-
-export const createSecretQueryParamsSchema = z
-	.object({
-		teamId: z.optional(
-			z.string().describe("The Team identifier to perform the request on behalf of."),
-		),
-		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
-	})
-	.optional();
-
-/**
- * @description Successful response showing the created secret.
- */
-export const createSecret200Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request body is invalid.
- */
-export const createSecret400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const createSecret401Schema = z.unknown();
-
-/**
- * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
- */
-export const createSecret402Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const createSecret403Schema = z.unknown();
-
-export const createSecret410Schema = z.unknown();
-
-export const createSecretMutationResponseSchema = z.lazy(() => createSecret200Schema);
-
-export const renameSecretPathParamsSchema = z.object({
-	name: z.string().describe("The name of the secret."),
-});
-
-export const renameSecretQueryParamsSchema = z
-	.object({
-		teamId: z.optional(
-			z.string().describe("The Team identifier to perform the request on behalf of."),
-		),
-		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
-	})
-	.optional();
-
-export const renameSecret200Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
- */
-export const renameSecret400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const renameSecret401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const renameSecret403Schema = z.unknown();
-
-export const renameSecret410Schema = z.unknown();
-
-export const renameSecretMutationResponseSchema = z.lazy(() => renameSecret200Schema);
-
-export const getSecretPathParamsSchema = z.object({
-	idOrName: z
-		.string()
-		.describe("The name or the unique identifier to which the secret belongs to."),
-});
-
-export const getSecretQueryParamsSchema = z
-	.object({
-		decrypt: z.optional(
-			z
-				.enum(["true", "false"])
-				.describe(
-					"Whether to try to decrypt the value of the secret. Only works if `decryptable` has been set to `true` when the secret was created.",
-				),
-		),
-		teamId: z.optional(
-			z.string().describe("The Team identifier to perform the request on behalf of."),
-		),
-		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
-	})
-	.optional();
-
-/**
- * @description Successful response retrieving a secret.
- */
-export const getSecret200Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export const getSecret400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const getSecret401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const getSecret403Schema = z.unknown();
-
-export const getSecret404Schema = z.unknown();
-
-export const getSecret410Schema = z.unknown();
-
-export const getSecretQueryResponseSchema = z.lazy(() => getSecret200Schema);
-
-export const deleteSecretPathParamsSchema = z.object({
-	idOrName: z
-		.string()
-		.describe("The name or the unique identifier to which the secret belongs to."),
-});
-
-export const deleteSecretQueryParamsSchema = z
-	.object({
-		teamId: z.optional(
-			z.string().describe("The Team identifier to perform the request on behalf of."),
-		),
-		slug: z.optional(z.string().describe("The Team slug to perform the request on behalf of.")),
-	})
-	.optional();
-
-export const deleteSecret200Schema = z.unknown();
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export const deleteSecret400Schema = z.unknown();
-
-/**
- * @description The request is not authorized.
- */
-export const deleteSecret401Schema = z.unknown();
-
-/**
- * @description You do not have permission to access this resource.
- */
-export const deleteSecret403Schema = z.unknown();
-
-export const deleteSecret410Schema = z.unknown();
-
-export const deleteSecretMutationResponseSchema = z.lazy(() => deleteSecret200Schema);

@@ -56,6 +56,7 @@ import {
 	deleteAdminRealmsRealmUsersUserIdGroupsGroupId,
 	deleteAdminRealmsRealmUsersUserIdRoleMappingsClientsClientId,
 	deleteAdminRealmsRealmUsersUserIdRoleMappingsRealm,
+	deleteAdminRealmsRealmWorkflowsId,
 	getAdminRealms,
 	getAdminRealmsRealm,
 	getAdminRealmsRealmAdminEvents,
@@ -246,6 +247,9 @@ import {
 	getAdminRealmsRealmUsersUserIdRoleMappingsRealmComposite,
 	getAdminRealmsRealmUsersUserIdSessions,
 	getAdminRealmsRealmUsersUserIdUnmanagedAttributes,
+	getAdminRealmsRealmWorkflows,
+	getAdminRealmsRealmWorkflowsId,
+	getAdminRealmsRealmWorkflowsScheduledResourceId,
 	postAdminRealms,
 	postAdminRealmsRealmAuthenticationConfig,
 	postAdminRealmsRealmAuthenticationExecutions,
@@ -302,6 +306,7 @@ import {
 	postAdminRealmsRealmIdentityProviderImportConfig,
 	postAdminRealmsRealmIdentityProviderInstances,
 	postAdminRealmsRealmIdentityProviderInstancesAliasMappers,
+	postAdminRealmsRealmIdentityProviderUploadCertificate,
 	postAdminRealmsRealmLocalizationLocale,
 	postAdminRealmsRealmLogoutAll,
 	postAdminRealmsRealmOrganizations,
@@ -324,6 +329,9 @@ import {
 	postAdminRealmsRealmUsersUserIdLogout,
 	postAdminRealmsRealmUsersUserIdRoleMappingsClientsClientId,
 	postAdminRealmsRealmUsersUserIdRoleMappingsRealm,
+	postAdminRealmsRealmWorkflows,
+	postAdminRealmsRealmWorkflowsIdActivateTypeResourceId,
+	postAdminRealmsRealmWorkflowsIdDeactivateTypeResourceId,
 	putAdminRealmsRealm,
 	putAdminRealmsRealmAuthenticationConfigId,
 	putAdminRealmsRealmAuthenticationFlowsFlowAliasExecutions,
@@ -373,6 +381,7 @@ import {
 	putAdminRealmsRealmUsersUserIdResetPassword,
 	putAdminRealmsRealmUsersUserIdResetPasswordEmail,
 	putAdminRealmsRealmUsersUserIdSendVerifyEmail,
+	putAdminRealmsRealmWorkflowsId,
 } from "./components";
 
 export const operationsByPath = {
@@ -863,6 +872,8 @@ export const operationsByPath = {
 		getAdminRealmsRealmIdentityProviderInstancesAliasReloadKeys,
 	"GET /admin/realms/{realm}/identity-provider/providers/{provider_id}":
 		getAdminRealmsRealmIdentityProviderProvidersProviderId,
+	"POST /admin/realms/{realm}/identity-provider/upload-certificate":
+		postAdminRealmsRealmIdentityProviderUploadCertificate,
 	"GET /admin/realms/{realm}/keys": getAdminRealmsRealmKeys,
 	"GET /admin/realms/{realm}/localization": getAdminRealmsRealmLocalization,
 	"GET /admin/realms/{realm}/localization/{locale}": getAdminRealmsRealmLocalizationLocale,
@@ -1029,4 +1040,15 @@ export const operationsByPath = {
 	"GET /admin/realms/{realm}/users/{user-id}/sessions": getAdminRealmsRealmUsersUserIdSessions,
 	"GET /admin/realms/{realm}/users/{user-id}/unmanagedAttributes":
 		getAdminRealmsRealmUsersUserIdUnmanagedAttributes,
+	"GET /admin/realms/{realm}/workflows": getAdminRealmsRealmWorkflows,
+	"POST /admin/realms/{realm}/workflows": postAdminRealmsRealmWorkflows,
+	"GET /admin/realms/{realm}/workflows/scheduled/{resource-id}":
+		getAdminRealmsRealmWorkflowsScheduledResourceId,
+	"GET /admin/realms/{realm}/workflows/{id}": getAdminRealmsRealmWorkflowsId,
+	"PUT /admin/realms/{realm}/workflows/{id}": putAdminRealmsRealmWorkflowsId,
+	"DELETE /admin/realms/{realm}/workflows/{id}": deleteAdminRealmsRealmWorkflowsId,
+	"POST /admin/realms/{realm}/workflows/{id}/activate/{type}/{resourceId}":
+		postAdminRealmsRealmWorkflowsIdActivateTypeResourceId,
+	"POST /admin/realms/{realm}/workflows/{id}/deactivate/{type}/{resourceId}":
+		postAdminRealmsRealmWorkflowsIdDeactivateTypeResourceId,
 };

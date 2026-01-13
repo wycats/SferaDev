@@ -3,6 +3,119 @@
  * Do not edit manually.
  */
 
+export const networkStatusEnum = {
+	create_in_progress: "create_in_progress",
+	delete_in_progress: "delete_in_progress",
+	error: "error",
+	ready: "ready",
+} as const;
+
+export type NetworkStatusEnumKey = (typeof networkStatusEnum)[keyof typeof networkStatusEnum];
+
+export type Network = {
+	/**
+	 * @description The ID of the AWS Account in which the network exists.
+	 * @type string
+	 */
+	awsAccountId: string;
+	/**
+	 * @description The IDs of the AWS Availability Zones in which the network exists, if specified during creation.
+	 * @type array | undefined
+	 */
+	awsAvailabilityZoneIds?: string[] | undefined;
+	/**
+	 * @description The AWS Region in which the network exists.
+	 * @type string
+	 */
+	awsRegion: string;
+	/**
+	 * @description The CIDR range of the Network.
+	 * @type string
+	 */
+	cidr: string;
+	/**
+	 * @description The date at which the Network was created, represented as a UNIX timestamp since EPOCH.
+	 * @type number
+	 */
+	createdAt: number;
+	/**
+	 * @type array | undefined
+	 */
+	egressIpAddresses?: string[] | undefined;
+	/**
+	 * @description Metadata about any AWS Route53 Hosted Zones associated with the Network.
+	 * @type object | undefined
+	 */
+	hostedZones?:
+		| {
+				/**
+				 * @description The number of AWS Route53 Hosted Zones associated with the Network.
+				 * @type number
+				 */
+				count: number;
+		  }
+		| undefined;
+	/**
+	 * @description The unique identifier of the Network.
+	 * @type string
+	 */
+	id: string;
+	/**
+	 * @description The name of the network.
+	 * @type string
+	 */
+	name: string;
+	/**
+	 * @description Metadata about any AWS Route53 Hosted Zones associated with the Network.
+	 * @type object | undefined
+	 */
+	peeringConnections?:
+		| {
+				/**
+				 * @description The number of AWS Route53 Hosted Zones associated with the Network.
+				 * @type number
+				 */
+				count: number;
+		  }
+		| undefined;
+	/**
+	 * @description Metadata about any projects associated with the Network.
+	 * @type object | undefined
+	 */
+	projects?:
+		| {
+				/**
+				 * @type number
+				 */
+				count: number;
+				/**
+				 * @type array
+				 */
+				ids: string[];
+		  }
+		| undefined;
+	/**
+	 * @description The Vercel region in which the Network exists.
+	 * @type string | undefined
+	 */
+	region?: string | undefined;
+	/**
+	 * @description The status of the Network.
+	 * @type string
+	 */
+	status: NetworkStatusEnumKey;
+	/**
+	 * @description The unique identifier of the Team that owns the Network.
+	 * @type string
+	 */
+	teamId: string;
+	/**
+	 * @description The ID of the VPC which hosts the network.
+	 * @type string | undefined
+	 */
+	vpcId?: string | undefined;
+};
+
 export const ACLActionEnum = {
 	create: "create",
 	delete: "delete",
@@ -898,14 +1011,6 @@ export const registrantFieldTypeEnum = {
 export type RegistrantFieldTypeEnumKey =
 	(typeof registrantFieldTypeEnum)[keyof typeof registrantFieldTypeEnum];
 
-export const registrantFieldValidationEnum2 = {
-	valid_email: "valid_email",
-	valid_countries: "valid_countries",
-} as const;
-
-export type RegistrantFieldValidationEnum2Key =
-	(typeof registrantFieldValidationEnum2)[keyof typeof registrantFieldValidationEnum2];
-
 export const registrantFieldTypeEnum2 = {
 	enum: "enum",
 } as const;
@@ -913,28 +1018,12 @@ export const registrantFieldTypeEnum2 = {
 export type RegistrantFieldTypeEnum2Key =
 	(typeof registrantFieldTypeEnum2)[keyof typeof registrantFieldTypeEnum2];
 
-export const registrantFieldValidationEnum3 = {
-	valid_email: "valid_email",
-	valid_countries: "valid_countries",
-} as const;
-
-export type RegistrantFieldValidationEnum3Key =
-	(typeof registrantFieldValidationEnum3)[keyof typeof registrantFieldValidationEnum3];
-
 export const registrantFieldTypeEnum3 = {
 	acknowledgement: "acknowledgement",
 } as const;
 
 export type RegistrantFieldTypeEnum3Key =
 	(typeof registrantFieldTypeEnum3)[keyof typeof registrantFieldTypeEnum3];
-
-export const registrantFieldValidationEnum4 = {
-	valid_email: "valid_email",
-	valid_countries: "valid_countries",
-} as const;
-
-export type RegistrantFieldValidationEnum4Key =
-	(typeof registrantFieldValidationEnum4)[keyof typeof registrantFieldValidationEnum4];
 
 export const registrantFieldTypeEnum4 = {
 	notice: "notice",
@@ -1013,7 +1102,7 @@ export type RegistrantField =
 			 * @type string | undefined
 			 */
 			label?: string | undefined;
-			validation?: (RegistrantFieldValidationEnum2Key | string | string) | undefined;
+			validation?: (RegistrantFieldValidationEnumKey | string | string) | undefined;
 			requiredWhen?:
 				| (
 						| string
@@ -1064,7 +1153,7 @@ export type RegistrantField =
 			 * @type string | undefined
 			 */
 			label?: string | undefined;
-			validation?: (RegistrantFieldValidationEnum3Key | string | string) | undefined;
+			validation?: (RegistrantFieldValidationEnumKey | string | string) | undefined;
 			requiredWhen?:
 				| (
 						| string
@@ -1098,7 +1187,7 @@ export type RegistrantField =
 			 * @type string | undefined
 			 */
 			label?: string | undefined;
-			validation?: (RegistrantFieldValidationEnum4Key | string | string) | undefined;
+			validation?: (RegistrantFieldValidationEnumKey | string | string) | undefined;
 			requiredWhen?:
 				| (
 						| string
@@ -1827,6 +1916,38 @@ export const newOwnerVersionEnum = {
 
 export type NewOwnerVersionEnumKey = (typeof newOwnerVersionEnum)[keyof typeof newOwnerVersionEnum];
 
+export const historyActionEnum = {
+	enabled: "enabled",
+	disabled: "disabled",
+} as const;
+
+export type HistoryActionEnumKey = (typeof historyActionEnum)[keyof typeof historyActionEnum];
+
+export const historyMethodEnum = {
+	totp: "totp",
+	passkey: "passkey",
+	user_disabled: "user_disabled",
+	admin_removal: "admin_removal",
+	unknown: "unknown",
+} as const;
+
+export type HistoryMethodEnumKey = (typeof historyMethodEnum)[keyof typeof historyMethodEnum];
+
+export const historyActorTypeEnum = {
+	user: "user",
+	admin: "admin",
+} as const;
+
+export type HistoryActorTypeEnumKey =
+	(typeof historyActorTypeEnum)[keyof typeof historyActorTypeEnum];
+
+export const payloadProjectIdsEnum = {
+	all: "all",
+} as const;
+
+export type PayloadProjectIdsEnumKey =
+	(typeof payloadProjectIdsEnum)[keyof typeof payloadProjectIdsEnum];
+
 export const roleEnum = {
 	OWNER: "OWNER",
 	MEMBER: "MEMBER",
@@ -1839,23 +1960,6 @@ export const roleEnum = {
 } as const;
 
 export type RoleEnumKey = (typeof roleEnum)[keyof typeof roleEnum];
-
-export const joinedFromOriginEnum2 = {
-	teams: "teams",
-	saml: "saml",
-	link: "link",
-	github: "github",
-	gitlab: "gitlab",
-	bitbucket: "bitbucket",
-	mail: "mail",
-	import: "import",
-	dsync: "dsync",
-	feedback: "feedback",
-	"organization-teams": "organization-teams",
-} as const;
-
-export type JoinedFromOriginEnum2Key =
-	(typeof joinedFromOriginEnum2)[keyof typeof joinedFromOriginEnum2];
 
 export const ssoProtectionDeploymentTypeEnum = {
 	all: "all",
@@ -2051,21 +2155,6 @@ export const budgetPricingPlanEnum = {
 export type BudgetPricingPlanEnumKey =
 	(typeof budgetPricingPlanEnum)[keyof typeof budgetPricingPlanEnum];
 
-export const budgetTypeEnum2 = {
-	fixed: "fixed",
-} as const;
-
-export type BudgetTypeEnum2Key = (typeof budgetTypeEnum2)[keyof typeof budgetTypeEnum2];
-
-export const budgetPricingPlanEnum2 = {
-	plus: "plus",
-	legacy: "legacy",
-	unbundled: "unbundled",
-} as const;
-
-export type BudgetPricingPlanEnum2Key =
-	(typeof budgetPricingPlanEnum2)[keyof typeof budgetPricingPlanEnum2];
-
 export const payloadTypeEnum2 = {
 	redis: "redis",
 	postgres: "postgres",
@@ -2083,19 +2172,6 @@ export const payloadStoreTypeEnum = {
 
 export type PayloadStoreTypeEnumKey =
 	(typeof payloadStoreTypeEnum)[keyof typeof payloadStoreTypeEnum];
-
-export const roleEnum2 = {
-	OWNER: "OWNER",
-	MEMBER: "MEMBER",
-	DEVELOPER: "DEVELOPER",
-	SECURITY: "SECURITY",
-	BILLING: "BILLING",
-	VIEWER: "VIEWER",
-	VIEWER_FOR_PLUS: "VIEWER_FOR_PLUS",
-	CONTRIBUTOR: "CONTRIBUTOR",
-} as const;
-
-export type RoleEnum2Key = (typeof roleEnum2)[keyof typeof roleEnum2];
 
 export const payloadRoleEnum = {
 	OWNER: "OWNER",
@@ -2145,15 +2221,6 @@ export const removedMembershipRoleEnum = {
 export type RemovedMembershipRoleEnumKey =
 	(typeof removedMembershipRoleEnum)[keyof typeof removedMembershipRoleEnum];
 
-export const projectMembershipRoleEnum2 = {
-	ADMIN: "ADMIN",
-	PROJECT_DEVELOPER: "PROJECT_DEVELOPER",
-	PROJECT_VIEWER: "PROJECT_VIEWER",
-} as const;
-
-export type ProjectMembershipRoleEnum2Key =
-	(typeof projectMembershipRoleEnum2)[keyof typeof projectMembershipRoleEnum2];
-
 export const projectMembershipPreviousRoleEnum = {
 	ADMIN: "ADMIN",
 	PROJECT_DEVELOPER: "PROJECT_DEVELOPER",
@@ -2197,11 +2264,9 @@ export type PayloadScopesEnumKey = (typeof payloadScopesEnum)[keyof typeof paylo
 export const payloadPermissionsEnum = {
 	"*": "*",
 	"read:user": "read:user",
-	"read-write:user": "read-write:user",
 	"read:domain": "read:domain",
 	"read-write:domain": "read-write:domain",
 	"read:team": "read:team",
-	"read-write:team": "read-write:team",
 	"read:billing": "read:billing",
 	"read-write:ai-gateway-api-key": "read-write:ai-gateway-api-key",
 	"read:project": "read:project",
@@ -2233,11 +2298,9 @@ export type PayloadNextScopesEnumKey =
 export const payloadNextPermissionsEnum = {
 	"*": "*",
 	"read:user": "read:user",
-	"read-write:user": "read-write:user",
 	"read:domain": "read:domain",
 	"read-write:domain": "read-write:domain",
 	"read:team": "read:team",
-	"read-write:team": "read-write:team",
 	"read:billing": "read:billing",
 	"read-write:ai-gateway-api-key": "read-write:ai-gateway-api-key",
 	"read:project": "read:project",
@@ -2267,30 +2330,6 @@ export const itemsTypeEnum = {
 } as const;
 
 export type ItemsTypeEnumKey = (typeof itemsTypeEnum)[keyof typeof itemsTypeEnum];
-
-export const projectIdsTypeEnum2 = {
-	list: "list",
-} as const;
-
-export type ProjectIdsTypeEnum2Key = (typeof projectIdsTypeEnum2)[keyof typeof projectIdsTypeEnum2];
-
-export const itemsTypeEnum2 = {
-	string: "string",
-} as const;
-
-export type ItemsTypeEnum2Key = (typeof itemsTypeEnum2)[keyof typeof itemsTypeEnum2];
-
-export const projectIdsTypeEnum3 = {
-	list: "list",
-} as const;
-
-export type ProjectIdsTypeEnum3Key = (typeof projectIdsTypeEnum3)[keyof typeof projectIdsTypeEnum3];
-
-export const itemsTypeEnum3 = {
-	string: "string",
-} as const;
-
-export type ItemsTypeEnum3Key = (typeof itemsTypeEnum3)[keyof typeof itemsTypeEnum3];
 
 export const payloadGrantTypeEnum = {
 	authorization_code: "authorization_code",
@@ -6243,6 +6282,44 @@ export type UserEvent = {
 													createdAt: number;
 											  }
 											| undefined;
+										/**
+										 * @description History of MFA state changes (enabled/disabled events). Most recent events first.
+										 * @type array | undefined
+										 */
+										history?:
+											| {
+													/**
+													 * @description The action that occurred
+													 * @type string
+													 */
+													action: HistoryActionEnumKey;
+													/**
+													 * @description Unix timestamp (milliseconds) when the change occurred. May be null for events that occurred before history tracking was implemented.
+													 * @type number
+													 */
+													timestamp: number | null;
+													/**
+													 * @description Method used for the state change - \'totp\': User set up TOTP authenticator - \'passkey\': User registered a passkey - \'user_disabled\': User disabled their own MFA - \'admin_removal\': Admin removed MFA via backoffice - \'unknown\': Method unknown (for pre-tracking events)
+													 * @type string
+													 */
+													method: HistoryMethodEnumKey;
+													/**
+													 * @description ID of the actor who made the change - For user actions: the user\'s own ID - For admin actions: the admin\'s user ID
+													 * @type string
+													 */
+													actorId: string;
+													/**
+													 * @description Type of actor
+													 * @type string
+													 */
+													actorType: HistoryActorTypeEnumKey;
+													/**
+													 * @description Optional: Additional context or reason e.g., \"Account recovery request - ticket #12345\"
+													 * @type string | undefined
+													 */
+													reason?: string | undefined;
+											  }[]
+											| undefined;
 								  }
 								| undefined;
 						} | null;
@@ -6329,6 +6406,29 @@ export type UserEvent = {
 						 * @type array | undefined
 						 */
 						projectIds?: string[] | undefined;
+				  }
+				| {
+						/**
+						 * @type string
+						 */
+						integrationId: string;
+						/**
+						 * @type string
+						 */
+						configurationId: string;
+						/**
+						 * @type string
+						 */
+						integrationSlug: string;
+						/**
+						 * @type string
+						 */
+						integrationName: string;
+						/**
+						 * @type string
+						 */
+						ownerId: string;
+						projectIds?: (string[] | PayloadProjectIdsEnumKey) | undefined;
 				  }
 				| {
 						/**
@@ -6463,7 +6563,7 @@ export type UserEvent = {
 													/**
 													 * @type string
 													 */
-													origin: JoinedFromOriginEnum2Key;
+													origin: JoinedFromOriginEnumKey;
 													/**
 													 * @type string | undefined
 													 */
@@ -7087,6 +7187,90 @@ export type UserEvent = {
 						 */
 						projectName: string;
 						/**
+						 * @type object
+						 */
+						next: {
+							/**
+							 * @type number
+							 */
+							skewProtectionBoundaryAt: number;
+						};
+						/**
+						 * @type object
+						 */
+						previous: {
+							/**
+							 * @type number | undefined
+							 */
+							skewProtectionBoundaryAt?: number | undefined;
+						};
+				  }
+				| {
+						/**
+						 * @type string
+						 */
+						projectId: string;
+						/**
+						 * @type string
+						 */
+						projectName: string;
+						/**
+						 * @type object
+						 */
+						next: {
+							/**
+							 * @type number
+							 */
+							skewProtectionMaxAge: number;
+						};
+						/**
+						 * @type object
+						 */
+						previous: {
+							/**
+							 * @type number | undefined
+							 */
+							skewProtectionMaxAge?: number | undefined;
+						};
+				  }
+				| {
+						/**
+						 * @type string
+						 */
+						projectId: string;
+						/**
+						 * @type string
+						 */
+						projectName: string;
+						/**
+						 * @type object
+						 */
+						next: {
+							/**
+							 * @type array | undefined
+							 */
+							skewProtectionAllowedDomains?: string[] | undefined;
+						};
+						/**
+						 * @type object
+						 */
+						previous: {
+							/**
+							 * @type array | undefined
+							 */
+							skewProtectionAllowedDomains?: string[] | undefined;
+						};
+				  }
+				| {
+						/**
+						 * @type string
+						 */
+						projectId: string;
+						/**
+						 * @type string
+						 */
+						projectName: string;
+						/**
 						 * @type string | undefined
 						 */
 						targetDeploymentId?: string | undefined;
@@ -7434,7 +7618,7 @@ export type UserEvent = {
 							 * @description The budget type
 							 * @type string
 							 */
-							type: BudgetTypeEnum2Key;
+							type: BudgetTypeEnumKey;
 							/**
 							 * @description Budget amount (USD / dollars)
 							 * @type number
@@ -7484,7 +7668,7 @@ export type UserEvent = {
 							 * @description The acive pricing plan the team is billed with
 							 * @type string | undefined
 							 */
-							pricingPlan?: BudgetPricingPlanEnum2Key | undefined;
+							pricingPlan?: BudgetPricingPlanEnumKey | undefined;
 							/**
 							 * @description Partition key
 							 * @type string
@@ -7605,7 +7789,7 @@ export type UserEvent = {
 										/**
 										 * @type string
 										 */
-										role: RoleEnum2Key;
+										role: RoleEnumKey;
 										/**
 										 * @type boolean
 										 */
@@ -8206,7 +8390,7 @@ export type UserEvent = {
 							/**
 							 * @type string | undefined
 							 */
-							role?: ProjectMembershipRoleEnum2Key | undefined;
+							role?: ProjectMembershipRoleEnumKey | undefined;
 							/**
 							 * @type string | undefined
 							 */
@@ -8873,7 +9057,7 @@ export type UserEvent = {
 													/**
 													 * @type string
 													 */
-													type: ProjectIdsTypeEnum2Key;
+													type: ProjectIdsTypeEnumKey;
 													/**
 													 * @type boolean
 													 */
@@ -8885,7 +9069,7 @@ export type UserEvent = {
 														/**
 														 * @type string
 														 */
-														type: ItemsTypeEnum2Key;
+														type: ItemsTypeEnumKey;
 													};
 												};
 										  }
@@ -8909,7 +9093,7 @@ export type UserEvent = {
 													/**
 													 * @type string
 													 */
-													type: ProjectIdsTypeEnum3Key;
+													type: ProjectIdsTypeEnumKey;
 													/**
 													 * @type boolean
 													 */
@@ -8921,7 +9105,7 @@ export type UserEvent = {
 														/**
 														 * @type string
 														 */
-														type: ItemsTypeEnum3Key;
+														type: ItemsTypeEnumKey;
 													};
 												};
 										  }
@@ -9382,7 +9566,7 @@ export const membershipTeamPermissionsEnum = {
 export type MembershipTeamPermissionsEnumKey =
 	(typeof membershipTeamPermissionsEnum)[keyof typeof membershipTeamPermissionsEnum];
 
-export const joinedFromOriginEnum3 = {
+export const joinedFromOriginEnum2 = {
 	bitbucket: "bitbucket",
 	dsync: "dsync",
 	feedback: "feedback",
@@ -9396,8 +9580,8 @@ export const joinedFromOriginEnum3 = {
 	teams: "teams",
 } as const;
 
-export type JoinedFromOriginEnum3Key =
-	(typeof joinedFromOriginEnum3)[keyof typeof joinedFromOriginEnum3];
+export type JoinedFromOriginEnum2Key =
+	(typeof joinedFromOriginEnum2)[keyof typeof joinedFromOriginEnum2];
 
 /**
  * @description Data representing a Team.
@@ -9826,7 +10010,7 @@ export type Team = {
 					/**
 					 * @type string
 					 */
-					origin: JoinedFromOriginEnum3Key;
+					origin: JoinedFromOriginEnum2Key;
 					/**
 					 * @type string | undefined
 					 */
@@ -9872,6 +10056,7 @@ export type Team = {
 	 * @type number
 	 */
 	createdAt: number;
+	[key: string]: unknown;
 };
 
 export const teamLimitedLimitedByEnum = {
@@ -9881,65 +10066,6 @@ export const teamLimitedLimitedByEnum = {
 
 export type TeamLimitedLimitedByEnumKey =
 	(typeof teamLimitedLimitedByEnum)[keyof typeof teamLimitedLimitedByEnum];
-
-export const membershipRoleEnum2 = {
-	BILLING: "BILLING",
-	CONTRIBUTOR: "CONTRIBUTOR",
-	DEVELOPER: "DEVELOPER",
-	MEMBER: "MEMBER",
-	OWNER: "OWNER",
-	SECURITY: "SECURITY",
-	VIEWER: "VIEWER",
-	VIEWER_FOR_PLUS: "VIEWER_FOR_PLUS",
-} as const;
-
-export type MembershipRoleEnum2Key = (typeof membershipRoleEnum2)[keyof typeof membershipRoleEnum2];
-
-export const membershipTeamRolesEnum2 = {
-	BILLING: "BILLING",
-	CONTRIBUTOR: "CONTRIBUTOR",
-	DEVELOPER: "DEVELOPER",
-	MEMBER: "MEMBER",
-	OWNER: "OWNER",
-	SECURITY: "SECURITY",
-	VIEWER: "VIEWER",
-	VIEWER_FOR_PLUS: "VIEWER_FOR_PLUS",
-} as const;
-
-export type MembershipTeamRolesEnum2Key =
-	(typeof membershipTeamRolesEnum2)[keyof typeof membershipTeamRolesEnum2];
-
-export const membershipTeamPermissionsEnum2 = {
-	CreateProject: "CreateProject",
-	EnvVariableManager: "EnvVariableManager",
-	EnvironmentManager: "EnvironmentManager",
-	FullProductionDeployment: "FullProductionDeployment",
-	IntegrationManager: "IntegrationManager",
-	UsageViewer: "UsageViewer",
-	V0Builder: "V0Builder",
-	V0Chatter: "V0Chatter",
-	V0Viewer: "V0Viewer",
-} as const;
-
-export type MembershipTeamPermissionsEnum2Key =
-	(typeof membershipTeamPermissionsEnum2)[keyof typeof membershipTeamPermissionsEnum2];
-
-export const joinedFromOriginEnum4 = {
-	bitbucket: "bitbucket",
-	dsync: "dsync",
-	feedback: "feedback",
-	github: "github",
-	gitlab: "gitlab",
-	import: "import",
-	link: "link",
-	mail: "mail",
-	"organization-teams": "organization-teams",
-	saml: "saml",
-	teams: "teams",
-} as const;
-
-export type JoinedFromOriginEnum4Key =
-	(typeof joinedFromOriginEnum4)[keyof typeof joinedFromOriginEnum4];
 
 /**
  * @description A limited form of data representing a Team, due to the authentication token missing privileges to read the full Team data.
@@ -10093,15 +10219,15 @@ export type TeamLimited = {
 		/**
 		 * @type string
 		 */
-		role: MembershipRoleEnum2Key;
+		role: MembershipRoleEnumKey;
 		/**
 		 * @type array | undefined
 		 */
-		teamRoles?: MembershipTeamRolesEnum2Key[] | undefined;
+		teamRoles?: MembershipTeamRolesEnumKey[] | undefined;
 		/**
 		 * @type array | undefined
 		 */
-		teamPermissions?: MembershipTeamPermissionsEnum2Key[] | undefined;
+		teamPermissions?: MembershipTeamPermissionsEnumKey[] | undefined;
 		/**
 		 * @type number
 		 */
@@ -10118,7 +10244,7 @@ export type TeamLimited = {
 					/**
 					 * @type string
 					 */
-					origin: JoinedFromOriginEnum4Key;
+					origin: JoinedFromOriginEnum2Key;
 					/**
 					 * @type string | undefined
 					 */
@@ -10204,24 +10330,6 @@ export const scopesTypeEnum2 = {
 
 export type ScopesTypeEnum2Key = (typeof scopesTypeEnum2)[keyof typeof scopesTypeEnum2];
 
-export const scopesOriginEnum2 = {
-	saml: "saml",
-	github: "github",
-	gitlab: "gitlab",
-	bitbucket: "bitbucket",
-	email: "email",
-	manual: "manual",
-	passkey: "passkey",
-	otp: "otp",
-	sms: "sms",
-	invite: "invite",
-	google: "google",
-	apple: "apple",
-	app: "app",
-} as const;
-
-export type ScopesOriginEnum2Key = (typeof scopesOriginEnum2)[keyof typeof scopesOriginEnum2];
-
 /**
  * @description Authentication token metadata.
  */
@@ -10298,7 +10406,7 @@ export type AuthToken = {
 						/**
 						 * @type string | undefined
 						 */
-						origin?: ScopesOriginEnum2Key | undefined;
+						origin?: ScopesOriginEnumKey | undefined;
 						/**
 						 * @type number
 						 */
@@ -10946,6 +11054,85 @@ export type FileTree = {
 	 * @type number
 	 */
 	mode: number;
+};
+
+export type VercelBaseError = {
+	/**
+	 * @type string
+	 */
+	code: string;
+	/**
+	 * @type string
+	 */
+	message: string;
+};
+
+export type VercelForbiddenError = {
+	error: unknown & {
+		/**
+		 * @type string
+		 */
+		code: string;
+	};
+};
+
+export type VercelNotFoundError = {
+	error: unknown & {
+		/**
+		 * @type string
+		 */
+		code: string;
+		/**
+		 * @type string | undefined
+		 */
+		message?: string | undefined;
+	};
+};
+
+export type VercelBadRequestError = {
+	error: unknown & {
+		/**
+		 * @type string
+		 */
+		code: string;
+		/**
+		 * @type string | undefined
+		 */
+		message?: string | undefined;
+	};
+};
+
+export type VercelRateLimitError = {
+	error: unknown & {
+		/**
+		 * @type string
+		 */
+		code: string;
+		limit?: unknown | undefined;
+	};
+};
+
+export type RateLimitNotice = {
+	/**
+	 * @minLength 0
+	 * @type integer
+	 */
+	remaining: number;
+	/**
+	 * @minLength 0
+	 * @type integer
+	 */
+	reset: number;
+	/**
+	 * @minLength 0
+	 * @type integer
+	 */
+	resetMs: number;
+	/**
+	 * @minLength 0
+	 * @type integer
+	 */
+	total: number;
 };
 
 export type ReadAccessGroupPathParams = {
@@ -12497,68 +12684,272 @@ export type RerequestCheckMutation = {
 	Errors: RerequestCheck400 | RerequestCheck401 | RerequestCheck403 | RerequestCheck404;
 };
 
-export type PurgeAllDataCacheQueryParams = {
+export type ListNetworksQueryParams = {
 	/**
-	 * @type string
+	 * @description Whether to include Hosted Zones in the response
+	 * @default true
+	 * @type boolean | undefined
 	 */
-	projectIdOrName: string;
+	includeHostedZones?: boolean | undefined;
+	/**
+	 * @description Whether to include VPC Peering connections in the response
+	 * @default true
+	 * @type boolean | undefined
+	 */
+	includePeeringConnections?: boolean | undefined;
+	/**
+	 * @description Whether to include projects in the response
+	 * @default true
+	 * @type boolean | undefined
+	 */
+	includeProjects?: boolean | undefined;
+	/**
+	 * @description The query to use as a filter for returned networks
+	 * @maxLength 255
+	 * @type string | undefined
+	 */
+	search?: string | undefined;
+	/**
+	 * @description The Team identifier to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	teamId?: string | undefined;
+	/**
+	 * @description The Team slug to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	slug?: string | undefined;
 };
 
-export type PurgeAllDataCache200 = unknown;
+export type ListNetworks200 = unknown;
 
 /**
  * @description One of the provided values in the request query is invalid.
  */
-export type PurgeAllDataCache400 = unknown;
+export type ListNetworks400 = unknown;
 
 /**
  * @description The request is not authorized.
  */
-export type PurgeAllDataCache401 = unknown;
+export type ListNetworks401 = unknown;
 
 /**
  * @description You do not have permission to access this resource.
  */
-export type PurgeAllDataCache403 = unknown;
+export type ListNetworks403 = unknown;
 
-export type PurgeAllDataCache404 = unknown;
+export type ListNetworksQueryResponse = ListNetworks200;
 
-export type PurgeAllDataCacheMutationResponse = PurgeAllDataCache200;
-
-export type PurgeAllDataCacheMutation = {
-	Response: PurgeAllDataCache200;
-	QueryParams: PurgeAllDataCacheQueryParams;
-	Errors: PurgeAllDataCache400 | PurgeAllDataCache401 | PurgeAllDataCache403 | PurgeAllDataCache404;
+export type ListNetworksQuery = {
+	Response: ListNetworks200;
+	QueryParams: ListNetworksQueryParams;
+	Errors: ListNetworks400 | ListNetworks401 | ListNetworks403;
 };
 
-export type UpdateDataCacheBillingSettings200 = unknown;
+export type CreateNetworkQueryParams = {
+	/**
+	 * @description The Team identifier to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	teamId?: string | undefined;
+	/**
+	 * @description The Team slug to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	slug?: string | undefined;
+};
+
+export type CreateNetwork201 = unknown;
 
 /**
  * @description One of the provided values in the request body is invalid.
  */
-export type UpdateDataCacheBillingSettings400 = unknown;
+export type CreateNetwork400 = unknown;
 
 /**
  * @description The request is not authorized.
  */
-export type UpdateDataCacheBillingSettings401 = unknown;
+export type CreateNetwork401 = unknown;
+
+/**
+ * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
+ */
+export type CreateNetwork402 = unknown;
 
 /**
  * @description You do not have permission to access this resource.
  */
-export type UpdateDataCacheBillingSettings403 = unknown;
+export type CreateNetwork403 = unknown;
 
-export type UpdateDataCacheBillingSettings404 = unknown;
+export type CreateNetwork404 = unknown;
 
-export type UpdateDataCacheBillingSettingsMutationResponse = UpdateDataCacheBillingSettings200;
+export type CreateNetwork409 = unknown;
 
-export type UpdateDataCacheBillingSettingsMutation = {
-	Response: UpdateDataCacheBillingSettings200;
+export type CreateNetworkMutationResponse = CreateNetwork201;
+
+export type CreateNetworkMutation = {
+	Response: CreateNetwork201;
+	QueryParams: CreateNetworkQueryParams;
 	Errors:
-		| UpdateDataCacheBillingSettings400
-		| UpdateDataCacheBillingSettings401
-		| UpdateDataCacheBillingSettings403
-		| UpdateDataCacheBillingSettings404;
+		| CreateNetwork400
+		| CreateNetwork401
+		| CreateNetwork402
+		| CreateNetwork403
+		| CreateNetwork404
+		| CreateNetwork409;
+};
+
+export type DeleteNetworkPathParams = {
+	/**
+	 * @description The ID of the network to delete
+	 * @type string
+	 */
+	networkId: string;
+};
+
+export type DeleteNetworkQueryParams = {
+	/**
+	 * @description The Team identifier to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	teamId?: string | undefined;
+	/**
+	 * @description The Team slug to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	slug?: string | undefined;
+};
+
+export type DeleteNetwork204 = unknown;
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export type DeleteNetwork400 = unknown;
+
+/**
+ * @description The request is not authorized.
+ */
+export type DeleteNetwork401 = unknown;
+
+export type DeleteNetwork402 = unknown;
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export type DeleteNetwork403 = unknown;
+
+export type DeleteNetwork404 = unknown;
+
+export type DeleteNetwork409 = unknown;
+
+export type DeleteNetworkMutationResponse = DeleteNetwork204;
+
+export type DeleteNetworkMutation = {
+	Response: DeleteNetwork204;
+	PathParams: DeleteNetworkPathParams;
+	QueryParams: DeleteNetworkQueryParams;
+	Errors:
+		| DeleteNetwork400
+		| DeleteNetwork401
+		| DeleteNetwork402
+		| DeleteNetwork403
+		| DeleteNetwork404
+		| DeleteNetwork409;
+};
+
+export type UpdateNetworkPathParams = {
+	/**
+	 * @description The unique identifier of the Secure Compute network
+	 * @type string
+	 */
+	networkId: string;
+};
+
+export type UpdateNetworkQueryParams = {
+	/**
+	 * @description The Team identifier to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	teamId?: string | undefined;
+	/**
+	 * @description The Team slug to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	slug?: string | undefined;
+};
+
+export type UpdateNetwork200 = unknown;
+
+/**
+ * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
+ */
+export type UpdateNetwork400 = unknown;
+
+/**
+ * @description The request is not authorized.
+ */
+export type UpdateNetwork401 = unknown;
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export type UpdateNetwork403 = unknown;
+
+export type UpdateNetworkMutationResponse = UpdateNetwork200;
+
+export type UpdateNetworkMutation = {
+	Response: UpdateNetwork200;
+	PathParams: UpdateNetworkPathParams;
+	QueryParams: UpdateNetworkQueryParams;
+	Errors: UpdateNetwork400 | UpdateNetwork401 | UpdateNetwork403;
+};
+
+export type ReadNetworkPathParams = {
+	/**
+	 * @description The unique identifier of the Secure Compute network
+	 * @type string
+	 */
+	networkId: string;
+};
+
+export type ReadNetworkQueryParams = {
+	/**
+	 * @description The Team identifier to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	teamId?: string | undefined;
+	/**
+	 * @description The Team slug to perform the request on behalf of.
+	 * @type string | undefined
+	 */
+	slug?: string | undefined;
+};
+
+export type ReadNetwork200 = unknown;
+
+/**
+ * @description One of the provided values in the request query is invalid.
+ */
+export type ReadNetwork400 = unknown;
+
+/**
+ * @description The request is not authorized.
+ */
+export type ReadNetwork401 = unknown;
+
+/**
+ * @description You do not have permission to access this resource.
+ */
+export type ReadNetwork403 = unknown;
+
+export type ReadNetworkQueryResponse = ReadNetwork200;
+
+export type ReadNetworkQuery = {
+	Response: ReadNetwork200;
+	PathParams: ReadNetworkPathParams;
+	QueryParams: ReadNetworkQueryParams;
+	Errors: ReadNetwork400 | ReadNetwork401 | ReadNetwork403;
 };
 
 export type UpdateProjectDataCachePathParams = {
@@ -12980,131 +13371,6 @@ export type CancelDeploymentMutation = {
 	PathParams: CancelDeploymentPathParams;
 	QueryParams: CancelDeploymentQueryParams;
 	Errors: CancelDeployment400 | CancelDeployment401 | CancelDeployment403 | CancelDeployment404;
-};
-
-export const checkDomainPriceQueryParamsTypeEnum = {
-	new: "new",
-	renewal: "renewal",
-	transfer: "transfer",
-	redemption: "redemption",
-} as const;
-
-export type CheckDomainPriceQueryParamsTypeEnumKey =
-	(typeof checkDomainPriceQueryParamsTypeEnum)[keyof typeof checkDomainPriceQueryParamsTypeEnum];
-
-export type CheckDomainPriceQueryParams = {
-	/**
-	 * @description The name of the domain for which the price needs to be checked.
-	 * @type string
-	 */
-	name: string;
-	/**
-	 * @description In which status of the domain the price needs to be checked.
-	 * @type string | undefined
-	 */
-	type?: CheckDomainPriceQueryParamsTypeEnumKey | undefined;
-	/**
-	 * @description The Team identifier to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	teamId?: string | undefined;
-	/**
-	 * @description The Team slug to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	slug?: string | undefined;
-};
-
-/**
- * @description Successful response which returns the price of the domain and the period.
- */
-export type CheckDomainPrice200 = unknown;
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export type CheckDomainPrice400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type CheckDomainPrice401 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type CheckDomainPrice403 = unknown;
-
-export type CheckDomainPrice404 = unknown;
-
-export type CheckDomainPrice500 = unknown;
-
-export type CheckDomainPriceQueryResponse = CheckDomainPrice200;
-
-export type CheckDomainPriceQuery = {
-	Response: CheckDomainPrice200;
-	QueryParams: CheckDomainPriceQueryParams;
-	Errors:
-		| CheckDomainPrice400
-		| CheckDomainPrice401
-		| CheckDomainPrice403
-		| CheckDomainPrice404
-		| CheckDomainPrice500;
-};
-
-export type CheckDomainStatusQueryParams = {
-	/**
-	 * @description The name of the domain for which we would like to check the status.
-	 * @type string
-	 */
-	name: string;
-	/**
-	 * @description The Team identifier to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	teamId?: string | undefined;
-	/**
-	 * @description The Team slug to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	slug?: string | undefined;
-};
-
-/**
- * @description Successful response checking if a Domain\'s name is available.
- */
-export type CheckDomainStatus200 = unknown;
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export type CheckDomainStatus400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type CheckDomainStatus401 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type CheckDomainStatus403 = unknown;
-
-export type CheckDomainStatus408 = unknown;
-
-export type CheckDomainStatus500 = unknown;
-
-export type CheckDomainStatusQueryResponse = CheckDomainStatus200;
-
-export type CheckDomainStatusQuery = {
-	Response: CheckDomainStatus200;
-	QueryParams: CheckDomainStatusQueryParams;
-	Errors:
-		| CheckDomainStatus400
-		| CheckDomainStatus401
-		| CheckDomainStatus403
-		| CheckDomainStatus408
-		| CheckDomainStatus500;
 };
 
 export type GetRecordsPathParams = {
@@ -14658,18 +14924,19 @@ export type DeleteConfigurableLogDrainMutation = {
 
 export type GetAllLogDrainsQueryParams = {
 	/**
+	 * @pattern ^[a-zA-z0-9_]+$
 	 * @type string | undefined
 	 */
 	projectId?: string | undefined;
+	/**
+	 * @type string | undefined
+	 */
+	projectIdOrName?: string | undefined;
 	/**
 	 * @default false
 	 * @type boolean | undefined
 	 */
 	includeMetadata?: boolean | undefined;
-	/**
-	 * @type string | undefined
-	 */
-	projectIdOrName?: string | undefined;
 	/**
 	 * @description The Team identifier to perform the request on behalf of.
 	 * @type string | undefined
@@ -16648,9 +16915,6 @@ export type SearchRepoQueryParams = {
 	 * @type string | undefined
 	 */
 	query?: string | undefined;
-	/**
-	 * @type string,number
-	 */
 	namespaceId?: ((string | number) | null) | undefined;
 	provider?: SearchRepoQueryParamsProviderEnumKey | undefined;
 	/**
@@ -17744,15 +18008,13 @@ export type ExchangeSsoToken400 = unknown;
 
 export type ExchangeSsoToken403 = unknown;
 
-export type ExchangeSsoToken404 = unknown;
-
 export type ExchangeSsoToken500 = unknown;
 
 export type ExchangeSsoTokenMutationResponse = ExchangeSsoToken200;
 
 export type ExchangeSsoTokenMutation = {
 	Response: ExchangeSsoToken200;
-	Errors: ExchangeSsoToken400 | ExchangeSsoToken403 | ExchangeSsoToken404 | ExchangeSsoToken500;
+	Errors: ExchangeSsoToken400 | ExchangeSsoToken403 | ExchangeSsoToken500;
 };
 
 export type GetIntegrationLogDrainsQueryParams = {
@@ -18730,6 +18992,8 @@ export type UpdateStaticIps403 = unknown;
 
 export type UpdateStaticIps404 = unknown;
 
+export type UpdateStaticIps409 = unknown;
+
 export type UpdateStaticIps500 = unknown;
 
 export type UpdateStaticIpsMutationResponse = UpdateStaticIps200;
@@ -18744,6 +19008,7 @@ export type UpdateStaticIpsMutation = {
 		| UpdateStaticIps402
 		| UpdateStaticIps403
 		| UpdateStaticIps404
+		| UpdateStaticIps409
 		| UpdateStaticIps500;
 };
 
@@ -19036,7 +19301,7 @@ export type GetProjectDomainsPathParams = {
 	/**
 	 * @description The unique project identifier or the project name
 	 */
-	idOrName: string | number;
+	idOrName: string;
 };
 
 export const getProjectDomainsQueryParamsProductionEnum = {
@@ -20886,6 +21151,7 @@ export type UpdateFirewallConfigMutation = {
 
 export type GetFirewallConfigPathParams = {
 	/**
+	 * @description The deployed configVersion for the firewall configuration
 	 * @type string
 	 */
 	configVersion: string;
@@ -21384,7 +21650,7 @@ export type InviteUserToTeam400 = unknown;
 export type InviteUserToTeam401 = unknown;
 
 /**
- * @description The authenticated user must be a team owner to perform the action\nYou do not have permission to access this resource.
+ * @description You do not have permission to access this resource.\nThe authenticated user must be a team owner to perform the action
  */
 export type InviteUserToTeam403 = unknown;
 
@@ -21400,6 +21666,7 @@ export type InviteUserToTeamMutation = {
 
 export type RequestAccessToTeamPathParams = {
 	/**
+	 * @description The unique team identifier
 	 * @type string
 	 */
 	teamId: string;
@@ -21444,10 +21711,12 @@ export type RequestAccessToTeamMutation = {
 
 export type GetTeamAccessRequestPathParams = {
 	/**
+	 * @description The unique user identifier
 	 * @type string
 	 */
 	userId: string;
 	/**
+	 * @description The unique team identifier
 	 * @type string
 	 */
 	teamId: string;
@@ -21489,6 +21758,7 @@ export type GetTeamAccessRequestQuery = {
 
 export type JoinTeamPathParams = {
 	/**
+	 * @description The unique team identifier
 	 * @type string
 	 */
 	teamId: string;
@@ -21530,6 +21800,7 @@ export type UpdateTeamMemberPathParams = {
 	 */
 	uid: string;
 	/**
+	 * @description The unique team identifier
 	 * @type string
 	 */
 	teamId: string;
@@ -21588,6 +21859,7 @@ export type RemoveTeamMemberPathParams = {
 	 */
 	uid: string;
 	/**
+	 * @description The unique team identifier
 	 * @type string
 	 */
 	teamId: string;
@@ -21907,6 +22179,7 @@ export type DeleteTeamInviteCodePathParams = {
 	 */
 	inviteId: string;
 	/**
+	 * @description The Team identifier to perform the request on behalf of.
 	 * @type string
 	 */
 	teamId: string;
@@ -22785,27 +23058,6 @@ export type PatchUrlProtectionBypassMutation = {
 		| PatchUrlProtectionBypass500;
 };
 
-export type ListCerts200 = unknown;
-
-export type ListCerts400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type ListCerts401 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type ListCerts403 = unknown;
-
-export type ListCertsQueryResponse = ListCerts200;
-
-export type ListCertsQuery = {
-	Response: ListCerts200;
-	Errors: ListCerts400 | ListCerts401 | ListCerts403;
-};
-
 export type GetCertByIdPathParams = {
 	/**
 	 * @description The cert id
@@ -23309,280 +23561,4 @@ export type DeleteDeploymentMutation = {
 	PathParams: DeleteDeploymentPathParams;
 	QueryParams: DeleteDeploymentQueryParams;
 	Errors: DeleteDeployment400 | DeleteDeployment401 | DeleteDeployment403 | DeleteDeployment404;
-};
-
-export type GetSecretsQueryParams = {
-	/**
-	 * @description Filter out secrets based on comma separated secret ids.
-	 * @deprecated
-	 * @type string | undefined
-	 */
-	id?: string | undefined;
-	/**
-	 * @description Filter out secrets that belong to a project.
-	 * @deprecated
-	 * @type string | undefined
-	 */
-	projectId?: string | undefined;
-	/**
-	 * @description The Team identifier to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	teamId?: string | undefined;
-	/**
-	 * @description The Team slug to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	slug?: string | undefined;
-};
-
-/**
- * @description Successful response retrieving a list of secrets.
- */
-export type GetSecrets200 = unknown;
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export type GetSecrets400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type GetSecrets401 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type GetSecrets403 = unknown;
-
-export type GetSecrets410 = unknown;
-
-export type GetSecretsQueryResponse = GetSecrets200;
-
-export type GetSecretsQuery = {
-	Response: GetSecrets200;
-	QueryParams: GetSecretsQueryParams;
-	Errors: GetSecrets400 | GetSecrets401 | GetSecrets403 | GetSecrets410;
-};
-
-export type CreateSecretPathParams = {
-	/**
-	 * @type string
-	 */
-	name: string;
-};
-
-export type CreateSecretQueryParams = {
-	/**
-	 * @description The Team identifier to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	teamId?: string | undefined;
-	/**
-	 * @description The Team slug to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	slug?: string | undefined;
-};
-
-/**
- * @description Successful response showing the created secret.
- */
-export type CreateSecret200 = unknown;
-
-/**
- * @description One of the provided values in the request body is invalid.
- */
-export type CreateSecret400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type CreateSecret401 = unknown;
-
-/**
- * @description The account was soft-blocked for an unhandled reason.\nThe account is missing a payment so payment method must be updated
- */
-export type CreateSecret402 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type CreateSecret403 = unknown;
-
-export type CreateSecret410 = unknown;
-
-export type CreateSecretMutationResponse = CreateSecret200;
-
-export type CreateSecretMutation = {
-	Response: CreateSecret200;
-	PathParams: CreateSecretPathParams;
-	QueryParams: CreateSecretQueryParams;
-	Errors: CreateSecret400 | CreateSecret401 | CreateSecret402 | CreateSecret403 | CreateSecret410;
-};
-
-export type RenameSecretPathParams = {
-	/**
-	 * @description The name of the secret.
-	 * @type string
-	 */
-	name: string;
-};
-
-export type RenameSecretQueryParams = {
-	/**
-	 * @description The Team identifier to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	teamId?: string | undefined;
-	/**
-	 * @description The Team slug to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	slug?: string | undefined;
-};
-
-export type RenameSecret200 = unknown;
-
-/**
- * @description One of the provided values in the request body is invalid.\nOne of the provided values in the request query is invalid.
- */
-export type RenameSecret400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type RenameSecret401 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type RenameSecret403 = unknown;
-
-export type RenameSecret410 = unknown;
-
-export type RenameSecretMutationResponse = RenameSecret200;
-
-export type RenameSecretMutation = {
-	Response: RenameSecret200;
-	PathParams: RenameSecretPathParams;
-	QueryParams: RenameSecretQueryParams;
-	Errors: RenameSecret400 | RenameSecret401 | RenameSecret403 | RenameSecret410;
-};
-
-export type GetSecretPathParams = {
-	/**
-	 * @description The name or the unique identifier to which the secret belongs to.
-	 * @type string
-	 */
-	idOrName: string;
-};
-
-export const getSecretQueryParamsDecryptEnum = {
-	true: "true",
-	false: "false",
-} as const;
-
-export type GetSecretQueryParamsDecryptEnumKey =
-	(typeof getSecretQueryParamsDecryptEnum)[keyof typeof getSecretQueryParamsDecryptEnum];
-
-export type GetSecretQueryParams = {
-	/**
-	 * @description Whether to try to decrypt the value of the secret. Only works if `decryptable` has been set to `true` when the secret was created.
-	 * @type string | undefined
-	 */
-	decrypt?: GetSecretQueryParamsDecryptEnumKey | undefined;
-	/**
-	 * @description The Team identifier to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	teamId?: string | undefined;
-	/**
-	 * @description The Team slug to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	slug?: string | undefined;
-};
-
-/**
- * @description Successful response retrieving a secret.
- */
-export type GetSecret200 = unknown;
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export type GetSecret400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type GetSecret401 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type GetSecret403 = unknown;
-
-export type GetSecret404 = unknown;
-
-export type GetSecret410 = unknown;
-
-export type GetSecretQueryResponse = GetSecret200;
-
-export type GetSecretQuery = {
-	Response: GetSecret200;
-	PathParams: GetSecretPathParams;
-	QueryParams: GetSecretQueryParams;
-	Errors: GetSecret400 | GetSecret401 | GetSecret403 | GetSecret404 | GetSecret410;
-};
-
-export type DeleteSecretPathParams = {
-	/**
-	 * @description The name or the unique identifier to which the secret belongs to.
-	 * @type string
-	 */
-	idOrName: string;
-};
-
-export type DeleteSecretQueryParams = {
-	/**
-	 * @description The Team identifier to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	teamId?: string | undefined;
-	/**
-	 * @description The Team slug to perform the request on behalf of.
-	 * @type string | undefined
-	 */
-	slug?: string | undefined;
-};
-
-export type DeleteSecret200 = unknown;
-
-/**
- * @description One of the provided values in the request query is invalid.
- */
-export type DeleteSecret400 = unknown;
-
-/**
- * @description The request is not authorized.
- */
-export type DeleteSecret401 = unknown;
-
-/**
- * @description You do not have permission to access this resource.
- */
-export type DeleteSecret403 = unknown;
-
-export type DeleteSecret410 = unknown;
-
-export type DeleteSecretMutationResponse = DeleteSecret200;
-
-export type DeleteSecretMutation = {
-	Response: DeleteSecret200;
-	PathParams: DeleteSecretPathParams;
-	QueryParams: DeleteSecretQueryParams;
-	Errors: DeleteSecret400 | DeleteSecret401 | DeleteSecret403 | DeleteSecret410;
 };

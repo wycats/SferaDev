@@ -9976,6 +9976,10 @@ export type GetAdminRealmsRealmIdentityProviderInstancesQueryParams = {
 	 */
 	briefRepresentation?: boolean;
 	/**
+	 * Filter by identity providers capability
+	 */
+	capability?: string;
+	/**
 	 * Pagination offset
 	 *
 	 * @format int32
@@ -9995,6 +9999,10 @@ export type GetAdminRealmsRealmIdentityProviderInstancesQueryParams = {
 	 * Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact ("name"). Default prefixed.
 	 */
 	search?: string;
+	/**
+	 * Filter by identity providers type
+	 */
+	type?: string;
 };
 
 export type GetAdminRealmsRealmIdentityProviderInstancesError = Fetcher.ErrorWrapper<undefined>;
@@ -10546,6 +10554,38 @@ export const getAdminRealmsRealmIdentityProviderProvidersProviderId = (
 	>({
 		url: "/admin/realms/{realm}/identity-provider/providers/{providerId}",
 		method: "get",
+		...variables,
+		signal,
+	});
+
+export type PostAdminRealmsRealmIdentityProviderUploadCertificatePathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+};
+
+export type PostAdminRealmsRealmIdentityProviderUploadCertificateError =
+	Fetcher.ErrorWrapper<undefined>;
+
+export type PostAdminRealmsRealmIdentityProviderUploadCertificateVariables = {
+	pathParams: PostAdminRealmsRealmIdentityProviderUploadCertificatePathParams;
+} & FetcherExtraProps;
+
+export const postAdminRealmsRealmIdentityProviderUploadCertificate = (
+	variables: PostAdminRealmsRealmIdentityProviderUploadCertificateVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		Schemas.CertificateRepresentation,
+		PostAdminRealmsRealmIdentityProviderUploadCertificateError,
+		undefined,
+		{},
+		{},
+		PostAdminRealmsRealmIdentityProviderUploadCertificatePathParams
+	>({
+		url: "/admin/realms/{realm}/identity-provider/upload-certificate",
+		method: "post",
 		...variables,
 		signal,
 	});
@@ -14604,6 +14644,364 @@ export const getAdminRealmsRealmUsersUserIdUnmanagedAttributes = (
 		signal,
 	});
 
+export type GetAdminRealmsRealmWorkflowsPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+};
+
+export type GetAdminRealmsRealmWorkflowsQueryParams = {
+	/**
+	 * Boolean which defines whether the param 'search' must match exactly or not
+	 */
+	exact?: boolean;
+	/**
+	 * The position of the first result to be processed (pagination offset)
+	 *
+	 * @format int32
+	 * @default 0
+	 */
+	first?: number;
+	/**
+	 * The maximum number of results to be returned - defaults to 10
+	 *
+	 * @format int32
+	 * @default 10
+	 */
+	max?: number;
+	/**
+	 * A String representing the workflow name - either partial or exact
+	 */
+	search?: string;
+};
+
+export type GetAdminRealmsRealmWorkflowsError = Fetcher.ErrorWrapper<undefined>;
+
+export type GetAdminRealmsRealmWorkflowsVariables = {
+	pathParams: GetAdminRealmsRealmWorkflowsPathParams;
+	queryParams?: GetAdminRealmsRealmWorkflowsQueryParams;
+} & FetcherExtraProps;
+
+/**
+ * List workflows filtered by name and paginated using first and max parameters.
+ */
+export const getAdminRealmsRealmWorkflows = (
+	variables: GetAdminRealmsRealmWorkflowsVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		Schemas.WorkflowRepresentation,
+		GetAdminRealmsRealmWorkflowsError,
+		undefined,
+		{},
+		GetAdminRealmsRealmWorkflowsQueryParams,
+		GetAdminRealmsRealmWorkflowsPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows",
+		method: "get",
+		...variables,
+		signal,
+	});
+
+export type PostAdminRealmsRealmWorkflowsPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+};
+
+export type PostAdminRealmsRealmWorkflowsError = Fetcher.ErrorWrapper<undefined>;
+
+export type PostAdminRealmsRealmWorkflowsVariables = {
+	body?: Schemas.WorkflowRepresentation;
+	pathParams: PostAdminRealmsRealmWorkflowsPathParams;
+} & FetcherExtraProps;
+
+/**
+ * Create a new workflow from the provided representation.
+ */
+export const postAdminRealmsRealmWorkflows = (
+	variables: PostAdminRealmsRealmWorkflowsVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		undefined,
+		PostAdminRealmsRealmWorkflowsError,
+		Schemas.WorkflowRepresentation,
+		{},
+		{},
+		PostAdminRealmsRealmWorkflowsPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows",
+		method: "post",
+		...variables,
+		signal,
+	});
+
+export type GetAdminRealmsRealmWorkflowsScheduledResourceIdPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+	/**
+	 * Identifier of the resource associated with the scheduled workflows
+	 */
+	resourceId: string;
+};
+
+export type GetAdminRealmsRealmWorkflowsScheduledResourceIdError = Fetcher.ErrorWrapper<undefined>;
+
+export type GetAdminRealmsRealmWorkflowsScheduledResourceIdVariables = {
+	pathParams: GetAdminRealmsRealmWorkflowsScheduledResourceIdPathParams;
+} & FetcherExtraProps;
+
+/**
+ * Return workflows that have scheduled steps for the given resource identifier.
+ */
+export const getAdminRealmsRealmWorkflowsScheduledResourceId = (
+	variables: GetAdminRealmsRealmWorkflowsScheduledResourceIdVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		Schemas.WorkflowRepresentation,
+		GetAdminRealmsRealmWorkflowsScheduledResourceIdError,
+		undefined,
+		{},
+		{},
+		GetAdminRealmsRealmWorkflowsScheduledResourceIdPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows/scheduled/{resourceId}",
+		method: "get",
+		...variables,
+		signal,
+	});
+
+export type GetAdminRealmsRealmWorkflowsIdPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+	/**
+	 * Workflow identifier
+	 */
+	id: string;
+};
+
+export type GetAdminRealmsRealmWorkflowsIdQueryParams = {
+	/**
+	 * Indicates whether the workflow id should be included in the representation or not - defaults to true
+	 */
+	includeId?: boolean;
+};
+
+export type GetAdminRealmsRealmWorkflowsIdError = Fetcher.ErrorWrapper<undefined>;
+
+export type GetAdminRealmsRealmWorkflowsIdVariables = {
+	pathParams: GetAdminRealmsRealmWorkflowsIdPathParams;
+	queryParams?: GetAdminRealmsRealmWorkflowsIdQueryParams;
+} & FetcherExtraProps;
+
+/**
+ * Get the workflow representation. Optionally exclude the workflow id from the response.
+ */
+export const getAdminRealmsRealmWorkflowsId = (
+	variables: GetAdminRealmsRealmWorkflowsIdVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		Schemas.WorkflowRepresentation,
+		GetAdminRealmsRealmWorkflowsIdError,
+		undefined,
+		{},
+		GetAdminRealmsRealmWorkflowsIdQueryParams,
+		GetAdminRealmsRealmWorkflowsIdPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows/{id}",
+		method: "get",
+		...variables,
+		signal,
+	});
+
+export type PutAdminRealmsRealmWorkflowsIdPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+	/**
+	 * Workflow identifier
+	 */
+	id: string;
+};
+
+export type PutAdminRealmsRealmWorkflowsIdError = Fetcher.ErrorWrapper<undefined>;
+
+export type PutAdminRealmsRealmWorkflowsIdVariables = {
+	body?: Schemas.WorkflowRepresentation;
+	pathParams: PutAdminRealmsRealmWorkflowsIdPathParams;
+} & FetcherExtraProps;
+
+/**
+ * Update the workflow configuration. This method does not update the workflow steps.
+ */
+export const putAdminRealmsRealmWorkflowsId = (
+	variables: PutAdminRealmsRealmWorkflowsIdVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		undefined,
+		PutAdminRealmsRealmWorkflowsIdError,
+		Schemas.WorkflowRepresentation,
+		{},
+		{},
+		PutAdminRealmsRealmWorkflowsIdPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows/{id}",
+		method: "put",
+		...variables,
+		signal,
+	});
+
+export type DeleteAdminRealmsRealmWorkflowsIdPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+	/**
+	 * Workflow identifier
+	 */
+	id: string;
+};
+
+export type DeleteAdminRealmsRealmWorkflowsIdError = Fetcher.ErrorWrapper<undefined>;
+
+export type DeleteAdminRealmsRealmWorkflowsIdVariables = {
+	pathParams: DeleteAdminRealmsRealmWorkflowsIdPathParams;
+} & FetcherExtraProps;
+
+/**
+ * Delete the workflow and its configuration.
+ */
+export const deleteAdminRealmsRealmWorkflowsId = (
+	variables: DeleteAdminRealmsRealmWorkflowsIdVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		undefined,
+		DeleteAdminRealmsRealmWorkflowsIdError,
+		undefined,
+		{},
+		{},
+		DeleteAdminRealmsRealmWorkflowsIdPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows/{id}",
+		method: "delete",
+		...variables,
+		signal,
+	});
+
+export type PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+	/**
+	 * Workflow identifier
+	 */
+	id: string;
+	/**
+	 * Resource identifier
+	 */
+	resourceId: string;
+	/**
+	 * Resource type
+	 */
+	type: Record<string, any>;
+};
+
+export type PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdQueryParams = {
+	/**
+	 * Optional value representing the time to schedule the first workflow step. The value is either an integer representing the seconds from now, an integer followed by 'ms' representing milliseconds from now, or an ISO-8601 date string.
+	 */
+	notBefore?: string;
+};
+
+export type PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdError =
+	Fetcher.ErrorWrapper<undefined>;
+
+export type PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdVariables = {
+	pathParams: PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdPathParams;
+	queryParams?: PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdQueryParams;
+} & FetcherExtraProps;
+
+/**
+ * Activate the workflow for the given resource type and identifier. Optionally schedule the first step using the notBefore parameter.
+ */
+export const postAdminRealmsRealmWorkflowsIdActivateTypeResourceId = (
+	variables: PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		undefined,
+		PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdError,
+		undefined,
+		{},
+		PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdQueryParams,
+		PostAdminRealmsRealmWorkflowsIdActivateTypeResourceIdPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows/{id}/activate/{type}/{resourceId}",
+		method: "post",
+		...variables,
+		signal,
+	});
+
+export type PostAdminRealmsRealmWorkflowsIdDeactivateTypeResourceIdPathParams = {
+	/**
+	 * realm name (not id!)
+	 */
+	realm: string;
+	/**
+	 * Workflow identifier
+	 */
+	id: string;
+	/**
+	 * Resource identifier
+	 */
+	resourceId: string;
+	/**
+	 * Resource type
+	 */
+	type: Record<string, any>;
+};
+
+export type PostAdminRealmsRealmWorkflowsIdDeactivateTypeResourceIdError =
+	Fetcher.ErrorWrapper<undefined>;
+
+export type PostAdminRealmsRealmWorkflowsIdDeactivateTypeResourceIdVariables = {
+	pathParams: PostAdminRealmsRealmWorkflowsIdDeactivateTypeResourceIdPathParams;
+} & FetcherExtraProps;
+
+/**
+ * Deactivate the workflow for the given resource type and identifier.
+ */
+export const postAdminRealmsRealmWorkflowsIdDeactivateTypeResourceId = (
+	variables: PostAdminRealmsRealmWorkflowsIdDeactivateTypeResourceIdVariables,
+	signal?: AbortSignal,
+) =>
+	fetch<
+		undefined,
+		PostAdminRealmsRealmWorkflowsIdDeactivateTypeResourceIdError,
+		undefined,
+		{},
+		{},
+		PostAdminRealmsRealmWorkflowsIdDeactivateTypeResourceIdPathParams
+	>({
+		url: "/admin/realms/{realm}/workflows/{id}/deactivate/{type}/{resourceId}",
+		method: "post",
+		...variables,
+		signal,
+	});
+
 export const operationsByTag = {
 	realmsAdmin: {
 		getAdminRealms,
@@ -14819,6 +15217,7 @@ export const operationsByTag = {
 		postAdminRealmsRealmClientsClientUuidCertificatesAttrGenerateAndDownload,
 		postAdminRealmsRealmClientsClientUuidCertificatesAttrUpload,
 		postAdminRealmsRealmClientsClientUuidCertificatesAttrUploadCertificate,
+		postAdminRealmsRealmIdentityProviderUploadCertificate,
 	},
 	roles: {
 		getAdminRealmsRealmClientsClientUuidRoles,
@@ -14985,5 +15384,15 @@ export const operationsByTag = {
 		putAdminRealmsRealmUsersUserIdSendVerifyEmail,
 		getAdminRealmsRealmUsersUserIdSessions,
 		getAdminRealmsRealmUsersUserIdUnmanagedAttributes,
+	},
+	workflows: {
+		getAdminRealmsRealmWorkflows,
+		postAdminRealmsRealmWorkflows,
+		getAdminRealmsRealmWorkflowsScheduledResourceId,
+		getAdminRealmsRealmWorkflowsId,
+		putAdminRealmsRealmWorkflowsId,
+		deleteAdminRealmsRealmWorkflowsId,
+		postAdminRealmsRealmWorkflowsIdActivateTypeResourceId,
+		postAdminRealmsRealmWorkflowsIdDeactivateTypeResourceId,
 	},
 };
