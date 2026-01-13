@@ -30,7 +30,7 @@ export const effectServiceGenerator: ReturnType<typeof createReactGenerator<Plug
 				if (!operationsByTag.has(tagKey)) {
 					operationsByTag.set(tagKey, []);
 				}
-				operationsByTag.get(tagKey)!.push(operation);
+				operationsByTag.get(tagKey)?.push(operation);
 			}
 
 			// Map operations with their metadata
@@ -88,7 +88,8 @@ export const effectServiceGenerator: ReturnType<typeof createReactGenerator<Plug
 					const serviceName = `${pascalCase(tag)}Service`;
 					const methods = tagOperations
 						.map((operation) => {
-							const opMeta = operationsMapped.find((o) => o.operation === operation)!;
+							const opMeta = operationsMapped.find((o) => o.operation === operation);
+							if (!opMeta) return null;
 							const params = getEffectParams({
 								paramsCasing: options.paramsCasing,
 								typeSchemas: opMeta.type.schemas,
@@ -97,6 +98,7 @@ export const effectServiceGenerator: ReturnType<typeof createReactGenerator<Plug
 							const callParamsStr = params.toCall();
 							return `    ${opMeta.effect.name}: (${paramsStr}) => ${opMeta.effect.name}(${callParamsStr})`;
 						})
+						.filter((m): m is string => m !== null)
 						.join(",\n");
 
 					return `export const ${serviceName} = {
@@ -128,12 +130,20 @@ ${methods}
 				.sort((a, b) => a.key.localeCompare(b.key));
 
 			const pathsType = operationsByPath
-				.map(({ key }) => `  "${key}": typeof ${operationsByPath.find((o) => o.key === key)!.name}`)
+				.map(({ key, name }) => `  "${key}": typeof ${name}`)
 				.join(";\n");
 
 			const pathsObject = operationsByPath
 				.map(({ key, name }) => `  "${key}": ${name}`)
 				.join(",\n");
+
+			// Extract package name for JSDoc examples from output directory
+			const outputPath = options.output?.path || "";
+			const packageName = outputPath.includes("vercel-api-js")
+				? "vercel-api-js"
+				: outputPath.includes("v0-api")
+					? "v0-api"
+					: "your-package";
 
 			return (
 				<File
@@ -146,8 +156,18 @@ ${methods}
 				>
 					<File.Import name={["Effect", "Context", "Layer"]} path="effect" />
 					<File.Import
-						name={["ApiClient", "ApiError", "ApiClientLive", "makeApiClientLive"]}
-						path="../utils/effect"
+						name={[
+							"ApiClient",
+							"ApiError",
+							"ValidationError",
+							"NetworkError",
+							"makeApiClientLive",
+							"makeApiClientFromEnv",
+							"createClient",
+							"runWithClient",
+							"serializeQueryParams",
+						]}
+						path="@sferadev/openapi-utils/effect"
 					/>
 					{imports}
 					{typeImports}
@@ -155,7 +175,8 @@ ${methods}
 					<File.Source name={fileName} isExportable isIndexable>
 						{`
 // Re-export core types for convenience
-export { ApiClient, ApiError, ApiClientLive, makeApiClientLive } from "../utils/effect";
+export { ApiClient, ApiError, ValidationError, NetworkError, makeApiClientLive, makeApiClientFromEnv, createClient, runWithClient, serializeQueryParams } from "@sferadev/openapi-utils/effect";
+export type { ApiClientConfig, ApiClientRequest, ApiClientService } from "@sferadev/openapi-utils/effect";
 
 // ============================================================================
 // Tag-based Services
@@ -173,12 +194,16 @@ ${tagServices}
  *
  * @example
  * \`\`\`ts
- * import { ApiService, makeApiClientLive } from "your-package/effect";
+ * import { ApiService, makeApiClientLive } from "${packageName}/effect";
  * import { Effect } from "effect";
  *
- * const program = ApiService.projects.listProjects();
+ * const program = Effect.gen(function* () {
+ *   const projects = yield* ApiService.projects.listProjects();
+ *   return projects;
+ * });
+ *
  * const result = await program.pipe(
- *   Effect.provide(makeApiClientLive({ token: "your-token" })),
+ *   Effect.provide(makeApiClientLive({ baseUrl: "https://api.example.com", token: "your-token" })),
  *   Effect.runPromise
  * );
  * \`\`\`
@@ -196,12 +221,16 @@ ${apiServiceMethods}
  *
  * @example
  * \`\`\`ts
- * import { operationsByPath, makeApiClientLive } from "your-package/effect";
+ * import { operationsByPath, makeApiClientLive } from "${packageName}/effect";
  * import { Effect } from "effect";
  *
- * const program = operationsByPath["GET /v4/projects"]();
+ * const program = Effect.gen(function* () {
+ *   const result = yield* operationsByPath["GET /v4/projects"]();
+ *   return result;
+ * });
+ *
  * const result = await program.pipe(
- *   Effect.provide(makeApiClientLive({ token: "your-token" })),
+ *   Effect.provide(makeApiClientLive({ baseUrl: "https://api.example.com", token: "your-token" })),
  *   Effect.runPromise
  * );
  * \`\`\`
@@ -223,21 +252,26 @@ ${pathsObject}
  *
  * @example
  * \`\`\`ts
- * import { request, makeApiClientLive } from "your-package/effect";
+ * import { request, makeApiClientLive } from "${packageName}/effect";
  * import { Effect } from "effect";
  *
- * const program = request("GET /v4/projects", {});
+ * const program = Effect.gen(function* () {
+ *   const result = yield* request("GET /v4/projects", {});
+ *   return result;
+ * });
+ *
  * const result = await program.pipe(
- *   Effect.provide(makeApiClientLive({ token: "your-token" })),
+ *   Effect.provide(makeApiClientLive({ baseUrl: "https://api.example.com", token: "your-token" })),
  *   Effect.runPromise
  * );
  * \`\`\`
  */
 export function request<K extends keyof OperationsByPath>(
   endpoint: K,
-  ...args: Parameters<OperationsByPath[K]>
+  params: Parameters<OperationsByPath[K]>[0]
 ): ReturnType<OperationsByPath[K]> {
-  return (operationsByPath[endpoint] as any)(...args);
+  const operation = operationsByPath[endpoint] as (params: unknown) => ReturnType<OperationsByPath[K]>;
+  return operation(params);
 }
 `}
 					</File.Source>

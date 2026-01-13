@@ -20,13 +20,13 @@
 		"is-tree-shakable": "is-tree-shakable"
 	},
 	"dependencies": {
+		"@sferadev/openapi-utils": "workspace:*",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@kubb/cli": "catalog:",
 		"@kubb/core": "catalog:",
 		"@modelcontextprotocol/sdk": "catalog:",
-		"@sferadev/openapi-utils": "workspace:*",
 		"@sferadev/tsconfig": "workspace:*",
 		"@types/node": "catalog:",
 		"bunchee": "catalog:",

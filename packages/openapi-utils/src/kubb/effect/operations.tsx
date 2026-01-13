@@ -40,7 +40,10 @@ export const effectOperationsGenerator: ReturnType<typeof createReactGenerator<P
 					footer={getFooter({ oas, output })}
 				>
 					<File.Import name={["Effect"]} path="effect" />
-					<File.Import name={["ApiClient", "ApiError"]} path="../utils/effect" />
+					<File.Import
+						name={["ApiClient", "ApiError", "ValidationError", "serializeQueryParams"]}
+						path="@sferadev/openapi-utils/effect"
+					/>
 					<File.Import
 						name={
 							[

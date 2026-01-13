@@ -769,6 +769,9 @@ importers:
 
   packages/v0-api:
     dependencies:
+      '@sferadev/openapi-utils':
+        specifier: workspace:*
+        version: link:../openapi-utils
       zod:
         specifier: 'catalog:'
         version: 4.3.5
@@ -788,9 +791,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 'catalog:'
         version: 1.25.2(hono@4.11.3)(zod@4.3.5)
-      '@sferadev/openapi-utils':
-        specifier: workspace:*
-        version: link:../openapi-utils
       '@sferadev/tsconfig':
         specifier: workspace:*
         version: link:../../configs/tsconfig
@@ -812,6 +812,9 @@ importers:
 
   packages/vercel-api-js:
     dependencies:
+      '@sferadev/openapi-utils':
+        specifier: workspace:*
+        version: link:../openapi-utils
       zod:
         specifier: 'catalog:'
         version: 4.3.5
@@ -825,9 +828,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 'catalog:'
         version: 1.25.2(hono@4.11.3)(zod@4.3.5)
-      '@sferadev/openapi-utils':
-        specifier: workspace:*
-        version: link:../openapi-utils
       '@sferadev/tsconfig':
         specifier: workspace:*
         version: link:../../configs/tsconfig

@@ -90,7 +90,7 @@ export function EffectOperation({
 	const hasBody = !!typeSchemas.request?.name;
 	const hasHeaders = !!typeSchemas.headerParams?.name;
 
-	const hasAnyParams = hasPathParams || hasQueryParams || hasBody || hasHeaders;
+	const _hasAnyParams = hasPathParams || hasQueryParams || hasBody || hasHeaders;
 
 	// Build the path template with interpolation
 	const pathTemplate = path.template;
@@ -103,44 +103,54 @@ export function EffectOperation({
 
 	const headersObject = headersEntries.length > 0 ? `{ ${headersEntries.join(", ")} }` : "{}";
 
+	// Build URL construction code
+	const urlConstruction = hasPathParams
+		? `const url = ${pathTemplate};`
+		: `const url = "${operation.path}";`;
+
+	const queryParamsCode = hasQueryParams
+		? `const searchParams = serializeQueryParams(queryParams);
+			const fullUrl = url + (searchParams ? "?" + searchParams : "");`
+		: `const fullUrl = url;`;
+
+	const pathParamsValidation = hasPathParams
+		? Object.keys(typeSchemas.pathParams?.schema?.properties || {})
+				.map(
+					(key) => `
+			if (${key} === undefined) {
+				return yield* Effect.fail(new ValidationError({
+					field: "${key}",
+					message: "Missing required path parameter"
+				}));
+			}`,
+				)
+				.join("")
+		: "";
+
+	const formDataCode = isFormData
+		? `
+			const formData = new FormData();
+			if (body) {
+				Object.entries(body).forEach(([key, value]) => {
+					if (value instanceof File || value instanceof Blob || typeof value === "string") {
+						formData.append(key, value);
+					} else if (value !== undefined && value !== null) {
+						formData.append(key, String(value));
+					}
+				});
+			}`
+		: "";
+
 	// Generate the Effect function body
 	const functionBody = `
 		return Effect.gen(function* () {
 			const client = yield* ApiClient;
-			${hasPathParams ? `const { ${Object.keys(typeSchemas.pathParams?.schema?.properties || {}).join(", ")} } = pathParams ?? {};` : ""}
-			${
-				hasPathParams
-					? Object.keys(typeSchemas.pathParams?.schema?.properties || {})
-							.map(
-								(key) => `
-			if (${key} === undefined) {
-				return yield* Effect.fail(new ApiError({
-					status: 400,
-					error: { message: "Missing required path parameter: ${key}" }
-				}));
-			}`,
-							)
-							.join("")
-					: ""
-			}
+			${pathParamsValidation}
 
-			const url = \`${pathTemplate}\`;
-			${hasQueryParams ? "const searchParams = queryParams ? new URLSearchParams(Object.entries(queryParams).filter(([_, v]) => v !== undefined).map(([k, v]) => [k, String(v)])).toString() : '';" : ""}
-			const fullUrl = ${hasQueryParams ? '`${url}${searchParams ? `?${searchParams}` : ""}`' : "url"};
+			${urlConstruction}
+			${queryParamsCode}
 
-			${
-				isFormData
-					? `
-			const formData = new FormData();
-			if (body) {
-				Object.entries(body).forEach(([key, value]) => {
-					if (typeof value === "string" || value instanceof Blob) {
-						formData.append(key, value);
-					}
-				});
-			}`
-					: ""
-			}
+			${formDataCode}
 
 			const response = yield* client.request({
 				method: "${method}",
@@ -161,7 +171,7 @@ export function EffectOperation({
 				JSDoc={{
 					comments: getComments(operation),
 				}}
-				returnType={`Effect.Effect<${TResponse}, ApiError | ${TError}, ApiClient>`}
+				returnType={`Effect.Effect<${TResponse}, ApiError | ValidationError | ${TError}, ApiClient>`}
 			>
 				{functionBody}
 			</FunctionDeclaration>
