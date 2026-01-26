@@ -1,5 +1,27 @@
 # keycloak-api
 
+## 0.3.0
+
+### Minor Changes
+
+- f930fc9: Added new organization invitation endpoints: list, get, delete, and resend invitations for organizations.
+- 887cbe1: Added new workflows API endpoints and types for managing workflows in admin realms.
+- 887cbe1: Added types and endpoints for organization invitations.
+- 74ad091: Migrate OpenAPI clients to SferaDev monorepo with improved build configuration, updated dependencies, and enhanced TypeScript support.
+- 887cbe1: Added postAdminRealmsRealmIdentityProviderUploadCertificate API for uploading identity provider certificates.
+
+### Patch Changes
+
+- f930fc9: Removed the optional 'address' property from AccessToken and IDToken types.
+- 887cbe1: Added 'capability' and 'type' filters to GetAdminRealmsRealmIdentityProviderInstancesQueryParams.
+- 0075a59: Update some export types in schemas.ts to use void instead of undefined for better type semantics.
+- 887cbe1: Updated AccessToken and IDToken address property to a generic object instead of AddressClaimSet.
+- 887cbe1: Added webOrigins field to ClientInitialAccessCreatePresentation type.
+- 887cbe1: Extended CertificateRepresentation with jwks property.
+- 887cbe1: Updated and extended workflow-related types and fields, including WorkflowRepresentation and related subtypes.
+- 0075a59: Refactor import statements and API method signatures in account and admin components for greater consistency and clarity.
+- 887cbe1: Expanded IdentityProviderRepresentation with 'types' property.
+
 ## 0.2.6
 
 ### Patch Changes

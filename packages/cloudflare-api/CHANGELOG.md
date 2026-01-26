@@ -1,5 +1,11 @@
 # cloudflare-api-js
 
+## 0.19.0
+
+### Minor Changes
+
+- 74ad091: Migrate OpenAPI clients to SferaDev monorepo with improved build configuration, updated dependencies, and enhanced TypeScript support.
+
 ## 0.18.1
 
 ### Patch Changes

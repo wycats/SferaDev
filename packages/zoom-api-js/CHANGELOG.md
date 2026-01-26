@@ -1,5 +1,24 @@
 # zoom-api-js
 
+## 0.7.0
+
+### Minor Changes
+
+- 74ad091: Migrate OpenAPI clients to SferaDev monorepo with improved build configuration, updated dependencies, and enhanced TypeScript support.
+
+### Patch Changes
+
+- ec0dcc0: Updated descriptions for from and to parameters to clarify time field is specified by time_filter_field.
+- ec0dcc0: Added time_filter_field parameter to ListmeetingsummariesQueryParams to specify which summary time field to use for filtering.
+- 5d138a3: Added show_join_info setting to Webinar settings objects for controlling if join info appears on the registration confirmation page.
+- 5d138a3: Added additional_data_center_regions field to Meeting and Webinar settings for creating, updating, and responding with extra allowed data center regions.
+- 1d4a15e: Refactored import statements in extra.ts for improved readability and organization.
+- 5d138a3: Added visible property to Webinar tracking field responses indicating portal visibility status.
+- 5d138a3: Added template_id field to MeetingResponse, MeetingCreateResponse, WebinarResponse, and WebinarCreateResponse types for tracking meeting and webinar templates used.
+- 5d138a3: Added registrants_confirmation_email to WebinarCreateRequestBody settings for sending confirmation emails to webinar registrants.
+- 5d138a3: Improved various field descriptions and documentation in WebinarCreateResponse for clarity and consistency.
+- 5d138a3: Added registration_url field to MeetingResponse and WebinarResponse types for returning the registration link when registration is enabled.
+
 ## 0.6.4
 
 ### Patch Changes

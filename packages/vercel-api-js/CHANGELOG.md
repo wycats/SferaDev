@@ -1,5 +1,109 @@
 # vercel-api-js
 
+## 1.1.0
+
+### Minor Changes
+
+- 2053ddf: Added a new variant to the UserEvent type and schema to include authentication methods, geolocation, user agent, environment, OS, and MFA factors information.
+- 6e270cb: Added RateLimitNotice schema and type.
+- 5fbafa4: Add types, schemas, and API endpoints for Secure Compute networks, including list, create, delete, update, and read operations.
+- 1e823d5: Added Drains endpoints for log drains: create, retrieve, update, delete, and test Drains.
+- 9b46913: Removed CreateSecret402 and GetSecret404 error types from API methods, types, and schemas.
+- 6e270cb: Added reusable error schemas and types (VercelBaseError, VercelForbiddenError, etc).
+- 4be1a80: Added the GET /v1/installations/{integrationConfigurationId}/resources/{resourceId}/experimentation/edge-config endpoint to fetch the contents of a user-provided Edge Config when Edge Config syncing is enabled.
+- 1e823d5: Added endpoints for configuring Static IPs in a project and client certificate management for mTLS egress auth.
+- 750dcd9: Add support for a new UserEvent variant containing project Git provider migration details with previous and next fields.
+- 3b019a4: Added support for projectIds:'all' in UserEvent integration payloads.
+- 9b46913: Removed deprecated 'id' and 'projectId' fields from GetSecretsQueryParams type and related schemas.
+- 1e823d5: Removed deprecated deprecated buyDomain function and related API types.
+- 1e823d5: Added shared environment variable endpoints for teams: create, list, update, delete, retrieve by id, and unlink from project.
+- 1e823d5: Added endpoint for team Directory Sync role mappings update.
+- 74ad091: Migrate OpenAPI clients to SferaDev monorepo with improved build configuration, updated dependencies, and enhanced TypeScript support.
+- 1e823d5: Added integration, billing, and git-related endpoints: marketplace billing plan listing, resource/project connections, update installation, git namespaces, and repo search.
+- 1e823d5: Added bulk redirects endpoints: staging, editing, deleting, restoring, versioning, and promoting project-level redirects.
+- 1e823d5: Added endpoints for edge cache tag/image invalidation and dangerous deletes by tag and by src image.
+- 1e823d5: Added Domains Registrar endpoints: supported TLDs, TLD price, domain availability and price, buy domains (single and multiple), renew, transfer-in, transfer status, order info, update auto-renew and nameservers, contact info schema.
+- 8c10b95: Added a new variant to userEventSchema and UserEvent type with projectId, projectName, previous, and next objects.
+
+### Patch Changes
+
+- 9200170: Add optional 'leakedAt' field to AuthToken schema and type to indicate when the token was marked as leaked.
+- f432baa: Added support for branch matcher details in custom environment objects in the user event schema and types.
+- de7684d: Add user event tracking for gitForkProtection property changes in projects.
+- 750dcd9: Change the order of values in the importFlowGitProvider enum to match a new preferred order.
+- 0aee180: Added a regex pattern constraint for projectId in GetAllLogDrainsQueryParams to ensure valid project IDs.
+- 418f7c1: Removed 'read-write:user' from payloadPermissionsEnum and userEvent schema permissions.
+- 6e270cb: Removed the /certs list endpoint and related types and schemas.
+- 6a04278: Added new UserEvent object variants for project-related Git information and deployment options.
+- b5daff8: Added workflowStorage and workflowStep block information to user event schema.
+- 9211d88: Added recommendation in documentation comments to prefer using 'invalidateByTag' and 'invalidateBySrcImage' methods over 'dangerouslyDeleteByTags' and 'dangerouslyDeleteBySrcImages' for advanced use cases.
+- beb0866: Add new user event schema for enableAffectedProjectsDeployments field for projects.
+- 418f7c1: Added skewProtectionBoundaryAt, skewProtectionMaxAge, and skewProtectionAllowedDomains objects to the userEvent schema.
+- 3d27423: [BREAKING] Removed the updateProjectDataCache endpoint and all related types and schemas.
+- c740263: Removed the acceptedPermissionSets and nextAcceptedPermissionSets fields from userEvent schema and UserEvent type.
+- 9b46913: Removed unnecessary 'headers' property from request calls in secret-related API methods.
+- de7684d: Add support for user event tracking on changes to project issuerMode.
+- 6e270cb: Removed the /data-cache/purge-all endpoint and related types and schemas.
+- 47ad788: Add user event schema for functionDefaultTimeout update.
+- 3b7949f: Added optional nsnbConfig property with preference setting to Team schema and type.
+- 3b019a4: [BREAKING] Removed all Secret-related API endpoints and types, including getSecrets, createSecret, renameSecret, getSecret, and deleteSecret.
+- 1e823d5: Marked some domains endpoints as deprecated and noted their replacements in summary.
+- 5253cb0: Added optional 'history' field to MFA configuration schema to track state changes and relevant details.
+- de7684d: Add user event tracking for customerSupportCodeVisibility property changes in projects.
+- 1e823d5: Added additional error type handling and enhanced error schemas throughout endpoints.
+- 6c1a68b: Refactored mcp.ts to re-export all endpoint functions from components.ts, consolidating API surface and reducing boilerplate.
+- b5daff8: Added enums and types for workflowStorage and workflowStep block reasons.
+- 52113c6: Introduced payloadDirectoryListingEnum and associated type for directoryListing property.
+- 048da32: Added import for CallToolResult type from utils/mcp.
+- bd25f9b: Renamed payloadActionEnum7 and PayloadActionEnum7Key to payloadActionEnum8 and PayloadActionEnum8Key, and updated references accordingly.
+- 6b31045: [BREAKING] Changed the registrantFieldSchema validation field to accept only strings instead of specific enums or patterns.
+- 3d27423: Expanded countryCode to use a strict enum of ISO 3166-1 alpha-2 codes rather than a string regex.
+- bd25f9b: Introduced payloadActionEnum6 with enabled and disabled values, and corresponding type PayloadActionEnum6Key.
+- fbcc6f4: Added optional 'access' property with enum values 'public' and 'private' to userEventSchema and UserEvent type.
+- f6e47b5: Added buildQueueConfiguration and oldBuildQueueConfiguration optional fields with enum values to user event schema.
+- 6e270cb: Allowed arbitrary properties in teamSchema to support unexpected fields.
+- 1e823d5: Set query parameter types to properly handle undefined/optional and removed | undefined where not needed.
+- 63eb4c1: Introduced PayloadPreviewDeploymentsEnabledEnum type for the previewDeploymentsEnabled property.
+- bd25f9b: Added a new object schema to userEventSchema with projectId, projectName, and action fields.
+- 2053ddf: Introduced enums and types for various authentication methods and MFA factors in generated types.
+- fae7185: [BREAKING] Removed deprecated checkDomainPrice and checkDomainStatus API endpoints, along with related types and schemas.
+- 3e6ad2c: Extended the list of possible values for getBillingPlansQueryParams 'source' field to a defined enum and updated the types accordingly.
+- 3b019a4: Added UpdateStaticIps409 error type to updateStaticIps mutation errors.
+- 47ad788: Add user event schema for functionZeroConfigFailover update.
+- beb0866: Add new user event schema for sourceFilesOutsideRootDirectory field for projects.
+- 3b019a4: Removed ExchangeSsoToken404 error type from exchangeSsoToken mutation errors.
+- 8c10b95: [BREAKING] skewProtectionAllowedDomains is now required in userEventSchema and UserEvent type next object.
+- 52113c6: Added new user event type for projects with directoryListing property in userEventSchema and UserEvent type.
+- 58d2f79: Added projectId field to several userEventSchema variants and corresponding UserEvent types.
+- f2fd5bb: Removed 'read-write:team' from permissions enums and user event schema.
+- fa99aa6: Added a new project event type with 'gitLFS' and 'projectId' to user event schema and types.
+- 3d27423: Added strictDeploymentProtectionSettings property to the Team type and schema.
+- 6e270cb: Removed the /data-cache/billing-settings endpoint and related types and schemas.
+- de7684d: Add user event tracking for project expiration configuration changes.
+- 47ad788: Add user event schema for functionDefaultRegions update.
+- 144fcba: [BREAKING] Removed all client certificate management endpoints and types for project mTLS egress from the API.
+- bd25f9b: Renamed payloadActionEnum6 and PayloadActionEnum6Key to payloadActionEnum7 and PayloadActionEnum7Key, and updated references accordingly.
+- aa354b2: Added buildQueueConfiguration filter to getProjects query parameters schema and types.
+- f6e47b5: Added the ineligibleForAppeal boolean field to user event schema.
+- f432baa: Introduced BranchMatcherTypeEnumKey type and branchMatcherTypeEnum constants.
+- 9b46913: Simplified response types and schemas by replacing specific types (e.g., CreateSecret200, RenameSecret200) with generic unknown/any types.
+- 4be1a80: Refactored schemas and types to represent booleans as literal true/false unions and enum types for improved type safety and API consistency, especially for fields throughout the event and configuration models.
+- 6a04278: Added payloadGitProviderEnum and payloadCreateDeploymentsEnum types for additional enum validation.
+- 9200170: Remove redundant JSDoc comments from GetProjects200 type and schema.
+- 3e6ad2c: Added new user event object variants in userEventSchema and UserEvent type to support additional project and environment properties.
+- 63eb4c1: Added a new UserEvent variant for project preview deployments with projectId, projectName, and previewDeploymentsEnabled fields.
+- 8dc64f0: Added a new variant to userEventSchema to support project webhook events with projectId, projectName, hookName, and ref fields.
+- 87cb3c0: Shortened and clarified descriptions for product listing and store creation endpoints in API documentation.
+- 5c2329b: Added @ts-expect-error comments to suppress TypeScript errors for deep type instantiations in server.tool calls.
+- 6e270cb: Improved schema property descriptions for various team and firewall config path parameters.
+- 0aee180: Updated description for InviteUserToTeam403 to clarify permission requirements.
+- 47ad788: Add user event schema for functionDefaultMemoryType update.
+- 52113c6: Added new user event type for deletedCount and inviteIds in userEventSchema and UserEvent type.
+- 1e823d5: Improved JSDoc and description accuracy, particularly for new and existing endpoints.
+- e02b18f: Removed the cronJobs property from UserEvent and AuthUser schemas and types.
+- 20a3cc3: Added optional 'permissions' array to user event schema and UserEvent type for payload, before, and after objects.
+- de7684d: Add user event tracking for publicSource property changes in projects.
+
 ## 1.0.2
 
 ### Patch Changes
