@@ -1,5 +1,6 @@
 import type { LanguageModelChatInformation } from "vscode";
 import { BASE_URL, MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
+import { parseModelIdentity } from "./models/identity";
 
 export interface Model {
 	id: string;
@@ -66,22 +67,25 @@ export class ModelsClient {
 	}
 
 	private transformToVSCodeModels(data: Model[]): LanguageModelChatInformation[] {
-		return data.map((model) => ({
-			id: model.id,
-			name: model.name,
-			detail: "Vercel AI Gateway",
-			family: model.owned_by,
-			version: "1.0",
-			maxInputTokens: Math.floor(model.context_window * 0.85),
-			maxOutputTokens: model.max_tokens,
-			tooltip: model.description || "No description available.",
-			capabilities: {
-				// Check tags array for capabilities - only advertise what the model actually supports
-				imageInput: model.tags?.includes("vision") || model.tags?.includes("file-input") || false,
-				// Only advertise tool calling if explicitly supported via tags
-				// Defaulting to true could cause issues with models that don't support tools
-				toolCalling: model.tags?.includes("tool-use") || false,
-			},
-		}));
+		return data.map((model) => {
+			const identity = parseModelIdentity(model.id);
+			return {
+				id: model.id,
+				name: model.name,
+				detail: "Vercel AI Gateway",
+				family: identity.family,
+				version: identity.version,
+				maxInputTokens: Math.floor(model.context_window * 0.85),
+				maxOutputTokens: model.max_tokens,
+				tooltip: model.description || "No description available.",
+				capabilities: {
+					// Check tags array for capabilities - only advertise what the model actually supports
+					imageInput: model.tags?.includes("vision") || model.tags?.includes("file-input") || false,
+					// Only advertise tool calling if explicitly supported via tags
+					// Defaulting to true could cause issues with models that don't support tools
+					toolCalling: model.tags?.includes("tool-use") || false,
+				},
+			};
+		});
 	}
 }

@@ -135,12 +135,12 @@ aliases = ["logging-levels"]
 [[epochs]]
 id = "model-mapping-epoch"
 title = "High-Fidelity Model Mapping (RFC 008)"
-status = "pending"
+status = "active"
 
 [[epochs.phases]]
 id = "phase-model-identity"
 title = "Phase 1: Model Identity Parsing"
-status = "pending"
+status = "active"
 rfcs = ["008"]
 
 [[epochs.phases.tasks]]
