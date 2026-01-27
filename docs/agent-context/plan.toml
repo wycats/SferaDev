@@ -146,22 +146,22 @@ rfcs = ["008"]
 [[epochs.phases.tasks]]
 id = "parse-family"
 label = "Create parseModelFamily() to extract family from model ID"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "parse-version"
 label = "Create parseModelVersion() to extract version from model ID"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "update-registration"
 label = "Update model registration to use parsed family/version"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "test-identity"
 label = "Write property-based tests for parseModelIdentity()"
-status = "pending"
+status = "completed"
 
 [[epochs.phases]]
 id = "phase-context-window"
