@@ -2,22 +2,18 @@
 # Implementation Plan
 
 [phase]
-id = "phase-1"
-title = "Phase 1: It works well enough to use as a daily driver"
-rfcs = []
+id = "phase-model-identity"
+title = "Phase 1: Model Identity Parsing"
+rfcs = ["008"]
 
 [plan]
 [[plan.changes]]
 name = "First Step"
 type = "feat"
-details = "It works well enough to use as a daily driver"
+details = "Description"
 files = []
 tests = []
 
 [verification]
 automated = ["Run scripts/verify-phase.sh"]
 manual = []
-
-[meta]
-schema_version = "1.0.0"
-exo_version = "0.1.0"
