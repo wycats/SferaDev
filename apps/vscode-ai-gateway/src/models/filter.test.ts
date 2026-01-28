@@ -2,6 +2,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create hoisted mock functions
 const hoisted = vi.hoisted(() => {
+	const mockEventEmitterFire = vi.fn();
+	const mockEventEmitterDispose = vi.fn();
+	const mockEventEmitterEvent = vi.fn();
+	const listeners: Array<() => void> = [];
+
+	class MockEventEmitter {
+		event = (listener: () => void) => {
+			listeners.push(listener);
+			mockEventEmitterEvent(listener);
+			return { dispose: vi.fn() };
+		};
+		fire = () => {
+			mockEventEmitterFire();
+			for (const listener of listeners) {
+				listener();
+			}
+		};
+		dispose = mockEventEmitterDispose;
+	}
+
 	const mockGetConfiguration = vi.fn();
 	const mockOnDidChangeConfiguration = vi.fn(
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -9,6 +29,10 @@ const hoisted = vi.hoisted(() => {
 	);
 
 	return {
+		mockEventEmitterFire,
+		mockEventEmitterDispose,
+		mockEventEmitterEvent,
+		MockEventEmitter,
 		mockGetConfiguration,
 		mockOnDidChangeConfiguration,
 	};
@@ -16,6 +40,7 @@ const hoisted = vi.hoisted(() => {
 
 // Mock vscode module
 vi.mock("vscode", () => ({
+	EventEmitter: hoisted.MockEventEmitter,
 	workspace: {
 		getConfiguration: hoisted.mockGetConfiguration,
 		onDidChangeConfiguration: hoisted.mockOnDidChangeConfiguration,
@@ -77,7 +102,7 @@ describe("ModelFilter", () => {
 	describe("constructor", () => {
 		it("should load configuration on creation", () => {
 			new ModelFilter();
-			expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway.models");
+			expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway");
 		});
 
 		it("should register configuration change listener", () => {
@@ -104,7 +129,9 @@ describe("ModelFilter", () => {
 		it("should filter by allowlist with exact match", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "allowlist") return ["openai/gpt-4", "anthropic/claude-sonnet-4-20250514"];
+					if (key === "models.allowlist") {
+						return ["openai/gpt-4", "anthropic/claude-sonnet-4-20250514"];
+					}
 					return defaultValue;
 				}),
 			});
@@ -122,7 +149,7 @@ describe("ModelFilter", () => {
 		it("should filter by allowlist with wildcard", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "allowlist") return ["openai/*"];
+					if (key === "models.allowlist") return ["openai/*"];
 					return defaultValue;
 				}),
 			});
@@ -137,7 +164,7 @@ describe("ModelFilter", () => {
 		it("should filter by denylist with exact match", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "denylist") return ["openai/gpt-3.5"];
+					if (key === "models.denylist") return ["openai/gpt-3.5"];
 					return defaultValue;
 				}),
 			});
@@ -152,7 +179,7 @@ describe("ModelFilter", () => {
 		it("should filter by denylist with wildcard", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "denylist") return ["anthropic/*"];
+					if (key === "models.denylist") return ["anthropic/*"];
 					return defaultValue;
 				}),
 			});
@@ -171,8 +198,8 @@ describe("ModelFilter", () => {
 		it("should apply denylist after allowlist", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "allowlist") return ["openai/*"];
-					if (key === "denylist") return ["openai/gpt-3.5"];
+					if (key === "models.allowlist") return ["openai/*"];
+					if (key === "models.denylist") return ["openai/gpt-3.5"];
 					return defaultValue;
 				}),
 			});
@@ -195,7 +222,7 @@ describe("ModelFilter", () => {
 		it("should return configured fallbacks for a model", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "fallbacks") {
+					if (key === "models.fallbacks") {
 						return {
 							"openai/gpt-4": ["openai/gpt-3.5", "anthropic/claude-sonnet-4-20250514"],
 						};
@@ -213,7 +240,7 @@ describe("ModelFilter", () => {
 		it("should return empty array for model without fallbacks", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "fallbacks") {
+					if (key === "models.fallbacks") {
 						return {
 							"openai/gpt-4": ["openai/gpt-3.5"],
 						};
@@ -239,7 +266,7 @@ describe("ModelFilter", () => {
 		it("should return configured default model", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "default") return "openai/gpt-4";
+					if (key === "models.default") return "openai/gpt-4";
 					return defaultValue;
 				}),
 			});
@@ -281,14 +308,14 @@ describe("ModelFilter", () => {
 			// Change to allowlist
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "allowlist") return ["openai/*"];
+					if (key === "models.allowlist") return ["openai/*"];
 					return defaultValue;
 				}),
 			});
 
 			// Trigger configuration change
 			configChangeCallback?.({
-				affectsConfiguration: (s: string) => s === "vercelAiGateway.models",
+				affectsConfiguration: (s: string) => s === "vercelAiGateway",
 			});
 
 			// Now only OpenAI models should be returned

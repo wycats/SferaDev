@@ -55,6 +55,18 @@
 		"configuration": {
 			"title": "Vercel AI Gateway",
 			"properties": {
+				"vercelAiGateway.endpoint": {
+					"type": "string",
+					"default": "https://ai-gateway.vercel.sh",
+					"description": "AI Gateway endpoint URL. Change for self-hosted or regional deployments."
+				},
+				"vercelAiGateway.timeout": {
+					"type": "number",
+					"default": 30000,
+					"description": "Request timeout in milliseconds.",
+					"minimum": 5000,
+					"maximum": 300000
+				},
 				"vercelAiGateway.systemPrompt.enabled": {
 					"type": "boolean",
 					"default": false,
@@ -64,6 +76,16 @@
 					"type": "string",
 					"default": "You are being accessed through the Vercel AI Gateway VS Code extension. The user is interacting with you via VS Code's chat interface.",
 					"description": "The system prompt message to inject when enabled."
+				},
+				"vercelAiGateway.reasoning.defaultEffort": {
+					"type": "string",
+					"enum": [
+						"low",
+						"medium",
+						"high"
+					],
+					"default": "medium",
+					"description": "Default reasoning effort level for models that support it."
 				},
 				"vercelAiGateway.logging.level": {
 					"type": "string",

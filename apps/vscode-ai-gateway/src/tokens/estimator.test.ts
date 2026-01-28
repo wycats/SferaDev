@@ -2,6 +2,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create hoisted mock functions
 const hoisted = vi.hoisted(() => {
+	const mockEventEmitterFire = vi.fn();
+	const mockEventEmitterDispose = vi.fn();
+	const mockEventEmitterEvent = vi.fn();
+	const listeners: Array<() => void> = [];
+
+	class MockEventEmitter {
+		event = (listener: () => void) => {
+			listeners.push(listener);
+			mockEventEmitterEvent(listener);
+			return { dispose: vi.fn() };
+		};
+		fire = () => {
+			mockEventEmitterFire();
+			for (const listener of listeners) {
+				listener();
+			}
+		};
+		dispose = mockEventEmitterDispose;
+	}
+
 	const mockGetConfiguration = vi.fn();
 	const mockOnDidChangeConfiguration = vi.fn(
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -9,6 +29,10 @@ const hoisted = vi.hoisted(() => {
 	);
 
 	return {
+		mockEventEmitterFire,
+		mockEventEmitterDispose,
+		mockEventEmitterEvent,
+		MockEventEmitter,
 		mockGetConfiguration,
 		mockOnDidChangeConfiguration,
 	};
@@ -16,6 +40,7 @@ const hoisted = vi.hoisted(() => {
 
 // Mock vscode module
 vi.mock("vscode", () => ({
+	EventEmitter: hoisted.MockEventEmitter,
 	workspace: {
 		getConfiguration: hoisted.mockGetConfiguration,
 		onDidChangeConfiguration: hoisted.mockOnDidChangeConfiguration,
@@ -56,7 +81,7 @@ describe("TokenEstimator", () => {
 	describe("constructor", () => {
 		it("should load configuration on creation", () => {
 			new TokenEstimator();
-			expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway.tokens");
+			expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway");
 		});
 
 		it("should register configuration change listener", () => {
@@ -76,7 +101,7 @@ describe("TokenEstimator", () => {
 		it("should estimate tokens using conservative mode", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "estimationMode") return "conservative";
+					if (key === "tokens.estimationMode") return "conservative";
 					return defaultValue;
 				}),
 			});
@@ -90,7 +115,7 @@ describe("TokenEstimator", () => {
 		it("should estimate tokens using aggressive mode", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "estimationMode") return "aggressive";
+					if (key === "tokens.estimationMode") return "aggressive";
 					return defaultValue;
 				}),
 			});
@@ -104,7 +129,7 @@ describe("TokenEstimator", () => {
 		it("should use custom charsPerToken override", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "charsPerToken") return 2;
+					if (key === "tokens.charsPerToken") return 2;
 					return defaultValue;
 				}),
 			});
@@ -146,7 +171,7 @@ describe("TokenEstimator", () => {
 		it("should return conservative mode value", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "estimationMode") return "conservative";
+					if (key === "tokens.estimationMode") return "conservative";
 					return defaultValue;
 				}),
 			});
@@ -158,7 +183,7 @@ describe("TokenEstimator", () => {
 		it("should return aggressive mode value", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "estimationMode") return "aggressive";
+					if (key === "tokens.estimationMode") return "aggressive";
 					return defaultValue;
 				}),
 			});
@@ -170,7 +195,7 @@ describe("TokenEstimator", () => {
 		it("should return custom override value", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "charsPerToken") return 3.5;
+					if (key === "tokens.charsPerToken") return 3.5;
 					return defaultValue;
 				}),
 			});
@@ -189,7 +214,7 @@ describe("TokenEstimator", () => {
 		it("should return configured mode", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "estimationMode") return "conservative";
+					if (key === "tokens.estimationMode") return "conservative";
 					return defaultValue;
 				}),
 			});
@@ -224,14 +249,14 @@ describe("TokenEstimator", () => {
 			// Change to conservative mode
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string, defaultValue: unknown) => {
-					if (key === "estimationMode") return "conservative";
+					if (key === "tokens.estimationMode") return "conservative";
 					return defaultValue;
 				}),
 			});
 
 			// Trigger configuration change
 			configChangeCallback?.({
-				affectsConfiguration: (s: string) => s === "vercelAiGateway.tokens",
+				affectsConfiguration: (s: string) => s === "vercelAiGateway",
 			});
 
 			// "Hello World" = 11 chars, conservative = 3 chars/token -> ceil(3.67) = 4

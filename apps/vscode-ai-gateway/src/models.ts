@@ -1,5 +1,6 @@
 import type { LanguageModelChatInformation } from "vscode";
-import { BASE_URL, MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
+import { ConfigService } from "./config";
+import { MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
 import { ModelFilter } from "./models/filter";
 import { parseModelIdentity } from "./models/identity";
 
@@ -31,7 +32,13 @@ interface ModelsCache {
 
 export class ModelsClient {
 	private modelsCache?: ModelsCache;
-	private modelFilter = new ModelFilter();
+	private modelFilter: ModelFilter;
+	private configService: ConfigService;
+
+	constructor(configService: ConfigService = new ConfigService()) {
+		this.configService = configService;
+		this.modelFilter = new ModelFilter(configService);
+	}
 
 	async getModels(apiKey: string): Promise<LanguageModelChatInformation[]> {
 		if (this.isModelsCacheFresh() && this.modelsCache) {
@@ -46,7 +53,7 @@ export class ModelsClient {
 	}
 
 	private async fetchModels(apiKey: string): Promise<Model[]> {
-		const response = await fetch(`${BASE_URL}${MODELS_ENDPOINT}`, {
+		const response = await fetch(`${this.configService.endpoint}${MODELS_ENDPOINT}`, {
 			headers: apiKey
 				? {
 						Authorization: `Bearer ${apiKey}`,

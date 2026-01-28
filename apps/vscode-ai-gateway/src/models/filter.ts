@@ -4,7 +4,7 @@
  * Provides allowlist/denylist filtering with wildcard pattern support.
  */
 
-import * as vscode from "vscode";
+import { ConfigService } from "../config";
 
 export interface ModelFilterConfig {
 	allowlist: string[];
@@ -39,24 +39,28 @@ export function matchesPattern(modelId: string, pattern: string): boolean {
 
 export class ModelFilter {
 	private config: ModelFilterConfig;
+	private configService: ConfigService;
+	private readonly disposable: { dispose: () => void };
 
-	constructor() {
+	constructor(configService: ConfigService = new ConfigService()) {
+		this.configService = configService;
 		this.config = this.loadConfig();
 
-		vscode.workspace.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration("vercelAiGateway.models")) {
-				this.config = this.loadConfig();
-			}
+		this.disposable = this.configService.onDidChange(() => {
+			this.config = this.loadConfig();
 		});
 	}
 
+	dispose(): void {
+		this.disposable.dispose();
+	}
+
 	private loadConfig(): ModelFilterConfig {
-		const config = vscode.workspace.getConfiguration("vercelAiGateway.models");
 		return {
-			allowlist: config.get("allowlist", []),
-			denylist: config.get("denylist", []),
-			fallbacks: config.get("fallbacks", {}),
-			default: config.get("default", ""),
+			allowlist: this.configService.modelsAllowlist,
+			denylist: this.configService.modelsDenylist,
+			fallbacks: this.configService.modelsFallbacks,
+			default: this.configService.modelsDefault,
 		};
 	}
 

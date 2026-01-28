@@ -2,6 +2,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create hoisted mock functions
 const hoisted = vi.hoisted(() => {
+	const mockEventEmitterFire = vi.fn();
+	const mockEventEmitterDispose = vi.fn();
+	const mockEventEmitterEvent = vi.fn();
+	const listeners: Array<() => void> = [];
+
+	class MockEventEmitter {
+		event = (listener: () => void) => {
+			listeners.push(listener);
+			mockEventEmitterEvent(listener);
+			return { dispose: vi.fn() };
+		};
+		fire = () => {
+			mockEventEmitterFire();
+			for (const listener of listeners) {
+				listener();
+			}
+		};
+		dispose = mockEventEmitterDispose;
+	}
+
 	const mockOutputChannelAppendLine = vi.fn();
 	const mockOutputChannelShow = vi.fn();
 	const mockOutputChannelDispose = vi.fn();
@@ -17,6 +37,10 @@ const hoisted = vi.hoisted(() => {
 	);
 
 	return {
+		mockEventEmitterFire,
+		mockEventEmitterDispose,
+		mockEventEmitterEvent,
+		MockEventEmitter,
 		mockOutputChannelAppendLine,
 		mockOutputChannelShow,
 		mockOutputChannelDispose,
@@ -28,6 +52,7 @@ const hoisted = vi.hoisted(() => {
 
 // Mock vscode module
 vi.mock("vscode", () => ({
+	EventEmitter: hoisted.MockEventEmitter,
 	window: {
 		createOutputChannel: hoisted.mockCreateOutputChannel,
 	},
@@ -46,8 +71,8 @@ describe("Logger", () => {
 		// Default configuration
 		hoisted.mockGetConfiguration.mockReturnValue({
 			get: vi.fn((key: string, defaultValue: unknown) => {
-				if (key === "level") return "warn";
-				if (key === "outputChannel") return true;
+				if (key === "logging.level") return "warn";
+				if (key === "logging.outputChannel") return true;
 				return defaultValue;
 			}),
 		});
@@ -73,14 +98,14 @@ describe("Logger", () => {
 	describe("constructor", () => {
 		it("should load configuration on creation", () => {
 			new Logger();
-			expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway.logging");
+			expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway");
 		});
 
 		it("should create output channel when enabled", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return true;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return true;
 					return undefined;
 				}),
 			});
@@ -92,8 +117,8 @@ describe("Logger", () => {
 		it("should not create output channel when disabled", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -112,8 +137,8 @@ describe("Logger", () => {
 		it("should log error when level is error", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "error";
-					if (key === "outputChannel") return true;
+					if (key === "logging.level") return "error";
+					if (key === "logging.outputChannel") return true;
 					return undefined;
 				}),
 			});
@@ -129,8 +154,8 @@ describe("Logger", () => {
 		it("should not log warn when level is error", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "error";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "error";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -146,8 +171,8 @@ describe("Logger", () => {
 		it("should log both error and warn when level is warn", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -169,8 +194,8 @@ describe("Logger", () => {
 		it("should not log info when level is warn", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -186,8 +211,8 @@ describe("Logger", () => {
 		it("should log all levels when level is debug", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "debug";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "debug";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -217,8 +242,8 @@ describe("Logger", () => {
 		it("should not log anything when level is off", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "off";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "off";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -250,8 +275,8 @@ describe("Logger", () => {
 		it("should write to output channel when enabled", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "debug";
-					if (key === "outputChannel") return true;
+					if (key === "logging.level") return "debug";
+					if (key === "logging.outputChannel") return true;
 					return undefined;
 				}),
 			});
@@ -266,8 +291,8 @@ describe("Logger", () => {
 		it("should include timestamp and level in output", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "info";
-					if (key === "outputChannel") return true;
+					if (key === "logging.level") return "info";
+					if (key === "logging.outputChannel") return true;
 					return undefined;
 				}),
 			});
@@ -286,8 +311,8 @@ describe("Logger", () => {
 		it("should include additional args in output", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "info";
-					if (key === "outputChannel") return true;
+					if (key === "logging.level") return "info";
+					if (key === "logging.outputChannel") return true;
 					return undefined;
 				}),
 			});
@@ -307,8 +332,8 @@ describe("Logger", () => {
 		it("should show output channel when called", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return true;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return true;
 					return undefined;
 				}),
 			});
@@ -322,8 +347,8 @@ describe("Logger", () => {
 		it("should not throw when output channel is disabled", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -337,8 +362,8 @@ describe("Logger", () => {
 		it("should dispose output channel when called", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return true;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return true;
 					return undefined;
 				}),
 			});
@@ -352,8 +377,8 @@ describe("Logger", () => {
 		it("should not throw when output channel is disabled", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -379,8 +404,8 @@ describe("Logger", () => {
 			// Start with warn level
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "warn";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "warn";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
@@ -395,15 +420,15 @@ describe("Logger", () => {
 			// Change to debug level
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
-					if (key === "level") return "debug";
-					if (key === "outputChannel") return false;
+					if (key === "logging.level") return "debug";
+					if (key === "logging.outputChannel") return false;
 					return undefined;
 				}),
 			});
 
 			// Trigger configuration change
 			configChangeCallback?.({
-				affectsConfiguration: (s: string) => s === "vercelAiGateway.logging",
+				affectsConfiguration: (s: string) => s === "vercelAiGateway",
 			});
 
 			// Now info should log

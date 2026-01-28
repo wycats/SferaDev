@@ -5,8 +5,9 @@
  */
 
 import * as vscode from "vscode";
+import { ConfigService, type LogLevel } from "./config";
 
-export type LogLevel = "off" | "error" | "warn" | "info" | "debug";
+export type { LogLevel } from "./config";
 
 export const LOG_LEVELS: Record<LogLevel, number> = {
 	off: 0,
@@ -19,22 +20,22 @@ export const LOG_LEVELS: Record<LogLevel, number> = {
 export class Logger {
 	private outputChannel: vscode.OutputChannel | null = null;
 	private level: LogLevel = "info"; // Default to info for better visibility
+	private configService: ConfigService;
+	private readonly disposable: { dispose: () => void };
 
-	constructor() {
+	constructor(configService: ConfigService = new ConfigService()) {
+		this.configService = configService;
 		this.loadConfig();
 
-		vscode.workspace.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration("vercelAiGateway.logging")) {
-				this.loadConfig();
-			}
+		this.disposable = this.configService.onDidChange(() => {
+			this.loadConfig();
 		});
 	}
 
 	private loadConfig(): void {
-		const config = vscode.workspace.getConfiguration("vercelAiGateway.logging");
-		this.level = config.get("level", "info");
+		this.level = this.configService.logLevel ?? "info";
 
-		const useOutputChannel = config.get("outputChannel", true);
+		const useOutputChannel = this.configService.logOutputChannel ?? true;
 		if (useOutputChannel && !this.outputChannel) {
 			this.outputChannel = vscode.window.createOutputChannel("Vercel AI Gateway");
 		} else if (!useOutputChannel && this.outputChannel) {
@@ -96,6 +97,7 @@ export class Logger {
 	}
 
 	dispose(): void {
+		this.disposable.dispose();
 		this.outputChannel?.dispose();
 	}
 }

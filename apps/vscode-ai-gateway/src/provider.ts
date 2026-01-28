@@ -1,6 +1,6 @@
+import { createHash } from "node:crypto";
 import { createGatewayProvider } from "@ai-sdk/gateway";
 import { jsonSchema, type ModelMessage, streamText, type TextStreamPart, type ToolSet } from "ai";
-import { createHash } from "crypto";
 import * as vscode from "vscode";
 import {
 	authentication,
@@ -30,7 +30,12 @@ import {
 type StreamChunk = TextStreamPart<ToolSet>;
 
 import { VERCEL_AI_AUTH_PROVIDER_ID } from "./auth";
-import { ERROR_MESSAGES, LAST_SELECTED_MODEL_KEY } from "./constants";
+import { ConfigService } from "./config";
+import {
+	DEFAULT_SYSTEM_PROMPT_MESSAGE,
+	ERROR_MESSAGES,
+	LAST_SELECTED_MODEL_KEY,
+} from "./constants";
 import { extractErrorMessage, logError, logger } from "./logger";
 import { ModelsClient } from "./models";
 import { parseModelIdentity } from "./models/identity";
@@ -107,13 +112,15 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private tokenCounter: TokenCounter;
 	private correctionFactor: number = 1.0;
 	private lastEstimatedInputTokens: number = 0;
+	private configService: ConfigService;
 	// Track current request for caching API actuals
 	private currentRequestMessages: readonly LanguageModelChatMessage[] | null = null;
 	private currentRequestModelFamily: string | null = null;
 
-	constructor(context: ExtensionContext) {
+	constructor(context: ExtensionContext, configService: ConfigService = new ConfigService()) {
 		this.context = context;
-		this.modelsClient = new ModelsClient();
+		this.configService = configService;
+		this.modelsClient = new ModelsClient(configService);
 		this.tokenCache = new TokenCache();
 		this.tokenCounter = new TokenCounter();
 	}
@@ -191,7 +198,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				throw new Error(ERROR_MESSAGES.API_KEY_NOT_FOUND);
 			}
 
-			const gateway = createGatewayProvider({ apiKey });
+			const gateway = createGatewayProvider({
+				apiKey,
+				baseURL: this.configService.gatewayBaseUrl,
+			});
 
 			// Define tools WITHOUT execute functions - VS Code handles tool execution.
 			// The AI SDK will emit tool-call events which we forward to VS Code.
@@ -215,38 +225,36 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			}
 
 			// Get system prompt configuration
-			const config = vscode.workspace.getConfiguration("vercelAiGateway");
-			const systemPromptEnabled = config.get<boolean>("systemPrompt.enabled", false);
-			const systemPromptMessage = config.get<string>(
-				"systemPrompt.message",
-				"You are being accessed through the Vercel AI Gateway VS Code extension. The user is interacting with you via VS Code's chat interface.",
-			);
+			const systemPromptEnabled = this.configService.systemPromptEnabled;
+			const systemPromptMessage = this.configService.systemPromptMessage;
 
 			// Build provider options - add context management for Anthropic models
-			const providerOptions = this.isAnthropicModel(model)
-				? {
-						anthropic: {
-							// Enable automatic context management to clear old tool uses
-							// when approaching context limits
-							contextManagement: {
-								enabled: true,
-							},
-						},
-					}
+			const providerOptions = this.buildProviderOptions(model);
+
+			const systemPrompt = systemPromptEnabled
+				? systemPromptMessage?.trim()
+					? systemPromptMessage
+					: DEFAULT_SYSTEM_PROMPT_MESSAGE
 				: undefined;
 
-			const response = streamText({
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const streamOptions: any = {
 				model: gateway(model.id),
-				system:
-					systemPromptEnabled && systemPromptMessage?.trim() ? systemPromptMessage : undefined,
+				system: systemPrompt,
 				messages: convertMessages(chatMessages),
 				toolChoice,
 				temperature: options.modelOptions?.temperature ?? 0.7,
 				maxOutputTokens: options.modelOptions?.maxOutputTokens ?? 4096,
 				tools: Object.keys(tools).length > 0 ? tools : undefined,
 				abortSignal: abortController.signal,
-				...(providerOptions && { providerOptions }),
-			});
+				timeout: this.configService.timeout,
+			};
+
+			if (providerOptions) {
+				streamOptions.providerOptions = providerOptions;
+			}
+
+			const response = streamText(streamOptions);
 
 			// Use fullStream instead of toUIMessageStream() to get tool-call events.
 			// toUIMessageStream() hides tool calls and is designed for UI rendering,
@@ -304,6 +312,59 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			id.includes("claude") ||
 			id.includes("anthropic")
 		);
+	}
+
+	/**
+	 * Build provider-specific options based on model capabilities.
+	 */
+	private buildProviderOptions(
+		model: LanguageModelChatInformation,
+	): Record<string, unknown> | undefined {
+		const options: Record<string, unknown> = {};
+
+		if (this.isAnthropicModel(model)) {
+			options.anthropic = {
+				// Enable automatic context management to clear old tool uses
+				// when approaching context limits
+				contextManagement: {
+					enabled: true,
+				},
+			};
+		}
+
+		const reasoningOptions = this.getReasoningEffortOptions(model);
+		if (reasoningOptions) {
+			options.openai = reasoningOptions;
+		}
+
+		return Object.keys(options).length > 0 ? options : undefined;
+	}
+
+	private getReasoningEffortOptions(
+		model: LanguageModelChatInformation,
+	): { reasoningEffort: string } | undefined {
+		// Check if model supports reasoning via id pattern (o1, o3 models)
+		const lowerId = model.id.toLowerCase();
+		const supportsReasoning =
+			lowerId.includes("o1") || lowerId.includes("o3") || lowerId.includes("reasoning");
+
+		if (!supportsReasoning) {
+			return undefined;
+		}
+
+		const supportsReasoningEffort =
+			lowerId.startsWith("openai/") ||
+			lowerId.startsWith("openai:") ||
+			lowerId.includes("o1") ||
+			lowerId.includes("o3");
+
+		if (!supportsReasoningEffort) {
+			return undefined;
+		}
+
+		return {
+			reasoningEffort: this.configService.reasoningEffort,
+		};
 	}
 
 	/**

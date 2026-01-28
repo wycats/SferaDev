@@ -7,9 +7,25 @@ const hoisted = vi.hoisted(() => {
 		(_callback?: unknown) => ({ dispose: vi.fn() }),
 	);
 
+	// Mock EventEmitter class - must be inside hoisted
+	class MockEventEmitter {
+		private listeners: Set<(...args: unknown[]) => void> = new Set();
+		event = (listener: (...args: unknown[]) => void) => {
+			this.listeners.add(listener);
+			return { dispose: () => this.listeners.delete(listener) };
+		};
+		fire = (...args: unknown[]) => {
+			for (const listener of this.listeners) listener(...args);
+		};
+		dispose = () => {
+			this.listeners.clear();
+		};
+	}
+
 	return {
 		mockGetConfiguration,
 		mockOnDidChangeConfiguration,
+		MockEventEmitter,
 	};
 });
 
@@ -18,6 +34,7 @@ vi.mock("vscode", () => ({
 		getConfiguration: hoisted.mockGetConfiguration,
 		onDidChangeConfiguration: hoisted.mockOnDidChangeConfiguration,
 	},
+	EventEmitter: hoisted.MockEventEmitter,
 }));
 
 import { type Model, ModelsClient } from "./models";
@@ -184,7 +201,7 @@ describe("ModelsClient", () => {
 	it("filters models using allowlist config", async () => {
 		hoisted.mockGetConfiguration.mockReturnValue({
 			get: vi.fn((key: string, defaultValue: unknown) => {
-				if (key === "allowlist") return ["openai:*"];
+				if (key === "models.allowlist") return ["openai:*"];
 				return defaultValue;
 			}),
 		});
@@ -241,7 +258,7 @@ describe("ModelsClient", () => {
 	it("filters models using denylist config", async () => {
 		hoisted.mockGetConfiguration.mockReturnValue({
 			get: vi.fn((key: string, defaultValue: unknown) => {
-				if (key === "denylist") return ["anthropic:*"];
+				if (key === "models.denylist") return ["anthropic:*"];
 				return defaultValue;
 			}),
 		});

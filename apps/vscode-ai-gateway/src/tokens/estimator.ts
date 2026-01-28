@@ -4,7 +4,7 @@
  * Provides configurable token estimation with different accuracy/safety tradeoffs.
  */
 
-import * as vscode from "vscode";
+import { ConfigService } from "../config";
 
 export type EstimationMode = "conservative" | "balanced" | "aggressive";
 
@@ -26,23 +26,27 @@ export interface TokenEstimatorConfig {
 
 export class TokenEstimator {
 	private config: TokenEstimatorConfig;
+	private configService: ConfigService;
+	private readonly disposable: { dispose: () => void };
 
-	constructor() {
+	constructor(configService: ConfigService = new ConfigService()) {
+		this.configService = configService;
 		this.config = this.loadConfig();
 
-		vscode.workspace.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration("vercelAiGateway.tokens")) {
-				this.config = this.loadConfig();
-			}
+		this.disposable = this.configService.onDidChange(() => {
+			this.config = this.loadConfig();
 		});
 	}
 
 	private loadConfig(): TokenEstimatorConfig {
-		const config = vscode.workspace.getConfiguration("vercelAiGateway.tokens");
 		return {
-			estimationMode: config.get("estimationMode", "balanced") as EstimationMode,
-			charsPerToken: config.get("charsPerToken", undefined),
+			estimationMode: this.configService.tokensEstimationMode as EstimationMode,
+			charsPerToken: this.configService.tokensCharsPerToken,
 		};
+	}
+
+	dispose(): void {
+		this.disposable.dispose();
 	}
 
 	/**

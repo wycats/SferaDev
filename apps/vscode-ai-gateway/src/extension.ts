@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { VercelAIAuthenticationProvider } from "./auth";
+import { ConfigService } from "./config";
 import { EXTENSION_ID } from "./constants";
 import { logger } from "./logger";
 import { VercelAIChatModelProvider } from "./provider";
@@ -12,8 +13,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(authProvider);
 	logger.debug("Authentication provider registered");
 
+	const configService = new ConfigService();
+	context.subscriptions.push(configService);
+
 	// Register the language model chat provider
-	const provider = new VercelAIChatModelProvider(context);
+	const provider = new VercelAIChatModelProvider(context, configService);
 	const providerDisposable = vscode.lm.registerLanguageModelChatProvider(EXTENSION_ID, provider);
 	context.subscriptions.push(providerDisposable);
 	logger.debug("Language model chat provider registered");
