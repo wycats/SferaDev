@@ -146,8 +146,8 @@
 		}
 	},
 	"scripts": {
-		"build": "NODE_ENV=production bunchee ./src/extension.ts --format cjs --no-external",
-		"dev": "bunchee ./src/extension.ts --format cjs --watch",
+		"build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
+		"dev": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
 		"compile": "tsc -p ./",
 		"tsc": "tsc --noEmit",
 		"test": "vitest run",
@@ -163,13 +163,14 @@
 		"@types/node": "catalog:",
 		"@types/vscode": "^1.108.1",
 		"@vscode/vsce": "catalog:",
-		"bunchee": "catalog:",
+		"esbuild": "^0.24.0",
 		"fast-check": "catalog:",
 		"typescript": "catalog:",
 		"vitest": "catalog:"
 	},
 	"dependencies": {
 		"@ai-sdk/gateway": "catalog:",
-		"ai": "catalog:"
+		"ai": "catalog:",
+		"js-tiktoken": "^1.0.15"
 	}
 }

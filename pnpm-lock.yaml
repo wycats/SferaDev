@@ -509,6 +509,9 @@ importers:
       ai:
         specifier: 'catalog:'
         version: 6.0.50(zod@4.3.6)
+      js-tiktoken:
+        specifier: ^1.0.15
+        version: 1.0.21
     devDependencies:
       '@sferadev/tsconfig':
         specifier: workspace:*
@@ -525,9 +528,9 @@ importers:
       '@vscode/vsce':
         specifier: 'catalog:'
         version: 3.7.1
-      bunchee:
-        specifier: 'catalog:'
-        version: 6.9.4(typescript@5.9.3)
+      esbuild:
+        specifier: '>=0.25.0'
+        version: 0.27.2
       fast-check:
         specifier: 'catalog:'
         version: 3.23.2
@@ -6331,6 +6334,9 @@ packages:
   js-runtime@0.0.8:
     resolution: {integrity: sha512-/nxfuHRkzajgNgGP/7j2A9y8k54XtTWizq+vEGrWh3eBWlSqFhwgToXHAGZeHX3wRMTC3VFBw1iVeemlX4qxZw==}
     engines: {node: '>=18', pnpm: '>=8.3.0'}
+
+  js-tiktoken@1.0.21:
+    resolution: {integrity: sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -15335,6 +15341,10 @@ snapshots:
   js-levenshtein@1.1.6: {}
 
   js-runtime@0.0.8: {}
+
+  js-tiktoken@1.0.21:
+    dependencies:
+      base64-js: 1.5.1
 
   js-tokens@4.0.0: {}
 

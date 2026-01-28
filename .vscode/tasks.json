@@ -1,0 +1,33 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build and Install Extension",
+			"type": "shell",
+			"command": "cd apps/vscode-ai-gateway && pnpm package && code --install-extension *.vsix --force && rm -f *.vsix",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Build Extension (no install)",
+			"type": "shell",
+			"command": "cd apps/vscode-ai-gateway && pnpm build",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Test Extension",
+			"type": "shell",
+			"command": "cd apps/vscode-ai-gateway && pnpm test",
+			"group": "test",
+			"problemMatcher": []
+		}
+	]
+}
