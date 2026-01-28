@@ -181,4 +181,116 @@ describe("TokenStatusBar", () => {
 			expect(mockStatusBarItem.dispose).toHaveBeenCalled();
 		});
 	});
+
+	describe("session tracking", () => {
+		it("generates unique session IDs", () => {
+			const id1 = statusBar.generateSessionId();
+			const id2 = statusBar.generateSessionId();
+
+			expect(id1).toMatch(/^session-\d+-[a-z0-9]+$/);
+			expect(id2).toMatch(/^session-\d+-[a-z0-9]+$/);
+			expect(id1).not.toBe(id2);
+		});
+
+		it("starts a new session", () => {
+			const sessionId = statusBar.startSession(undefined, 50000, 128000);
+
+			expect(sessionId).toBeDefined();
+			expect(statusBar.getActiveSessionId()).toBe(sessionId);
+			expect(statusBar.getSessions()).toHaveLength(1);
+		});
+
+		it("joins an existing session with same ID", () => {
+			const sessionId = statusBar.startSession("test-session", 50000, 128000);
+			statusBar.showUsage(
+				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
+				sessionId,
+			);
+
+			// Join the same session (simulating subagent)
+			statusBar.startSession("test-session", 30000, 128000);
+
+			const sessions = statusBar.getSessions();
+			expect(sessions).toHaveLength(1);
+			expect(sessions[0].requestCount).toBe(2);
+			expect(sessions[0].inputTokens).toBe(50000); // From first showUsage
+		});
+
+		it("accumulates tokens across requests in a session", () => {
+			const sessionId = statusBar.startSession("test-session", 50000, 128000);
+
+			// First request completes
+			statusBar.showUsage(
+				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
+				sessionId,
+			);
+
+			// Second request (subagent) joins and completes
+			statusBar.startSession("test-session", 30000, 128000);
+			statusBar.showUsage(
+				{ inputTokens: 30000, outputTokens: 500, maxInputTokens: 128000 },
+				sessionId,
+			);
+
+			const sessions = statusBar.getSessions();
+			expect(sessions[0].inputTokens).toBe(80000);
+			expect(sessions[0].outputTokens).toBe(1500);
+			expect(sessions[0].requestCount).toBe(2);
+		});
+
+		it("shows session totals in display for multi-request sessions", () => {
+			const sessionId = statusBar.startSession("test-session", 50000, 128000);
+			statusBar.showUsage(
+				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
+				sessionId,
+			);
+
+			// Second request
+			statusBar.startSession("test-session", 30000, 128000);
+			statusBar.showUsage(
+				{ inputTokens: 30000, outputTokens: 500, maxInputTokens: 128000 },
+				sessionId,
+			);
+
+			// Should show session total indicator [Σ80k]
+			expect(mockStatusBarItem.text).toContain("[Σ80.0k]");
+		});
+
+		it("clears all sessions", () => {
+			statusBar.startSession("session-1", 50000, 128000);
+			statusBar.startSession("session-2", 30000, 128000);
+
+			statusBar.clearSessions();
+
+			expect(statusBar.getSessions()).toHaveLength(0);
+			expect(statusBar.getActiveSessionId()).toBeNull();
+		});
+
+		it("marks session as error", () => {
+			const sessionId = statusBar.startSession("test-session", 50000, 128000);
+			statusBar.markSessionError(sessionId);
+
+			const sessions = statusBar.getSessions();
+			expect(sessions[0].status).toBe("error");
+		});
+
+		it("updates streaming progress", () => {
+			statusBar.startSession("test-session", 50000, 128000);
+			statusBar.updateStreamingProgress(500);
+
+			expect(mockStatusBarItem.text).toContain("500 out");
+		});
+
+		it("gets session totals for non-dimmed sessions", () => {
+			const sessionId = statusBar.startSession("test-session", 50000, 128000);
+			statusBar.showUsage(
+				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
+				sessionId,
+			);
+
+			const totals = statusBar.getSessionTotals();
+			expect(totals.inputTokens).toBe(50000);
+			expect(totals.outputTokens).toBe(1000);
+		});
+	});
 });

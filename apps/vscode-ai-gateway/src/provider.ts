@@ -144,6 +144,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private readonly modelInfoChangeEmitter = new vscode.EventEmitter<void>();
 	readonly onDidChangeLanguageModelChatInformation = this.modelInfoChangeEmitter.event;
 	private statusBar: TokenStatusBar | null = null;
+	/** Track streaming output for real-time status bar updates */
+	private streamingOutputChars: number = 0;
+	private lastStatusBarUpdate: number = 0;
+	private currentSessionId: string | null = null;
 
 	constructor(context: ExtensionContext, configService: ConfigService = new ConfigService()) {
 		this.context = context;
@@ -323,8 +327,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 			this.lastEstimatedInputTokens = estimatedTokens;
 
-			// Show streaming indicator in status bar with estimated tokens
-			this.statusBar?.showStreaming(estimatedTokens, maxInputTokens);
+			// Start a session in the status bar for tracking across subagent calls
+			// Use chatId as the session ID so subagents can join the same session
+			this.currentSessionId =
+				this.statusBar?.startSession(chatId, estimatedTokens, maxInputTokens) ?? null;
+			this.streamingOutputChars = 0;
+			this.lastStatusBarUpdate = Date.now();
 
 			const apiKey = await this.getApiKey(false);
 			if (!apiKey) {
@@ -450,6 +458,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 					`Token limit exceeded: ${tokenInfo.actualTokens.toLocaleString()} tokens ` +
 						`(max: ${tokenInfo.maxTokens?.toLocaleString() ?? "unknown"})`,
 				);
+				this.statusBar?.markSessionError(this.currentSessionId ?? undefined);
 			}
 
 			// CRITICAL: Always emit an error response to prevent "no response returned" error.
@@ -464,6 +473,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			this.currentRequestModelFamily = null;
 			this.currentRequestMaxInputTokens = undefined;
 			this.currentRequestModelId = undefined;
+			this.currentSessionId = null;
+			this.streamingOutputChars = 0;
 			this.toolCallBuffer.clear();
 			abortSubscription.dispose();
 		}
@@ -825,6 +836,16 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				const textContent = chunkWithText.textDelta ?? chunkWithText.text;
 				if (textContent) {
 					progress.report(new LanguageModelTextPart(textContent));
+
+					// Track output for status bar updates (estimate ~4 chars per token)
+					this.streamingOutputChars += textContent.length;
+					const now = Date.now();
+					// Update status bar every 500ms to avoid excessive updates
+					if (now - this.lastStatusBarUpdate > 500) {
+						const estimatedOutputTokens = Math.round(this.streamingOutputChars / 4);
+						this.statusBar?.updateStreamingProgress(estimatedOutputTokens);
+						this.lastStatusBarUpdate = now;
+					}
 				}
 				break;
 			}
@@ -930,13 +951,16 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 					);
 				}
 				if (actualInputTokens !== undefined) {
-					this.statusBar?.showUsage({
-						inputTokens: actualInputTokens,
-						outputTokens,
-						maxInputTokens: this.currentRequestMaxInputTokens,
-						modelId: this.currentRequestModelId,
-						contextManagement: appliedEdits ? { appliedEdits } : undefined,
-					});
+					this.statusBar?.showUsage(
+						{
+							inputTokens: actualInputTokens,
+							outputTokens,
+							maxInputTokens: this.currentRequestMaxInputTokens,
+							modelId: this.currentRequestModelId,
+							contextManagement: appliedEdits ? { appliedEdits } : undefined,
+						},
+						this.currentSessionId ?? undefined,
+					);
 				}
 				break;
 			}
