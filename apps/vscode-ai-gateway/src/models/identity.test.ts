@@ -67,7 +67,10 @@ describe("parseModelIdentity", () => {
 				({ year, month, day }) =>
 					`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
 			);
-		const compactDigitsArb = fc.stringOf(digits, { minLength: 4, maxLength: 8 });
+		const compactDigitsArb = fc.stringOf(digits, {
+			minLength: 4,
+			maxLength: 8,
+		});
 		const semverArb = fc
 			.tuple(
 				fc.integer({ min: 0, max: 20 }),
