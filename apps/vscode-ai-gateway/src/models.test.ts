@@ -1,3 +1,4 @@
+import fc from "fast-check";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const hoisted = vi.hoisted(() => {
@@ -41,6 +42,36 @@ import { type Model, ModelsClient } from "./models";
 
 describe("ModelsClient", () => {
 	let originalFetch: typeof fetch;
+
+	const reasoningTags = ["reasoning", "o1", "o3", "extended-thinking", "extended_thinking"];
+	const webSearchTags = ["web-search", "web_search", "search", "grounding"];
+
+	const baseModel: Omit<Model, "id" | "tags" | "type"> = {
+		object: "model",
+		created: 0,
+		owned_by: "test",
+		name: "Test Model",
+		description: "Test",
+		context_window: 8192,
+		max_tokens: 2048,
+		pricing: {
+			input: "0",
+			output: "0",
+		},
+	};
+
+	const transformModels = (models: Model[]) => {
+		const client = new ModelsClient();
+		const transform = (
+			client as unknown as {
+				transformToVSCodeModels: (data: Model[]) => Array<{
+					id: string;
+					capabilities: { reasoning: boolean; webSearch: boolean };
+				}>;
+			}
+		).transformToVSCodeModels;
+		return transform(models);
+	};
 
 	beforeEach(() => {
 		originalFetch = globalThis.fetch;
@@ -363,5 +394,78 @@ describe("ModelsClient", () => {
 			"openai:gpt-4o-2024-11-20",
 			"anthropic:claude-3-opus-20240229",
 		]);
+	});
+
+	describe("property-based capability detection", () => {
+		it("sets reasoning when any reasoning tag is present", () => {
+			fc.assert(
+				fc.property(
+					fc.constantFrom(...reasoningTags),
+					fc.array(fc.string(), { maxLength: 4 }),
+					(reasoningTag, extraTags) => {
+						const models: Model[] = [
+							{
+								...baseModel,
+								id: "openai:o3-mini",
+								type: "chat",
+								tags: [reasoningTag, ...extraTags],
+							},
+						];
+
+						const [result] = transformModels(models);
+						expect(result.capabilities.reasoning).toBe(true);
+					},
+				),
+				{ numRuns: 50 },
+			);
+		});
+
+		it("sets webSearch when any web-search tag is present", () => {
+			fc.assert(
+				fc.property(
+					fc.constantFrom(...webSearchTags),
+					fc.array(fc.string(), { maxLength: 4 }),
+					(webSearchTag, extraTags) => {
+						const models: Model[] = [
+							{
+								...baseModel,
+								id: "openai:o3-mini",
+								type: "chat",
+								tags: [webSearchTag, ...extraTags],
+							},
+						];
+
+						const [result] = transformModels(models);
+						expect(result.capabilities.webSearch).toBe(true);
+					},
+				),
+				{ numRuns: 50 },
+			);
+		});
+
+		it("ignores unknown tags for reasoning/web-search", () => {
+			const unknownTagArb = fc.string({ minLength: 1, maxLength: 12 }).filter((tag) => {
+				const lower = tag.toLowerCase();
+				return !reasoningTags.includes(lower) && !webSearchTags.includes(lower);
+			});
+
+			fc.assert(
+				fc.property(fc.array(unknownTagArb, { minLength: 1, maxLength: 6 }), (tags) => {
+					const models: Model[] = [
+						{
+							...baseModel,
+							id: "openai:gpt-4o",
+							type: "chat",
+							tags,
+						},
+					];
+
+					const [result] = transformModels(models);
+					expect(result.capabilities.reasoning).toBe(false);
+					expect(result.capabilities.webSearch).toBe(false);
+				}),
+				{ numRuns: 50 },
+			);
+		});
 	});
 });

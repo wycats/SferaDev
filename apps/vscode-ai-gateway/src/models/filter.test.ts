@@ -1,3 +1,4 @@
+import fc from "fast-check";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create hoisted mock functions
@@ -48,6 +49,7 @@ vi.mock("vscode", () => ({
 }));
 
 // Import after mocking
+import { type Model, ModelsClient } from "../models";
 import { ModelFilter, type ModelFilterConfig, matchesPattern } from "./filter";
 
 describe("ModelFilter", () => {
@@ -275,6 +277,107 @@ describe("ModelFilter", () => {
 			const result = filter.getDefaultModel();
 
 			expect(result).toBe("openai/gpt-4");
+		});
+	});
+
+	describe("property-based model type filtering", () => {
+		const allowedTypes = new Set(["chat", "language", undefined]);
+		const baseModel: Omit<Model, "id" | "type" | "tags"> = {
+			object: "model",
+			created: 0,
+			owned_by: "test",
+			name: "Test Model",
+			description: "Test",
+			context_window: 1024,
+			max_tokens: 256,
+			pricing: {
+				input: "0",
+				output: "0",
+			},
+		};
+
+		const modelIdArb = fc.string({ minLength: 1 });
+		const typeArb = fc.option(fc.constantFrom("chat", "language", "embedding"), {
+			nil: undefined,
+		});
+		const modelArb = fc
+			.record({
+				id: modelIdArb,
+				type: typeArb,
+				tags: fc.array(fc.string(), { maxLength: 4 }),
+			})
+			.map((data) => ({
+				...baseModel,
+				...data,
+			}));
+		const modelsArb = fc.uniqueArray(modelArb, {
+			selector: (model) => model.id,
+			minLength: 1,
+			maxLength: 20,
+		});
+
+		const transformModels = (models: Model[]) => {
+			const client = new ModelsClient();
+			const transform = (
+				client as unknown as {
+					transformToVSCodeModels: (data: Model[]) => Array<{ id: string }>;
+				}
+			).transformToVSCodeModels;
+			return transform(models);
+		};
+
+		const isAllowedType = (model: Model) => allowedTypes.has(model.type);
+
+		it("returns only chat/language/undefined types", () => {
+			fc.assert(
+				fc.property(modelsArb, (models) => {
+					const resultIds = transformModels(models).map((model) => model.id);
+					const allowedIds = models.filter(isAllowedType).map((model) => model.id);
+					for (const id of resultIds) {
+						expect(allowedIds).toContain(id);
+					}
+				}),
+				{ numRuns: 50 },
+			);
+		});
+
+		it("never returns embedding models", () => {
+			fc.assert(
+				fc.property(modelsArb, (models) => {
+					const resultIds = transformModels(models).map((model) => model.id);
+					const embeddingIds = new Set(
+						models.filter((model) => model.type === "embedding").map((model) => model.id),
+					);
+					for (const id of resultIds) {
+						expect(embeddingIds.has(id)).toBe(false);
+					}
+				}),
+				{ numRuns: 50 },
+			);
+		});
+
+		it("is idempotent", () => {
+			fc.assert(
+				fc.property(modelsArb, (models) => {
+					const filteredOnce = transformModels(models).map((model) => model.id);
+					const filteredTwice = transformModels(models.filter(isAllowedType)).map(
+						(model) => model.id,
+					);
+					expect(filteredTwice).toEqual(filteredOnce);
+				}),
+				{ numRuns: 50 },
+			);
+		});
+
+		it("preserves model identity", () => {
+			fc.assert(
+				fc.property(modelsArb, (models) => {
+					const resultIds = transformModels(models).map((model) => model.id);
+					const allowedIds = models.filter(isAllowedType).map((model) => model.id);
+					expect(resultIds).toEqual(allowedIds);
+				}),
+				{ numRuns: 50 },
+			);
 		});
 	});
 
