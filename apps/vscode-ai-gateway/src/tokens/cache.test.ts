@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 const hoisted = vi.hoisted(() => {
+	// Mock the role enum
+	const LanguageModelChatMessageRole = {
+		User: 1,
+		Assistant: 2,
+	};
+
 	class LanguageModelTextPart {
 		value: string;
 
@@ -42,6 +48,7 @@ const hoisted = vi.hoisted(() => {
 	}
 
 	return {
+		LanguageModelChatMessageRole,
 		LanguageModelTextPart,
 		LanguageModelDataPart,
 		LanguageModelToolCallPart,
@@ -55,9 +62,10 @@ import * as vscode from "vscode";
 import { TokenCache } from "./cache";
 
 describe("TokenCache", () => {
-	const createMessage = (parts: vscode.LanguageModelChatMessagePart[]) =>
+	const createMessage = (parts: unknown[]) =>
 		({
-			role: "user",
+			role: vscode.LanguageModelChatMessageRole.User,
+			name: "test",
 			content: parts,
 		}) as vscode.LanguageModelChatMessage;
 
@@ -107,12 +115,8 @@ describe("TokenCache", () => {
 		const cache = new TokenCache();
 		const contentA = [new vscode.LanguageModelTextPart("Result")];
 		const contentB = [new vscode.LanguageModelTextPart("Result changed")];
-		const messageA = createMessage([
-			new vscode.LanguageModelToolResultPart("call-1", contentA),
-		]);
-		const messageB = createMessage([
-			new vscode.LanguageModelToolResultPart("call-1", contentB),
-		]);
+		const messageA = createMessage([new vscode.LanguageModelToolResultPart("call-1", contentA)]);
+		const messageB = createMessage([new vscode.LanguageModelToolResultPart("call-1", contentB)]);
 
 		expect(cache.digestMessage(messageA)).not.toBe(cache.digestMessage(messageB));
 	});

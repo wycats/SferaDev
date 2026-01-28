@@ -146,8 +146,8 @@
 		}
 	},
 	"scripts": {
-		"build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
-		"dev": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
+		"build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --minify",
+		"dev": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --watch",
 		"compile": "tsc -p ./",
 		"tsc": "tsc --noEmit",
 		"test": "vitest run",

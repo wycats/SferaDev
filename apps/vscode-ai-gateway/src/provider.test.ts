@@ -101,9 +101,15 @@ vi.mock("vscode", () => ({
 	},
 	window: {
 		showErrorMessage: hoisted.mockShowErrorMessage,
+		createOutputChannel: vi.fn(() => ({
+			appendLine: vi.fn(),
+			show: vi.fn(),
+			dispose: vi.fn(),
+		})),
 	},
 	workspace: {
 		getConfiguration: hoisted.mockGetConfiguration,
+		onDidChangeConfiguration: vi.fn(() => ({ dispose: vi.fn() })),
 	},
 	LanguageModelTextPart: hoisted.MockLanguageModelTextPart,
 	LanguageModelToolCallPart: hoisted.MockLanguageModelToolCallPart,

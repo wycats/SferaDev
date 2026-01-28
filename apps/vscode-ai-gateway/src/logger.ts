@@ -18,7 +18,7 @@ export const LOG_LEVELS: Record<LogLevel, number> = {
 
 export class Logger {
 	private outputChannel: vscode.OutputChannel | null = null;
-	private level: LogLevel = "warn";
+	private level: LogLevel = "info"; // Default to info for better visibility
 
 	constructor() {
 		this.loadConfig();
@@ -32,7 +32,7 @@ export class Logger {
 
 	private loadConfig(): void {
 		const config = vscode.workspace.getConfiguration("vercelAiGateway.logging");
-		this.level = config.get("level", "warn");
+		this.level = config.get("level", "info");
 
 		const useOutputChannel = config.get("outputChannel", true);
 		if (useOutputChannel && !this.outputChannel) {

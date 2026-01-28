@@ -20,10 +20,7 @@ export class TokenCounter {
 		return this.estimateByChars(text);
 	}
 
-	estimateMessageTokens(
-		message: vscode.LanguageModelChatMessage,
-		modelFamily: string,
-	): number {
+	estimateMessageTokens(message: vscode.LanguageModelChatMessage, modelFamily: string): number {
 		let total = 0;
 		for (const part of message.content) {
 			if (part instanceof vscode.LanguageModelTextPart) {
