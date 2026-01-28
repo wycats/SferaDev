@@ -1,6 +1,7 @@
 import type { LanguageModelChatInformation } from "vscode";
 import { ConfigService } from "./config";
 import { MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
+import { logger } from "./logger";
 import { ModelFilter } from "./models/filter";
 import { parseModelIdentity } from "./models/identity";
 
@@ -44,9 +45,12 @@ export class ModelsClient {
 		if (this.isModelsCacheFresh() && this.modelsCache) {
 			return this.modelsCache.models;
 		}
-
+		const startTime = Date.now();
+		const url = `${this.configService.endpoint}${MODELS_ENDPOINT}`;
+		logger.info(`Fetching models from ${url}`);
 		const data = await this.fetchModels(apiKey);
 		const models = this.transformToVSCodeModels(data);
+		logger.info(`Models fetched in ${Date.now() - startTime}ms, count: ${models.length}`);
 
 		this.modelsCache = { fetchedAt: Date.now(), models };
 		return models;
@@ -98,7 +102,9 @@ export class ModelsClient {
 		const webSearchTags = new Set(["web-search", "web_search", "search", "grounding"]);
 
 		return data
-			.filter((model) => model.type === "chat" || model.type === undefined)
+			.filter(
+				(model) => model.type === "chat" || model.type === "language" || model.type === undefined,
+			)
 			.map((model) => {
 				const identity = parseModelIdentity(model.id);
 				const tags = (model.tags ?? []).map((tag) => tag.toLowerCase());

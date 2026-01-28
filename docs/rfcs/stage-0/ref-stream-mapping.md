@@ -4,7 +4,7 @@ document: reference
 status: reference
 feature: sferadev-extension
 created: 2026-01-26
-updated: 2026-01-26
+updated: 2026-01-28
 exo:
     tool: exo rfc create
     protocol: 1
@@ -15,8 +15,8 @@ exo:
 **Document Type**: Reference (Implementation)  
 **Feature**: sferadev-extension  
 **Created**: 2026-01-26  
-**Updated**: 2026-01-26  
-**Audit Status**: ✅ Verified by prepare agent
+**Updated**: 2026-01-28  
+**Audit Status**: ✅ Verified and updated 2026-01-28
 
 ## Summary
 
@@ -26,34 +26,41 @@ This reference document captures the mapping between the Vercel AI SDK's streami
 
 ## Critical Issues Identified
 
-### 1. Token Limit Miscommunication (BLOCKER)
+### 1. Token Limit Communication (✅ DESIGN DECISION)
 
-The extension sets `maxInputTokens` directly from the model's `context_window` without reserving output tokens or accounting for tool/system overhead. This causes VS Code's compaction algorithm to fail catastrophically because it believes more input budget is available than actually exists.
+The extension intentionally sets `maxInputTokens` from the model's `context_window` directly. This is a deliberate design choice documented in RFC 008:
 
-### 2. Stream Chunk Schema Mismatch (BLOCKER)
+- Preflight token validation warns when approaching limits ([provider.ts#L264-L283](../../../apps/vscode-ai-gateway/src/provider.ts#L264-L283))
+- `maxOutputTokens` is reported separately from `max_tokens` ([models.ts#L123](../../../apps/vscode-ai-gateway/src/models.ts#L123))
+- VS Code receives accurate information to make its own decisions
 
-The Vercel AI SDK has inconsistent chunk schemas between documentation and runtime:
+### 2. Stream Chunk Schema Mismatch (✅ FIXED)
 
-- Error chunks use `error` field, not `errorText`
-- The `reasoning-delta` handler expects `text` field but SDK sends `delta` field
+The stream handlers now correctly accept both standard and legacy field names:
 
-> **Note (2026-01-26 Audit)**: The `text-delta` chunk handling is correct—`fullStream` uses `textDelta` consistently. The original claim about `text` field variants was incorrect. However, the `reasoning-delta` handler has a type signature bug that drops all reasoning content.
+- **`text-delta`**: Uses `textDelta` with `text` fallback ([provider.ts#L700-L707](../../../apps/vscode-ai-gateway/src/provider.ts#L700-L707))
+- **`reasoning-delta`**: Uses `delta` with `text` fallback ([provider.ts#L816-L836](../../../apps/vscode-ai-gateway/src/provider.ts#L816-L836))
+- **`error`**: Uses `error` field correctly ([provider.ts#L1024-L1031](../../../apps/vscode-ai-gateway/src/provider.ts#L1024-L1031))
 
-### 3. Tool Result Message Format (BLOCKER)
+### 3. Tool Result Message Format (✅ FIXED)
 
-Tool results had multiple schema issues:
+Tool result handling has been fixed with the following implementation:
 
-1. Missing `toolName` field (required by Vercel AI SDK `ToolResultPart`)
-2. Wrong output structure: used `result: string` instead of `output: { type: 'text', value: string }`
-3. Cross-message `toolCallId → toolName` mapping was not maintained
+1. **`toolNameMap` construction**: First pass scans all `LanguageModelToolCallPart` entries to build `toolCallId → toolName` mapping ([provider.ts#L1060-L1072](../../../apps/vscode-ai-gateway/src/provider.ts#L1060-L1072))
+2. **Output format**: Uses `output: { type: 'text', value: ... }` per SDK schema
+3. **Cross-message correlation**: `convertSingleMessage` receives `toolNameMap` for result lookups ([provider.ts#L1077-L1144](../../../apps/vscode-ai-gateway/src/provider.ts#L1077-L1144))
 
-> **Note (2026-01-26 Fix)**: The `convertMessages` function now builds a `toolNameMap` in a first pass by scanning all `LanguageModelToolCallPart` entries, then uses this map when constructing `tool-result` messages in the second pass. The output format now correctly uses `{ type: 'text', value: ... }` per the SDK schema.
+> **Note**: The output schema uses `output: { type, value }` structure. If AI SDK changes to expect `result: string`, this will need updating.
 
-### 4. System Role Handling (BLOCKER)
+### 4. System Role Handling (⚠️ LIMITATION - NOT A BUG)
 
-System messages are not explicitly mapped - they're coerced to `assistant` and only retroactively fixed if they appear before the first user message.
+VS Code's `LanguageModelChatMessageRole` enum only defines `User` (1) and `Assistant` (2)—**there is no `System` role**. This is a VS Code API limitation, not an extension bug.
 
-> **Note (2026-01-26 Audit)**: VS Code's `LanguageModelChatMessageRole` enum only has `User` (1) and `Assistant` (2)—there is **no `System` role**. The fix is more complex than simply adding a case to the enum check; it requires detecting system messages through other means (e.g., content heuristics or metadata markers).
+**Current approach:**
+- Pre-user assistant messages are rewritten to `system` role in `fixSystemMessages()` ([provider.ts#L1241-L1248](../../../apps/vscode-ai-gateway/src/provider.ts#L1241-L1248))
+- System prompts are passed via the SDK's `system` parameter ([provider.ts#L336-L341](../../../apps/vscode-ai-gateway/src/provider.ts#L336-L341))
+
+**Future**: If VS Code adds a `System` role, update the enum mapping.
 
 ## Motivation
 

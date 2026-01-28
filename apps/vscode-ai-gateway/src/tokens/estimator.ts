@@ -5,6 +5,7 @@
  */
 
 import { ConfigService } from "../config";
+import { logger } from "../logger";
 
 export type EstimationMode = "conservative" | "balanced" | "aggressive";
 
@@ -57,7 +58,9 @@ export class TokenEstimator {
 		if (this.config.charsPerToken !== undefined) {
 			return this.config.charsPerToken;
 		}
-		return ESTIMATION_MODES[this.config.estimationMode];
+		const value = ESTIMATION_MODES[this.config.estimationMode];
+		logger.trace(`Chars per token for ${this.config.estimationMode}: ${value}`);
+		return value;
 	}
 
 	/**
@@ -74,7 +77,9 @@ export class TokenEstimator {
 	estimateTokens(text: string): number {
 		if (!text) return 0;
 		const charsPerToken = this.getCharsPerToken();
-		return Math.ceil(text.length / charsPerToken);
+		const result = Math.ceil(text.length / charsPerToken);
+		logger.debug(`Token estimation (${this.config.estimationMode}): ${result} tokens`);
+		return result;
 	}
 
 	/**

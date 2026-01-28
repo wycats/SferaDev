@@ -1,5 +1,6 @@
 import * as crypto from "crypto";
 import * as vscode from "vscode";
+import { logger } from "../logger";
 
 export interface CachedTokenCount {
 	digest: string;
@@ -28,7 +29,13 @@ export class TokenCache {
 	getCached(message: vscode.LanguageModelChatMessage, modelFamily: string): number | undefined {
 		const digest = this.digestMessage(message);
 		const key = this.cacheKey(modelFamily, digest);
-		return this.cache.get(key)?.actualTokens;
+		const cached = this.cache.get(key)?.actualTokens;
+		if (cached !== undefined) {
+			logger.trace(`Token cache hit for message (family: ${modelFamily}): ${cached} tokens`);
+			return cached;
+		}
+		logger.trace(`Token cache miss for message (family: ${modelFamily})`);
+		return undefined;
 	}
 
 	cacheActual(
@@ -44,6 +51,7 @@ export class TokenCache {
 			actualTokens,
 			timestamp: Date.now(),
 		});
+		logger.trace(`Cached actual token count: ${actualTokens} (family: ${modelFamily})`);
 	}
 
 	private cacheKey(modelFamily: string, digest: string): string {

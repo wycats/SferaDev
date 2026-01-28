@@ -119,4 +119,88 @@ describe("TokenCounter", () => {
 		expect(result).toBe(5);
 		expect(tiktokenHoisted.mockEncode).toHaveBeenCalled();
 	});
+
+	it("caches text tokenization results", () => {
+		tiktokenHoisted.mockEncode.mockClear();
+		const counter = new TokenCounter();
+
+		counter.estimateTextTokens("hello", "gpt-4");
+		counter.estimateTextTokens("hello", "gpt-4");
+
+		expect(tiktokenHoisted.mockEncode).toHaveBeenCalledTimes(1);
+	});
+
+	it("uses separate cache entries per model family", () => {
+		tiktokenHoisted.mockEncode.mockClear();
+		const counter = new TokenCounter();
+
+		counter.estimateTextTokens("hello", "gpt-4");
+		counter.estimateTextTokens("hello", "claude-3-5-sonnet");
+
+		expect(tiktokenHoisted.mockEncode).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe("countToolsTokens", () => {
+	it("returns 0 for empty tools array", () => {
+		const counter = new TokenCounter();
+		const result = counter.countToolsTokens([], "gpt-4o");
+		expect(result).toBe(0);
+	});
+
+	it("returns 0 for undefined tools", () => {
+		const counter = new TokenCounter();
+		const result = counter.countToolsTokens(undefined, "gpt-4o");
+		expect(result).toBe(0);
+	});
+
+	it("calculates tokens using GCMP formula: 16 base + 8/tool + content × 1.1", () => {
+		const counter = new TokenCounter();
+		const tools = [
+			{
+				name: "tool1",
+				description: "desc1",
+				inputSchema: { type: "object" },
+			},
+			{
+				name: "tool2",
+				description: "desc2",
+				inputSchema: { type: "string" },
+			},
+		] as vscode.LanguageModelChatTool[];
+
+		const result = counter.countToolsTokens(tools, "gpt-4o");
+
+		// Base: 16, per-tool: 8 × 2 = 16, content tokens × 1.1
+		// Content = "tool1" (5) + "desc1" (5) + JSON (17) + "tool2" (5) + "desc2" (5) + JSON (17) = 54
+		// Total = Math.ceil((16 + 16 + 54) × 1.1) = Math.ceil(94.6) = 95
+		expect(result).toBeGreaterThan(0);
+		expect(tiktokenHoisted.mockEncode).toHaveBeenCalled();
+	});
+});
+
+describe("countSystemPromptTokens", () => {
+	it("returns 0 for empty system prompt", () => {
+		const counter = new TokenCounter();
+		const result = counter.countSystemPromptTokens("", "gpt-4o");
+		expect(result).toBe(0);
+	});
+
+	it("returns 0 for undefined system prompt", () => {
+		const counter = new TokenCounter();
+		const result = counter.countSystemPromptTokens(undefined, "gpt-4o");
+		expect(result).toBe(0);
+	});
+
+	it("adds 28 token overhead for system prompt wrapping", () => {
+		const counter = new TokenCounter();
+		const systemPrompt = "You are a helpful assistant.";
+		const result = counter.countSystemPromptTokens(systemPrompt, "gpt-4o");
+
+		// Text length + 28 overhead
+		// "You are a helpful assistant." = 29 chars = 29 tokens (mock)
+		// Total = 29 + 28 = 57
+		expect(result).toBe(systemPrompt.length + 28);
+		expect(tiktokenHoisted.mockEncode).toHaveBeenCalled();
+	});
 });

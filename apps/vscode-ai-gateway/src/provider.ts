@@ -36,8 +36,9 @@ import {
 	ERROR_MESSAGES,
 	LAST_SELECTED_MODEL_KEY,
 } from "./constants";
-import { extractErrorMessage, logError, logger } from "./logger";
+import { extractErrorMessage, extractTokenCountFromError, logError, logger } from "./logger";
 import { ModelsClient } from "./models";
+import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
 import { parseModelIdentity } from "./models/identity";
 import { TokenCache } from "./tokens/cache";
 import { TokenCounter } from "./tokens/counter";
@@ -113,9 +114,32 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private correctionFactor: number = 1.0;
 	private lastEstimatedInputTokens: number = 0;
 	private configService: ConfigService;
+	private enricher: ModelEnricher;
 	// Track current request for caching API actuals
 	private currentRequestMessages: readonly LanguageModelChatMessage[] | null = null;
 	private currentRequestModelFamily: string | null = null;
+	/**
+	 * Learned actual token total from "input too long" errors.
+	 * When set, this is distributed across messages proportionally to trigger VS Code summarization.
+	 * Keyed by conversation hash to avoid cross-conversation pollution.
+	 */
+	private learnedTokenTotal: {
+		conversationHash: string;
+		actualTokens: number;
+	} | null = null;
+	/**
+	 * Tool-call streaming buffer keyed by `toolCallId`.
+	 *
+	 * Lifecycle:
+	 * - Buffer partial tool calls during streaming.
+	 * - Flush on stream finish to emit complete tool calls.
+	 * - Clear on abort/error (finally block) to avoid stale entries.
+	 */
+	private toolCallBuffer: Map<string, { toolName: string; argsText: string }> = new Map();
+	/** Cache of enriched model data for the session */
+	private enrichedModels: Map<string, EnrichedModelData> = new Map();
+	private readonly modelInfoChangeEmitter = new vscode.EventEmitter<void>();
+	readonly onDidChangeLanguageModelChatInformation = this.modelInfoChangeEmitter.event;
 
 	constructor(context: ExtensionContext, configService: ConfigService = new ConfigService()) {
 		this.context = context;
@@ -123,6 +147,42 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		this.modelsClient = new ModelsClient(configService);
 		this.tokenCache = new TokenCache();
 		this.tokenCounter = new TokenCounter();
+		this.enricher = new ModelEnricher(configService);
+		// Initialize enricher persistence for faster startup
+		this.enricher.initializePersistence(context.globalState);
+	}
+
+	dispose(): void {
+		this.modelInfoChangeEmitter.dispose();
+	}
+
+	private applyEnrichmentToModels(
+		models: LanguageModelChatInformation[],
+	): LanguageModelChatInformation[] {
+		return models.map((model) => {
+			const enriched = this.enrichedModels.get(model.id);
+			if (!enriched) {
+				return model;
+			}
+
+			let hasChanges = false;
+			const refined: LanguageModelChatInformation = { ...model };
+
+			if (enriched.context_length && enriched.context_length !== model.maxInputTokens) {
+				refined.maxInputTokens = enriched.context_length;
+				hasChanges = true;
+			}
+
+			if (enriched.input_modalities?.includes("image")) {
+				refined.capabilities = {
+					...(model.capabilities ?? {}),
+					imageInput: true,
+				};
+				hasChanges = true;
+			}
+
+			return hasChanges ? refined : model;
+		});
 	}
 
 	async provideLanguageModelChatInformation(
@@ -143,11 +203,43 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				"Available models",
 				models.map((m) => m.id),
 			);
+			if (this.configService.modelsEnrichmentEnabled) {
+				const enrichedModels = this.applyEnrichmentToModels(models);
+				this.triggerBackgroundEnrichment(models, apiKey);
+				return enrichedModels;
+			}
+
 			return models;
 		} catch (error) {
 			logger.error(ERROR_MESSAGES.MODELS_FETCH_FAILED, error);
 			return [];
 		}
+	}
+
+	private triggerBackgroundEnrichment(
+		models: LanguageModelChatInformation[],
+		apiKey: string,
+	): void {
+		const modelsToEnrich = models.filter((model) => !this.enrichedModels.has(model.id));
+
+		if (modelsToEnrich.length === 0) {
+			return;
+		}
+
+		Promise.allSettled(
+			modelsToEnrich.map((model) => this.enrichModelIfNeeded(model.id, apiKey)),
+		).then((results) => {
+			const enrichedCount = results.filter(
+				(result) => result.status === "fulfilled" && result.value,
+			).length;
+
+			if (enrichedCount > 0) {
+				logger.debug(
+					`Background enrichment completed for ${enrichedCount} models, firing refresh event`,
+				);
+				this.modelInfoChangeEmitter.fire();
+			}
+		});
 	}
 
 	async provideLanguageModelChatResponse(
@@ -157,17 +249,41 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		progress: Progress<LanguageModelResponsePart>,
 		token: CancellationToken,
 	): Promise<void> {
+		// Generate a simple chat ID for per-chat logging (first 8 chars of hash + timestamp)
+		const chatHash = createHash("sha256")
+			.update(chatMessages.map((m) => m.role + JSON.stringify(m.content)).join("|"))
+			.digest("hex")
+			.substring(0, 8);
+		const chatId = `chat-${chatHash}-${Date.now()}`;
+
 		logger.info(`Chat request to ${model.id} with ${chatMessages.length} messages`);
+		logger.debug(`Chat ID: ${chatId}`);
+
 		const abortController = new AbortController();
 		const abortSubscription = token.onCancellationRequested(() => abortController.abort());
+
+		let responseSent = false;
 
 		try {
 			// Track current request for caching API actuals after response
 			this.currentRequestMessages = chatMessages;
 			this.currentRequestModelFamily = model.family;
 
+			// Get system prompt configuration for token estimation
+			const systemPromptEnabled = this.configService.systemPromptEnabled;
+			const systemPromptMessage = this.configService.systemPromptMessage;
+			const systemPrompt = systemPromptEnabled
+				? systemPromptMessage?.trim()
+					? systemPromptMessage
+					: DEFAULT_SYSTEM_PROMPT_MESSAGE
+				: undefined;
+
 			// Pre-flight check: estimate total tokens and validate against model limit
-			const estimatedTokens = await this.estimateTotalInputTokens(model, chatMessages, token);
+			// Now includes tool schemas (can be 50k+ tokens) and system prompt overhead
+			const estimatedTokens = await this.estimateTotalInputTokens(model, chatMessages, token, {
+				tools: options.tools,
+				systemPrompt,
+			});
 			const maxInputTokens = model.maxInputTokens;
 			logger.debug(
 				`Token estimate: ${estimatedTokens}/${maxInputTokens} (${Math.round((estimatedTokens / maxInputTokens) * 100)}%)`,
@@ -198,6 +314,11 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				throw new Error(ERROR_MESSAGES.API_KEY_NOT_FOUND);
 			}
 
+			// Lazy enrichment: fetch additional metadata on first use of each model
+			if (this.configService.modelsEnrichmentEnabled) {
+				await this.enrichModelIfNeeded(model.id, apiKey);
+			}
+
 			const gateway = createGatewayProvider({
 				apiKey,
 				baseURL: this.configService.gatewayBaseUrl,
@@ -224,19 +345,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				toolChoice = "none";
 			}
 
-			// Get system prompt configuration
-			const systemPromptEnabled = this.configService.systemPromptEnabled;
-			const systemPromptMessage = this.configService.systemPromptMessage;
-
 			// Build provider options - add context management for Anthropic models
 			const providerOptions = this.buildProviderOptions(model);
 
-			const systemPrompt = systemPromptEnabled
-				? systemPromptMessage?.trim()
-					? systemPromptMessage
-					: DEFAULT_SYSTEM_PROMPT_MESSAGE
-				: undefined;
-
+			// Note: systemPrompt is computed earlier for token estimation
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const streamOptions: any = {
 				model: gateway(model.id),
@@ -259,8 +371,32 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			// Use fullStream instead of toUIMessageStream() to get tool-call events.
 			// toUIMessageStream() hides tool calls and is designed for UI rendering,
 			// while fullStream exposes all events needed for VS Code tool execution.
+			let chunkCount = 0;
 			for await (const chunk of response.fullStream) {
 				this.handleStreamChunk(chunk, progress);
+				// Track if we've emitted any response content
+				if (
+					(chunk as { type?: string }).type === "text-delta" ||
+					(chunk as { type?: string }).type === "tool-call" ||
+					(chunk as { type?: string }).type === "tool-result"
+				) {
+					responseSent = true;
+				}
+				chunkCount += 1;
+			}
+
+			// Safety check: if we got no chunks or no response was sent, emit something
+			if (!responseSent && chunkCount === 0) {
+				logger.error(`Stream completed with no chunks for chat ${chatId}`);
+				progress.report(
+					new LanguageModelTextPart(
+						`**Error**: No response received from model. Please try again.`,
+					),
+				);
+			} else if (!responseSent) {
+				logger.warn(
+					`Stream completed with ${chunkCount} chunks but no content emitted for chat ${chatId}`,
+				);
 			}
 
 			await this.context.workspaceState.update(LAST_SELECTED_MODEL_KEY, model.id);
@@ -274,11 +410,36 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 			logError("Exception during streaming", error);
 			const errorMessage = extractErrorMessage(error);
+
+			// Check if this is a "too long" error we can learn from
+			const tokenInfo = extractTokenCountFromError(error);
+			if (tokenInfo && this.currentRequestMessages) {
+				// Learn the actual token count so we can report accurate counts on retry
+				const conversationHash = this.hashConversation(this.currentRequestMessages);
+				this.learnedTokenTotal = {
+					conversationHash,
+					actualTokens: tokenInfo.actualTokens,
+				};
+				logger.info(
+					`Learned actual token count from error: ${tokenInfo.actualTokens} tokens. ` +
+						`Firing model info change to trigger VS Code re-evaluation.`,
+				);
+				// Fire the event so VS Code re-queries token counts
+				// This should trigger summarization before the next request
+				this.modelInfoChangeEmitter.fire();
+			}
+
+			// CRITICAL: Always emit an error response to prevent "no response returned" error.
+			// If nothing has been sent yet, this is the only response VS Code will see.
+			if (!responseSent) {
+				logger.error(`Emitting error response for chat ${chatId} due to: ${errorMessage}`);
+			}
 			progress.report(new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`));
 		} finally {
 			// Clear current request tracking
 			this.currentRequestMessages = null;
 			this.currentRequestModelFamily = null;
+			this.toolCallBuffer.clear();
 			abortSubscription.dispose();
 		}
 	}
@@ -296,6 +457,18 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			);
 		}
 		return false;
+	}
+
+	/**
+	 * Create a hash of the conversation for identifying when learned token counts apply.
+	 * Uses the first few and last messages to create a stable identifier.
+	 */
+	private hashConversation(messages: readonly LanguageModelChatMessage[]): string {
+		// Use first 2 and last 2 messages for a stable hash
+		// This way the hash changes if messages are added but remains stable for same conversation
+		const relevant = [...messages.slice(0, 2), ...messages.slice(-2)].filter(Boolean);
+		const hashes = relevant.map((msg) => hashMessage(msg as LanguageModelChatRequestMessage));
+		return createHash("sha256").update(hashes.join(":")).digest("hex").slice(0, 16);
 	}
 
 	/**
@@ -375,45 +548,82 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	 * "input too long" errors.
 	 *
 	 * Token counting strategy:
-	 * 1. Check cache for API actuals (ground truth from previous requests)
-	 * 2. Use tiktoken for precise estimation (unsent messages)
-	 * 3. Apply safety margins (2% on actuals, 5% on estimates)
+	 * 1. Check if we learned actual counts from a previous "too long" error
+	 * 2. Check cache for API actuals (ground truth from previous requests)
+	 * 3. Use tiktoken for precise estimation (unsent messages)
+	 * 4. Apply safety margins (2% on actuals, 5% on estimates)
 	 */
 	async provideTokenCount(
 		model: LanguageModelChatInformation,
 		text: string | LanguageModelChatMessage,
 		_token: CancellationToken,
 	): Promise<number> {
+		// Calculate base estimate first
+		let baseEstimate: number;
+
 		if (typeof text === "string") {
 			// Use tiktoken for text strings
 			const estimated = this.tokenCounter.estimateTextTokens(text, model.family);
-			const corrected = estimated * this.correctionFactor;
-			const margin = this.tokenCounter.usesCharacterFallback(model.family) ? 0.1 : 0.05;
-			return this.tokenCounter.applySafetyMargin(corrected, margin);
+			baseEstimate = estimated * this.correctionFactor;
+		} else {
+			// Check cache for API actuals first (ground truth)
+			const cached = this.tokenCache.getCached(text, model.family);
+			if (cached !== undefined) {
+				// We have ground truth from a previous API response - use with minimal margin
+				baseEstimate = cached;
+			} else {
+				// Use tiktoken-based estimation for unsent messages
+				const estimated = this.tokenCounter.estimateMessageTokens(text, model.family);
+				baseEstimate = estimated * this.correctionFactor;
+			}
 		}
 
-		// Check cache for API actuals first (ground truth)
-		const cached = this.tokenCache.getCached(text, model.family);
-		if (cached !== undefined) {
-			// We have ground truth from a previous API response - use with minimal margin
-			return Math.ceil(cached * 1.02);
+		// If we learned from a "too long" error, apply a correction multiplier
+		// This ensures VS Code sees token counts that will trigger summarization
+		if (this.learnedTokenTotal) {
+			// Apply a 1.5x multiplier to compensate for the underestimate
+			// The goal is to make the sum exceed maxInputTokens so VS Code summarizes
+			const inflated = baseEstimate * 1.5;
+			logger.trace(
+				`Applying learned token correction: ${baseEstimate} -> ${Math.ceil(inflated)} ` +
+					`(learned actual total: ${this.learnedTokenTotal.actualTokens})`,
+			);
+			return Math.ceil(inflated);
 		}
 
-		// Use tiktoken-based estimation for unsent messages
-		const estimated = this.tokenCounter.estimateMessageTokens(text, model.family);
-		const corrected = estimated * this.correctionFactor;
-		const margin = this.tokenCounter.usesCharacterFallback(model.family) ? 0.1 : 0.05;
-		return this.tokenCounter.applySafetyMargin(corrected, margin);
+		// Apply standard safety margins
+		const margin =
+			typeof text === "string" ||
+			!this.tokenCache.getCached(text as LanguageModelChatMessage, model.family)
+				? this.tokenCounter.usesCharacterFallback(model.family)
+					? 0.1
+					: 0.05
+				: 0.02;
+		return this.tokenCounter.applySafetyMargin(baseEstimate, margin);
 	}
 
 	/**
 	 * Estimate total input tokens for all messages.
 	 * Used for pre-flight validation before sending to the API.
+	 *
+	 * Includes:
+	 * - Message content tokens (from cache or estimation)
+	 * - Message structure overhead (4 tokens/message)
+	 * - Tool schema tokens (16 + 8/tool + content × 1.1)
+	 * - System prompt tokens (content + 28 overhead)
 	 */
 	private async estimateTotalInputTokens(
 		model: LanguageModelChatInformation,
 		messages: readonly LanguageModelChatMessage[],
 		token: CancellationToken,
+		options?: {
+			tools?: readonly {
+				name: string;
+				description?: string;
+				inputSchema?: unknown;
+			}[];
+			systemPrompt?: string;
+		},
 	): Promise<number> {
 		// Estimate based on cached actuals and tiktoken/character fallback
 		let total = 0;
@@ -423,7 +633,24 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		// Add overhead for message structure (~4 tokens per message)
 		total += messages.length * 4;
 
-		logger.debug(`Pure estimation: ${total} tokens`);
+		// Add tool schema tokens (critical - can be 50k+ tokens)
+		if (options?.tools && options.tools.length > 0) {
+			const toolTokens = this.tokenCounter.countToolsTokens(options.tools, model.family);
+			total += toolTokens;
+			logger.debug(`Added ${toolTokens} tokens for ${options.tools.length} tool schemas`);
+		}
+
+		// Add system prompt tokens (including 28-token structural overhead)
+		if (options?.systemPrompt) {
+			const systemTokens = this.tokenCounter.countSystemPromptTokens(
+				options.systemPrompt,
+				model.family,
+			);
+			total += systemTokens;
+			logger.debug(`Added ${systemTokens} tokens for system prompt`);
+		}
+
+		logger.debug(`Total input token estimate: ${total} tokens`);
 
 		return total;
 	}
@@ -502,11 +729,53 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			return session?.accessToken;
 		} catch (error) {
 			if (!silent) {
-				console.error("Failed to get authentication session:", error);
+				logger.error("Failed to get authentication session:", error);
 				window.showErrorMessage(ERROR_MESSAGES.AUTH_FAILED);
 			}
 			return undefined;
 		}
+	}
+
+	/**
+	 * Enrich model metadata on first use.
+	 *
+	 * Fetches additional metadata (context_length, input_modalities, etc.)
+	 * from the enrichment endpoint and caches it for the session.
+	 * This enables more accurate token limits and capability detection.
+	 *
+	 * @param modelId - The model ID to enrich
+	 * @param apiKey - API key for authentication
+	 */
+	private async enrichModelIfNeeded(modelId: string, apiKey: string): Promise<boolean> {
+		// Skip if already enriched this session
+		if (this.enrichedModels.has(modelId)) {
+			return false;
+		}
+
+		try {
+			const enriched = await this.enricher.enrichModel(modelId, apiKey);
+			if (enriched) {
+				this.enrichedModels.set(modelId, enriched);
+				logger.debug(`Enriched model ${modelId}:`, {
+					context_length: enriched.context_length,
+					input_modalities: enriched.input_modalities,
+					supports_implicit_caching: enriched.supports_implicit_caching,
+				});
+				return true;
+			}
+		} catch (error) {
+			// Non-blocking: enrichment failure shouldn't prevent chat
+			logger.warn(`Failed to enrich model ${modelId}`, error);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get enriched data for a model, if available.
+	 */
+	public getEnrichedModelData(modelId: string): EnrichedModelData | undefined {
+		return this.enrichedModels.get(modelId);
 	}
 
 	/**
@@ -525,12 +794,15 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		progress: Progress<LanguageModelResponsePart>,
 	): void {
 		switch (chunk.type) {
-			case "text-delta":
-				// fullStream TextStreamPart uses 'text' field, not 'textDelta'
-				if (chunk.text) {
-					progress.report(new LanguageModelTextPart(chunk.text));
+			case "text-delta": {
+				// Accept both 'textDelta' (SDK standard) and 'text' (legacy) field names
+				const chunkWithText = chunk as { textDelta?: string; text?: string };
+				const textContent = chunkWithText.textDelta ?? chunkWithText.text;
+				if (textContent) {
+					progress.report(new LanguageModelTextPart(textContent));
 				}
 				break;
+			}
 
 			case "reasoning-delta":
 				this.handleReasoningChunk(chunk, progress);
@@ -551,10 +823,24 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				this.handleToolCall(chunk, progress);
 				break;
 
+			case "tool-call-streaming-start":
+				// Start buffering a new streaming tool call
+				this.handleToolCallStreamingStart(chunk);
+				break;
+
+			case "tool-call-delta":
+				// Accumulate streaming tool call arguments
+				this.handleToolCallDelta(chunk, progress);
+				break;
+
 			// Lifecycle events - no content to emit
 			case "start":
 			case "start-step":
+				break;
+
 			case "abort":
+				// Abort means the request was cancelled - discard incomplete tool calls.
+				this.toolCallBuffer.clear();
 				break;
 
 			case "finish-step": {
@@ -562,6 +848,16 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			}
 
 			case "finish": {
+				// Flush any buffered tool calls before finishing
+				this.flushToolCallBuffer(progress);
+
+				// Clear learned token total since the request succeeded
+				// (VS Code must have summarized successfully if we got here)
+				if (this.learnedTokenTotal) {
+					logger.info("Request succeeded after learning token count - clearing learned total");
+					this.learnedTokenTotal = null;
+				}
+
 				const finishChunk = chunk as {
 					type: "finish";
 					totalUsage?: { inputTokens?: number; outputTokens?: number };
@@ -622,7 +918,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	 * (there's no equivalent stable API surface).
 	 */
 	private handleReasoningChunk(
-		chunk: { type: "reasoning-delta"; text: string },
+		chunk: { type: "reasoning-delta"; delta?: string; text?: string },
 		progress: Progress<LanguageModelResponsePart>,
 	): void {
 		const vsAny = vscode as unknown as Record<string, unknown>;
@@ -634,10 +930,11 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			  ) => unknown)
 			| undefined;
 
-		// fullStream TextStreamPart uses 'text' field for reasoning-delta
-		if (ThinkingCtor && chunk.text) {
+		// Accept both 'delta' (SDK standard) and 'text' (legacy) field names
+		const reasoningText = chunk.delta ?? chunk.text;
+		if (ThinkingCtor && reasoningText) {
 			progress.report(
-				new (ThinkingCtor as new (text: string) => LanguageModelResponsePart)(chunk.text),
+				new (ThinkingCtor as new (text: string) => LanguageModelResponsePart)(reasoningText),
 			);
 		}
 		// If ThinkingCtor doesn't exist, silently skip - no stable API equivalent
@@ -655,17 +952,107 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			type: "tool-call";
 			toolCallId: string;
 			toolName: string;
-			input: unknown;
+			args?: unknown;
+			input?: unknown;
 		},
 		progress: Progress<LanguageModelResponsePart>,
 	): void {
-		progress.report(
-			new LanguageModelToolCallPart(
-				chunk.toolCallId,
-				chunk.toolName,
-				chunk.input as Record<string, unknown>,
-			),
+		const buffered = this.toolCallBuffer.get(chunk.toolCallId);
+
+		// Accept both 'args' (new SDK) and 'input' (legacy) field names
+		let toolInput = (chunk.args ?? chunk.input) as Record<string, unknown> | undefined;
+
+		// Fallback to buffered args if the final tool-call chunk omits args/input
+		if (toolInput === undefined && buffered) {
+			try {
+				toolInput = JSON.parse(buffered.argsText || "{}") as Record<string, unknown>;
+			} catch (error) {
+				logger.error(
+					`Failed to parse buffered tool call args for ${chunk.toolCallId}: ${buffered.argsText}`,
+					error,
+				);
+				toolInput = {};
+			}
+		}
+
+		// If this tool call was buffered from streaming, remove it from buffer
+		// to avoid duplicate emission
+		if (buffered) {
+			this.toolCallBuffer.delete(chunk.toolCallId);
+		}
+
+		progress.report(new LanguageModelToolCallPart(chunk.toolCallId, chunk.toolName, toolInput));
+		logger.debug(`Tool call emitted: ${chunk.toolName} (${chunk.toolCallId})`);
+	}
+
+	/**
+	 * Handle tool-call-streaming-start by initializing a buffer entry.
+	 */
+	private handleToolCallStreamingStart(chunk: {
+		type: "tool-call-streaming-start";
+		toolCallId: string;
+		toolName: string;
+	}): void {
+		this.toolCallBuffer.set(chunk.toolCallId, {
+			toolName: chunk.toolName,
+			argsText: "",
+		});
+		logger.debug(`Tool call streaming started: ${chunk.toolCallId} (${chunk.toolName})`);
+	}
+
+	/**
+	 * Handle tool-call-delta by accumulating arguments text.
+	 * Emit complete tool call if this is the final delta (no more deltas expected).
+	 */
+	private handleToolCallDelta(
+		chunk: {
+			type: "tool-call-delta";
+			toolCallId: string;
+			argsTextDelta: string;
+		},
+		progress: Progress<LanguageModelResponsePart>,
+	): void {
+		const buffered = this.toolCallBuffer.get(chunk.toolCallId);
+		if (!buffered) {
+			logger.warn(`Tool call delta for unknown toolCallId: ${chunk.toolCallId}`);
+			return;
+		}
+
+		// Accumulate the delta
+		buffered.argsText += chunk.argsTextDelta;
+		logger.debug(
+			`Tool call delta accumulated: ${chunk.toolCallId} (${buffered.argsText.length} chars)`,
 		);
+
+		// Note: We don't emit here - we wait for either:
+		// 1. A final 'tool-call' chunk (which will find and remove from buffer)
+		// 2. Stream 'finish' event (which flushes all buffered calls)
+		// This prevents emitting incomplete tool calls
+	}
+
+	/**
+	 * Flush any remaining buffered tool calls at stream end.
+	 * This handles cases where streaming started but no final 'tool-call' chunk arrived.
+	 */
+	private flushToolCallBuffer(progress: Progress<LanguageModelResponsePart>): void {
+		for (const [toolCallId, buffered] of this.toolCallBuffer.entries()) {
+			try {
+				// Parse accumulated args text as JSON
+				const toolInput = JSON.parse(buffered.argsText || "{}") as Record<string, unknown>;
+
+				progress.report(new LanguageModelToolCallPart(toolCallId, buffered.toolName, toolInput));
+
+				logger.debug(`Flushed buffered tool call: ${toolCallId} (${buffered.toolName})`);
+			} catch (error) {
+				logger.error(
+					`Failed to parse buffered tool call args for ${toolCallId}: ${buffered.argsText}`,
+					error,
+				);
+			}
+		}
+
+		// Clear buffer after flushing
+		this.toolCallBuffer.clear();
 	}
 
 	/**
@@ -691,7 +1078,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	): void {
 		const mimeType = chunk.file?.mediaType;
 		if (!mimeType || !isValidMimeType(mimeType)) {
-			console.warn(`[VercelAI] Unsupported file mime type: ${mimeType ?? "unknown"}`);
+			logger.warn(`Unsupported file mime type: ${mimeType ?? "unknown"}`);
 			return;
 		}
 
@@ -699,7 +1086,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			const dataPart = this.createDataPartForMimeType(chunk.file.uint8Array, mimeType);
 			progress.report(dataPart);
 		} catch (error) {
-			console.warn("[VercelAI] Failed to process file chunk:", error);
+			logger.warn("Failed to process file chunk:", error);
 		}
 	}
 
@@ -761,17 +1148,13 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 		if (chunkType && SILENTLY_IGNORED_CHUNK_TYPES.has(chunkType)) {
 			// Expected chunk type with no VS Code equivalent - debug log only
-			console.debug("[VercelAI] Ignored expected chunk type:", chunkType);
+			logger.trace(`Ignored expected chunk type: ${chunkType}`);
 		} else if (chunkType?.startsWith("data-")) {
 			// Custom data chunks - silently ignore
-			console.debug("[VercelAI] Ignored data chunk type:", chunkType);
+			logger.trace(`Ignored data chunk type: ${chunkType}`);
 		} else {
 			// Truly unknown chunk type - warn to help identify API changes
-			console.warn(
-				"[VercelAI] Unknown stream chunk type:",
-				chunkType,
-				JSON.stringify(chunk, null, 2),
-			);
+			logger.warn(`Unknown stream chunk type: ${chunkType}`, chunk);
 		}
 	}
 }
@@ -856,7 +1239,7 @@ export function convertSingleMessage(
 					// Look up the tool name from the mapping built in convertMessages
 					const toolName = toolNameMap[part.callId] || "unknown_tool";
 					if (!toolNameMap[part.callId]) {
-						console.warn(`[VercelAI] No tool name found for callId ${part.callId}, using fallback`);
+						logger.warn(`No tool name found for callId ${part.callId}, using fallback`);
 					}
 					results.push({
 						role: "tool",
@@ -883,7 +1266,7 @@ export function convertSingleMessage(
 	}
 
 	if (results.length === 0) {
-		console.debug("[VercelAI] Message had no valid content, creating placeholder");
+		logger.debug("Message had no valid content, creating placeholder");
 		results.push({ role, content: "" });
 	}
 
@@ -931,9 +1314,7 @@ function createMultiModalMessage(
 	}
 
 	// For non-user roles, convert images to placeholder text
-	console.warn(
-		`[VercelAI] Images in ${role} messages are not supported, converting to placeholder`,
-	);
+	logger.warn(`Images in ${role} messages are not supported, converting to placeholder`);
 	return {
 		role,
 		content: parts.map((p) => (p.type === "text" ? p.text : "[Image content]")).join(""),

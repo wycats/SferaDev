@@ -94,7 +94,8 @@
 						"error",
 						"warn",
 						"info",
-						"debug"
+						"debug",
+						"trace"
 					],
 					"default": "warn",
 					"description": "Logging verbosity level.",
@@ -103,13 +104,19 @@
 						"Log only errors",
 						"Log errors and warnings",
 						"Log errors, warnings, and info messages",
-						"Log everything including debug messages"
+						"Log everything including debug messages",
+						"Log everything including trace-level diagnostic messages"
 					]
 				},
 				"vercelAiGateway.logging.outputChannel": {
 					"type": "boolean",
 					"default": true,
 					"description": "Show logs in 'Vercel AI Gateway' output channel."
+				},
+				"vercelAiGateway.logging.fileDirectory": {
+					"type": "string",
+					"default": "",
+					"description": "Directory for log files. When set and log level is debug/trace, logs are written to files. Use an absolute path or path relative to workspace root."
 				},
 				"vercelAiGateway.models.allowlist": {
 					"type": "array",
@@ -163,6 +170,11 @@
 					"description": "Override characters per token for estimation. Lower = more conservative.",
 					"minimum": 2,
 					"maximum": 6
+				},
+				"vercelAiGateway.models.enrichmentEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Fetch per-model metadata to refine capabilities and token limits"
 				}
 			}
 		}

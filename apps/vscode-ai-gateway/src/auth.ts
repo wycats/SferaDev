@@ -11,6 +11,7 @@ import {
 	window,
 } from "vscode";
 import { ERROR_MESSAGES, EXTENSION_ID } from "./constants";
+import { logger } from "./logger";
 import {
 	checkVercelCliAvailable,
 	createInteractiveOidcSession,
@@ -81,7 +82,11 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 					account: session.account,
 					scopes: [...session.scopes],
 				}));
-				this._sessionChangeEmitter.fire({ added: [], removed: [], changed: changedAuthSessions });
+				this._sessionChangeEmitter.fire({
+					added: [],
+					removed: [],
+					changed: changedAuthSessions,
+				});
 			}
 		}
 
@@ -119,7 +124,7 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 					}
 					refreshedSessions.push(refreshedSession);
 				} catch (error) {
-					console.error("Failed to refresh OIDC token in getSessions:", error);
+					logger.error("Failed to refresh OIDC token in getSessions:", error);
 					refreshedSessions.push(session);
 				}
 			} else {
@@ -229,7 +234,10 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 		const session: SessionData = {
 			id: this.generateSessionId(),
 			accessToken: storedToken.token,
-			account: { id: "vercel-oidc-user", label: `${storedToken.projectName}${teamLabel}` },
+			account: {
+				id: "vercel-oidc-user",
+				label: `${storedToken.projectName}${teamLabel}`,
+			},
 			scopes: [],
 			method: "oidc",
 			oidcData: {
@@ -252,7 +260,11 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 
 		await this.setActiveSession(session.id);
 
-		this._sessionChangeEmitter.fire({ added: [session], removed: [], changed: [] });
+		this._sessionChangeEmitter.fire({
+			added: [session],
+			removed: [],
+			changed: [],
+		});
 		window.showInformationMessage("Authentication successful!");
 	}
 
@@ -284,7 +296,11 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 			account: removed.account,
 			scopes: removed.scopes,
 		};
-		this._sessionChangeEmitter.fire({ added: [], removed: [removedAuthSession], changed: [] });
+		this._sessionChangeEmitter.fire({
+			added: [],
+			removed: [removedAuthSession],
+			changed: [],
+		});
 		window.showInformationMessage("Session removed");
 	}
 
@@ -340,7 +356,7 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 			const action = await this.promptForAction(sessions);
 			await this.executeAction(action, sessions);
 		} catch (error) {
-			console.error("Error in manage authentication:", error);
+			logger.error("Error in manage authentication:", error);
 			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 			window.showErrorMessage(`Authentication management failed: ${errorMessage}`);
 		}
@@ -413,7 +429,7 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 					window.showWarningMessage(`Unknown action: ${action}`);
 			}
 		} catch (error) {
-			console.error(`Error executing action ${action}:`, error);
+			logger.error(`Error executing action ${action}:`, error);
 			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
 			if (
@@ -473,7 +489,7 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 				}
 				return refreshedSession;
 			} catch (error) {
-				console.error("Failed to refresh OIDC token in getActiveSession:", error);
+				logger.error("Failed to refresh OIDC token in getActiveSession:", error);
 				// Return the original session if refresh fails
 				return activeSession;
 			}
@@ -497,7 +513,11 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 				account: updatedSession.account,
 				scopes: [...updatedSession.scopes],
 			};
-			this._sessionChangeEmitter.fire({ added: [], removed: [], changed: [authSession] });
+			this._sessionChangeEmitter.fire({
+				added: [],
+				removed: [],
+				changed: [authSession],
+			});
 		}
 	}
 
@@ -549,7 +569,11 @@ export class VercelAIAuthenticationProvider implements AuthenticationProvider, D
 				account: selectedSession.account,
 				scopes: selectedSession.scopes,
 			};
-			this._sessionChangeEmitter.fire({ added: [], removed: [], changed: [authSession] });
+			this._sessionChangeEmitter.fire({
+				added: [],
+				removed: [],
+				changed: [authSession],
+			});
 		}
 		window.showInformationMessage(`Switched to: ${selectedSession?.account.label} ${methodLabel}`);
 	}

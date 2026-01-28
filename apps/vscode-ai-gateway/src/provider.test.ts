@@ -870,6 +870,472 @@ describe("Property-based tests", () => {
 	});
 });
 
+describe("Tool-call streaming buffer", () => {
+	const createProviderWithConfig = () => {
+		hoisted.mockGetConfiguration.mockReturnValue({
+			get: (_key: string, defaultValue?: unknown) => defaultValue,
+		});
+		return createProvider();
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("should buffer tool-call-streaming-start and emit on finish", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-1",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "finish" } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported.callId).toBe("call-1");
+		expect(reported.name).toBe("searchDocs");
+		expect(reported.input).toEqual({});
+	});
+
+	it("should accumulate tool-call-delta and emit complete tool call", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-1",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-1",
+				argsTextDelta: '{"query": "',
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-1",
+				argsTextDelta: 'test"}',
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "finish" } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported.callId).toBe("call-1");
+		expect(reported.name).toBe("searchDocs");
+		expect(reported.input).toEqual({ query: "test" });
+	});
+
+	it("should handle args field in tool-call chunks", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call",
+				toolCallId: "call-args",
+				toolName: "searchDocs",
+				args: { query: "args-field" },
+			},
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported.callId).toBe("call-args");
+		expect(reported.name).toBe("searchDocs");
+		expect(reported.input).toEqual({ query: "args-field" });
+	});
+
+	it("should fallback to input field if args missing", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call",
+				toolCallId: "call-input",
+				toolName: "searchDocs",
+				input: { query: "input-field" },
+			},
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported.callId).toBe("call-input");
+		expect(reported.name).toBe("searchDocs");
+		expect(reported.input).toEqual({ query: "input-field" });
+	});
+
+	it("should handle invalid JSON in buffered tool call args", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-bad-json",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-bad-json",
+				argsTextDelta: "{invalid",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "finish" } as unknown,
+			progress,
+		);
+
+		expect(progress.report).not.toHaveBeenCalled();
+		expect(errorSpy).toHaveBeenCalledWith(
+			expect.stringContaining("Failed to parse buffered tool call args"),
+			expect.any(Error),
+		);
+		errorSpy.mockRestore();
+	});
+
+	it("should clear buffer on abort chunk", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+		const toolCallBuffer = (provider as unknown as { toolCallBuffer: Map<string, unknown> })
+			.toolCallBuffer;
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-abort",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		expect(toolCallBuffer.size).toBe(1);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "abort" } as unknown,
+			progress,
+		);
+
+		expect(toolCallBuffer.size).toBe(0);
+		expect(progress.report).not.toHaveBeenCalled();
+	});
+
+	it("should clear buffer when stream finishes even if no tool calls", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+		const toolCallBuffer = (provider as unknown as { toolCallBuffer: Map<string, unknown> })
+			.toolCallBuffer;
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-finish",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		expect(toolCallBuffer.size).toBe(1);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "finish" } as unknown,
+			progress,
+		);
+
+		expect(toolCallBuffer.size).toBe(0);
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported.callId).toBe("call-finish");
+		expect(reported.name).toBe("searchDocs");
+		expect(reported.input).toEqual({});
+	});
+
+	it("should not emit stale tool calls from previous request", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+		const toolCallBuffer = (provider as unknown as { toolCallBuffer: Map<string, unknown> })
+			.toolCallBuffer;
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-stale",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-stale",
+				argsTextDelta: '{"query": "stale"}',
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "abort" } as unknown,
+			progress,
+		);
+
+		expect(toolCallBuffer.size).toBe(0);
+		expect(progress.report).not.toHaveBeenCalled();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-fresh",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-fresh",
+				argsTextDelta: '{"query": "fresh"}',
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "finish" } as unknown,
+			progress,
+		);
+
+		expect(toolCallBuffer.size).toBe(0);
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported.callId).toBe("call-fresh");
+		expect(reported.input).toEqual({ query: "fresh" });
+	});
+
+	it("should warn for delta with unknown toolCallId", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "missing-call",
+				argsTextDelta: "{}",
+			},
+			progress,
+		);
+
+		expect(progress.report).not.toHaveBeenCalled();
+		expect(warnSpy).toHaveBeenCalledWith(
+			expect.stringContaining("Tool call delta for unknown toolCallId: missing-call"),
+		);
+		warnSpy.mockRestore();
+	});
+
+	it("should use textDelta field for text-delta chunks", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "text-delta", textDelta: "Hello" } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelTextPart);
+		expect(reported.value).toBe("Hello");
+	});
+
+	it("should fallback to text field if textDelta missing", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "text-delta", text: "Hello" } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelTextPart);
+		expect(reported.value).toBe("Hello");
+	});
+
+	it("should use delta field for reasoning-delta chunks", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "reasoning-delta", delta: "Thinking..." } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelThinkingPart);
+		expect(reported.text).toBe("Thinking...");
+	});
+
+	it("should fallback to text field if delta missing in reasoning", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "reasoning-delta", text: "Thinking..." } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelThinkingPart);
+		expect(reported.text).toBe("Thinking...");
+	});
+
+	it("should handle multiple concurrent tool call streams", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-1",
+				toolName: "toolOne",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-2",
+				toolName: "toolTwo",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-1",
+				argsTextDelta: '{"value": "one"}',
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-2",
+				argsTextDelta: '{"value": "two"}',
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "finish" } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(2);
+		const reported = progress.report.mock.calls.map(([call]) => call);
+		expect(reported[0]).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported[1]).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported[0].callId).toBe("call-1");
+		expect(reported[0].name).toBe("toolOne");
+		expect(reported[0].input).toEqual({ value: "one" });
+		expect(reported[1].callId).toBe("call-2");
+		expect(reported[1].name).toBe("toolTwo");
+		expect(reported[1].input).toEqual({ value: "two" });
+	});
+
+	it("should remove tool from buffer when final tool-call arrives", () => {
+		const provider = createProviderWithConfig();
+		const progress = createMockProgress();
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-streaming-start",
+				toolCallId: "call-final",
+				toolName: "searchDocs",
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call-delta",
+				toolCallId: "call-final",
+				argsTextDelta: '{"query": "done"}',
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{
+				type: "tool-call",
+				toolCallId: "call-final",
+				toolName: "searchDocs",
+				input: { query: "done" },
+			},
+			progress,
+		);
+
+		(provider as unknown as { handleStreamChunk: Function }).handleStreamChunk(
+			{ type: "finish" } as unknown,
+			progress,
+		);
+
+		expect(progress.report).toHaveBeenCalledTimes(1);
+		const reported = progress.report.mock.calls[0][0];
+		expect(reported).toBeInstanceOf(hoisted.MockLanguageModelToolCallPart);
+		expect(reported.callId).toBe("call-final");
+		expect(reported.name).toBe("searchDocs");
+		expect(reported.input).toEqual({ query: "done" });
+	});
+});
+
 describe("Fixture-based tests", () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
@@ -893,7 +1359,9 @@ describe("Fixture-based tests", () => {
 		);
 
 		expect(progress.report).not.toHaveBeenCalled();
-		expect(warnSpy).toHaveBeenCalledWith("[VercelAI] Unsupported file mime type: cache_control");
+		expect(warnSpy).toHaveBeenCalledWith(
+			expect.stringContaining("Unsupported file mime type: cache_control"),
+		);
 	});
 
 	it("handles file chunks with valid and invalid MIME types", () => {
@@ -950,7 +1418,9 @@ describe("Fixture-based tests", () => {
 			}
 		}
 
-		expect(warnSpy).toHaveBeenCalledWith("[VercelAI] Unsupported file mime type: cache_control");
+		expect(warnSpy).toHaveBeenCalledWith(
+			expect.stringContaining("Unsupported file mime type: cache_control"),
+		);
 	});
 
 	it("handles tool call streaming chunks", () => {

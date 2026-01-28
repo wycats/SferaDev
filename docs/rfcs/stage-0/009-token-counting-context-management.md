@@ -50,22 +50,26 @@ Our current implementation has:
 
 [VicBilibily/GCMP](https://github.com/VicBilibily/GCMP) is a well-maintained third-party language model provider with 82+ stars. Their implementation includes features we're missing:
 
-| Feature                    | Our Implementation          | GCMP                               |
-| -------------------------- | --------------------------- | ---------------------------------- |
-| **Tokenizer**              | Character-based (`len/3.5`) | Real tiktoken library              |
-| **Context status bar**     | None                        | Detailed breakdown by category     |
-| **Model selection memory** | None                        | Remembers last-selected model      |
-| **Token usage analytics**  | Basic tracking              | Full per-provider/model statistics |
-| **Config overrides**       | Fixed system prompt only    | Full provider/model customization  |
+| Feature                    | Our Implementation | GCMP                             |
+| -------------------------- | ------------------ | -------------------------------- |
+| **Tokenizer**              | ✅ js-tiktoken     | ✅ @microsoft/tiktokenizer       |
+| **Tool schema counting**   | ❌ Missing         | ✅ Formula: 16 + 8/tool + 1.1x   |
+| **System prompt overhead** | ❌ Missing         | ✅ 28 token overhead             |
+| **LRU text cache**         | ❌ Missing         | ✅ 5000 entries                  |
+| **Prompt breakdown**       | ❌ Missing         | ✅ Detailed by category          |
+| **Context status bar**     | ❌ None            | ✅ Detailed breakdown            |
+| **Model selection memory** | ✅ Implemented     | ✅ Remembers last-selected model |
+| **Token usage analytics**  | ✅ Basic tracking  | ✅ Full per-provider/model stats |
 
 However, GCMP lacks features we have:
 
-| Feature                     | Our Implementation    | GCMP                   |
-| --------------------------- | --------------------- | ---------------------- |
-| **Dynamic model discovery** | ✅ From API           | ❌ Hardcoded in config |
-| **Hybrid token estimation** | ✅ Actual + estimated | ❌ Pure estimation     |
-| **Correction factor**       | ✅ Rolling average    | ❌ None                |
-| **Anthropic context mgmt**  | ✅ Enabled            | ❌ Not mentioned       |
+| Feature                     | Our Implementation         | GCMP                   |
+| --------------------------- | -------------------------- | ---------------------- |
+| **Dynamic model discovery** | ✅ From API                | ❌ Hardcoded in config |
+| **API actuals caching**     | ✅ Ground truth from API   | ❌ Pure estimation     |
+| **Correction factor**       | ✅ Rolling average         | ❌ None                |
+| **Reactive error learning** | ✅ Parse "too long" errors | ❌ None                |
+| **Anthropic context mgmt**  | ✅ Enabled                 | ❌ Not mentioned       |
 
 ## Problem Statement
 
@@ -92,7 +96,7 @@ In a typical conversation:
 
 ```
 Message 1 (sent) → API returns actual: 150 tokens  → CACHE IT
-Message 2 (sent) → API returns actual: 200 tokens  → CACHE IT  
+Message 2 (sent) → API returns actual: 200 tokens  → CACHE IT
 Message 3 (sent) → API returns actual: 180 tokens  → CACHE IT
 Message 4 (composing) → No actual yet             → ESTIMATE IT
 ```
@@ -101,13 +105,14 @@ For a 50-message conversation, we have actuals for 49 messages and only need to 
 
 ### Token Count Sources (Priority Order)
 
-| Source | When Used | Accuracy | Safety Margin |
-|--------|-----------|----------|---------------|
-| **Cached API actuals** | Already-sent messages | Ground truth | 2% |
-| **Tiktoken estimation** | Unsent messages only | Very accurate | 5% |
-| **Character fallback** | Unknown encodings (rare) | Rough | 10% |
+| Source                  | When Used                | Accuracy      | Safety Margin |
+| ----------------------- | ------------------------ | ------------- | ------------- |
+| **Cached API actuals**  | Already-sent messages    | Ground truth  | 2%            |
+| **Tiktoken estimation** | Unsent messages only     | Very accurate | 5%            |
+| **Character fallback**  | Unknown encodings (rare) | Rough         | 10%           |
 
 **The key insight:** Estimation (tiktoken) is only needed for:
+
 - The new user message being composed
 - Tool results that haven't been sent yet
 - Edited messages (until the next API response caches them)
@@ -214,22 +219,211 @@ class TokenCache {
 }
 ```
 
+### Tool Schema Token Counting (CRITICAL — The 50k Gap)
+
+**This is the root cause of our token underestimation.** Tool schemas (JSON schemas for each tool) can be 50k+ tokens, but we never count them.
+
+GCMP uses this formula:
+
+```typescript
+private countToolsTokens(tools?: readonly LanguageModelChatTool[]): number {
+    if (!tools || tools.length === 0) return 0;
+
+    let numTokens = 16; // Base overhead for tools array
+
+    for (const tool of tools) {
+        numTokens += 8; // Per-tool structural overhead
+        numTokens += this.countText(tool.name);
+        numTokens += this.countText(tool.description || '');
+        numTokens += this.countText(JSON.stringify(tool.inputSchema));
+    }
+
+    // 1.1x safety factor (official standard from vscode-copilot-chat)
+    return Math.floor(numTokens * 1.1);
+}
+```
+
+**Formula breakdown:**
+
+- **16 tokens**: Base overhead for the tools array structure
+- **8 tokens per tool**: Structural overhead for each tool definition
+- **Content**: Tokenize name + description + JSON.stringify(inputSchema)
+- **1.1x multiplier**: Safety factor aligned with official VS Code Copilot implementation
+
+**Why this matters:** In a typical Copilot session with 50+ tools, the tool schemas alone can be:
+
+- 50 tools × (8 overhead + ~1000 tokens for schema) × 1.1 = ~55,000 tokens
+
+This is the "missing 50k" that caused our token underestimation.
+
+### System Prompt Overhead
+
+System prompts have additional wrapping overhead when sent to providers like Anthropic:
+
+```typescript
+const SYSTEM_PROMPT_OVERHEAD = 28; // Tokens for Anthropic system message wrapping
+
+function countSystemPromptTokens(systemText: string): number {
+  const contentTokens = this.countText(systemText);
+  return contentTokens + SYSTEM_PROMPT_OVERHEAD;
+}
+```
+
+The 28-token overhead accounts for:
+
+- Role markers and message structure
+- Anthropic-specific system message formatting
+- Safety padding for variations between models
+
+### LRU Text Cache (Performance Layer)
+
+Distinct from the **API actuals cache** (which stores ground truth from successful requests), the **LRU text cache** is a performance optimization for the tokenizer itself:
+
+```typescript
+class LRUCache<T> {
+  private cache = new Map<string, T>();
+  constructor(private maxSize: number = 5000) {}
+
+  get(key: string): T | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      // Move to end (most recently used)
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  put(key: string, value: T): void {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.maxSize) {
+      // Evict oldest (first key)
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+}
+
+class TokenCounter {
+  private textCache = new LRUCache<number>(5000);
+
+  private countText(text: string): number {
+    if (!text) return 0;
+
+    const cached = this.textCache.get(text);
+    if (cached !== undefined) return cached;
+
+    const count = this.encoder.encode(text).length;
+    this.textCache.put(text, count);
+    return count;
+  }
+}
+```
+
+**Why this helps:**
+
+- Tool names/descriptions are repeated across requests
+- System prompt content is often identical
+- Avoids re-tokenizing the same strings repeatedly
+- 5000 entries is sufficient for typical conversations
+
+### Prompt Breakdown for Debugging
+
+For observability, we should break down prompts into categories:
+
+```typescript
+interface PromptPartTokens {
+  systemPrompt: number; // System instructions
+  availableTools: number; // Tool schemas
+  environment: number; // environment_info, workspace_info
+  historyMessages: number; // Previous turns
+  currentRound: number; // Current turn messages
+  thinking: number; // Reasoning content (if present)
+  autoCompressed: number; // VS Code's summarization markers
+  total: number; // Sum of all parts
+}
+
+function analyzePromptParts(
+  messages: LanguageModelChatMessage[],
+  options: ProvideLanguageModelChatResponseOptions,
+): PromptPartTokens {
+  // Break down by category for debugging visibility
+  // Detect VS Code markers like "conversation-summary" and "environment_info"
+  // ...
+}
+```
+
+**Detection markers from GCMP:**
+
+- `The following is a compressed version of the preceeding history` — Auto-compressed history
+- `<conversation-summary>` — VS Code conversation summary
+- `</environment_info>\n<workspace_info>` — Environment information
+
+This breakdown helps diagnose where tokens are being consumed.
+
+### Reactive Error Learning (NEW)
+
+When we receive a "too long" error, we can extract the actual token count and use it for future estimates:
+
+```typescript
+// Error: "prompt is too long: 204716 tokens > 200000 maximum"
+
+function extractTokenCountFromError(
+  error: unknown,
+): { actualTokens: number; maxTokens?: number } | undefined {
+  const message = extractErrorMessage(error);
+  const match = message.match(/(\d+)\s*tokens?\s*>\s*(\d+)/i);
+  if (match) {
+    return {
+      actualTokens: parseInt(match[1], 10),
+      maxTokens: parseInt(match[2], 10),
+    };
+  }
+  return undefined;
+}
+
+// After catching error:
+if (tokenInfo) {
+  this.learnedTokenTotal = tokenInfo.actualTokens;
+  this.modelInfoChangeEmitter.fire(); // Trigger VS Code to re-query
+}
+```
+
+This is a **safety net** — the user sees one error, but subsequent requests will have accurate counts.
+
+### Token Counting Architecture Summary
+
+| Layer                       | Type        | Purpose                          | Source                 |
+| --------------------------- | ----------- | -------------------------------- | ---------------------- |
+| **API Actuals Cache**       | Cached      | Ground truth for sent messages   | Vercel AI finish chunk |
+| **LRU Text Cache**          | Performance | Avoid re-tokenizing same strings | In-memory              |
+| **Tool Schema Counting**    | Proactive   | Count tools before sending       | options.tools          |
+| **System Prompt Overhead**  | Proactive   | Add 28 token overhead            | First system message   |
+| **Tiktoken Estimation**     | Proactive   | Estimate unsent messages         | js-tiktoken            |
+| **Reactive Error Learning** | Reactive    | Learn from "too long" errors     | Error message parsing  |
+| **Correction Factor**       | Adaptive    | Calibrate estimates over time    | Rolling average        |
+
 ### Phase 1: Message Digest Cache Infrastructure (Critical)
 
 **Goal:** Build the caching infrastructure that makes API actuals available for all sent messages, even after edits.
 
 This is the highest priority because:
+
 - API actuals are ground truth — no estimation error
 - Most messages in a conversation are already-sent
 - The cache survives message edits (digest is content-based, not position-based)
 
-### Phase 2: Token Counting with Cache Lookup (Critical)
+### Phase 2: Token Counting with Cache Lookup + Tool Schemas (Critical)
 
-**Goal:** Use cached actuals when available, estimate only unsent messages:
+**Goal:** Use cached actuals when available, estimate only unsent messages, AND count tool schemas + system prompt overhead.
 
 1. **Check cache first** — If we have an actual for this message digest, use it
 2. **Estimate if needed** — Only for messages without cached actuals (new/edited)
-3. **Apply appropriate margin** — 2% on actuals, 5% on estimates
+3. **Count tool schemas** — 16 + 8/tool + content tokens, × 1.1 safety factor
+4. **Add system prompt overhead** — +28 tokens for Anthropic wrapping
+5. **Apply appropriate margin** — 2% on actuals, 5% on estimates
 
 ```typescript
 import { getEncoding, type Tiktoken } from "js-tiktoken";
@@ -330,7 +524,15 @@ Character-based estimation systematically underestimates code and non-ASCII text
 
 - `js-tiktoken` (pure JS, ~2MB, works in VS Code extension host)
 
-### Phase 3: Wiring API Actuals to Cache (Critical)
+### Phase 3: LRU Text Cache + Prompt Breakdown (Important)
+
+**Goal:** Add performance layer and debugging visibility.
+
+1. **LRU Text Cache** — 5000-entry cache for tokenized strings
+2. **Prompt Breakdown** — Categorize tokens by type (system, tools, messages, etc.)
+3. **Logging** — Output category breakdown for debugging
+
+### Phase 4: Wiring API Actuals to Cache (Critical)
 
 **Goal:** Extract actual token counts from Vercel AI Gateway responses and populate the cache after each request.
 
@@ -406,7 +608,7 @@ After editing msg3:
   Total: 765 tokens (mostly cached, one estimate)
 ```
 
-### Phase 3: Token Usage Analytics (Important)
+### Phase 5: Token Usage Analytics (Important)
 
 **Goal:** Track actual vs estimated tokens for debugging and accuracy monitoring.
 
@@ -458,7 +660,7 @@ class TokenUsageManager {
 }
 ```
 
-### Phase 4: Model Selection Memory (Nice-to-have)
+### Phase 6: Model Selection Memory (Already Implemented)
 
 **Goal:** Remember the user's last-selected model per provider.
 
@@ -485,7 +687,7 @@ return models.map((m) => ({
 }));
 ```
 
-### Phase 4: Context Usage Status Bar (Nice-to-have)
+### Phase 7: Context Usage Status Bar (Nice-to-have)
 
 **Goal:** Show token usage breakdown in VS Code status bar for debugging.
 
@@ -516,46 +718,57 @@ class ContextUsageStatusBar {
 
 ## Implementation Plan
 
-### Phase 1: Message Digest Cache (Week 1) — CRITICAL
+### Phase 1: Tool Schema + System Prompt Counting (Week 1) — CRITICAL
 
-**Priority: Highest.** The cache is foundational—everything else depends on it.
+**Priority: Highest.** This closes the 50k token gap.
 
-1. Create `TokenCache` class with message digest hashing
-2. Implement `digestMessage()` using SHA-256 of message content
-3. Store cache in `ExtensionContext.workspaceState` for persistence
-4. Add cache eviction strategy (LRU or time-based)
-5. Write tests for digest stability across message edits
+1. Add `countToolsTokens()` to TokenCounter with GCMP formula
+2. Add system prompt overhead (28 tokens) calculation
+3. Update `estimateTotalInputTokens()` to include tools + system prompt
+4. Write tests for tool schema token counting
 
-### Phase 2: Wire API Actuals to Cache (Week 1) — CRITICAL
+### Phase 2: Message Digest Cache (Week 1) — DONE ✅
 
-**Priority: High.** This populates the cache with ground truth.
+**Already implemented.** The cache is foundational.
 
-1. Extract `usage.inputTokens` from `finish`/`finish-step` stream events
-2. Distribute total across messages proportionally
-3. Call `tokenCache.cacheActual()` for each message
-4. Verify cache is populated after each successful request
+1. ✅ `TokenCache` class with message digest hashing
+2. ✅ `digestMessage()` using SHA-256 of message content
+3. ✅ Store cache in memory (workspace state optional)
+4. ✅ Cache eviction strategy (LRU)
+5. ✅ Tests for digest stability
 
-### Phase 3: Token Counter with Cache Lookup (Week 2) — CRITICAL
+### Phase 3: Wire API Actuals to Cache (Week 1) — DONE ✅
 
-**Priority: High.** This uses the cache for sent messages, estimates only for unsent.
+**Already implemented.** Populates the cache with ground truth.
 
-1. Create `TokenCounter` class that checks cache first
-2. Add `js-tiktoken` for estimating unsent messages only
-3. Update `provideTokenCount` to use the new flow
-4. Apply 2% margin on cached actuals, 5% on estimates
-5. Add character-based fallback for unknown encodings
+1. ✅ Extract `usage.inputTokens` from `finish` stream events
+2. ✅ Distribute total across messages proportionally
+3. ✅ Call `tokenCache.cacheActual()` for each message
+4. ✅ Cache is populated after each successful request
 
-### Phase 4: Usage Analytics (Week 2) — Important
+### Phase 4: LRU Text Cache (Week 2) — Important
 
-1. Create `TokenUsageManager` class
-2. Track estimated vs actual for debugging
-3. Log accuracy statistics to output channel
-4. Surface in dev tools command
+**Priority: Medium.** Performance optimization.
 
-### Phase 5: Nice-to-have (Week 3+)
+1. Add 5000-entry LRU cache for tokenized text strings
+2. Wrap `encoder.encode()` with cache lookup
+3. Measure performance improvement
 
-1. Model selection memory
-2. Status bar for debugging
+### Phase 5: Prompt Breakdown for Debugging (Week 2) — Nice-to-have
+
+1. Create `PromptAnalyzer` class
+2. Detect VS Code markers (conversation-summary, environment_info)
+3. Log breakdown by category
+4. Optional: Surface in status bar
+
+### Phase 6: Reactive Error Learning (Week 1) — DONE ✅
+
+**Already implemented.** Safety net for estimation failures.
+
+1. ✅ `extractTokenCountFromError()` parses "too long" errors
+2. ✅ Store learned token count
+3. ✅ Fire `modelInfoChangeEmitter` to trigger re-evaluation
+4. ✅ Clear learned state on successful request
 
 ## Preserving Existing Strengths
 
@@ -665,4 +878,6 @@ This gives us multiple layers of protection while maintaining precision at the b
 1. Should we expose token usage stats via a VS Code command for debugging?
 2. Should the status bar be opt-in or opt-out?
 3. Do we need to support custom tokenizers for non-OpenAI/Anthropic models?
-4. Should we cache tokenized message hashes to avoid re-tokenizing unchanged messages?
+4. ~~Should we cache tokenized message hashes to avoid re-tokenizing unchanged messages?~~ **ANSWERED:** Yes, use 5000-entry LRU cache (per GCMP).
+5. Should we use `@microsoft/tiktokenizer` instead of `js-tiktoken`? (GCMP uses the former)
+6. How should we handle the prompt breakdown logging—debug only, or surface to users?

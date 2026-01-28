@@ -36,17 +36,23 @@ const VERSION_PATTERN = /[-_](\d{4}-\d{2}-\d{2}|\d{4,8}|\d+\.\d+(?:\.\d+)?)$/;
  */
 export function parseModelIdentity(modelId: string): ParsedModelIdentity {
 	const colonIndex = modelId.indexOf(":");
+	const slashIndex = modelId.indexOf("/");
 
 	let provider: string;
 	let modelPart: string;
 
-	if (colonIndex === -1) {
-		// No colon found, no provider
-		provider = "";
-		modelPart = modelId;
-	} else {
+	if (colonIndex !== -1) {
+		// Colon format: "provider:model"
 		provider = modelId.slice(0, colonIndex);
 		modelPart = modelId.slice(colonIndex + 1);
+	} else if (slashIndex !== -1) {
+		// Slash format: "provider/model" (gateway format)
+		provider = modelId.slice(0, slashIndex);
+		modelPart = modelId.slice(slashIndex + 1);
+	} else {
+		// No separator found, no provider
+		provider = "";
+		modelPart = modelId;
 	}
 
 	const { family, version } = extractFamilyAndVersion(modelPart);

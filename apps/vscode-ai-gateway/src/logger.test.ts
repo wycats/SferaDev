@@ -63,11 +63,18 @@ vi.mock("vscode", () => ({
 }));
 
 // Import after mocking
-import { LOG_LEVELS, Logger, type LogLevel } from "./logger";
+import {
+	_resetOutputChannelForTesting,
+	initializeOutputChannel,
+	LOG_LEVELS,
+	Logger,
+} from "./logger";
 
 describe("Logger", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Reset the output channel singleton so each test can verify channel creation
+		_resetOutputChannelForTesting();
 		// Default configuration
 		hoisted.mockGetConfiguration.mockReturnValue({
 			get: vi.fn((key: string, defaultValue: unknown) => {
@@ -95,13 +102,34 @@ describe("Logger", () => {
 		});
 	});
 
+	describe("initializeOutputChannel", () => {
+		it("should create output channel when called", () => {
+			initializeOutputChannel();
+			expect(hoisted.mockCreateOutputChannel).toHaveBeenCalledWith("Vercel AI Gateway");
+		});
+
+		it("should return a disposable that cleans up the channel", () => {
+			const disposable = initializeOutputChannel();
+			expect(hoisted.mockCreateOutputChannel).toHaveBeenCalled();
+
+			disposable.dispose();
+			expect(hoisted.mockOutputChannelDispose).toHaveBeenCalled();
+		});
+
+		it("should only create one channel even if called multiple times", () => {
+			initializeOutputChannel();
+			initializeOutputChannel();
+			expect(hoisted.mockCreateOutputChannel).toHaveBeenCalledTimes(1);
+		});
+	});
+
 	describe("constructor", () => {
 		it("should load configuration on creation", () => {
 			new Logger();
 			expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway");
 		});
 
-		it("should create output channel when enabled", () => {
+		it("should use shared output channel when enabled and initialized", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
 					if (key === "logging.level") return "warn";
@@ -110,11 +138,16 @@ describe("Logger", () => {
 				}),
 			});
 
+			// Initialize the shared channel first (simulates extension activation)
+			initializeOutputChannel();
+			expect(hoisted.mockCreateOutputChannel).toHaveBeenCalledTimes(1);
+
+			// Creating a logger should NOT create another channel
 			new Logger();
-			expect(hoisted.mockCreateOutputChannel).toHaveBeenCalledWith("Vercel AI Gateway");
+			expect(hoisted.mockCreateOutputChannel).toHaveBeenCalledTimes(1);
 		});
 
-		it("should not create output channel when disabled", () => {
+		it("should not use output channel when disabled", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
 					if (key === "logging.level") return "warn";
@@ -123,8 +156,11 @@ describe("Logger", () => {
 				}),
 			});
 
-			new Logger();
-			expect(hoisted.mockCreateOutputChannel).not.toHaveBeenCalled();
+			initializeOutputChannel();
+			const logger = new Logger();
+			logger.info("test");
+			// Should not write to output channel when disabled
+			expect(hoisted.mockOutputChannelAppendLine).not.toHaveBeenCalled();
 		});
 
 		it("should register configuration change listener", () => {
@@ -281,6 +317,7 @@ describe("Logger", () => {
 				}),
 			});
 
+			initializeOutputChannel();
 			const logger = new Logger();
 			vi.spyOn(console, "debug").mockImplementation(() => {});
 
@@ -297,6 +334,7 @@ describe("Logger", () => {
 				}),
 			});
 
+			initializeOutputChannel();
 			const logger = new Logger();
 			vi.spyOn(console, "info").mockImplementation(() => {});
 
@@ -317,6 +355,7 @@ describe("Logger", () => {
 				}),
 			});
 
+			initializeOutputChannel();
 			const logger = new Logger();
 			vi.spyOn(console, "info").mockImplementation(() => {});
 
@@ -338,6 +377,8 @@ describe("Logger", () => {
 				}),
 			});
 
+			// Initialize the shared channel first
+			initializeOutputChannel();
 			const logger = new Logger();
 			logger.show();
 
@@ -359,7 +400,7 @@ describe("Logger", () => {
 	});
 
 	describe("dispose()", () => {
-		it("should dispose output channel when called", () => {
+		it("should not dispose shared output channel (managed by extension context)", () => {
 			hoisted.mockGetConfiguration.mockReturnValue({
 				get: vi.fn((key: string) => {
 					if (key === "logging.level") return "warn";
@@ -368,10 +409,13 @@ describe("Logger", () => {
 				}),
 			});
 
+			initializeOutputChannel();
 			const logger = new Logger();
 			logger.dispose();
 
-			expect(hoisted.mockOutputChannelDispose).toHaveBeenCalled();
+			// Logger.dispose() should NOT dispose the shared channel
+			// The channel is managed by initializeOutputChannel()'s disposable
+			expect(hoisted.mockOutputChannelDispose).not.toHaveBeenCalled();
 		});
 
 		it("should not throw when output channel is disabled", () => {
@@ -437,5 +481,204 @@ describe("Logger", () => {
 
 			infoSpy.mockRestore();
 		});
+	});
+});
+
+// Import extractErrorMessage for testing
+import { extractErrorMessage, extractTokenCountFromError } from "./logger";
+
+describe("extractErrorMessage", () => {
+	it("should extract message from simple Error object", () => {
+		const error = new Error("Something went wrong");
+		expect(extractErrorMessage(error)).toBe("Something went wrong");
+	});
+
+	it("should return string errors directly", () => {
+		expect(extractErrorMessage("Raw error string")).toBe("Raw error string");
+	});
+
+	it("should extract message from object with message property", () => {
+		const error = { message: "Object error message" };
+		expect(extractErrorMessage(error)).toBe("Object error message");
+	});
+
+	it("should return fallback for unknown error types", () => {
+		expect(extractErrorMessage(null)).toBe("An unexpected error occurred");
+		expect(extractErrorMessage(undefined)).toBe("An unexpected error occurred");
+		expect(extractErrorMessage(123)).toBe("An unexpected error occurred");
+	});
+
+	it("should remove 'undefined: ' prefix from error messages", () => {
+		const error = {
+			message: "undefined: The model returned the following errors: Input is too long",
+		};
+		expect(extractErrorMessage(error)).toBe(
+			"The model returned the following errors: Input is too long",
+		);
+	});
+
+	it("should remove 'undefined: ' prefix case-insensitively", () => {
+		expect(extractErrorMessage("UNDEFINED: Some error")).toBe("Some error");
+		expect(extractErrorMessage("Undefined: Another error")).toBe("Another error");
+	});
+
+	it("should extract best error from Vercel AI Gateway response body with routing attempts", () => {
+		const responseBody = JSON.stringify({
+			error: {
+				message:
+					"undefined: The model returned the following errors: Input is too long for requested model.",
+				type: "AI_APICallError",
+			},
+			providerMetadata: {
+				gateway: {
+					routing: {
+						attempts: [
+							{
+								provider: "anthropic",
+								success: false,
+								error: "prompt is too long: 204716 tokens > 200000 maximum",
+							},
+							{
+								provider: "vertexAnthropic",
+								success: false,
+								error: "Prompt is too long",
+							},
+							{
+								provider: "bedrock",
+								success: false,
+								error:
+									"undefined: The model returned the following errors: Input is too long for requested model.",
+							},
+						],
+					},
+				},
+			},
+		});
+
+		const error = { responseBody };
+		// Should prefer the Anthropic error because it has more detail (includes token counts)
+		expect(extractErrorMessage(error)).toBe("prompt is too long: 204716 tokens > 200000 maximum");
+	});
+
+	it("should fall back to first attempt error if no informative error found", () => {
+		const responseBody = JSON.stringify({
+			error: {
+				message: "Generic error",
+				type: "AI_APICallError",
+			},
+			providerMetadata: {
+				gateway: {
+					routing: {
+						attempts: [
+							{
+								provider: "anthropic",
+								success: false,
+								error: "First generic error",
+							},
+							{
+								provider: "vertexAnthropic",
+								success: false,
+								error: "Second generic error",
+							},
+						],
+					},
+				},
+			},
+		});
+
+		const error = { responseBody };
+		expect(extractErrorMessage(error)).toBe("First generic error");
+	});
+
+	it("should fall back to top-level error message if no attempts", () => {
+		const responseBody = JSON.stringify({
+			error: {
+				message: "undefined: Top level error",
+				type: "AI_APICallError",
+			},
+		});
+
+		const error = { responseBody };
+		expect(extractErrorMessage(error)).toBe("Top level error");
+	});
+
+	it("should handle malformed response body gracefully", () => {
+		const error = { responseBody: "not valid json", message: "Fallback" };
+		expect(extractErrorMessage(error)).toBe("Fallback");
+	});
+});
+
+describe("extractTokenCountFromError", () => {
+	it("should extract token counts from Anthropic-style error", () => {
+		const error = {
+			message: "prompt is too long: 204716 tokens > 200000 maximum",
+		};
+		const result = extractTokenCountFromError(error);
+		expect(result).toEqual({
+			actualTokens: 204716,
+			maxTokens: 200000,
+		});
+	});
+
+	it("should extract token counts from Vercel AI Gateway response body", () => {
+		const responseBody = JSON.stringify({
+			providerMetadata: {
+				gateway: {
+					routing: {
+						attempts: [
+							{
+								provider: "anthropic",
+								error: "prompt is too long: 150000 tokens > 128000 maximum",
+							},
+						],
+					},
+				},
+			},
+		});
+		const error = { responseBody };
+		const result = extractTokenCountFromError(error);
+		expect(result).toEqual({
+			actualTokens: 150000,
+			maxTokens: 128000,
+		});
+	});
+
+	it("should handle 'exceeds context window' pattern", () => {
+		const error = {
+			message: "Input exceeds context window of 128000 tokens",
+		};
+		const result = extractTokenCountFromError(error);
+		expect(result).toEqual({
+			actualTokens: 128001, // We know it exceeds, so actual is at least max + 1
+			maxTokens: 128000,
+		});
+	});
+
+	it("should return undefined for non-token-related errors", () => {
+		const error = new Error("Network connection failed");
+		expect(extractTokenCountFromError(error)).toBeUndefined();
+	});
+
+	it("should return undefined for generic too long errors without counts", () => {
+		const error = {
+			message: "Input is too long for requested model.",
+		};
+		expect(extractTokenCountFromError(error)).toBeUndefined();
+	});
+
+	it("should handle token counts with 'token' singular", () => {
+		const error = {
+			message: "prompt is too long: 1 token > 0 maximum",
+		};
+		const result = extractTokenCountFromError(error);
+		expect(result).toEqual({
+			actualTokens: 1,
+			maxTokens: 0,
+		});
+	});
+
+	it("should handle null and undefined", () => {
+		expect(extractTokenCountFromError(null)).toBeUndefined();
+		expect(extractTokenCountFromError(undefined)).toBeUndefined();
 	});
 });

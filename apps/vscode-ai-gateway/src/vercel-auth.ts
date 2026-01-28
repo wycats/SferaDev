@@ -3,6 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { TOKEN_REFRESH_MARGIN } from "./constants";
+import { logger } from "./logger";
 
 interface VercelTokenResponse {
 	token: string;
@@ -128,7 +129,7 @@ function createStoredToken(
 		expiresAt = payload.exp * 1000;
 	} else {
 		// Default to 1 hour from now if exp is missing or invalid
-		console.warn("JWT token missing or invalid exp field, using default expiration");
+		logger.warn("JWT token missing or invalid exp field, using default expiration");
 		expiresAt = Date.now() + DEFAULT_TOKEN_EXPIRATION_MS;
 	}
 
