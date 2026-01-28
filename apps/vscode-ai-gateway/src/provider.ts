@@ -40,6 +40,7 @@ import { extractErrorMessage, extractTokenCountFromError, logError, logger } fro
 import { ModelsClient } from "./models";
 import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
 import { parseModelIdentity } from "./models/identity";
+import type { TokenStatusBar } from "./status-bar";
 import { TokenCache } from "./tokens/cache";
 import { TokenCounter } from "./tokens/counter";
 
@@ -115,9 +116,11 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private lastEstimatedInputTokens: number = 0;
 	private configService: ConfigService;
 	private enricher: ModelEnricher;
-	// Track current request for caching API actuals
+	// Track current request for caching API actuals and status bar
 	private currentRequestMessages: readonly LanguageModelChatMessage[] | null = null;
 	private currentRequestModelFamily: string | null = null;
+	private currentRequestMaxInputTokens: number | undefined = undefined;
+	private currentRequestModelId: string | undefined = undefined;
 	/**
 	 * Learned actual token total from "input too long" errors.
 	 * When set, this is distributed across messages proportionally to trigger VS Code summarization.
@@ -140,6 +143,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private enrichedModels: Map<string, EnrichedModelData> = new Map();
 	private readonly modelInfoChangeEmitter = new vscode.EventEmitter<void>();
 	readonly onDidChangeLanguageModelChatInformation = this.modelInfoChangeEmitter.event;
+	private statusBar: TokenStatusBar | null = null;
 
 	constructor(context: ExtensionContext, configService: ConfigService = new ConfigService()) {
 		this.context = context;
@@ -150,6 +154,14 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		this.enricher = new ModelEnricher(configService);
 		// Initialize enricher persistence for faster startup
 		this.enricher.initializePersistence(context.globalState);
+	}
+
+	/**
+	 * Set the status bar instance for token usage display.
+	 * Called from extension.ts after both provider and status bar are created.
+	 */
+	setStatusBar(statusBar: TokenStatusBar): void {
+		this.statusBar = statusBar;
 	}
 
 	dispose(): void {
@@ -268,6 +280,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			// Track current request for caching API actuals after response
 			this.currentRequestMessages = chatMessages;
 			this.currentRequestModelFamily = model.family;
+			this.currentRequestMaxInputTokens = model.maxInputTokens;
+			this.currentRequestModelId = model.id;
 
 			// Get system prompt configuration for token estimation
 			const systemPromptEnabled = this.configService.systemPromptEnabled;
@@ -308,6 +322,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			}
 
 			this.lastEstimatedInputTokens = estimatedTokens;
+
+			// Show streaming indicator in status bar with estimated tokens
+			this.statusBar?.showStreaming(estimatedTokens, maxInputTokens);
 
 			const apiKey = await this.getApiKey(false);
 			if (!apiKey) {
@@ -427,6 +444,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				// Fire the event so VS Code re-queries token counts
 				// This should trigger summarization before the next request
 				this.modelInfoChangeEmitter.fire();
+
+				// Show error in status bar with token info
+				this.statusBar?.showError(
+					`Token limit exceeded: ${tokenInfo.actualTokens.toLocaleString()} tokens ` +
+						`(max: ${tokenInfo.maxTokens?.toLocaleString() ?? "unknown"})`,
+				);
 			}
 
 			// CRITICAL: Always emit an error response to prevent "no response returned" error.
@@ -439,6 +462,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			// Clear current request tracking
 			this.currentRequestMessages = null;
 			this.currentRequestModelFamily = null;
+			this.currentRequestMaxInputTokens = undefined;
+			this.currentRequestModelId = undefined;
 			this.toolCallBuffer.clear();
 			abortSubscription.dispose();
 		}
@@ -877,6 +902,17 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 					const newFactor = actualInputTokens / this.lastEstimatedInputTokens;
 					this.correctionFactor = this.correctionFactor * 0.7 + newFactor * 0.3;
 					logger.debug(`Correction factor updated: ${this.correctionFactor.toFixed(3)}`);
+				}
+
+				// Update status bar with actual token usage
+				const outputTokens = finishChunk.totalUsage?.outputTokens ?? 0;
+				if (actualInputTokens !== undefined) {
+					this.statusBar?.showUsage({
+						inputTokens: actualInputTokens,
+						outputTokens,
+						maxInputTokens: this.currentRequestMaxInputTokens,
+						modelId: this.currentRequestModelId,
+					});
 				}
 				break;
 			}
