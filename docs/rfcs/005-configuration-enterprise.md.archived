@@ -1,0 +1,820 @@
+# RFC 005: Configuration and Enterprise Features
+
+**Status:** Draft  
+**Author:** Vercel AI Team  
+**Created:** 2026-01-27  
+**Updated:** 2026-01-27
+
+## Summary
+
+Expand the VS Code AI Gateway extension's configuration options to support enterprise use cases, including custom API endpoints, OIDC authentication, default model selection, token estimation tuning, and opt-in telemetry.
+
+## Motivation
+
+The current extension has minimal configuration:
+
+- `vercelAiGateway.systemPrompt.enabled`
+- `vercelAiGateway.systemPrompt.message`
+
+Enterprise users need:
+
+1. **Custom endpoints**: Self-hosted or region-specific AI Gateway deployments
+2. **OIDC authentication**: Integration with corporate identity providers
+3. **Policy controls**: Model restrictions, usage limits
+4. **Observability**: Telemetry for cost tracking and debugging
+5. **Customization**: Default models, token estimation tuning
+
+## Detailed Design
+
+### Configuration Schema
+
+```json
+{
+  "contributes": {
+    "configuration": {
+      "title": "Vercel AI",
+      "properties": {
+        "vercel.ai.gateway.endpoint": {
+          "type": "string",
+          "default": "https://ai-gateway.vercel.sh",
+          "description": "AI Gateway endpoint URL. Change for self-hosted or regional deployments.",
+          "scope": "machine-overridable"
+        },
+        "vercel.ai.gateway.timeout": {
+          "type": "number",
+          "default": 60000,
+          "description": "Request timeout in milliseconds.",
+          "minimum": 5000,
+          "maximum": 300000
+        },
+        "vercel.ai.authentication.method": {
+          "type": "string",
+          "enum": ["apiKey", "oidc"],
+          "default": "apiKey",
+          "description": "Authentication method to use.",
+          "enumDescriptions": [
+            "Use an API key stored in VS Code's secure storage",
+            "Use OIDC token from configured identity provider"
+          ]
+        },
+        "vercel.ai.authentication.oidc.issuer": {
+          "type": "string",
+          "description": "OIDC issuer URL for enterprise authentication."
+        },
+        "vercel.ai.authentication.oidc.clientId": {
+          "type": "string",
+          "description": "OIDC client ID."
+        },
+        "vercel.ai.authentication.oidc.scopes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["openid", "profile"],
+          "description": "OIDC scopes to request."
+        },
+        "vercel.ai.models.default": {
+          "type": "string",
+          "default": "",
+          "description": "Default model ID (e.g., 'anthropic/claude-sonnet-4-20250514'). Leave empty to show model picker.",
+          "examples": [
+            "anthropic/claude-sonnet-4-20250514",
+            "openai/gpt-4.1",
+            "google/gemini-2.5-pro"
+          ]
+        },
+        "vercel.ai.models.allowlist": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Restrict available models to this list. Empty means all models are available.",
+          "examples": [["anthropic/claude-sonnet-4-20250514", "openai/gpt-4.1"]]
+        },
+        "vercel.ai.models.denylist": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Hide these models from the model picker."
+        },
+        "vercel.ai.models.fallbacks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "default": {},
+          "description": "Fallback models for each primary model.",
+          "examples": [
+            {
+              "anthropic/claude-sonnet-4-20250514": [
+                "openai/gpt-4.1",
+                "google/gemini-2.5-pro"
+              ]
+            }
+          ]
+        },
+        "vercel.ai.tokens.estimationMode": {
+          "type": "string",
+          "enum": ["conservative", "balanced", "aggressive"],
+          "default": "conservative",
+          "description": "Token estimation strategy.",
+          "enumDescriptions": [
+            "Overestimate tokens to avoid context overflow (recommended)",
+            "Balance between accuracy and safety",
+            "Underestimate tokens for maximum context usage"
+          ]
+        },
+        "vercel.ai.tokens.charsPerToken": {
+          "type": "number",
+          "default": 3.5,
+          "description": "Characters per token for estimation. Lower = more conservative.",
+          "minimum": 2,
+          "maximum": 6
+        },
+        "vercel.ai.reasoning.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show model reasoning/thinking when available."
+        },
+        "vercel.ai.reasoning.defaultEffort": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "default": "medium",
+          "description": "Default reasoning effort level for models that support it."
+        },
+        "vercel.ai.systemPrompt.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Inject a system prompt to all requests."
+        },
+        "vercel.ai.systemPrompt.message": {
+          "type": "string",
+          "default": "You are being accessed through Vercel AI Gateway in VS Code.",
+          "description": "System prompt message to inject."
+        },
+        "vercel.ai.telemetry.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Send anonymous usage telemetry to help improve the extension."
+        },
+        "vercel.ai.telemetry.includeModelUsage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include model and token usage in telemetry (requires telemetry.enabled)."
+        },
+        "vercel.ai.logging.level": {
+          "type": "string",
+          "enum": ["off", "error", "warn", "info", "debug"],
+          "default": "warn",
+          "description": "Logging verbosity level."
+        },
+        "vercel.ai.logging.outputChannel": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show logs in 'Vercel AI' output channel."
+        }
+      }
+    }
+  }
+}
+```
+
+### OIDC Authentication
+
+```typescript
+// src/auth/oidc.ts
+
+import * as vscode from "vscode";
+
+export interface OIDCConfig {
+  issuer: string;
+  clientId: string;
+  scopes: string[];
+}
+
+export class OIDCAuthenticationProvider
+  implements vscode.AuthenticationProvider
+{
+  static readonly id = "vercel.ai.auth.oidc";
+  static readonly label = "Vercel AI (OIDC)";
+
+  private _onDidChangeSessions =
+    new vscode.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>();
+  readonly onDidChangeSessions = this._onDidChangeSessions.event;
+
+  private sessions: vscode.AuthenticationSession[] = [];
+  private config: OIDCConfig;
+
+  constructor(private context: vscode.ExtensionContext) {
+    this.config = this.loadConfig();
+
+    // Watch for config changes
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("vercel.ai.authentication.oidc")) {
+        this.config = this.loadConfig();
+      }
+    });
+  }
+
+  private loadConfig(): OIDCConfig {
+    const config = vscode.workspace.getConfiguration(
+      "vercel.ai.authentication.oidc",
+    );
+    return {
+      issuer: config.get("issuer", ""),
+      clientId: config.get("clientId", ""),
+      scopes: config.get("scopes", ["openid", "profile"]),
+    };
+  }
+
+  async getSessions(
+    scopes?: readonly string[],
+  ): Promise<readonly vscode.AuthenticationSession[]> {
+    // Return cached sessions that match requested scopes
+    if (!scopes || scopes.length === 0) {
+      return this.sessions;
+    }
+    return this.sessions.filter((session) =>
+      scopes.every((scope) => session.scopes.includes(scope)),
+    );
+  }
+
+  async createSession(
+    scopes: readonly string[],
+  ): Promise<vscode.AuthenticationSession> {
+    if (!this.config.issuer || !this.config.clientId) {
+      throw new Error(
+        "OIDC not configured. Set vercel.ai.authentication.oidc.issuer and clientId.",
+      );
+    }
+
+    // Discover OIDC endpoints
+    const discovery = await this.discoverEndpoints();
+
+    // Start authorization flow
+    const { code, codeVerifier } = await this.startAuthorizationFlow(
+      discovery,
+      scopes,
+    );
+
+    // Exchange code for tokens
+    const tokens = await this.exchangeCode(discovery, code, codeVerifier);
+
+    // Create session
+    const session: vscode.AuthenticationSession = {
+      id: crypto.randomUUID(),
+      accessToken: tokens.access_token,
+      account: {
+        id: tokens.sub || "unknown",
+        label: tokens.email || tokens.name || "OIDC User",
+      },
+      scopes: [...scopes],
+    };
+
+    this.sessions.push(session);
+    this._onDidChangeSessions.fire({
+      added: [session],
+      removed: [],
+      changed: [],
+    });
+
+    // Store refresh token securely
+    if (tokens.refresh_token) {
+      await this.context.secrets.store(
+        `vercel.ai.oidc.refresh.${session.id}`,
+        tokens.refresh_token,
+      );
+    }
+
+    return session;
+  }
+
+  async removeSession(sessionId: string): Promise<void> {
+    const index = this.sessions.findIndex((s) => s.id === sessionId);
+    if (index >= 0) {
+      const [removed] = this.sessions.splice(index, 1);
+      await this.context.secrets.delete(`vercel.ai.oidc.refresh.${sessionId}`);
+      this._onDidChangeSessions.fire({
+        added: [],
+        removed: [removed],
+        changed: [],
+      });
+    }
+  }
+
+  private async discoverEndpoints(): Promise<OIDCDiscovery> {
+    const response = await fetch(
+      `${this.config.issuer}/.well-known/openid-configuration`,
+    );
+    if (!response.ok) {
+      throw new Error(`OIDC discovery failed: ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  private async startAuthorizationFlow(
+    discovery: OIDCDiscovery,
+    scopes: readonly string[],
+  ): Promise<{ code: string; codeVerifier: string }> {
+    // Generate PKCE challenge
+    const codeVerifier = this.generateCodeVerifier();
+    const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+
+    // Build authorization URL
+    const state = crypto.randomUUID();
+    const authUrl = new URL(discovery.authorization_endpoint);
+    authUrl.searchParams.set("client_id", this.config.clientId);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", scopes.join(" "));
+    authUrl.searchParams.set(
+      "redirect_uri",
+      "vscode://vercel.vscode-ai-gateway/auth/callback",
+    );
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("code_challenge", codeChallenge);
+    authUrl.searchParams.set("code_challenge_method", "S256");
+
+    // Open browser for authentication
+    const opened = await vscode.env.openExternal(
+      vscode.Uri.parse(authUrl.toString()),
+    );
+    if (!opened) {
+      throw new Error("Failed to open browser for authentication");
+    }
+
+    // Wait for callback
+    const code = await this.waitForCallback(state);
+    return { code, codeVerifier };
+  }
+
+  private async exchangeCode(
+    discovery: OIDCDiscovery,
+    code: string,
+    codeVerifier: string,
+  ): Promise<TokenResponse> {
+    const response = await fetch(discovery.token_endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: this.config.clientId,
+        code,
+        code_verifier: codeVerifier,
+        redirect_uri: "vscode://vercel.vscode-ai-gateway/auth/callback",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  private generateCodeVerifier(): string {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Buffer.from(array).toString("base64url");
+  }
+
+  private async generateCodeChallenge(verifier: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return Buffer.from(hash).toString("base64url");
+  }
+
+  private waitForCallback(expectedState: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        disposable.dispose();
+        reject(new Error("Authentication timeout"));
+      }, 300000); // 5 minute timeout
+
+      const disposable = vscode.window.registerUriHandler({
+        handleUri(uri: vscode.Uri) {
+          if (uri.path === "/auth/callback") {
+            const params = new URLSearchParams(uri.query);
+            const state = params.get("state");
+            const code = params.get("code");
+            const error = params.get("error");
+
+            clearTimeout(timeout);
+            disposable.dispose();
+
+            if (error) {
+              reject(new Error(`Authentication error: ${error}`));
+            } else if (state !== expectedState) {
+              reject(new Error("State mismatch"));
+            } else if (code) {
+              resolve(code);
+            } else {
+              reject(new Error("No authorization code received"));
+            }
+          }
+        },
+      });
+    });
+  }
+}
+
+interface OIDCDiscovery {
+  authorization_endpoint: string;
+  token_endpoint: string;
+  userinfo_endpoint: string;
+}
+
+interface TokenResponse {
+  access_token: string;
+  refresh_token?: string;
+  id_token?: string;
+  token_type: string;
+  expires_in: number;
+  sub?: string;
+  email?: string;
+  name?: string;
+}
+```
+
+### Model Filtering
+
+```typescript
+// src/models/filter.ts
+
+import * as vscode from "vscode";
+import type { LanguageModelChatInformation } from "vscode";
+
+export interface ModelFilterConfig {
+  allowlist: string[];
+  denylist: string[];
+  fallbacks: Record<string, string[]>;
+}
+
+export class ModelFilter {
+  private config: ModelFilterConfig;
+
+  constructor() {
+    this.config = this.loadConfig();
+
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("vercel.ai.models")) {
+        this.config = this.loadConfig();
+      }
+    });
+  }
+
+  private loadConfig(): ModelFilterConfig {
+    const config = vscode.workspace.getConfiguration("vercel.ai.models");
+    return {
+      allowlist: config.get("allowlist", []),
+      denylist: config.get("denylist", []),
+      fallbacks: config.get("fallbacks", {}),
+    };
+  }
+
+  /**
+   * Filter models based on allowlist/denylist configuration.
+   */
+  filterModels(
+    models: LanguageModelChatInformation[],
+  ): LanguageModelChatInformation[] {
+    let filtered = models;
+
+    // Apply allowlist (if non-empty)
+    if (this.config.allowlist.length > 0) {
+      filtered = filtered.filter((m) =>
+        this.config.allowlist.some((pattern) =>
+          this.matchesPattern(m.id, pattern),
+        ),
+      );
+    }
+
+    // Apply denylist
+    if (this.config.denylist.length > 0) {
+      filtered = filtered.filter(
+        (m) =>
+          !this.config.denylist.some((pattern) =>
+            this.matchesPattern(m.id, pattern),
+          ),
+      );
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Get fallback models for a given model.
+   */
+  getFallbacks(modelId: string): string[] {
+    return this.config.fallbacks[modelId] || [];
+  }
+
+  /**
+   * Check if a model ID matches a pattern (supports wildcards).
+   */
+  private matchesPattern(modelId: string, pattern: string): boolean {
+    if (pattern.includes("*")) {
+      const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
+      return regex.test(modelId);
+    }
+    return modelId === pattern;
+  }
+}
+```
+
+### Telemetry
+
+```typescript
+// src/telemetry/index.ts
+
+import * as vscode from "vscode";
+
+export interface TelemetryEvent {
+  name: string;
+  properties?: Record<string, string>;
+  measurements?: Record<string, number>;
+}
+
+export class TelemetryReporter {
+  private enabled: boolean = false;
+  private includeModelUsage: boolean = true;
+  private sessionId: string;
+
+  constructor(private context: vscode.ExtensionContext) {
+    this.sessionId = crypto.randomUUID();
+    this.loadConfig();
+
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("vercel.ai.telemetry")) {
+        this.loadConfig();
+      }
+    });
+  }
+
+  private loadConfig(): void {
+    const config = vscode.workspace.getConfiguration("vercel.ai.telemetry");
+    this.enabled = config.get("enabled", false);
+    this.includeModelUsage = config.get("includeModelUsage", true);
+  }
+
+  /**
+   * Send a telemetry event (if enabled).
+   */
+  sendEvent(event: TelemetryEvent): void {
+    if (!this.enabled) return;
+
+    // Respect VS Code's global telemetry setting
+    if (vscode.env.isTelemetryEnabled === false) return;
+
+    const payload = {
+      ...event,
+      properties: {
+        ...event.properties,
+        sessionId: this.sessionId,
+        extensionVersion: this.context.extension.packageJSON.version,
+        vscodeVersion: vscode.version,
+        platform: process.platform,
+      },
+    };
+
+    // Remove model usage if not enabled
+    if (!this.includeModelUsage && event.measurements) {
+      delete payload.measurements?.inputTokens;
+      delete payload.measurements?.outputTokens;
+      delete payload.properties?.modelId;
+    }
+
+    // Send to telemetry endpoint
+    this.send(payload).catch(console.error);
+  }
+
+  /**
+   * Track a model request.
+   */
+  trackRequest(
+    modelId: string,
+    inputTokens: number,
+    outputTokens: number,
+    durationMs: number,
+  ): void {
+    this.sendEvent({
+      name: "model_request",
+      properties: {
+        modelId,
+        modelProvider: modelId.split("/")[0],
+      },
+      measurements: {
+        inputTokens,
+        outputTokens,
+        durationMs,
+      },
+    });
+  }
+
+  /**
+   * Track an error.
+   */
+  trackError(error: Error, context: string): void {
+    this.sendEvent({
+      name: "error",
+      properties: {
+        errorName: error.name,
+        errorMessage: error.message.slice(0, 200), // Truncate
+        context,
+      },
+    });
+  }
+
+  /**
+   * Track token estimation accuracy.
+   */
+  trackEstimationAccuracy(estimated: number, actual: number): void {
+    this.sendEvent({
+      name: "token_estimation",
+      measurements: {
+        estimated,
+        actual,
+        accuracy: actual > 0 ? estimated / actual : 0,
+      },
+    });
+  }
+
+  private async send(payload: unknown): Promise<void> {
+    // Implementation would send to Vercel telemetry endpoint
+    // For now, just log in debug mode
+    const config = vscode.workspace.getConfiguration("vercel.ai.logging");
+    if (config.get("level") === "debug") {
+      console.debug("[Telemetry]", payload);
+    }
+  }
+}
+```
+
+### Logging
+
+```typescript
+// src/utils/logger.ts
+
+import * as vscode from "vscode";
+
+export type LogLevel = "off" | "error" | "warn" | "info" | "debug";
+
+const LOG_LEVELS: Record<LogLevel, number> = {
+  off: 0,
+  error: 1,
+  warn: 2,
+  info: 3,
+  debug: 4,
+};
+
+export class Logger {
+  private outputChannel: vscode.OutputChannel | null = null;
+  private level: LogLevel = "warn";
+
+  constructor() {
+    this.loadConfig();
+
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("vercel.ai.logging")) {
+        this.loadConfig();
+      }
+    });
+  }
+
+  private loadConfig(): void {
+    const config = vscode.workspace.getConfiguration("vercel.ai.logging");
+    this.level = config.get("level", "warn");
+
+    const useOutputChannel = config.get("outputChannel", true);
+    if (useOutputChannel && !this.outputChannel) {
+      this.outputChannel = vscode.window.createOutputChannel("Vercel AI");
+    } else if (!useOutputChannel && this.outputChannel) {
+      this.outputChannel.dispose();
+      this.outputChannel = null;
+    }
+  }
+
+  private shouldLog(level: LogLevel): boolean {
+    return LOG_LEVELS[level] <= LOG_LEVELS[this.level];
+  }
+
+  private log(level: LogLevel, message: string, ...args: unknown[]): void {
+    if (!this.shouldLog(level)) return;
+
+    const timestamp = new Date().toISOString();
+    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+    const formatted = `${prefix} ${message}`;
+
+    // Console output
+    switch (level) {
+      case "error":
+        console.error(formatted, ...args);
+        break;
+      case "warn":
+        console.warn(formatted, ...args);
+        break;
+      case "info":
+        console.info(formatted, ...args);
+        break;
+      case "debug":
+        console.debug(formatted, ...args);
+        break;
+    }
+
+    // Output channel
+    if (this.outputChannel) {
+      const argsStr = args.length > 0 ? " " + JSON.stringify(args) : "";
+      this.outputChannel.appendLine(formatted + argsStr);
+    }
+  }
+
+  error(message: string, ...args: unknown[]): void {
+    this.log("error", message, ...args);
+  }
+
+  warn(message: string, ...args: unknown[]): void {
+    this.log("warn", message, ...args);
+  }
+
+  info(message: string, ...args: unknown[]): void {
+    this.log("info", message, ...args);
+  }
+
+  debug(message: string, ...args: unknown[]): void {
+    this.log("debug", message, ...args);
+  }
+
+  show(): void {
+    this.outputChannel?.show();
+  }
+
+  dispose(): void {
+    this.outputChannel?.dispose();
+  }
+}
+
+// Singleton instance
+export const logger = new Logger();
+```
+
+## Drawbacks
+
+1. **Configuration complexity**: Many options can overwhelm users
+2. **OIDC implementation**: Security-sensitive code requires careful review
+3. **Telemetry concerns**: Even opt-in telemetry may deter some users
+4. **Testing burden**: More configurations = more test scenarios
+
+## Alternatives
+
+### Alternative 1: Minimal Configuration
+
+Keep only essential settings, rely on AI Gateway dashboard for enterprise features.
+
+**Rejected because:** VS Code-specific settings (logging, token estimation) can't be configured elsewhere.
+
+### Alternative 2: Settings UI Extension
+
+Build a custom settings UI instead of JSON configuration.
+
+**Considered:** Could be added later for better UX, but JSON config is sufficient initially.
+
+### Alternative 3: Environment Variables
+
+Use environment variables for enterprise settings.
+
+**Rejected because:** VS Code settings are more discoverable and user-friendly.
+
+## Unresolved Questions
+
+1. **OIDC providers**: Which identity providers should we test with?
+2. **Telemetry endpoint**: Where should telemetry data be sent?
+3. **Settings sync**: Should these settings sync across machines?
+4. **Managed settings**: How to push settings from enterprise admin?
+
+## Implementation Plan
+
+### Phase 1: Core Configuration (Week 1)
+
+- [ ] Implement configuration schema
+- [ ] Add endpoint configuration
+- [ ] Add model filtering
+- [ ] Add logging system
+
+### Phase 2: Authentication (Week 2)
+
+- [ ] Implement OIDC authentication provider
+- [ ] Add authentication method selection
+- [ ] Test with common identity providers
+- [ ] Security review
+
+### Phase 3: Telemetry (Week 3)
+
+- [ ] Implement telemetry reporter
+- [ ] Add opt-in UI
+- [ ] Privacy documentation
+- [ ] Data retention policy
+
+### Phase 4: Documentation (Week 4)
+
+- [ ] Configuration reference
+- [ ] Enterprise deployment guide
+- [ ] Troubleshooting guide
+- [ ] Security documentation
