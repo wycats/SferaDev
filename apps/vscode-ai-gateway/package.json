@@ -50,6 +50,11 @@
 				"command": "vercelAiGateway.manage",
 				"title": "Manage Authentication",
 				"category": "Vercel AI Gateway"
+			},
+			{
+				"command": "vercelAiGateway.showTokenDetails",
+				"title": "Show Token Usage Details",
+				"category": "Vercel AI Gateway"
 			}
 		],
 		"configuration": {
