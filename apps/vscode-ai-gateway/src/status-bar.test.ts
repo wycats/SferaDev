@@ -115,6 +115,28 @@ describe("TokenStatusBar", () => {
 
 			expect(statusBar.getLastUsage()).toEqual(usage);
 		});
+
+		it("shows compaction info with fold icon and freed tokens", () => {
+			statusBar.showUsage({
+				inputTokens: 37100,
+				outputTokens: 1200,
+				maxInputTokens: 128000,
+				modelId: "anthropic:claude-sonnet-4",
+				contextManagement: {
+					appliedEdits: [
+						{
+							type: "clear_tool_uses_20250919",
+							clearedInputTokens: 15200,
+							clearedToolUses: 8,
+						},
+					],
+				},
+			});
+
+			expect(mockStatusBarItem.text).toBe("$(fold) 37.1k/128.0k (1.2k out) ↓15.2k");
+			expect(mockStatusBarItem.tooltip).toContain("⚡ Context compacted");
+			expect(mockStatusBarItem.tooltip).toContain("- 8 tool uses cleared (15,200 freed)");
+		});
 	});
 
 	describe("showError", () => {
