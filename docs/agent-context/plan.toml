@@ -135,111 +135,111 @@ aliases = ["logging-levels"]
 [[epochs]]
 id = "model-mapping-epoch"
 title = "High-Fidelity Model Mapping (RFC 008)"
-status = "pending"
+status = "completed"
 
 [[epochs.phases]]
 id = "phase-model-identity"
 title = "Phase 1: Model Identity Parsing"
-status = "pending"
+status = "completed"
 rfcs = ["008"]
 
 [[epochs.phases.tasks]]
 id = "parse-family"
 label = "Create parseModelFamily() to extract family from model ID"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "parse-version"
 label = "Create parseModelVersion() to extract version from model ID"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "update-registration"
 label = "Update model registration to use parsed family/version"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "test-identity"
 label = "Write property-based tests for parseModelIdentity()"
-status = "pending"
+status = "completed"
 
 [[epochs.phases]]
 id = "phase-context-window"
 title = "Phase 2: Context Window Accuracy"
-status = "pending"
+status = "completed"
 rfcs = ["008"]
 
 [[epochs.phases.tasks]]
 id = "use-true-context"
 label = "Use true context_window for maxInputTokens"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "preflight-safety"
 label = "Add preflight safety margin check before API calls"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "update-tests"
 label = "Update tests for new token limit behavior"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "test-token-validation"
 label = "Write property-based tests for token budget validation"
-status = "pending"
+status = "completed"
 
 [[epochs.phases]]
 id = "phase-capability-detection"
 title = "Phase 3: Enhanced Capability Detection"
-status = "pending"
+status = "completed"
 rfcs = ["008"]
 
 [[epochs.phases.tasks]]
 id = "add-reasoning-tag"
 label = "Add reasoning capability detection from tags"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "add-websearch-tag"
 label = "Add web-search capability detection"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "map-modalities"
 label = "Map input/output modalities to VS Code capabilities"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "test-capability-detection"
 label = "Write property-based tests for capability tag detection"
-status = "pending"
+status = "completed"
 
 [[epochs.phases]]
 id = "phase-model-filtering"
 title = "Phase 4: Model Type Filtering"
-status = "pending"
+status = "completed"
 rfcs = ["008"]
 
 [[epochs.phases.tasks]]
 id = "filter-language-type"
 label = "Filter models by type=language before registration"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "exclude-embedding"
 label = "Exclude embedding models from chat provider"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "test-filtering"
 label = "Write property-based tests for model type filtering"
-status = "pending"
+status = "completed"
 
 [[epochs.phases.tasks]]
 id = "integration-tests"
 label = "Write integration tests for all 4 phases working together"
-status = "pending"
+status = "completed"
 
 [[epochs]]
 id = "vercel-transition-epoch"
