@@ -1,5 +1,6 @@
 import type { LanguageModelChatInformation } from "vscode";
 import { BASE_URL, MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
+import { ModelFilter } from "./models/filter";
 import { parseModelIdentity } from "./models/identity";
 
 export interface Model {
@@ -30,6 +31,7 @@ interface ModelsCache {
 
 export class ModelsClient {
 	private modelsCache?: ModelsCache;
+	private modelFilter = new ModelFilter();
 
 	async getModels(apiKey: string): Promise<LanguageModelChatInformation[]> {
 		if (this.isModelsCacheFresh() && this.modelsCache) {
@@ -57,7 +59,7 @@ export class ModelsClient {
 		}
 
 		const { data } = (await response.json()) as ModelsResponse;
-		return data;
+		return this.modelFilter.filterModels(data);
 	}
 
 	private isModelsCacheFresh(): boolean {

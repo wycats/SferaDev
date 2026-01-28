@@ -1,4 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const hoisted = vi.hoisted(() => {
+	const mockGetConfiguration = vi.fn();
+	const mockOnDidChangeConfiguration = vi.fn(
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		(_callback?: unknown) => ({ dispose: vi.fn() }),
+	);
+
+	return {
+		mockGetConfiguration,
+		mockOnDidChangeConfiguration,
+	};
+});
+
+vi.mock("vscode", () => ({
+	workspace: {
+		getConfiguration: hoisted.mockGetConfiguration,
+		onDidChangeConfiguration: hoisted.mockOnDidChangeConfiguration,
+	},
+}));
+
 import { type Model, ModelsClient } from "./models";
 
 describe("ModelsClient", () => {
@@ -6,6 +27,10 @@ describe("ModelsClient", () => {
 
 	beforeEach(() => {
 		originalFetch = globalThis.fetch;
+		vi.clearAllMocks();
+		hoisted.mockGetConfiguration.mockReturnValue({
+			get: vi.fn((key: string, defaultValue: unknown) => defaultValue),
+		});
 	});
 
 	afterEach(() => {
@@ -154,5 +179,172 @@ describe("ModelsClient", () => {
 		const capabilities = result[0].capabilities as Record<string, boolean>;
 		expect(capabilities.reasoning).toBe(true);
 		expect(capabilities.webSearch).toBe(true);
+	});
+
+	it("filters models using allowlist config", async () => {
+		hoisted.mockGetConfiguration.mockReturnValue({
+			get: vi.fn((key: string, defaultValue: unknown) => {
+				if (key === "allowlist") return ["openai:*"];
+				return defaultValue;
+			}),
+		});
+
+		const models: Model[] = [
+			{
+				id: "openai:gpt-4o-2024-11-20",
+				object: "model",
+				created: 0,
+				owned_by: "openai",
+				name: "GPT-4o",
+				description: "Latest GPT-4o model",
+				context_window: 128000,
+				max_tokens: 4096,
+				type: "chat",
+				tags: [],
+				pricing: {
+					input: "0",
+					output: "0",
+				},
+			},
+			{
+				id: "anthropic:claude-3-opus-20240229",
+				object: "model",
+				created: 0,
+				owned_by: "anthropic",
+				name: "Claude 3 Opus",
+				description: "Claude 3 Opus",
+				context_window: 200000,
+				max_tokens: 4096,
+				type: "chat",
+				tags: [],
+				pricing: {
+					input: "0",
+					output: "0",
+				},
+			},
+		];
+
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ data: models }),
+		});
+
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+		const client = new ModelsClient();
+		const result = await client.getModels("test-api-key");
+
+		expect(result).toHaveLength(1);
+		expect(result[0].id).toBe("openai:gpt-4o-2024-11-20");
+	});
+
+	it("filters models using denylist config", async () => {
+		hoisted.mockGetConfiguration.mockReturnValue({
+			get: vi.fn((key: string, defaultValue: unknown) => {
+				if (key === "denylist") return ["anthropic:*"];
+				return defaultValue;
+			}),
+		});
+
+		const models: Model[] = [
+			{
+				id: "openai:gpt-4o-2024-11-20",
+				object: "model",
+				created: 0,
+				owned_by: "openai",
+				name: "GPT-4o",
+				description: "Latest GPT-4o model",
+				context_window: 128000,
+				max_tokens: 4096,
+				type: "chat",
+				tags: [],
+				pricing: {
+					input: "0",
+					output: "0",
+				},
+			},
+			{
+				id: "anthropic:claude-3-opus-20240229",
+				object: "model",
+				created: 0,
+				owned_by: "anthropic",
+				name: "Claude 3 Opus",
+				description: "Claude 3 Opus",
+				context_window: 200000,
+				max_tokens: 4096,
+				type: "chat",
+				tags: [],
+				pricing: {
+					input: "0",
+					output: "0",
+				},
+			},
+		];
+
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ data: models }),
+		});
+
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+		const client = new ModelsClient();
+		const result = await client.getModels("test-api-key");
+
+		expect(result).toHaveLength(1);
+		expect(result[0].id).toBe("openai:gpt-4o-2024-11-20");
+	});
+
+	it("returns all models when no filter config is set", async () => {
+		const models: Model[] = [
+			{
+				id: "openai:gpt-4o-2024-11-20",
+				object: "model",
+				created: 0,
+				owned_by: "openai",
+				name: "GPT-4o",
+				description: "Latest GPT-4o model",
+				context_window: 128000,
+				max_tokens: 4096,
+				type: "chat",
+				tags: [],
+				pricing: {
+					input: "0",
+					output: "0",
+				},
+			},
+			{
+				id: "anthropic:claude-3-opus-20240229",
+				object: "model",
+				created: 0,
+				owned_by: "anthropic",
+				name: "Claude 3 Opus",
+				description: "Claude 3 Opus",
+				context_window: 200000,
+				max_tokens: 4096,
+				type: "chat",
+				tags: [],
+				pricing: {
+					input: "0",
+					output: "0",
+				},
+			},
+		];
+
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ data: models }),
+		});
+
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+		const client = new ModelsClient();
+		const result = await client.getModels("test-api-key");
+
+		expect(result).toHaveLength(2);
+		expect(result.map((model) => model.id)).toEqual([
+			"openai:gpt-4o-2024-11-20",
+			"anthropic:claude-3-opus-20240229",
+		]);
 	});
 });
