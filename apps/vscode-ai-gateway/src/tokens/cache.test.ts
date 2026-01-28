@@ -120,4 +120,14 @@ describe("TokenCache", () => {
 
 		expect(cache.digestMessage(messageA)).not.toBe(cache.digestMessage(messageB));
 	});
+
+	it("includes plain object tool result content in digest", () => {
+		const cache = new TokenCache();
+		const contentA = [new vscode.LanguageModelTextPart("Result")];
+		const contentB = [new vscode.LanguageModelTextPart("Result changed")];
+		const messageA = createMessage([{ callId: "call-1", content: contentA }]);
+		const messageB = createMessage([{ callId: "call-1", content: contentB }]);
+
+		expect(cache.digestMessage(messageA)).not.toBe(cache.digestMessage(messageB));
+	});
 });

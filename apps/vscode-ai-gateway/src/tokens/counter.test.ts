@@ -95,6 +95,17 @@ describe("TokenCounter", () => {
 		expect(result).toBe(2);
 	});
 
+	it("reports character fallback when encoding is unavailable", () => {
+		tiktokenHoisted.mockGetEncoding.mockImplementationOnce(() => {
+			throw new Error("encoding unavailable");
+		});
+
+		const counter = new TokenCounter();
+		const fallback = counter.usesCharacterFallback("gpt-4");
+
+		expect(fallback).toBe(true);
+	});
+
 	it("estimates message tokens using tiktoken", () => {
 		const counter = new TokenCounter();
 		const message = {

@@ -54,7 +54,7 @@ export class TokenCache {
 		return Array.from(parts as Iterable<MessagePart>, (part) => this.serializePart(part));
 	}
 
-	private serializePart(part: MessagePart): unknown {
+	private serializePart(part: MessagePart | unknown): unknown {
 		if (part instanceof vscode.LanguageModelTextPart) {
 			return { type: "text", value: part.value };
 		}
@@ -83,8 +83,25 @@ export class TokenCache {
 				content: this.serializeToolResultContent(part.content),
 			};
 		}
+		if (this.isToolResultLike(part)) {
+			const callId = typeof part.callId === "string" ? part.callId : undefined;
+			return {
+				type: "toolResult",
+				callId,
+				content: this.serializeToolResultContent(part.content),
+			};
+		}
 
 		return { type: "unknown" };
+	}
+
+	private isToolResultLike(part: unknown): part is { callId?: unknown; content: unknown } {
+		return (
+			typeof part === "object" &&
+			part !== null &&
+			"content" in part &&
+			(part as { content?: unknown }).content !== undefined
+		);
 	}
 
 	private serializeToolResultContent(content: unknown): unknown {

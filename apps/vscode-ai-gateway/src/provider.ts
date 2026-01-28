@@ -105,9 +105,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private modelsClient: ModelsClient;
 	private tokenCache: TokenCache;
 	private tokenCounter: TokenCounter;
-	// Track actual token usage from completed requests
-	private lastRequestInputTokens: number | null = null;
-	private lastRequestMessageCount: number = 0;
 	private correctionFactor: number = 1.0;
 	private lastEstimatedInputTokens: number = 0;
 	// Track current request for caching API actuals
@@ -259,8 +256,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			}
 
 			await this.context.workspaceState.update(LAST_SELECTED_MODEL_KEY, model.id);
-			// Track message count for hybrid token estimation
-			this.lastRequestMessageCount = chatMessages.length;
 			logger.info(`Chat request completed for ${model.id}`);
 		} catch (error) {
 			// Don't report abort/cancellation as an error - it's expected behavior
@@ -331,7 +326,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		if (typeof text === "string") {
 			// Use tiktoken for text strings
 			const estimated = this.tokenCounter.estimateTextTokens(text, model.family);
-			return this.tokenCounter.applySafetyMargin(estimated, 0.05);
+			const corrected = estimated * this.correctionFactor;
+			const margin = this.tokenCounter.usesCharacterFallback(model.family) ? 0.1 : 0.05;
+			return this.tokenCounter.applySafetyMargin(corrected, margin);
 		}
 
 		// Check cache for API actuals first (ground truth)
@@ -343,7 +340,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 		// Use tiktoken-based estimation for unsent messages
 		const estimated = this.tokenCounter.estimateMessageTokens(text, model.family);
-		return this.tokenCounter.applySafetyMargin(estimated, 0.05);
+		const corrected = estimated * this.correctionFactor;
+		const margin = this.tokenCounter.usesCharacterFallback(model.family) ? 0.1 : 0.05;
+		return this.tokenCounter.applySafetyMargin(corrected, margin);
 	}
 
 	/**
@@ -355,30 +354,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		messages: readonly LanguageModelChatMessage[],
 		token: CancellationToken,
 	): Promise<number> {
-		// If we have actual data from a previous request in this conversation
-		// and new messages have been added (not edited/removed)
-		if (
-			this.lastRequestInputTokens !== null &&
-			messages.length > this.lastRequestMessageCount &&
-			this.lastRequestMessageCount > 0
-		) {
-			// Use actual tokens for known messages, estimate only new ones
-			const newMessages = messages.slice(this.lastRequestMessageCount);
-			let newTokenEstimate = 0;
-			for (const message of newMessages) {
-				newTokenEstimate += await this.provideTokenCount(model, message, token);
-			}
-			// Add overhead for new message structure
-			newTokenEstimate += newMessages.length * 4;
-
-			logger.debug(
-				`Hybrid token estimation: ${this.lastRequestInputTokens} actual + ${newTokenEstimate} estimated = ${this.lastRequestInputTokens + newTokenEstimate} total`,
-			);
-
-			return this.lastRequestInputTokens + newTokenEstimate;
-		}
-
-		// Fall back to pure estimation for first request or changed conversation
+		// Estimate based on cached actuals and tiktoken/character fallback
 		let total = 0;
 		for (const message of messages) {
 			total += await this.provideTokenCount(model, message, token);
@@ -521,13 +497,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				break;
 
 			case "finish-step": {
-				const finishChunk = chunk as {
-					type: "finish-step";
-					usage?: { inputTokens?: number; outputTokens?: number };
-				};
-				if (finishChunk.usage?.inputTokens !== undefined) {
-					this.lastRequestInputTokens = finishChunk.usage.inputTokens;
-				}
 				break;
 			}
 
@@ -536,19 +505,19 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 					type: "finish";
 					totalUsage?: { inputTokens?: number; outputTokens?: number };
 				};
-				if (finishChunk.totalUsage?.inputTokens !== undefined) {
-					this.lastRequestInputTokens = finishChunk.totalUsage.inputTokens;
+				const actualInputTokens = finishChunk.totalUsage?.inputTokens;
+				if (actualInputTokens !== undefined) {
 					// Cache actual token counts for each message (for future cache lookups)
 					if (this.currentRequestMessages && this.currentRequestModelFamily) {
 						this.cacheMessageTokenCounts(
 							this.currentRequestMessages,
 							this.currentRequestModelFamily,
-							finishChunk.totalUsage.inputTokens,
+							actualInputTokens,
 						);
 					}
 				}
-				if (this.lastEstimatedInputTokens > 0 && this.lastRequestInputTokens !== null) {
-					const newFactor = this.lastRequestInputTokens / this.lastEstimatedInputTokens;
+				if (this.lastEstimatedInputTokens > 0 && actualInputTokens !== undefined) {
+					const newFactor = actualInputTokens / this.lastEstimatedInputTokens;
 					this.correctionFactor = this.correctionFactor * 0.7 + newFactor * 0.3;
 					logger.debug(`Correction factor updated: ${this.correctionFactor.toFixed(3)}`);
 				}

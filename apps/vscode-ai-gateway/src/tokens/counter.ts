@@ -45,6 +45,10 @@ export class TokenCounter {
 		return Math.ceil(tokens * (1 + margin));
 	}
 
+	usesCharacterFallback(modelFamily: string): boolean {
+		return this.getEncodingForFamily(modelFamily) === undefined;
+	}
+
 	private estimateByChars(text: string): number {
 		return Math.ceil(text.length / FALLBACK_CHARS_PER_TOKEN);
 	}
