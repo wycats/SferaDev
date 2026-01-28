@@ -107,7 +107,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private tokenCounter: TokenCounter;
 	// Track actual token usage from completed requests
 	private lastRequestInputTokens: number | null = null;
-	private lastRequestOutputTokens: number | null = null;
 	private lastRequestMessageCount: number = 0;
 	private correctionFactor: number = 1.0;
 	private lastEstimatedInputTokens: number = 0;
@@ -348,49 +347,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	}
 
 	/**
-	 * Estimate tokens for an image based on the model family.
-	 *
-	 * Different providers have different image token costs:
-	 * - Anthropic: ~1600 tokens per image (fixed)
-	 * - OpenAI: Tile-based (~85 tokens per 512x512 tile, min 85, max ~1700)
-	 * - Google: Similar to OpenAI tile-based
-	 * - Others: Use conservative estimate of 1000 tokens
-	 */
-	private estimateImageTokens(
-		model: LanguageModelChatInformation,
-		imagePart: LanguageModelDataPart,
-	): number {
-		const family = model.family.toLowerCase();
-
-		// Anthropic uses fixed ~1600 tokens per image
-		if (family.includes("anthropic") || family.includes("claude")) {
-			return 1600;
-		}
-
-		// OpenAI and similar use tile-based counting
-		// Without knowing image dimensions, estimate based on data size
-		// A typical JPEG is ~10-50KB, PNG can be larger
-		const dataSize = imagePart.data.byteLength;
-
-		// Estimate dimensions from file size (very rough)
-		// Assume ~3 bytes per pixel for compressed image
-		const estimatedPixels = dataSize / 3;
-		const estimatedDimension = Math.sqrt(estimatedPixels);
-
-		// OpenAI tiles are 512x512, ~85 tokens each
-		// Images are scaled to fit within 2048x2048 first
-		const scaledDimension = Math.min(estimatedDimension, 2048);
-		const tilesPerSide = Math.ceil(scaledDimension / 512);
-		const totalTiles = tilesPerSide * tilesPerSide;
-
-		// 85 tokens per tile, plus 85 base tokens
-		const openAITokens = 85 + totalTiles * 85;
-
-		// Cap at reasonable maximum (high-res image)
-		return Math.min(openAITokens, 1700);
-	}
-
-	/**
 	 * Estimate total input tokens for all messages.
 	 * Used for pre-flight validation before sending to the API.
 	 */
@@ -496,21 +452,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		);
 	}
 
-	private getCachedTokenCount(msg: LanguageModelChatRequestMessage): number | undefined {
-		const key = `lm.tokens.${hashMessage(msg)}`;
-		return this.context.workspaceState.get<number>(key);
-	}
-
 	public getLastSelectedModelId(): string | undefined {
 		return this.context.workspaceState.get<string>(LAST_SELECTED_MODEL_KEY);
-	}
-
-	private async setCachedTokenCount(
-		msg: LanguageModelChatRequestMessage,
-		tokens: number,
-	): Promise<void> {
-		const key = `lm.tokens.${hashMessage(msg)}`;
-		await this.context.workspaceState.update(key, tokens);
 	}
 
 	private async getApiKey(silent: boolean): Promise<string | undefined> {
@@ -585,9 +528,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				if (finishChunk.usage?.inputTokens !== undefined) {
 					this.lastRequestInputTokens = finishChunk.usage.inputTokens;
 				}
-				if (finishChunk.usage?.outputTokens !== undefined) {
-					this.lastRequestOutputTokens = finishChunk.usage.outputTokens;
-				}
 				break;
 			}
 
@@ -606,9 +546,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 							finishChunk.totalUsage.inputTokens,
 						);
 					}
-				}
-				if (finishChunk.totalUsage?.outputTokens !== undefined) {
-					this.lastRequestOutputTokens = finishChunk.totalUsage.outputTokens;
 				}
 				if (this.lastEstimatedInputTokens > 0 && this.lastRequestInputTokens !== null) {
 					const newFactor = this.lastRequestInputTokens / this.lastEstimatedInputTokens;
@@ -806,19 +743,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				JSON.stringify(chunk, null, 2),
 			);
 		}
-	}
-
-	private extractErrorMessage(error: unknown): string {
-		if (error instanceof Error) {
-			return error.message;
-		}
-		if (typeof error === "string") {
-			return error;
-		}
-		if (error && typeof error === "object" && "message" in error) {
-			return String(error.message);
-		}
-		return "An unexpected error occurred";
 	}
 }
 
