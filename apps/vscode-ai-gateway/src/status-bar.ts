@@ -4,11 +4,23 @@ import { logger } from "./logger";
 /**
  * Token usage data from a completed request
  */
+export interface ContextManagementEdit {
+	type: "clear_tool_uses_20250919" | "clear_thinking_20251015";
+	clearedInputTokens: number;
+	clearedToolUses?: number;
+	clearedThinkingTurns?: number;
+}
+
+export interface ContextManagementInfo {
+	appliedEdits: ContextManagementEdit[];
+}
+
 export interface TokenUsage {
 	inputTokens: number;
 	outputTokens: number;
 	maxInputTokens?: number;
 	modelId?: string;
+	contextManagement?: ContextManagementInfo;
 }
 
 /**
@@ -69,6 +81,11 @@ export class TokenStatusBar implements vscode.Disposable {
 
 		const inputFormatted = this.formatTokenCount(usage.inputTokens);
 		const outputFormatted = this.formatTokenCount(usage.outputTokens);
+		const contextEdits = usage.contextManagement?.appliedEdits ?? [];
+		const hasCompaction = contextEdits.length > 0;
+		const freedTokens = contextEdits.reduce((total, edit) => total + edit.clearedInputTokens, 0);
+		const freedSuffix = hasCompaction ? ` ↓${this.formatTokenCount(freedTokens)}` : "";
+		const icon = hasCompaction ? "$(fold)" : "$(symbol-number)";
 
 		if (usage.maxInputTokens) {
 			const percentage = Math.round((usage.inputTokens / usage.maxInputTokens) * 100);
@@ -87,11 +104,11 @@ export class TokenStatusBar implements vscode.Disposable {
 				this.statusBarItem.backgroundColor = undefined;
 			}
 
-			this.statusBarItem.text = `$(symbol-number) ${inputFormatted}/${maxFormatted} (${outputFormatted} out)`;
+			this.statusBarItem.text = `${icon} ${inputFormatted}/${maxFormatted} (${outputFormatted} out)${freedSuffix}`;
 			this.statusBarItem.tooltip = this.buildTooltip(usage, percentage);
 		} else {
 			this.statusBarItem.backgroundColor = undefined;
-			this.statusBarItem.text = `$(symbol-number) ${inputFormatted} in, ${outputFormatted} out`;
+			this.statusBarItem.text = `${icon} ${inputFormatted} in, ${outputFormatted} out${freedSuffix}`;
 			this.statusBarItem.tooltip = this.buildTooltip(usage);
 		}
 
@@ -177,10 +194,41 @@ export class TokenStatusBar implements vscode.Disposable {
 			}
 		}
 
+		const contextEdits = usage.contextManagement?.appliedEdits ?? [];
+		if (contextEdits.length > 0) {
+			lines.push("");
+			lines.push("⚡ Context compacted");
+			lines.push(...this.formatContextEdits(contextEdits));
+		}
+
 		lines.push("");
 		lines.push("Click for details");
 
 		return lines.join("\n");
+	}
+
+	private formatContextEdits(edits: ContextManagementEdit[]): string[] {
+		return edits.map((edit) => {
+			const freed = edit.clearedInputTokens.toLocaleString();
+			switch (edit.type) {
+				case "clear_tool_uses_20250919": {
+					if (edit.clearedToolUses !== undefined) {
+						const label = edit.clearedToolUses === 1 ? "tool use" : "tool uses";
+						return `- ${edit.clearedToolUses} ${label} cleared (${freed} freed)`;
+					}
+					return `- Tool uses cleared (${freed} freed)`;
+				}
+				case "clear_thinking_20251015": {
+					if (edit.clearedThinkingTurns !== undefined) {
+						const label = edit.clearedThinkingTurns === 1 ? "thinking turn" : "thinking turns";
+						return `- ${edit.clearedThinkingTurns} ${label} cleared (${freed} freed)`;
+					}
+					return `- Thinking turns cleared (${freed} freed)`;
+				}
+				default:
+					return `- ${edit.type} (${freed} freed)`;
+			}
+		});
 	}
 
 	private clearHideTimeout(): void {

@@ -886,6 +886,18 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				const finishChunk = chunk as {
 					type: "finish";
 					totalUsage?: { inputTokens?: number; outputTokens?: number };
+					providerMetadata?: {
+						anthropic?: {
+							contextManagement?: {
+								appliedEdits?: Array<{
+									type: "clear_tool_uses_20250919" | "clear_thinking_20251015";
+									clearedInputTokens: number;
+									clearedToolUses?: number;
+									clearedThinkingTurns?: number;
+								}>;
+							};
+						};
+					};
 				};
 				const actualInputTokens = finishChunk.totalUsage?.inputTokens;
 				if (actualInputTokens !== undefined) {
@@ -906,12 +918,24 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 				// Update status bar with actual token usage
 				const outputTokens = finishChunk.totalUsage?.outputTokens ?? 0;
+				const appliedEdits =
+					finishChunk.providerMetadata?.anthropic?.contextManagement?.appliedEdits;
+				if (appliedEdits && appliedEdits.length > 0) {
+					const freedTokens = appliedEdits.reduce(
+						(total, edit) => total + edit.clearedInputTokens,
+						0,
+					);
+					logger.info(
+						`Context compaction applied: ${appliedEdits.length} edit${appliedEdits.length === 1 ? "" : "s"}, freed ${freedTokens.toLocaleString()} tokens`,
+					);
+				}
 				if (actualInputTokens !== undefined) {
 					this.statusBar?.showUsage({
 						inputTokens: actualInputTokens,
 						outputTokens,
 						maxInputTokens: this.currentRequestMaxInputTokens,
 						modelId: this.currentRequestModelId,
+						contextManagement: appliedEdits ? { appliedEdits } : undefined,
 					});
 				}
 				break;
