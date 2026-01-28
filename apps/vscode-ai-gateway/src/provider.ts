@@ -33,6 +33,7 @@ import { VERCEL_AI_AUTH_PROVIDER_ID } from "./auth";
 import { ERROR_MESSAGES } from "./constants";
 import { extractErrorMessage, logError, logger } from "./logger";
 import { ModelsClient } from "./models";
+import { parseModelIdentity } from "./models/identity";
 import { TokenCache } from "./tokens/cache";
 import { TokenCounter } from "./tokens/counter";
 
@@ -298,10 +299,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	 * Check if a model is an Anthropic/Claude model.
 	 */
 	private isAnthropicModel(model: LanguageModelChatInformation): boolean {
-		const family = model.family.toLowerCase();
+		const identity = parseModelIdentity(model.id);
+		const provider = identity.provider.toLowerCase();
+		const family = identity.family.toLowerCase();
 		const id = model.id.toLowerCase();
 		return (
-			family.includes("anthropic") ||
+			provider === "anthropic" ||
 			family.includes("claude") ||
 			id.includes("claude") ||
 			id.includes("anthropic")

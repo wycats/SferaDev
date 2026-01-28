@@ -1,5 +1,6 @@
 import type { LanguageModelChatInformation } from "vscode";
 import { BASE_URL, MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
+import { parseModelIdentity } from "./models/identity";
 
 export interface Model {
 	id: string;
@@ -10,7 +11,7 @@ export interface Model {
 	description: string;
 	context_window: number;
 	max_tokens: number;
-	type: string;
+	type?: string;
 	tags?: string[];
 	pricing: {
 		input: string;
@@ -66,22 +67,44 @@ export class ModelsClient {
 	}
 
 	private transformToVSCodeModels(data: Model[]): LanguageModelChatInformation[] {
-		return data.map((model) => ({
-			id: model.id,
-			name: model.name,
-			detail: "Vercel AI Gateway",
-			family: model.owned_by,
-			version: "1.0",
-			maxInputTokens: Math.floor(model.context_window * 0.85),
-			maxOutputTokens: model.max_tokens,
-			tooltip: model.description || "No description available.",
-			capabilities: {
-				// Check tags array for capabilities - only advertise what the model actually supports
-				imageInput: model.tags?.includes("vision") || model.tags?.includes("file-input") || false,
-				// Only advertise tool calling if explicitly supported via tags
-				// Defaulting to true could cause issues with models that don't support tools
-				toolCalling: model.tags?.includes("tool-use") || false,
-			},
-		}));
+		const imageInputTags = new Set(["vision", "image", "image-input", "file-input", "multimodal"]);
+		const toolCallingTags = new Set([
+			"tool-use",
+			"tool_use",
+			"tool-calling",
+			"function_calling",
+			"function-calling",
+			"function_call",
+			"tools",
+			"json_mode",
+			"json-mode",
+		]);
+
+		return data
+			.filter((model) => model.type === "chat" || model.type === undefined)
+			.map((model) => {
+				const identity = parseModelIdentity(model.id);
+				const tags = (model.tags ?? []).map((tag) => tag.toLowerCase());
+				const hasImageInput = tags.some((tag) => imageInputTags.has(tag));
+				const hasToolCalling = tags.some((tag) => toolCallingTags.has(tag));
+
+				return {
+					id: model.id,
+					name: model.name,
+					detail: "Vercel AI Gateway",
+					family: identity.family,
+					version: identity.version,
+					maxInputTokens: model.context_window,
+					maxOutputTokens: model.max_tokens,
+					tooltip: model.description || "No description available.",
+					capabilities: {
+						// Check tags array for capabilities - only advertise what the model actually supports
+						imageInput: hasImageInput || false,
+						// Only advertise tool calling if explicitly supported via tags
+						// Defaulting to true could cause issues with models that don't support tools
+						toolCalling: hasToolCalling || false,
+					},
+				};
+			});
 	}
 }
