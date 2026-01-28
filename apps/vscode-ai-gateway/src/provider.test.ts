@@ -2,6 +2,7 @@ import { streamText } from "ai";
 import fc from "fast-check";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionContext, LanguageModelChatMessage } from "vscode";
+import { LAST_SELECTED_MODEL_KEY } from "./constants";
 import {
 	convertMessages,
 	convertSingleMessage,
@@ -609,6 +610,70 @@ describe("System prompt configuration", () => {
 
 		const callArgs = (streamText as unknown as { mock: { calls: any[] } }).mock.calls[0][0];
 		expect(callArgs.system).toBe(DEFAULT_SYSTEM_PROMPT);
+	});
+});
+
+describe("Model selection memory", () => {
+	const model = {
+		id: "test-model",
+		maxInputTokens: 10000,
+		family: "openai",
+	} as any;
+
+	const token = {
+		onCancellationRequested: () => ({ dispose: vi.fn() }),
+	} as any;
+
+	const options = {
+		toolMode: "auto",
+		tools: [],
+		modelOptions: {},
+	} as any;
+
+	const chatMessages = [
+		{
+			role: 1,
+			content: [new hoisted.MockLanguageModelTextPart("Hello")],
+		} as unknown as LanguageModelChatMessage,
+	];
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		hoisted.mockGetSession.mockResolvedValue({ accessToken: "token" });
+		hoisted.mockGetConfiguration.mockReturnValue({
+			get: (_key: string, defaultValue?: unknown) => defaultValue,
+		});
+		(streamText as unknown as { mockReturnValue: Function }).mockReturnValue(createEmptyStream());
+	});
+
+	it("persists the last selected model id after successful completion", async () => {
+		const context = {
+			workspaceState: {
+				get: vi.fn(),
+				update: vi.fn().mockResolvedValue(undefined),
+			},
+		} as unknown as ExtensionContext;
+
+		const provider = new VercelAIChatModelProvider(context);
+		const progress = createMockProgress();
+
+		await provider.provideLanguageModelChatResponse(model, chatMessages, options, progress, token);
+
+		expect(context.workspaceState.update).toHaveBeenCalledWith(LAST_SELECTED_MODEL_KEY, model.id);
+	});
+
+	it("returns the last selected model id from workspace state", () => {
+		const context = {
+			workspaceState: {
+				get: vi.fn().mockReturnValue("stored-model"),
+				update: vi.fn(),
+			},
+		} as unknown as ExtensionContext;
+
+		const provider = new VercelAIChatModelProvider(context);
+
+		expect(provider.getLastSelectedModelId()).toBe("stored-model");
+		expect(context.workspaceState.get).toHaveBeenCalledWith(LAST_SELECTED_MODEL_KEY);
 	});
 });
 

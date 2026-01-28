@@ -79,6 +79,14 @@ export class ModelsClient {
 			"json_mode",
 			"json-mode",
 		]);
+		const reasoningTags = new Set([
+			"reasoning",
+			"o1",
+			"o3",
+			"extended-thinking",
+			"extended_thinking",
+		]);
+		const webSearchTags = new Set(["web-search", "web_search", "search", "grounding"]);
 
 		return data
 			.filter((model) => model.type === "chat" || model.type === undefined)
@@ -87,6 +95,8 @@ export class ModelsClient {
 				const tags = (model.tags ?? []).map((tag) => tag.toLowerCase());
 				const hasImageInput = tags.some((tag) => imageInputTags.has(tag));
 				const hasToolCalling = tags.some((tag) => toolCallingTags.has(tag));
+				const hasReasoning = tags.some((tag) => reasoningTags.has(tag));
+				const hasWebSearch = tags.some((tag) => webSearchTags.has(tag));
 
 				return {
 					id: model.id,
@@ -103,6 +113,8 @@ export class ModelsClient {
 						// Only advertise tool calling if explicitly supported via tags
 						// Defaulting to true could cause issues with models that don't support tools
 						toolCalling: hasToolCalling || false,
+						reasoning: hasReasoning || false,
+						webSearch: hasWebSearch || false,
 					},
 				};
 			});

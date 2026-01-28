@@ -30,7 +30,7 @@ import {
 type StreamChunk = TextStreamPart<ToolSet>;
 
 import { VERCEL_AI_AUTH_PROVIDER_ID } from "./auth";
-import { ERROR_MESSAGES } from "./constants";
+import { ERROR_MESSAGES, LAST_SELECTED_MODEL_KEY } from "./constants";
 import { extractErrorMessage, logError, logger } from "./logger";
 import { ModelsClient } from "./models";
 import { parseModelIdentity } from "./models/identity";
@@ -180,8 +180,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				);
 			}
 
-			// Warn if we're close to the limit (>80%)
-			if (estimatedTokens > maxInputTokens * 0.8) {
+			// Warn if we're close to the limit (>90%)
+			if (estimatedTokens > maxInputTokens * 0.9) {
 				logger.warn(
 					`Input is ${Math.round((estimatedTokens / maxInputTokens) * 100)}% of max tokens. ` +
 						`Consider reducing context to avoid potential issues.`,
@@ -259,6 +259,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				this.handleStreamChunk(chunk, progress);
 			}
 
+			await this.context.workspaceState.update(LAST_SELECTED_MODEL_KEY, model.id);
 			// Track message count for hybrid token estimation
 			this.lastRequestMessageCount = chatMessages.length;
 			logger.info(`Chat request completed for ${model.id}`);
@@ -498,6 +499,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private getCachedTokenCount(msg: LanguageModelChatRequestMessage): number | undefined {
 		const key = `lm.tokens.${hashMessage(msg)}`;
 		return this.context.workspaceState.get<number>(key);
+	}
+
+	public getLastSelectedModelId(): string | undefined {
+		return this.context.workspaceState.get<string>(LAST_SELECTED_MODEL_KEY);
 	}
 
 	private async setCachedTokenCount(

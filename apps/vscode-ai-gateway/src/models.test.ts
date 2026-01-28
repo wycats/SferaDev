@@ -119,4 +119,40 @@ describe("ModelsClient", () => {
 			"anthropic:claude-3-opus-20240229",
 		]);
 	});
+
+	it("detects reasoning and web-search capabilities from tags", async () => {
+		const models: Model[] = [
+			{
+				id: "openai:o3-mini",
+				object: "model",
+				created: 0,
+				owned_by: "openai",
+				name: "o3-mini",
+				description: "Reasoning model with web search",
+				context_window: 32768,
+				max_tokens: 4096,
+				type: "chat",
+				tags: ["o3", "web-search"],
+				pricing: {
+					input: "0",
+					output: "0",
+				},
+			},
+		];
+
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ data: models }),
+		});
+
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+		const client = new ModelsClient();
+		const result = await client.getModels("test-api-key");
+
+		expect(result).toHaveLength(1);
+		const capabilities = result[0].capabilities as Record<string, boolean>;
+		expect(capabilities.reasoning).toBe(true);
+		expect(capabilities.webSearch).toBe(true);
+	});
 });
