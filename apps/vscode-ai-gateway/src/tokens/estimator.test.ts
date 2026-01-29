@@ -48,14 +48,14 @@ vi.mock("vscode", () => ({
 }));
 
 // Import after mocking
-import { ESTIMATION_MODES, type EstimationMode, TokenEstimator } from "./estimator";
+import { ESTIMATION_MODES, TokenEstimator } from "./estimator";
 
 describe("TokenEstimator", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		// Default configuration - balanced mode
 		hoisted.mockGetConfiguration.mockReturnValue({
-			get: vi.fn((key: string, defaultValue: unknown) => defaultValue),
+			get: vi.fn((_key: string, defaultValue: unknown) => defaultValue),
 		});
 	});
 
@@ -239,7 +239,7 @@ describe("TokenEstimator", () => {
 
 			// Start with balanced mode
 			hoisted.mockGetConfiguration.mockReturnValue({
-				get: vi.fn((key: string, defaultValue: unknown) => defaultValue),
+				get: vi.fn((_key: string, defaultValue: unknown) => defaultValue),
 			});
 
 			const estimator = new TokenEstimator();

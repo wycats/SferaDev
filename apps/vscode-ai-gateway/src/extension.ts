@@ -24,8 +24,22 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Create the token status bar
 	const statusBar = new TokenStatusBar();
+	statusBar.setConfig({
+		showOutputTokens: configService.statusBarShowOutputTokens,
+	});
 	context.subscriptions.push(statusBar);
 	logger.debug("Token status bar created");
+
+	// Watch for config changes
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration((e) => {
+			if (e.affectsConfiguration("vercelAiGateway.statusBar")) {
+				statusBar.setConfig({
+					showOutputTokens: configService.statusBarShowOutputTokens,
+				});
+			}
+		}),
+	);
 
 	// Register the language model chat provider
 	const provider = new VercelAIChatModelProvider(context, configService);

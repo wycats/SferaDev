@@ -1,7 +1,59 @@
 # READ-ONLY: Use 'exo' CLI to modify this file.
 # Design Axioms
 
-axioms = []
+[[axioms]]
+id = "participant-provider-contract"
+principle = "The Participant is the Consumer"
+rationale = """
+This extension implements a LanguageModelChatProvider, but the Copilot Participant 
+(which we do not control) is the consumer of that provider. The participant handles 
+chat UI, conversation history, summarization decisions, and tool orchestration.
+
+Our job is to present information from the underlying language model in a format 
+that the participant understands and can use to behave correctly. We are not 
+implementing chat behavior—we are implementing a translation layer between 
+arbitrary LLM backends and VS Code's expected language model interface.
+"""
+implications = [
+    "Token counts (maxInputTokens, inputTokens, countTokens) must be accurate and consistent—the participant uses these to decide when to summarize",
+    "Response metadata must match what the participant expects—mismatches cause unexpected behavior like premature stopping",
+    "When debugging 'the model stopped', first ask: did we report something that made the participant think it should stop?",
+    "Features that 'only work with Copilot' usually mean 'the model must communicate X to the participant'—discover what X is",
+    "The participant's behavior is a black box we must reverse-engineer through its observable reactions to our outputs",
+]
+tags = ["core", "architecture", "vscode"]
+
+[[axioms]]
+id = "translation-not-passthrough"
+principle = "Translation, Not Passthrough"
+rationale = """
+We are not a simple proxy. Different LLM providers have different APIs, token 
+counting methods, error formats, and capabilities. VS Code's LanguageModelChat 
+API expects a specific contract. Our value is in bridging this gap correctly.
+"""
+implications = [
+    "Every provider response must be normalized to VS Code's expected format",
+    "Token counts from providers may need correction factors to match VS Code's expectations",
+    "Error messages from providers must be translated to actionable VS Code errors",
+    "Provider-specific features (like Anthropic's context management) must be surfaced through VS Code's extension points",
+    "When a provider lacks a capability VS Code expects, we must gracefully degrade or emulate",
+]
+tags = ["core", "architecture"]
+
+[[axioms]]
+id = "observable-state"
+principle = "Observable State for Debugging"
+rationale = """
+The interaction between our provider and the Copilot participant is complex and 
+often opaque. When things go wrong, we need to be able to reconstruct what happened.
+"""
+implications = [
+    "Log all information that affects participant behavior (token counts, finish reasons, errors)",
+    "Timestamps on logs enable replay and correlation with observed behavior",
+    "Status bar and other UI should reflect internal state accurately for debugging",
+    "When the participant behaves unexpectedly, logs should answer: what did we tell it?",
+]
+tags = ["debugging", "observability"]
 
 [meta]
 schema_version = "1.0.0"

@@ -50,14 +50,14 @@ vi.mock("vscode", () => ({
 
 // Import after mocking
 import { type Model, ModelsClient } from "../models";
-import { ModelFilter, type ModelFilterConfig, matchesPattern } from "./filter";
+import { ModelFilter, matchesPattern } from "./filter";
 
 describe("ModelFilter", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		// Default configuration - no filters
 		hoisted.mockGetConfiguration.mockReturnValue({
-			get: vi.fn((key: string, defaultValue: unknown) => defaultValue),
+			get: vi.fn((_key: string, defaultValue: unknown) => defaultValue),
 		});
 	});
 
@@ -396,7 +396,7 @@ describe("ModelFilter", () => {
 
 			// Start with no filters
 			hoisted.mockGetConfiguration.mockReturnValue({
-				get: vi.fn((key: string, defaultValue: unknown) => defaultValue),
+				get: vi.fn((_key: string, defaultValue: unknown) => defaultValue),
 			});
 
 			const filter = new ModelFilter();

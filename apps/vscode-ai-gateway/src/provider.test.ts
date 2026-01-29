@@ -145,6 +145,7 @@ vi.mock("ai", () => ({
 vi.mock("./models", () => ({
 	ModelsClient: class {
 		getModels = vi.fn();
+		initializePersistence = vi.fn();
 	},
 }));
 

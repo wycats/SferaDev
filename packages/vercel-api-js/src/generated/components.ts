@@ -5,7 +5,6 @@
 
 import type { ErrorWrapper, FetcherConfig } from "../utils/fetcher";
 import client from "../utils/fetcher";
-import type { CallToolResult } from "../utils/mcp";
 import type {
 	AcceptProjectTransferRequest400,
 	AcceptProjectTransferRequest401,

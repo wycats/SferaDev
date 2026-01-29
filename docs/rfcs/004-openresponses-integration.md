@@ -3,17 +3,52 @@
 **Status:** Triage  
 **Author:** Vercel AI Team  
 **Created:** 2026-01-27  
-**Updated:** 2026-01-27
+**Updated:** 2026-01-29
 
 ## Summary
 
 Integrate support for the OpenResponses API specification in the Vercel AI Gateway VS Code extension, enabling access to the unified, vendor-neutral API for AI model interactions while bridging the gaps between OpenResponses capabilities and VS Code's LanguageModel API.
 
+## ⚠️ CRITICAL: API Format Disambiguation
+
+**OpenResponses is its own wire protocol.** When working on this integration:
+
+| ❌ OpenResponses is NOT                              | ✅ OpenResponses IS                 |
+| ---------------------------------------------------- | ----------------------------------- |
+| OpenAI Chat Completions API (`/v1/chat/completions`) | A distinct `/v1/responses` endpoint |
+| Vercel AI SDK format (client library abstraction)    | A wire protocol specification       |
+| "OpenAI-compatible" in any way                       | Vendor-neutral with its own schema  |
+
+**Do NOT reference OpenAI or Vercel AI SDK documentation when implementing OpenResponses code.** The message formats, tool schemas, and streaming events are fundamentally different.
+
+## Documentation References
+
+| Resource                             | Location                                                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Protocol Specification**           | [`packages/openresponses-client/docs/OPENRESPONSES-SPEC.md`](../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md) |
+| **OpenAPI Schema (source of truth)** | [`packages/openresponses-client/openapi.json`](../../packages/openresponses-client/openapi.json)                             |
+| **Client Package README**            | [`packages/openresponses-client/README.md`](../../packages/openresponses-client/README.md)                                   |
+| **Client AGENTS.md**                 | [`packages/openresponses-client/AGENTS.md`](../../packages/openresponses-client/AGENTS.md)                                   |
+| **VS Code Extension AGENTS.md**      | [`apps/vscode-ai-gateway/AGENTS.md`](../../apps/vscode-ai-gateway/AGENTS.md)                                                 |
+| **Central Hub**                      | [`docs/OPENRESPONSES.md`](../OPENRESPONSES.md)                                                                               |
+| **External: OpenResponses Website**  | https://www.openresponses.org                                                                                                |
+| **External: OpenAPI JSON**           | https://www.openresponses.org/openapi/openapi.json                                                                           |
+
 ## Motivation
 
 ### What is OpenResponses?
 
-[OpenResponses](https://openresponses.org/) is an open, vendor-neutral specification for interoperable LLM APIs. Key characteristics:
+[OpenResponses](https://openresponses.org/) is an open, vendor-neutral **wire protocol specification** for LLM APIs. It is **NOT** a library, SDK, or compatibility layer—it defines the actual HTTP request/response format.
+
+**Key Protocol Characteristics:**
+
+- **Endpoint:** `POST /v1/responses` (not `/v1/chat/completions`)
+- **Input format:** Array of typed `items` (messages, function calls, function outputs)
+- **Content types:** `input_text` for user/system, `output_text` for assistant
+- **Tools:** Flat structure with `type`, `name`, `description`, `parameters` at top level
+- **Streaming:** Server-Sent Events with typed event names like `response.output_text.delta`
+
+**Additional characteristics:**
 
 - **Community-governed** with formal technical charter
 - **Items as atomic units** for agentic workflows (messages, tool calls, tool outputs, reasoning)

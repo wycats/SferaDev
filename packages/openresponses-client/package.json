@@ -1,0 +1,45 @@
+{
+	"name": "openresponses-client",
+	"version": "0.1.0",
+	"description": "TypeScript client for the OpenResponses API with streaming support",
+	"type": "module",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/SferaDev/SferaDev",
+		"directory": "packages/openresponses-client"
+	},
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./types": {
+			"types": "./src/generated/types/index.d.ts"
+		}
+	},
+	"files": [
+		"dist",
+		"src/generated"
+	],
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"tsc": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"generate": "kubb"
+	},
+	"devDependencies": {
+		"@kubb/cli": "catalog:",
+		"@kubb/core": "catalog:",
+		"@kubb/plugin-oas": "catalog:",
+		"@kubb/plugin-ts": "catalog:",
+		"@sferadev/tsconfig": "workspace:*",
+		"@types/node": "catalog:",
+		"typescript": "catalog:",
+		"vitest": "catalog:"
+	}
+}

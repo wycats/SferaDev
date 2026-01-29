@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { logger } from "./logger";
 
 /**
- * Token usage data from a completed request
+ * Context management edit from Anthropic's API
  */
 export interface ContextManagementEdit {
 	type: "clear_tool_uses_20250919" | "clear_thinking_20251015";
@@ -15,6 +15,9 @@ export interface ContextManagementInfo {
 	appliedEdits: ContextManagementEdit[];
 }
 
+/**
+ * Token usage data from a completed request
+ */
 export interface TokenUsage {
 	inputTokens: number;
 	outputTokens: number;
@@ -24,411 +27,476 @@ export interface TokenUsage {
 }
 
 /**
- * Session entry tracking token usage across related requests (main + subagents)
+ * Agent entry tracking token usage for a single LM call
  */
-export interface SessionEntry {
+export interface AgentEntry {
 	id: string;
+	/** Short display name (e.g., "recon", "execute", or hash) */
+	name: string;
 	startTime: number;
 	lastUpdateTime: number;
 	inputTokens: number;
 	outputTokens: number;
 	maxInputTokens?: number;
+	estimatedInputTokens?: number;
 	modelId?: string;
-	requestCount: number;
 	status: "streaming" | "complete" | "error";
 	contextManagement?: ContextManagementInfo;
-	/** Whether this session has been dimmed due to inactivity */
+	/** Whether this agent has been dimmed due to inactivity */
 	dimmed: boolean;
+	/** Is this the main/primary agent (first in conversation)? */
+	isMain: boolean;
+	/** Order in which this agent completed (for aging) */
+	completionOrder?: number;
 }
 
-/** Session aging configuration */
-const SESSION_DIM_AFTER_MS = 30_000; // Dim after 30 seconds of inactivity
-const SESSION_REMOVE_AFTER_MS = 120_000; // Remove after 2 minutes of inactivity
-const SESSION_REMOVE_AFTER_REQUESTS = 5; // Remove old sessions when we have this many new ones
-const SESSION_CLEANUP_INTERVAL_MS = 5_000; // Check for stale sessions every 5 seconds
+/** Agent aging configuration */
+const AGENT_DIM_AFTER_REQUESTS = 2; // Dim after 2 newer agents complete
+const AGENT_REMOVE_AFTER_REQUESTS = 5; // Remove after 5 newer agents complete
+const AGENT_CLEANUP_INTERVAL_MS = 2_000; // Check for stale agents every 2 seconds
 
 /**
- * Status bar item that displays token usage information with session tracking.
+ * Configuration interface (subset of ConfigService)
+ */
+export interface StatusBarConfig {
+	showOutputTokens: boolean;
+}
+
+/**
+ * Status bar item that displays token usage information with agent tracking.
  *
  * Shows:
- * - During request: "$(loading~spin) ~50k/128k (39%) streaming..."
- * - After completion: "$(symbol-number) 52k/128k (1.2k out)"
- * - With compaction: "$(fold) 52k/128k (1.2k out) ↓15k"
- * - Session total: Shows cumulative tokens across main + subagent requests
+ * - Main agent: "52k/128k" (input/max)
+ * - With subagent active: "52k/128k | ▸ recon 8k/128k"
+ * - With compaction: "$(fold) 52k/128k ↓15k"
  *
- * Sessions are tracked and aged:
- * - Active sessions show full brightness
- * - Sessions dim after 30s of inactivity
- * - Sessions are removed after 2min or when 5 newer sessions exist
- *
- * Clicking opens a tooltip with detailed breakdown.
+ * Agents are tracked and aged based on subsequent requests:
+ * - Active agents show full visibility
+ * - Agents dim after 2 newer agents complete
+ * - Agents are removed after 5 newer agents complete
  */
 export class TokenStatusBar implements vscode.Disposable {
 	private statusBarItem: vscode.StatusBarItem;
 	private currentUsage: TokenUsage | null = null;
-	private isStreaming = false;
 	private hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	// Session tracking
-	private sessions: Map<string, SessionEntry> = new Map();
-	private activeSessionId: string | null = null;
+	// Agent tracking
+	private agents: Map<string, AgentEntry> = new Map();
+	private mainAgentId: string | null = null;
+	private activeAgentId: string | null = null;
 	private cleanupInterval: ReturnType<typeof setInterval> | null = null;
-	private streamingStartTime: number | null = null;
+	private completedAgentCount = 0;
+
+	// Configuration
+	private config: StatusBarConfig = { showOutputTokens: false };
 
 	constructor() {
-		this.statusBarItem = vscode.window.createStatusBarItem(
-			vscode.StatusBarAlignment.Right,
-			100, // Priority - higher = more left
-		);
+		this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 		this.statusBarItem.name = "Vercel AI Token Usage";
 		this.statusBarItem.command = "vercelAiGateway.showTokenDetails";
 		this.hide();
 
-		// Start cleanup interval for aging sessions
-		this.cleanupInterval = setInterval(
-			() => this.cleanupStaleSessions(),
-			SESSION_CLEANUP_INTERVAL_MS,
-		);
+		this.cleanupInterval = setInterval(() => this.cleanupStaleAgents(), AGENT_CLEANUP_INTERVAL_MS);
 	}
 
 	/**
-	 * Generate a unique session ID
+	 * Update configuration
 	 */
-	generateSessionId(): string {
-		return `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	setConfig(config: StatusBarConfig): void {
+		this.config = config;
 	}
 
 	/**
-	 * Get the current active session ID, or null if none
+	 * Extract a short name from agent context
 	 */
-	getActiveSessionId(): string | null {
-		return this.activeSessionId;
-	}
-
-	/**
-	 * Get all sessions (for debugging/display)
-	 */
-	getSessions(): SessionEntry[] {
-		return Array.from(this.sessions.values()).sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
-	}
-
-	/**
-	 * Get session totals across all active (non-dimmed) sessions
-	 */
-	getSessionTotals(): { inputTokens: number; outputTokens: number } {
-		let inputTokens = 0;
-		let outputTokens = 0;
-		for (const session of this.sessions.values()) {
-			if (!session.dimmed) {
-				inputTokens += session.inputTokens;
-				outputTokens += session.outputTokens;
+	private extractAgentName(agentId: string, modelId?: string): string {
+		// Try to extract from model ID (e.g., "anthropic:claude-sonnet-4" -> "claude-sonnet-4")
+		if (modelId) {
+			// If it contains a colon, extract after it
+			const colonIdx = modelId.indexOf(":");
+			if (colonIdx >= 0) {
+				return modelId.slice(colonIdx + 1);
 			}
+			// Otherwise use the full modelId
+			return modelId;
 		}
-		return { inputTokens, outputTokens };
+		// Fall back to last 6 chars of agentId
+		return agentId.slice(-6);
 	}
 
 	/**
-	 * Start a new session or join an existing one.
-	 * Returns the session ID to use for subsequent updates.
+	 * Start tracking a new agent (LM call)
 	 */
-	startSession(sessionId?: string, estimatedTokens?: number, maxTokens?: number): string {
+	startAgent(
+		agentId: string,
+		estimatedTokens?: number,
+		maxTokens?: number,
+		modelId?: string,
+	): string {
 		const now = Date.now();
-		const id = sessionId ?? this.generateSessionId();
+		const isMain = this.mainAgentId === null;
 
-		// Check if joining an existing session
-		const existing = this.sessions.get(id);
-		if (existing) {
-			// Joining existing session (e.g., subagent joining main agent's session)
-			existing.lastUpdateTime = now;
-			existing.status = "streaming";
-			existing.requestCount += 1;
-			existing.dimmed = false;
-			if (maxTokens !== undefined) {
-				existing.maxInputTokens = maxTokens;
-			}
-			logger.debug(
-				`Session ${id} joined, request #${existing.requestCount}, ` +
-					`cumulative: ${existing.inputTokens} in, ${existing.outputTokens} out`,
-			);
-		} else {
-			// New session
-			this.sessions.set(id, {
-				id,
-				startTime: now,
-				lastUpdateTime: now,
-				inputTokens: 0,
-				outputTokens: 0,
-				maxInputTokens: maxTokens,
-				requestCount: 1,
-				status: "streaming",
-				dimmed: false,
-			});
-			logger.debug(`Session ${id} started`);
+		if (isMain) {
+			this.mainAgentId = agentId;
 		}
 
-		this.activeSessionId = id;
-		this.streamingStartTime = now;
-		this.showStreaming(estimatedTokens, maxTokens);
+		const agent: AgentEntry = {
+			id: agentId,
+			name: this.extractAgentName(agentId, modelId),
+			startTime: now,
+			lastUpdateTime: now,
+			inputTokens: 0,
+			outputTokens: 0,
+			maxInputTokens: maxTokens,
+			estimatedInputTokens: estimatedTokens,
+			modelId,
+			status: "streaming",
+			dimmed: false,
+			isMain,
+		};
 
-		return id;
-	}
-
-	/**
-	 * Show streaming indicator when a request starts
-	 */
-	showStreaming(estimatedTokens?: number, maxTokens?: number): void {
-		this.isStreaming = true;
-		this.clearHideTimeout();
-
-		const session = this.activeSessionId ? this.sessions.get(this.activeSessionId) : null;
-		const elapsed = this.streamingStartTime
-			? Math.round((Date.now() - this.streamingStartTime) / 1000)
-			: 0;
-		const elapsedStr = elapsed > 0 ? ` ${elapsed}s` : "";
-
-		// Show session cumulative if we have prior requests
-		const sessionSuffix =
-			session && session.requestCount > 1 ? ` [${session.requestCount} reqs]` : "";
-
-		if (estimatedTokens !== undefined && maxTokens !== undefined) {
-			const percentage = Math.round((estimatedTokens / maxTokens) * 100);
-			const formatted = this.formatTokenCount(estimatedTokens);
-			const maxFormatted = this.formatTokenCount(maxTokens);
-			this.statusBarItem.text = `$(loading~spin) ~${formatted}/${maxFormatted} (${percentage}%)${elapsedStr}${sessionSuffix}`;
-
-			const tooltipLines = [
-				`Estimated input: ${estimatedTokens.toLocaleString()} tokens`,
-				`Model limit: ${maxTokens.toLocaleString()} tokens`,
-			];
-			if (session && session.requestCount > 1) {
-				tooltipLines.push("");
-				tooltipLines.push(
-					`Session total: ${session.inputTokens.toLocaleString()} in, ${session.outputTokens.toLocaleString()} out`,
-				);
-				tooltipLines.push(`Requests in session: ${session.requestCount}`);
-			}
-			this.statusBarItem.tooltip = tooltipLines.join("\n");
-		} else {
-			this.statusBarItem.text = `$(loading~spin) Streaming...${elapsedStr}${sessionSuffix}`;
-			this.statusBarItem.tooltip = "AI request in progress";
-		}
-
-		this.statusBarItem.backgroundColor = undefined;
-		this.statusBarItem.show();
-	}
-
-	/**
-	 * Update streaming progress with output token count
-	 */
-	updateStreamingProgress(outputTokensSoFar: number): void {
-		if (!this.isStreaming) return;
-
-		const session = this.activeSessionId ? this.sessions.get(this.activeSessionId) : null;
-		const elapsed = this.streamingStartTime
-			? Math.round((Date.now() - this.streamingStartTime) / 1000)
-			: 0;
-		const elapsedStr = elapsed > 0 ? ` ${elapsed}s` : "";
-
-		const outputFormatted = this.formatTokenCount(outputTokensSoFar);
-		const sessionSuffix =
-			session && session.requestCount > 1 ? ` [${session.requestCount} reqs]` : "";
-
-		// Update text to show output progress
-		this.statusBarItem.text = `$(loading~spin) ${outputFormatted} out${elapsedStr}${sessionSuffix}`;
-
-		if (session) {
-			session.lastUpdateTime = Date.now();
-		}
-	}
-
-	/**
-	 * Update with actual token usage after request completes
-	 */
-	showUsage(usage: TokenUsage, sessionId?: string): void {
-		this.isStreaming = false;
-		this.currentUsage = usage;
-		this.streamingStartTime = null;
-		this.clearHideTimeout();
-
-		// Update session with actual usage
-		const sid = sessionId ?? this.activeSessionId;
-		const session = sid ? this.sessions.get(sid) : null;
-		if (session) {
-			session.inputTokens += usage.inputTokens;
-			session.outputTokens += usage.outputTokens;
-			session.lastUpdateTime = Date.now();
-			session.status = "complete";
-			session.modelId = usage.modelId;
-			if (usage.maxInputTokens !== undefined) {
-				session.maxInputTokens = usage.maxInputTokens;
-			}
-			if (usage.contextManagement) {
-				session.contextManagement = usage.contextManagement;
-			}
-			logger.debug(
-				`Session ${sid} updated: ${session.inputTokens} in, ${session.outputTokens} out (${session.requestCount} requests)`,
-			);
-		}
-
-		const inputFormatted = this.formatTokenCount(usage.inputTokens);
-		const outputFormatted = this.formatTokenCount(usage.outputTokens);
-		const contextEdits = usage.contextManagement?.appliedEdits ?? [];
-		const hasCompaction = contextEdits.length > 0;
-		const freedTokens = contextEdits.reduce((total, edit) => total + edit.clearedInputTokens, 0);
-		const freedSuffix = hasCompaction ? ` ↓${this.formatTokenCount(freedTokens)}` : "";
-
-		// Use a more prominent icon when compaction occurred
-		const icon = hasCompaction ? "$(fold)" : "$(symbol-number)";
-
-		// Show session info if multiple requests
-		const sessionSuffix =
-			session && session.requestCount > 1
-				? ` [Σ${this.formatTokenCount(session.inputTokens)}]`
-				: "";
-
-		if (usage.maxInputTokens) {
-			const percentage = Math.round((usage.inputTokens / usage.maxInputTokens) * 100);
-			const maxFormatted = this.formatTokenCount(usage.maxInputTokens);
-
-			// Color code based on usage percentage
-			if (percentage >= 90) {
-				this.statusBarItem.backgroundColor = new vscode.ThemeColor(
-					"statusBarItem.warningBackground",
-				);
-			} else if (percentage >= 75) {
-				this.statusBarItem.backgroundColor = new vscode.ThemeColor(
-					"statusBarItem.prominentBackground",
-				);
-			} else {
-				this.statusBarItem.backgroundColor = undefined;
-			}
-
-			this.statusBarItem.text = `${icon} ${inputFormatted}/${maxFormatted} (${outputFormatted} out)${freedSuffix}${sessionSuffix}`;
-			this.statusBarItem.tooltip = this.buildTooltip(usage, percentage, session);
-		} else {
-			this.statusBarItem.backgroundColor = undefined;
-			this.statusBarItem.text = `${icon} ${inputFormatted} in, ${outputFormatted} out${freedSuffix}${sessionSuffix}`;
-			this.statusBarItem.tooltip = this.buildTooltip(usage, undefined, session);
-		}
-
-		this.statusBarItem.show();
-
-		// Auto-hide after 30 seconds of inactivity
-		this.hideTimeout = setTimeout(() => this.hide(), 30000);
+		this.agents.set(agentId, agent);
+		this.activeAgentId = agentId;
 
 		logger.debug(
-			`Token usage: ${usage.inputTokens} in, ${usage.outputTokens} out${usage.maxInputTokens ? ` (${Math.round((usage.inputTokens / usage.maxInputTokens) * 100)}% of limit)` : ""}`,
+			`[StatusBar] Agent STARTED`,
+			JSON.stringify({
+				timestamp: now,
+				agentId,
+				isMain,
+				modelId,
+				estimatedTokens,
+				maxTokens,
+				name: agent.name,
+				totalAgents: this.agents.size,
+				mainAgentId: this.mainAgentId,
+				activeAgentId: this.activeAgentId,
+			}),
 		);
+
+		this.updateDisplay();
+		return agentId;
 	}
 
 	/**
-	 * Mark a session as having an error
+	 * Update agent with completed usage
 	 */
-	markSessionError(sessionId?: string): void {
-		const sid = sessionId ?? this.activeSessionId;
-		const session = sid ? this.sessions.get(sid) : null;
-		if (session) {
-			session.status = "error";
-			session.lastUpdateTime = Date.now();
+	completeAgent(agentId: string, usage: TokenUsage): void {
+		const agent = this.agents.get(agentId);
+		if (!agent) {
+			logger.warn(`Agent ${agentId} not found for completion`);
+			return;
 		}
+
+		agent.inputTokens = usage.inputTokens;
+		agent.outputTokens = usage.outputTokens;
+		agent.maxInputTokens = usage.maxInputTokens;
+		agent.modelId = usage.modelId;
+		agent.status = "complete";
+		agent.lastUpdateTime = Date.now();
+		agent.contextManagement = usage.contextManagement;
+		agent.completionOrder = this.completedAgentCount;
+
+		this.completedAgentCount++;
+		this.currentUsage = usage;
+
+		// If this was the active agent, clear it
+		if (this.activeAgentId === agentId) {
+			this.activeAgentId = null;
+		}
+
+		const contextEdits = usage.contextManagement?.appliedEdits ?? [];
+		const freedTokens = contextEdits.reduce((sum, e) => sum + e.clearedInputTokens, 0);
+
+		logger.debug(
+			`[StatusBar] Agent COMPLETED`,
+			JSON.stringify({
+				timestamp: agent.lastUpdateTime,
+				agentId,
+				inputTokens: usage.inputTokens,
+				outputTokens: usage.outputTokens,
+				maxInputTokens: usage.maxInputTokens,
+				modelId: usage.modelId,
+				completionOrder: agent.completionOrder,
+				completedAgentCount: this.completedAgentCount,
+				isMain: agent.isMain,
+				wasActive: this.activeAgentId === null,
+				totalAgents: this.agents.size,
+				contextManagement:
+					contextEdits.length > 0
+						? {
+								editCount: contextEdits.length,
+								freedTokens,
+								edits: contextEdits.map((e) => ({
+									type: e.type,
+									clearedInputTokens: e.clearedInputTokens,
+								})),
+							}
+						: null,
+			}),
+		);
+
+		// Immediately age other agents based on new completion
+		this.ageAgents();
+
+		this.updateDisplay();
+		this.scheduleHide();
 	}
 
 	/**
-	 * Show an error state
+	 * Mark an agent as errored
+	 */
+	errorAgent(agentId: string): void {
+		const agent = this.agents.get(agentId);
+		const now = Date.now();
+		if (agent) {
+			agent.status = "error";
+			agent.lastUpdateTime = now;
+			agent.completionOrder = this.completedAgentCount;
+			this.completedAgentCount++;
+
+			logger.debug(
+				`[StatusBar] Agent ERRORED`,
+				JSON.stringify({
+					timestamp: now,
+					agentId,
+					isMain: agent.isMain,
+					completionOrder: agent.completionOrder,
+					completedAgentCount: this.completedAgentCount,
+					totalAgents: this.agents.size,
+				}),
+			);
+		} else {
+			logger.warn(
+				`[StatusBar] errorAgent called for unknown agent`,
+				JSON.stringify({ timestamp: now, agentId }),
+			);
+		}
+		if (this.activeAgentId === agentId) {
+			this.activeAgentId = null;
+		}
+		this.updateDisplay();
+	}
+
+	/**
+	 * Show error state
 	 */
 	showError(message: string): void {
-		this.isStreaming = false;
 		this.clearHideTimeout();
-
 		this.statusBarItem.text = "$(error) Token limit exceeded";
 		this.statusBarItem.tooltip = message;
 		this.statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
 		this.statusBarItem.show();
-
-		// Keep error visible longer
 		this.hideTimeout = setTimeout(() => this.hide(), 60000);
 	}
 
 	/**
-	 * Hide the status bar item
+	 * Update the status bar display based on current agent state
 	 */
-	hide(): void {
-		this.statusBarItem.hide();
-		this.isStreaming = false;
-	}
+	private updateDisplay(): void {
+		this.clearHideTimeout();
 
-	/**
-	 * Get the last recorded usage (for commands/tooltips)
-	 */
-	getLastUsage(): TokenUsage | null {
-		return this.currentUsage;
-	}
+		// Debug: Log all agents state
+		const agentsSummary = Array.from(this.agents.values()).map((a) => ({
+			id: a.id.slice(-8),
+			name: a.name,
+			status: a.status,
+			isMain: a.isMain,
+			dimmed: a.dimmed,
+			inputTokens: a.inputTokens,
+			estimatedInputTokens: a.estimatedInputTokens,
+			completionOrder: a.completionOrder,
+			contextEdits: a.contextManagement?.appliedEdits?.length ?? 0,
+		}));
+		logger.debug(
+			`[StatusBar] updateDisplay called`,
+			JSON.stringify({
+				timestamp: Date.now(),
+				mainAgentId: this.mainAgentId?.slice(-8),
+				activeAgentId: this.activeAgentId?.slice(-8),
+				completedAgentCount: this.completedAgentCount,
+				agents: agentsSummary,
+			}),
+		);
 
-	/**
-	 * Format token count for display (e.g., 1234 -> "1.2k", 128000 -> "128k")
-	 */
-	private formatTokenCount(count: number): string {
-		if (count >= 1000000) {
-			return `${(count / 1000000).toFixed(1)}M`;
+		const mainAgent = this.mainAgentId ? this.agents.get(this.mainAgentId) : null;
+		const activeAgent = this.activeAgentId ? this.agents.get(this.activeAgentId) : null;
+
+		// Build main part of display
+		let mainText = "";
+		let icon = "$(symbol-number)";
+
+		if (mainAgent) {
+			const hasCompaction = (mainAgent.contextManagement?.appliedEdits?.length ?? 0) > 0;
+			if (hasCompaction) {
+				icon = "$(fold)";
+			}
+
+			if (mainAgent.status === "streaming") {
+				icon = "$(loading~spin)";
+				if (mainAgent.estimatedInputTokens && mainAgent.maxInputTokens) {
+					const pct = this.formatPercentage(
+						mainAgent.estimatedInputTokens,
+						mainAgent.maxInputTokens,
+					);
+					mainText = `~${this.formatTokenCount(mainAgent.estimatedInputTokens)}/${this.formatTokenCount(mainAgent.maxInputTokens)} (${pct})`;
+				} else {
+					mainText = "streaming...";
+				}
+			} else {
+				mainText = this.formatAgentUsage(mainAgent);
+			}
+
+			// Add compaction suffix
+			if (hasCompaction) {
+				const freed = mainAgent.contextManagement?.appliedEdits.reduce(
+					(t, e) => t + e.clearedInputTokens,
+					0,
+				);
+				// Use unpadded format for compaction suffix since it's less critical
+				mainText += ` ↓${this.formatTokenCount(freed, false)}`;
+			}
 		}
-		if (count >= 1000) {
-			return `${(count / 1000).toFixed(1)}k`;
+
+		// Build subagent part (if active and not main)
+		let subagentText = "";
+		if (activeAgent && activeAgent.id !== this.mainAgentId) {
+			if (activeAgent.status === "streaming") {
+				if (activeAgent.estimatedInputTokens && activeAgent.maxInputTokens) {
+					const pct = this.formatPercentage(
+						activeAgent.estimatedInputTokens,
+						activeAgent.maxInputTokens,
+					);
+					subagentText = ` | ▸ ${activeAgent.name} ~${this.formatTokenCount(activeAgent.estimatedInputTokens)}/${this.formatTokenCount(activeAgent.maxInputTokens)} (${pct})`;
+				} else {
+					subagentText = ` | ▸ ${activeAgent.name}...`;
+				}
+			} else {
+				subagentText = ` | ${activeAgent.name}: ${this.formatAgentUsage(activeAgent)}`;
+			}
 		}
-		return count.toString();
+
+		// Combine
+		if (mainText || subagentText) {
+			this.statusBarItem.text = `${icon} ${mainText}${subagentText}`.trim();
+			this.statusBarItem.tooltip = this.buildTooltip();
+			this.setBackgroundColor(mainAgent);
+			this.statusBarItem.show();
+		} else {
+			this.hide();
+		}
 	}
 
 	/**
-	 * Build detailed tooltip text
+	 * Format usage for a single agent
 	 */
-	private buildTooltip(
-		usage: TokenUsage,
-		percentage?: number,
-		session?: SessionEntry | null,
-	): string {
+	private formatAgentUsage(agent: AgentEntry): string {
+		const input = this.formatTokenCount(agent.inputTokens);
+
+		if (agent.maxInputTokens) {
+			const max = this.formatTokenCount(agent.maxInputTokens);
+			if (this.config.showOutputTokens) {
+				return `${input}/${max} (${this.formatTokenCount(agent.outputTokens)} out)`;
+			}
+			return `${input}/${max}`;
+		}
+
+		if (this.config.showOutputTokens) {
+			return `${input} in, ${this.formatTokenCount(agent.outputTokens)} out`;
+		}
+		return `${input} in`;
+	}
+
+	/**
+	 * Set background color based on usage percentage
+	 */
+	private setBackgroundColor(agent: AgentEntry | null | undefined): void {
+		if (!agent || !agent.maxInputTokens) {
+			this.statusBarItem.backgroundColor = undefined;
+			return;
+		}
+
+		const tokens =
+			agent.status === "streaming" ? (agent.estimatedInputTokens ?? 0) : agent.inputTokens;
+		const percentage = Math.round((tokens / agent.maxInputTokens) * 100);
+
+		if (percentage >= 90) {
+			this.statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+		} else if (percentage >= 75) {
+			this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+				"statusBarItem.prominentBackground",
+			);
+		} else {
+			this.statusBarItem.backgroundColor = undefined;
+		}
+	}
+
+	/**
+	 * Build tooltip with all agent details
+	 */
+	private buildTooltip(): string {
 		const lines: string[] = [];
 
-		if (usage.modelId) {
-			lines.push(`Model: ${usage.modelId}`);
-			lines.push("");
-		}
+		// Get all non-dimmed agents, sorted by start time
+		const visibleAgents = Array.from(this.agents.values())
+			.filter((a) => !a.dimmed)
+			.sort((a, b) => a.startTime - b.startTime);
 
-		lines.push(`Input tokens: ${usage.inputTokens.toLocaleString()}`);
-		lines.push(`Output tokens: ${usage.outputTokens.toLocaleString()}`);
-		lines.push(`Total: ${(usage.inputTokens + usage.outputTokens).toLocaleString()}`);
+		logger.debug(
+			`[StatusBar] buildTooltip`,
+			JSON.stringify({
+				timestamp: Date.now(),
+				visibleCount: visibleAgents.length,
+				agents: visibleAgents.map((a) => ({
+					id: a.id.slice(-8),
+					name: a.name,
+					status: a.status,
+					isMain: a.isMain,
+					inputTokens: a.inputTokens,
+					estimatedInputTokens: a.estimatedInputTokens,
+					contextEdits: a.contextManagement?.appliedEdits?.length ?? 0,
+				})),
+			}),
+		);
 
-		if (usage.maxInputTokens && percentage !== undefined) {
-			lines.push("");
-			lines.push(`Context used: ${percentage}%`);
-			lines.push(
-				`Remaining: ${(usage.maxInputTokens - usage.inputTokens).toLocaleString()} tokens`,
-			);
+		for (const agent of visibleAgents) {
+			const prefix = agent.isMain ? "Main" : agent.name;
+			const statusIcon =
+				agent.status === "streaming" ? "⏳" : agent.status === "error" ? "❌" : "✓";
 
-			if (percentage >= 90) {
-				lines.push("");
-				lines.push("⚠️ Approaching context limit");
-			}
-		}
-
-		const contextEdits = usage.contextManagement?.appliedEdits ?? [];
-		if (contextEdits.length > 0) {
-			lines.push("");
-			lines.push("⚡ Context compacted");
-			lines.push(...this.formatContextEdits(contextEdits));
-		}
-
-		// Show session totals if multiple requests
-		if (session && session.requestCount > 1) {
-			lines.push("");
-			lines.push("━━━ Session Totals ━━━");
-			lines.push(`Requests: ${session.requestCount}`);
-			lines.push(`Total input: ${session.inputTokens.toLocaleString()}`);
-			lines.push(`Total output: ${session.outputTokens.toLocaleString()}`);
-			const elapsed = Math.round((Date.now() - session.startTime) / 1000);
-			if (elapsed > 60) {
-				lines.push(`Duration: ${Math.floor(elapsed / 60)}m ${elapsed % 60}s`);
+			if (agent.modelId) {
+				lines.push(`${statusIcon} ${prefix} (${agent.modelId})`);
 			} else {
-				lines.push(`Duration: ${elapsed}s`);
+				lines.push(`${statusIcon} ${prefix}`);
 			}
+
+			if (agent.status === "complete" || agent.status === "error") {
+				lines.push(`   Input: ${agent.inputTokens.toLocaleString()}`);
+				if (this.config.showOutputTokens) {
+					lines.push(`   Output: ${agent.outputTokens.toLocaleString()}`);
+				}
+				if (agent.maxInputTokens) {
+					const pct = Math.round((agent.inputTokens / agent.maxInputTokens) * 100);
+					lines.push(`   Context: ${pct}% of ${agent.maxInputTokens.toLocaleString()}`);
+				}
+			} else if (agent.estimatedInputTokens) {
+				lines.push(`   Estimated: ~${agent.estimatedInputTokens.toLocaleString()}`);
+			}
+
+			// Context compaction
+			const edits = agent.contextManagement?.appliedEdits ?? [];
+			if (edits.length > 0) {
+				lines.push("   ⚡ Context compacted:");
+				for (const edit of edits) {
+					lines.push(`      ${this.formatContextEdit(edit)}`);
+				}
+			}
+
+			lines.push("");
+		}
+
+		if (lines.length > 0) {
+			lines.pop(); // Remove trailing empty line
 		}
 
 		lines.push("");
@@ -438,97 +506,135 @@ export class TokenStatusBar implements vscode.Disposable {
 	}
 
 	/**
-	 * Clean up stale sessions (dim old ones, remove very old ones)
+	 * Format a single context edit
 	 */
-	private cleanupStaleSessions(): void {
-		const now = Date.now();
-		const sessionsToRemove: string[] = [];
-
-		// Sort sessions by last update time (newest first)
-		const sortedSessions = Array.from(this.sessions.entries()).sort(
-			([, a], [, b]) => b.lastUpdateTime - a.lastUpdateTime,
-		);
-
-		let activeCount = 0;
-		for (const [id, session] of sortedSessions) {
-			const age = now - session.lastUpdateTime;
-
-			// Skip currently streaming sessions
-			if (session.status === "streaming") {
-				activeCount++;
-				continue;
-			}
-
-			// Remove sessions that are too old
-			if (age > SESSION_REMOVE_AFTER_MS) {
-				sessionsToRemove.push(id);
-				continue;
-			}
-
-			// Remove old sessions if we have too many newer ones
-			if (activeCount >= SESSION_REMOVE_AFTER_REQUESTS && !session.dimmed) {
-				sessionsToRemove.push(id);
-				continue;
-			}
-
-			// Dim sessions that haven't been updated recently
-			if (age > SESSION_DIM_AFTER_MS && !session.dimmed) {
-				session.dimmed = true;
-				logger.debug(`Session ${id} dimmed after ${Math.round(age / 1000)}s`);
-			}
-
-			if (!session.dimmed) {
-				activeCount++;
-			}
-		}
-
-		// Remove stale sessions
-		for (const id of sessionsToRemove) {
-			this.sessions.delete(id);
-			logger.debug(`Session ${id} removed`);
-			if (this.activeSessionId === id) {
-				this.activeSessionId = null;
-			}
-		}
-
-		// Update display if we have an active session
-		if (this.activeSessionId && this.currentUsage && !this.isStreaming) {
-			// Refresh the display to reflect any changes
-			this.showUsage(this.currentUsage, this.activeSessionId);
+	private formatContextEdit(edit: ContextManagementEdit): string {
+		const freed = edit.clearedInputTokens.toLocaleString();
+		switch (edit.type) {
+			case "clear_tool_uses_20250919":
+				if (edit.clearedToolUses !== undefined) {
+					return `${edit.clearedToolUses} tool uses cleared (${freed} freed)`;
+				}
+				return `Tool uses cleared (${freed} freed)`;
+			case "clear_thinking_20251015":
+				if (edit.clearedThinkingTurns !== undefined) {
+					return `${edit.clearedThinkingTurns} thinking turns cleared (${freed} freed)`;
+				}
+				return `Thinking turns cleared (${freed} freed)`;
+			default:
+				return `${edit.type} (${freed} freed)`;
 		}
 	}
 
 	/**
-	 * Manually clear all sessions (e.g., user command)
+	 * Age agents based on completed request count (dim and remove old agents)
 	 */
-	clearSessions(): void {
-		this.sessions.clear();
-		this.activeSessionId = null;
-		logger.debug("All sessions cleared");
+	private ageAgents(): void {
+		const agentsToRemove: string[] = [];
+		const agentsDimmed: string[] = [];
+
+		for (const [id, agent] of this.agents) {
+			// Skip streaming agents
+			if (agent.status === "streaming") continue;
+			// Skip agents without completion order
+			if (agent.completionOrder === undefined) continue;
+
+			// Calculate how many agents have completed since this one
+			const agentAge = this.completedAgentCount - agent.completionOrder - 1;
+
+			if (agentAge >= AGENT_REMOVE_AFTER_REQUESTS) {
+				agentsToRemove.push(id);
+			} else if (agentAge >= AGENT_DIM_AFTER_REQUESTS && !agent.dimmed) {
+				agent.dimmed = true;
+				agentsDimmed.push(id);
+			}
+		}
+
+		for (const id of agentsToRemove) {
+			this.agents.delete(id);
+			if (this.mainAgentId === id) {
+				this.mainAgentId = null;
+			}
+		}
+
+		if (agentsDimmed.length > 0 || agentsToRemove.length > 0) {
+			logger.debug(
+				`[StatusBar] Agents aged`,
+				JSON.stringify({
+					timestamp: Date.now(),
+					dimmed: agentsDimmed.map((id) => id.slice(-8)),
+					removed: agentsToRemove.map((id) => id.slice(-8)),
+					completedAgentCount: this.completedAgentCount,
+					remainingAgents: this.agents.size,
+				}),
+			);
+		}
 	}
 
-	private formatContextEdits(edits: ContextManagementEdit[]): string[] {
-		return edits.map((edit) => {
-			const freed = edit.clearedInputTokens.toLocaleString();
-			switch (edit.type) {
-				case "clear_tool_uses_20250919": {
-					if (edit.clearedToolUses !== undefined) {
-						const label = edit.clearedToolUses === 1 ? "tool use" : "tool uses";
-						return `- ${edit.clearedToolUses} ${label} cleared (${freed} freed)`;
-					}
-					return `- Tool uses cleared (${freed} freed)`;
-				}
-				case "clear_thinking_20251015": {
-					if (edit.clearedThinkingTurns !== undefined) {
-						const label = edit.clearedThinkingTurns === 1 ? "thinking turn" : "thinking turns";
-						return `- ${edit.clearedThinkingTurns} ${label} cleared (${freed} freed)`;
-					}
-					return `- Thinking turns cleared (${freed} freed)`;
-				}
-				default:
-					return `- ${edit.type} (${freed} freed)`;
+	/**
+	 * Clean up stale agents (periodic check)
+	 */
+	private cleanupStaleAgents(): void {
+		const countBefore = this.agents.size;
+		this.ageAgents();
+
+		// If we removed agents, update display
+		if (this.agents.size < countBefore) {
+			this.updateDisplay();
+		}
+	}
+
+	/**
+	 * Format token count for display.
+	 * Uses figure space (U+2007) padding for consistent width to prevent status bar bouncing.
+	 * Target widths: "XXX.Xk" (6 chars) for k values, "X.XM" (4 chars) for M values.
+	 */
+	private formatTokenCount(count: number, padded = true): string {
+		// Figure space has the same width as digits in most fonts
+		const figureSpace = "\u2007";
+
+		if (count >= 1000000) {
+			const formatted = `${(count / 1000000).toFixed(1)}M`;
+			// Pad to 5 chars: "X.XM" or "XX.XM"
+			if (padded) {
+				return formatted.padStart(5, figureSpace);
 			}
-		});
+			return formatted;
+		}
+		if (count >= 1000) {
+			const formatted = `${(count / 1000).toFixed(1)}k`;
+			// Pad to 6 chars: "X.Xk" → "XXX.Xk"
+			if (padded) {
+				return formatted.padStart(6, figureSpace);
+			}
+			return formatted;
+		}
+		// Small numbers: pad to 3 chars
+		const formatted = count.toString();
+		if (padded) {
+			return formatted.padStart(3, figureSpace);
+		}
+		return formatted;
+	}
+
+	/**
+	 * Format percentage with consistent width (always 3 chars + %).
+	 * Uses figure space padding: " 5%" → "99%"
+	 */
+	private formatPercentage(current: number, max: number): string {
+		const figureSpace = "\u2007";
+		const pct = Math.round((current / max) * 100);
+		// Clamp to 0-100 and pad to 3 chars
+		const clamped = Math.min(100, Math.max(0, pct));
+		return `${clamped.toString().padStart(3, figureSpace)}%`;
+	}
+
+	/**
+	 * Schedule auto-hide
+	 */
+	private scheduleHide(): void {
+		this.clearHideTimeout();
+		this.hideTimeout = setTimeout(() => this.hide(), 30000);
 	}
 
 	private clearHideTimeout(): void {
@@ -538,13 +644,49 @@ export class TokenStatusBar implements vscode.Disposable {
 		}
 	}
 
+	hide(): void {
+		this.statusBarItem.hide();
+	}
+
+	/**
+	 * Get the last recorded usage
+	 */
+	getLastUsage(): TokenUsage | null {
+		return this.currentUsage;
+	}
+
+	/**
+	 * Clear all agents (reset state)
+	 */
+	clearAgents(): void {
+		const previousCount = this.agents.size;
+		this.agents.clear();
+		this.mainAgentId = null;
+		this.activeAgentId = null;
+		this.completedAgentCount = 0;
+		logger.debug(
+			`[StatusBar] All agents CLEARED`,
+			JSON.stringify({
+				timestamp: Date.now(),
+				previousAgentCount: previousCount,
+			}),
+		);
+	}
+
+	/**
+	 * Get all agents for debugging
+	 */
+	getAgents(): AgentEntry[] {
+		return Array.from(this.agents.values());
+	}
+
 	dispose(): void {
 		this.clearHideTimeout();
 		if (this.cleanupInterval) {
 			clearInterval(this.cleanupInterval);
 			this.cleanupInterval = null;
 		}
-		this.sessions.clear();
+		this.agents.clear();
 		this.statusBarItem.dispose();
 	}
 }

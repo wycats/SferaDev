@@ -39,85 +39,92 @@ describe("TokenStatusBar", () => {
 		statusBar = new TokenStatusBar();
 	});
 
-	describe("showStreaming", () => {
-		it("shows streaming indicator without token info", () => {
-			statusBar.showStreaming();
+	describe("startAgent", () => {
+		// Figure space (U+2007) is used for padding to prevent status bar bouncing
+		const fs = "\u2007";
 
-			expect(mockStatusBarItem.text).toBe("$(loading~spin) Streaming...");
+		it("shows streaming indicator when agent starts", () => {
+			statusBar.startAgent("agent-1", 50000, 128000, "anthropic:claude-sonnet-4");
+
+			// Padded format: " 50.0k" (6 chars), "128.0k" (6 chars), " 39%" (4 chars)
+			expect(mockStatusBarItem.text).toBe(`$(loading~spin) ~${fs}50.0k/128.0k (${fs}39%)`);
 			expect(mockStatusBarItem.show).toHaveBeenCalled();
 		});
 
-		it("shows streaming indicator with estimated tokens", () => {
-			statusBar.showStreaming(50000, 128000);
+		it("shows streaming without token info when no estimates", () => {
+			statusBar.startAgent("agent-1");
 
-			expect(mockStatusBarItem.text).toBe("$(loading~spin) ~50.0k/128.0k (39%)");
+			expect(mockStatusBarItem.text).toBe("$(loading~spin) streaming...");
 			expect(mockStatusBarItem.show).toHaveBeenCalled();
 		});
 
-		it("shows high percentage correctly", () => {
-			statusBar.showStreaming(115000, 128000);
-
-			expect(mockStatusBarItem.text).toBe("$(loading~spin) ~115.0k/128.0k (90%)");
-		});
-	});
-
-	describe("showUsage", () => {
-		it("shows basic usage without max tokens", () => {
-			statusBar.showUsage({
-				inputTokens: 1500,
-				outputTokens: 500,
-			});
-
-			expect(mockStatusBarItem.text).toBe("$(symbol-number) 1.5k in, 500 out");
-			expect(mockStatusBarItem.show).toHaveBeenCalled();
-		});
-
-		it("shows usage with max tokens and percentage", () => {
-			statusBar.showUsage({
+		it("extracts display name from model ID", () => {
+			statusBar.startAgent("agent-1", 50000, 128000, "anthropic:claude-sonnet-4");
+			statusBar.completeAgent("agent-1", {
 				inputTokens: 50000,
 				outputTokens: 1000,
 				maxInputTokens: 128000,
+				modelId: "anthropic:claude-sonnet-4",
 			});
 
-			expect(mockStatusBarItem.text).toBe("$(symbol-number) 50.0k/128.0k (1.0k out)");
-			expect(mockStatusBarItem.backgroundColor).toBeUndefined();
+			// Tooltip should contain the display name
+			expect(mockStatusBarItem.tooltip).toContain("claude-sonnet-4");
 		});
+	});
 
-		it("shows warning background at 75%+ usage", () => {
-			statusBar.showUsage({
-				inputTokens: 100000,
-				outputTokens: 500,
+	describe("completeAgent", () => {
+		// Figure space (U+2007) is used for padding to prevent status bar bouncing
+		const fs = "\u2007";
+
+		it("shows usage after agent completes", () => {
+			statusBar.startAgent("agent-1", 50000, 128000);
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 52000,
+				outputTokens: 1500,
 				maxInputTokens: 128000,
 			});
 
-			expect(mockStatusBarItem.backgroundColor).toBeDefined();
+			// Padded format: " 52.0k" (6 chars), "128.0k" (6 chars)
+			expect(mockStatusBarItem.text).toBe(`$(symbol-number) ${fs}52.0k/128.0k`);
+			expect(mockStatusBarItem.show).toHaveBeenCalled();
 		});
 
-		it("shows warning background at 90%+ usage", () => {
-			statusBar.showUsage({
-				inputTokens: 120000,
-				outputTokens: 500,
+		it("shows output tokens when configured", () => {
+			statusBar.setConfig({ showOutputTokens: true });
+			statusBar.startAgent("agent-1", 50000, 128000);
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 52000,
+				outputTokens: 1500,
 				maxInputTokens: 128000,
 			});
 
-			expect(mockStatusBarItem.backgroundColor).toBeDefined();
+			// Padded format with output tokens
+			expect(mockStatusBarItem.text).toBe(
+				`$(symbol-number) ${fs}52.0k/128.0k (${fs}${fs}1.5k out)`,
+			);
 		});
 
 		it("stores usage for later retrieval", () => {
+			statusBar.startAgent("agent-1");
 			const usage = {
 				inputTokens: 5000,
 				outputTokens: 1000,
 				maxInputTokens: 128000,
 				modelId: "openai:gpt-4o",
 			};
+			statusBar.completeAgent("agent-1", usage);
 
-			statusBar.showUsage(usage);
-
-			expect(statusBar.getLastUsage()).toEqual(usage);
+			const lastUsage = statusBar.getLastUsage();
+			expect(lastUsage?.inputTokens).toBe(5000);
+			expect(lastUsage?.outputTokens).toBe(1000);
 		});
 
 		it("shows compaction info with fold icon and freed tokens", () => {
-			statusBar.showUsage({
+			// Figure space (U+2007) is used for padding to prevent status bar bouncing
+			const fs = "\u2007";
+
+			statusBar.startAgent("agent-1");
+			statusBar.completeAgent("agent-1", {
 				inputTokens: 37100,
 				outputTokens: 1200,
 				maxInputTokens: 128000,
@@ -133,9 +140,20 @@ describe("TokenStatusBar", () => {
 				},
 			});
 
-			expect(mockStatusBarItem.text).toBe("$(fold) 37.1k/128.0k (1.2k out) ↓15.2k");
+			// Padded format with compaction suffix (unpadded for the compaction amount)
+			expect(mockStatusBarItem.text).toBe(`$(fold) ${fs}37.1k/128.0k ↓15.2k`);
 			expect(mockStatusBarItem.tooltip).toContain("⚡ Context compacted");
-			expect(mockStatusBarItem.tooltip).toContain("- 8 tool uses cleared (15,200 freed)");
+			expect(mockStatusBarItem.tooltip).toContain("8 tool uses cleared (15,200 freed)");
+		});
+	});
+
+	describe("errorAgent", () => {
+		it("marks agent as error", () => {
+			statusBar.startAgent("agent-1", 50000, 128000);
+			statusBar.errorAgent("agent-1");
+
+			const agents = statusBar.getAgents();
+			expect(agents[0].status).toBe("error");
 		});
 	});
 
@@ -149,6 +167,30 @@ describe("TokenStatusBar", () => {
 		});
 	});
 
+	describe("warning thresholds", () => {
+		it("shows warning background at 75%+ usage", () => {
+			statusBar.startAgent("agent-1");
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 100000,
+				outputTokens: 500,
+				maxInputTokens: 128000,
+			});
+
+			expect(mockStatusBarItem.backgroundColor).toBeDefined();
+		});
+
+		it("shows warning background at 90%+ usage", () => {
+			statusBar.startAgent("agent-1");
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 120000,
+				outputTokens: 500,
+				maxInputTokens: 128000,
+			});
+
+			expect(mockStatusBarItem.backgroundColor).toBeDefined();
+		});
+	});
+
 	describe("hide", () => {
 		it("hides the status bar", () => {
 			statusBar.hide();
@@ -159,17 +201,29 @@ describe("TokenStatusBar", () => {
 
 	describe("formatTokenCount", () => {
 		it("formats small numbers as-is", () => {
-			statusBar.showUsage({ inputTokens: 500, outputTokens: 100 });
+			statusBar.startAgent("agent-1");
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 500,
+				outputTokens: 100,
+			});
 			expect(mockStatusBarItem.text).toContain("500");
 		});
 
 		it("formats thousands with k suffix", () => {
-			statusBar.showUsage({ inputTokens: 5000, outputTokens: 100 });
+			statusBar.startAgent("agent-1");
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 5000,
+				outputTokens: 100,
+			});
 			expect(mockStatusBarItem.text).toContain("5.0k");
 		});
 
 		it("formats millions with M suffix", () => {
-			statusBar.showUsage({ inputTokens: 1500000, outputTokens: 100 });
+			statusBar.startAgent("agent-1");
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 1500000,
+				outputTokens: 100,
+			});
 			expect(mockStatusBarItem.text).toContain("1.5M");
 		});
 	});
@@ -182,115 +236,94 @@ describe("TokenStatusBar", () => {
 		});
 	});
 
-	describe("session tracking", () => {
-		it("generates unique session IDs", () => {
-			const id1 = statusBar.generateSessionId();
-			const id2 = statusBar.generateSessionId();
+	describe("agent lifecycle and aging", () => {
+		it("dims agent after 2 newer completions", () => {
+			// First agent completes
+			statusBar.startAgent("agent-1", 50000, 128000);
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 50000,
+				outputTokens: 1000,
+			});
 
-			expect(id1).toMatch(/^session-\d+-[a-z0-9]+$/);
-			expect(id2).toMatch(/^session-\d+-[a-z0-9]+$/);
-			expect(id1).not.toBe(id2);
+			// Two more agents complete
+			statusBar.startAgent("agent-2", 30000, 128000);
+			statusBar.completeAgent("agent-2", {
+				inputTokens: 30000,
+				outputTokens: 500,
+			});
+
+			statusBar.startAgent("agent-3", 20000, 128000);
+			statusBar.completeAgent("agent-3", {
+				inputTokens: 20000,
+				outputTokens: 300,
+			});
+
+			const agents = statusBar.getAgents();
+			const agent1 = agents.find((a) => a.id === "agent-1");
+			expect(agent1?.dimmed).toBe(true);
 		});
 
-		it("starts a new session", () => {
-			const sessionId = statusBar.startSession(undefined, 50000, 128000);
+		it("removes agent after 5 newer completions", () => {
+			// First agent completes
+			statusBar.startAgent("agent-1", 50000, 128000);
+			statusBar.completeAgent("agent-1", {
+				inputTokens: 50000,
+				outputTokens: 1000,
+			});
 
-			expect(sessionId).toBeDefined();
-			expect(statusBar.getActiveSessionId()).toBe(sessionId);
-			expect(statusBar.getSessions()).toHaveLength(1);
+			// Five more agents complete
+			for (let i = 2; i <= 6; i++) {
+				statusBar.startAgent(`agent-${i}`, 10000, 128000);
+				statusBar.completeAgent(`agent-${i}`, {
+					inputTokens: 10000,
+					outputTokens: 100,
+				});
+			}
+
+			const agents = statusBar.getAgents();
+			const agent1 = agents.find((a) => a.id === "agent-1");
+			expect(agent1).toBeUndefined();
 		});
 
-		it("joins an existing session with same ID", () => {
-			const sessionId = statusBar.startSession("test-session", 50000, 128000);
-			statusBar.showUsage(
-				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
-				sessionId,
-			);
+		it("clears all agents", () => {
+			statusBar.startAgent("agent-1", 50000, 128000);
+			statusBar.startAgent("agent-2", 30000, 128000);
 
-			// Join the same session (simulating subagent)
-			statusBar.startSession("test-session", 30000, 128000);
+			statusBar.clearAgents();
 
-			const sessions = statusBar.getSessions();
-			expect(sessions).toHaveLength(1);
-			expect(sessions[0].requestCount).toBe(2);
-			expect(sessions[0].inputTokens).toBe(50000); // From first showUsage
+			expect(statusBar.getAgents()).toHaveLength(0);
+		});
+	});
+
+	describe("multi-agent display", () => {
+		it("shows subagent alongside main agent when active", () => {
+			// Main agent starts and completes (with maxInputTokens for consistent format)
+			statusBar.startAgent("main-agent", 50000, 128000, "anthropic:claude-sonnet-4");
+			statusBar.completeAgent("main-agent", {
+				inputTokens: 52000,
+				outputTokens: 1000,
+				maxInputTokens: 128000,
+			});
+
+			// Subagent starts
+			statusBar.startAgent("recon-agent", 8000, 128000, "recon");
+
+			// Should show both agents - main uses x/max format, subagent shows name
+			expect(mockStatusBarItem.text).toContain("52.0k/128.0k");
+			expect(mockStatusBarItem.text).toContain("▸ recon");
 		});
 
-		it("accumulates tokens across requests in a session", () => {
-			const sessionId = statusBar.startSession("test-session", 50000, 128000);
+		it("shows tooltip with all agent details", () => {
+			statusBar.startAgent("main-agent", 50000, 128000, "anthropic:claude-sonnet-4");
+			statusBar.completeAgent("main-agent", {
+				inputTokens: 52000,
+				outputTokens: 1000,
+				maxInputTokens: 128000,
+				modelId: "anthropic:claude-sonnet-4",
+			});
 
-			// First request completes
-			statusBar.showUsage(
-				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
-				sessionId,
-			);
-
-			// Second request (subagent) joins and completes
-			statusBar.startSession("test-session", 30000, 128000);
-			statusBar.showUsage(
-				{ inputTokens: 30000, outputTokens: 500, maxInputTokens: 128000 },
-				sessionId,
-			);
-
-			const sessions = statusBar.getSessions();
-			expect(sessions[0].inputTokens).toBe(80000);
-			expect(sessions[0].outputTokens).toBe(1500);
-			expect(sessions[0].requestCount).toBe(2);
-		});
-
-		it("shows session totals in display for multi-request sessions", () => {
-			const sessionId = statusBar.startSession("test-session", 50000, 128000);
-			statusBar.showUsage(
-				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
-				sessionId,
-			);
-
-			// Second request
-			statusBar.startSession("test-session", 30000, 128000);
-			statusBar.showUsage(
-				{ inputTokens: 30000, outputTokens: 500, maxInputTokens: 128000 },
-				sessionId,
-			);
-
-			// Should show session total indicator [Σ80k]
-			expect(mockStatusBarItem.text).toContain("[Σ80.0k]");
-		});
-
-		it("clears all sessions", () => {
-			statusBar.startSession("session-1", 50000, 128000);
-			statusBar.startSession("session-2", 30000, 128000);
-
-			statusBar.clearSessions();
-
-			expect(statusBar.getSessions()).toHaveLength(0);
-			expect(statusBar.getActiveSessionId()).toBeNull();
-		});
-
-		it("marks session as error", () => {
-			const sessionId = statusBar.startSession("test-session", 50000, 128000);
-			statusBar.markSessionError(sessionId);
-
-			const sessions = statusBar.getSessions();
-			expect(sessions[0].status).toBe("error");
-		});
-
-		it("updates streaming progress", () => {
-			statusBar.startSession("test-session", 50000, 128000);
-			statusBar.updateStreamingProgress(500);
-
-			expect(mockStatusBarItem.text).toContain("500 out");
-		});
-
-		it("gets session totals for non-dimmed sessions", () => {
-			const sessionId = statusBar.startSession("test-session", 50000, 128000);
-			statusBar.showUsage(
-				{ inputTokens: 50000, outputTokens: 1000, maxInputTokens: 128000 },
-				sessionId,
-			);
-
-			const totals = statusBar.getSessionTotals();
-			expect(totals.inputTokens).toBe(50000);
-			expect(totals.outputTokens).toBe(1000);
+			expect(mockStatusBarItem.tooltip).toContain("claude-sonnet-4");
+			expect(mockStatusBarItem.tooltip).toContain("52,000");
 		});
 	});
 });

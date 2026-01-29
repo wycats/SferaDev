@@ -40,6 +40,7 @@ import { extractErrorMessage, extractTokenCountFromError, logError, logger } fro
 import { ModelsClient } from "./models";
 import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
 import { parseModelIdentity } from "./models/identity";
+import { executeOpenResponsesChat } from "./provider/openresponses-chat.js";
 import type { TokenStatusBar } from "./status-bar";
 import { TokenCache } from "./tokens/cache";
 import { TokenCounter } from "./tokens/counter";
@@ -144,10 +145,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 	private readonly modelInfoChangeEmitter = new vscode.EventEmitter<void>();
 	readonly onDidChangeLanguageModelChatInformation = this.modelInfoChangeEmitter.event;
 	private statusBar: TokenStatusBar | null = null;
-	/** Track streaming output for real-time status bar updates */
-	private streamingOutputChars: number = 0;
-	private lastStatusBarUpdate: number = 0;
-	private currentSessionId: string | null = null;
+	/** Current agent ID for status bar tracking */
+	private currentAgentId: string | null = null;
 
 	constructor(context: ExtensionContext, configService: ConfigService = new ConfigService()) {
 		this.context = context;
@@ -158,6 +157,11 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 		this.enricher = new ModelEnricher(configService);
 		// Initialize enricher persistence for faster startup
 		this.enricher.initializePersistence(context.globalState);
+		// Initialize models client persistence for instant model availability on reload
+		// The callback fires when models are updated in the background, triggering VS Code refresh
+		this.modelsClient.initializePersistence(context.globalState, () => {
+			this.modelInfoChangeEmitter.fire();
+		});
 	}
 
 	/**
@@ -227,7 +231,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 			return models;
 		} catch (error) {
-			logger.error(ERROR_MESSAGES.MODELS_FETCH_FAILED, error);
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			logger.error(ERROR_MESSAGES.MODELS_FETCH_FAILED, { error: errorMessage });
 			return [];
 		}
 	}
@@ -327,12 +332,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 			this.lastEstimatedInputTokens = estimatedTokens;
 
-			// Start a session in the status bar for tracking across subagent calls
-			// Use chatId as the session ID so subagents can join the same session
-			this.currentSessionId =
-				this.statusBar?.startSession(chatId, estimatedTokens, maxInputTokens) ?? null;
-			this.streamingOutputChars = 0;
-			this.lastStatusBarUpdate = Date.now();
+			// Start tracking this agent in the status bar
+			this.currentAgentId = chatId;
+			this.statusBar?.startAgent(chatId, estimatedTokens, maxInputTokens, model.id);
 
 			const apiKey = await this.getApiKey(false);
 			if (!apiKey) {
@@ -342,6 +344,40 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			// Lazy enrichment: fetch additional metadata on first use of each model
 			if (this.configService.modelsEnrichmentEnabled) {
 				await this.enrichModelIfNeeded(model.id, apiKey);
+			}
+
+			// Route to OpenResponses implementation if experimental flag is enabled
+			// This provides more accurate token usage reporting
+			if (this.configService.experimentalUseOpenResponses) {
+				logger.debug(`[OpenResponses] Using experimental OpenResponses API for ${model.id}`);
+				const result = await executeOpenResponsesChat(
+					model,
+					chatMessages,
+					options,
+					progress,
+					token,
+					{
+						configService: this.configService,
+						statusBar: this.statusBar,
+						apiKey,
+						estimatedInputTokens: estimatedTokens,
+						chatId,
+					},
+				);
+
+				// Update last selected model on success
+				if (result.success) {
+					await this.context.workspaceState.update(LAST_SELECTED_MODEL_KEY, model.id);
+					logger.info(`[OpenResponses] Chat request completed for ${model.id}`);
+				}
+
+				// Clear tracking state
+				this.currentRequestMessages = null;
+				this.currentRequestModelFamily = null;
+				this.currentRequestMaxInputTokens = undefined;
+				this.currentRequestModelId = undefined;
+				this.currentAgentId = null;
+				return;
 			}
 
 			const gateway = createGatewayProvider({
@@ -397,13 +433,18 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			// toUIMessageStream() hides tool calls and is designed for UI rendering,
 			// while fullStream exposes all events needed for VS Code tool execution.
 			let chunkCount = 0;
+			const chunkTypes: string[] = [];
 			for await (const chunk of response.fullStream) {
+				const chunkType = (chunk as { type?: string }).type ?? "unknown";
+				chunkTypes.push(chunkType);
 				this.handleStreamChunk(chunk, progress);
 				// Track if we've emitted any response content
+				// Include "error" because handleErrorChunk emits error text to the user
 				if (
-					(chunk as { type?: string }).type === "text-delta" ||
-					(chunk as { type?: string }).type === "tool-call" ||
-					(chunk as { type?: string }).type === "tool-result"
+					chunkType === "text-delta" ||
+					chunkType === "tool-call" ||
+					chunkType === "tool-result" ||
+					chunkType === "error"
 				) {
 					responseSent = true;
 				}
@@ -411,17 +452,63 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			}
 
 			// Safety check: if we got no chunks or no response was sent, emit something
+			// CRITICAL: VS Code shows "Sorry, no response was returned" if we don't emit anything
 			if (!responseSent && chunkCount === 0) {
 				logger.error(`Stream completed with no chunks for chat ${chatId}`);
 				progress.report(
 					new LanguageModelTextPart(
-						`**Error**: No response received from model. Please try again.`,
+						`**Error**: No response received from model. The request completed but the model returned no content. Please try again.`,
 					),
 				);
 			} else if (!responseSent) {
-				logger.warn(
-					`Stream completed with ${chunkCount} chunks but no content emitted for chat ${chatId}`,
+				// This can happen if the model only sends metadata chunks (finish, start-step, etc.)
+				// without any actual content. We MUST emit something or VS Code shows "no response".
+				const uniqueTypes = [...new Set(chunkTypes)].join(", ");
+				logger.error(
+					`Stream completed with ${chunkCount} chunks but no content emitted for chat ${chatId}. ` +
+						`Chunk types received: [${uniqueTypes}]. ` +
+						`This usually indicates a model or gateway issue.`,
 				);
+				progress.report(
+					new LanguageModelTextPart(
+						`**Error**: The model responded with ${chunkCount} metadata chunk(s) but no content. ` +
+							`Received types: ${uniqueTypes}. ` +
+							`This may indicate a temporary issue with the model or gateway. Please try again.`,
+					),
+				);
+			}
+
+			// Get final usage and finish reason from the response object
+			// These are more reliable than the finish chunk for some providers
+			try {
+				const [finalUsage, finalFinishReason] = await Promise.all([
+					response.usage,
+					response.finishReason,
+				]);
+				logger.debug(
+					`[Stream] Async response.usage/finishReason (NOT finish chunk)`,
+					JSON.stringify({
+						finishReason: finalFinishReason,
+						inputTokens: finalUsage?.inputTokens,
+						outputTokens: finalUsage?.outputTokens,
+						rawUsage: finalUsage,
+					}),
+				);
+
+				// If we got actual usage data, update the status bar
+				if (finalUsage?.inputTokens !== undefined && this.currentAgentId && this.statusBar) {
+					logger.debug(
+						`[Stream] Updating agent with final usage: ${finalUsage.inputTokens} input, ${finalUsage.outputTokens ?? 0} output`,
+					);
+					this.statusBar.completeAgent(this.currentAgentId, {
+						inputTokens: finalUsage.inputTokens,
+						outputTokens: finalUsage.outputTokens ?? 0,
+						maxInputTokens: this.currentRequestMaxInputTokens,
+						modelId: this.currentRequestModelId,
+					});
+				}
+			} catch (usageError) {
+				logger.debug(`[Stream] Could not get final usage/finishReason: ${usageError}`);
 			}
 
 			await this.context.workspaceState.update(LAST_SELECTED_MODEL_KEY, model.id);
@@ -458,7 +545,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 					`Token limit exceeded: ${tokenInfo.actualTokens.toLocaleString()} tokens ` +
 						`(max: ${tokenInfo.maxTokens?.toLocaleString() ?? "unknown"})`,
 				);
-				this.statusBar?.markSessionError(this.currentSessionId ?? undefined);
+				if (this.currentAgentId) {
+					this.statusBar?.errorAgent(this.currentAgentId);
+				}
 			}
 
 			// CRITICAL: Always emit an error response to prevent "no response returned" error.
@@ -473,8 +562,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			this.currentRequestModelFamily = null;
 			this.currentRequestMaxInputTokens = undefined;
 			this.currentRequestModelId = undefined;
-			this.currentSessionId = null;
-			this.streamingOutputChars = 0;
+			this.currentAgentId = null;
 			this.toolCallBuffer.clear();
 			abortSubscription.dispose();
 		}
@@ -836,16 +924,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 				const textContent = chunkWithText.textDelta ?? chunkWithText.text;
 				if (textContent) {
 					progress.report(new LanguageModelTextPart(textContent));
-
-					// Track output for status bar updates (estimate ~4 chars per token)
-					this.streamingOutputChars += textContent.length;
-					const now = Date.now();
-					// Update status bar every 500ms to avoid excessive updates
-					if (now - this.lastStatusBarUpdate > 500) {
-						const estimatedOutputTokens = Math.round(this.streamingOutputChars / 4);
-						this.statusBar?.updateStreamingProgress(estimatedOutputTokens);
-						this.lastStatusBarUpdate = now;
-					}
 				}
 				break;
 			}
@@ -884,16 +962,46 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			case "start-step":
 				break;
 
-			case "abort":
+			case "abort": {
 				// Abort means the request was cancelled - discard incomplete tool calls.
+				const abortChunk = chunk as { type: "abort"; reason?: unknown };
+				logger.info(
+					`[Stream] Request aborted`,
+					JSON.stringify({
+						currentAgentId: this.currentAgentId,
+						reason: abortChunk.reason ?? "unknown",
+						bufferedToolCalls: this.toolCallBuffer.size,
+					}),
+				);
 				this.toolCallBuffer.clear();
 				break;
+			}
 
 			case "finish-step": {
+				const finishStepChunk = chunk as {
+					type: "finish-step";
+					finishReason?: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other";
+					usage?: { inputTokens?: number; outputTokens?: number };
+				};
+				logger.debug(
+					`[Stream] finish-step`,
+					JSON.stringify({
+						finishReason: finishStepChunk.finishReason ?? "unknown",
+						inputTokens: finishStepChunk.usage?.inputTokens,
+						outputTokens: finishStepChunk.usage?.outputTokens,
+					}),
+				);
+				// If this step finished due to length, that's a warning sign
+				if (finishStepChunk.finishReason === "length") {
+					logger.warn(`[Stream] Step finished due to length limit - response may be truncated`);
+				}
 				break;
 			}
 
 			case "finish": {
+				// Log the ENTIRE raw finish chunk first - before any extraction
+				logger.debug(`[Stream] FULL finish chunk (raw)`, JSON.stringify(chunk));
+
 				// Flush any buffered tool calls before finishing
 				this.flushToolCallBuffer(progress);
 
@@ -906,6 +1014,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 				const finishChunk = chunk as {
 					type: "finish";
+					finishReason?: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other";
+					rawFinishReason?: string;
 					totalUsage?: { inputTokens?: number; outputTokens?: number };
 					providerMetadata?: {
 						anthropic?: {
@@ -920,6 +1030,44 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 						};
 					};
 				};
+
+				// Log the raw finish chunk for debugging - this helps understand what the API returns
+				logger.debug(
+					`[Stream] Extracted finish chunk fields`,
+					JSON.stringify({
+						type: finishChunk.type,
+						finishReason: (chunk as { finishReason?: string }).finishReason,
+						rawFinishReason: (chunk as { rawFinishReason?: string }).rawFinishReason,
+						hasTotalUsage: finishChunk.totalUsage !== undefined,
+						totalUsageInputTokens: finishChunk.totalUsage?.inputTokens,
+						totalUsageOutputTokens: finishChunk.totalUsage?.outputTokens,
+						hasProviderMetadata: finishChunk.providerMetadata !== undefined,
+						providerMetadataKeys: finishChunk.providerMetadata
+							? Object.keys(finishChunk.providerMetadata)
+							: [],
+					}),
+				);
+
+				// Log finish reason - this is critical for understanding why the model stopped
+				const finishReason = (chunk as { finishReason?: string }).finishReason as
+					| "stop"
+					| "length"
+					| "content-filter"
+					| "tool-calls"
+					| "error"
+					| "other"
+					| undefined;
+				const rawFinishReason = (chunk as { rawFinishReason?: string }).rawFinishReason;
+				if (finishReason && finishReason !== "stop") {
+					// Non-standard finish reasons are worth logging at info level
+					logger.info(
+						`[Stream] Non-standard finish reason: ${finishReason}${rawFinishReason ? ` (raw: ${rawFinishReason})` : ""}`,
+					);
+				}
+				logger.debug(
+					`[Stream] Finish reason: ${finishReason ?? "unknown"}${rawFinishReason ? ` (raw: ${rawFinishReason})` : ""}`,
+				);
+
 				const actualInputTokens = finishChunk.totalUsage?.inputTokens;
 				if (actualInputTokens !== undefined) {
 					// Cache actual token counts for each message (for future cache lookups)
@@ -950,17 +1098,50 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 						`Context compaction applied: ${appliedEdits.length} edit${appliedEdits.length === 1 ? "" : "s"}, freed ${freedTokens.toLocaleString()} tokens`,
 					);
 				}
-				if (actualInputTokens !== undefined) {
-					this.statusBar?.showUsage(
-						{
-							inputTokens: actualInputTokens,
-							outputTokens,
-							maxInputTokens: this.currentRequestMaxInputTokens,
-							modelId: this.currentRequestModelId,
-							contextManagement: appliedEdits ? { appliedEdits } : undefined,
-						},
-						this.currentSessionId ?? undefined,
+
+				// Debug: Log finish chunk details for status bar tracking
+				logger.debug(
+					`[StatusBar] finish chunk received`,
+					JSON.stringify({
+						currentAgentId: this.currentAgentId,
+						hasActualInputTokens: actualInputTokens !== undefined,
+						actualInputTokens,
+						outputTokens,
+						estimatedTokens: this.lastEstimatedInputTokens,
+						maxInputTokens: this.currentRequestMaxInputTokens,
+						modelId: this.currentRequestModelId,
+						hasAppliedEdits: (appliedEdits?.length ?? 0) > 0,
+					}),
+				);
+
+				// Log context management details if any edits were applied
+				if (appliedEdits && appliedEdits.length > 0) {
+					logger.debug(
+						`[ContextMgmt] Applied edits`,
+						JSON.stringify({
+							currentAgentId: this.currentAgentId,
+							editCount: appliedEdits.length,
+							edits: appliedEdits.map((edit) => ({
+								type: edit.type,
+								clearedInputTokens: edit.clearedInputTokens,
+								clearedToolUses: edit.clearedToolUses,
+								clearedThinkingTurns: edit.clearedThinkingTurns,
+							})),
+							totalFreedTokens: appliedEdits.reduce((sum, e) => sum + e.clearedInputTokens, 0),
+						}),
 					);
+				}
+
+				// Always complete the agent, using estimated tokens as fallback
+				if (this.currentAgentId) {
+					const inputTokensToReport = actualInputTokens ?? this.lastEstimatedInputTokens;
+					this.statusBar?.completeAgent(this.currentAgentId, {
+						inputTokens: inputTokensToReport,
+						outputTokens,
+						maxInputTokens: this.currentRequestMaxInputTokens,
+						modelId: this.currentRequestModelId,
+						contextManagement: appliedEdits ? { appliedEdits } : undefined,
+					});
 				}
 				break;
 			}
@@ -986,6 +1167,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			// Tool input lifecycle - we wait for complete tool-call
 			case "tool-input-start":
 			case "tool-input-delta":
+			case "tool-input-end":
 				break;
 
 			default:
@@ -1094,7 +1276,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 			toolCallId: string;
 			argsTextDelta: string;
 		},
-		progress: Progress<LanguageModelResponsePart>,
+		_progress: Progress<LanguageModelResponsePart>,
 	): void {
 		const buffered = this.toolCallBuffer.get(chunk.toolCallId);
 		if (!buffered) {

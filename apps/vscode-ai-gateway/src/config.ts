@@ -46,6 +46,16 @@ export class ConfigService implements vscode.Disposable {
 		return `${trimmed}/v1/ai`;
 	}
 
+	/**
+	 * Base URL for OpenResponses API.
+	 * Per Vercel docs: https://ai-gateway.vercel.sh/v1/responses
+	 * The client appends /responses, so we return just /v1
+	 */
+	get openResponsesBaseUrl(): string {
+		const trimmed = this.endpoint.replace(/\/+$/, "");
+		return `${trimmed}/v1`;
+	}
+
 	get timeout(): number {
 		return this.config.get("timeout", DEFAULT_TIMEOUT_MS);
 	}
@@ -100,5 +110,17 @@ export class ConfigService implements vscode.Disposable {
 
 	get modelsEnrichmentEnabled(): boolean {
 		return this.config.get("models.enrichmentEnabled", true);
+	}
+
+	get statusBarShowOutputTokens(): boolean {
+		return this.config.get("statusBar.showOutputTokens", false);
+	}
+
+	/**
+	 * Whether to use the OpenResponses API directly instead of the Vercel AI SDK.
+	 * This provides more accurate token usage reporting.
+	 */
+	get experimentalUseOpenResponses(): boolean {
+		return this.config.get("experimental.useOpenResponses", false);
 	}
 }

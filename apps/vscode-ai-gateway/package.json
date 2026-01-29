@@ -180,6 +180,16 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Fetch per-model metadata to refine capabilities and token limits"
+				},
+				"vercelAiGateway.statusBar.showOutputTokens": {
+					"type": "boolean",
+					"default": false,
+					"description": "Show output token count in status bar (useful for cost tracking)"
+				},
+				"vercelAiGateway.experimental.useOpenResponses": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Use the OpenResponses API directly instead of the Vercel AI SDK. **Experimental**: Provides more accurate token usage reporting but may have compatibility differences. Enable this if you need reliable token counts in the status bar."
 				}
 			}
 		}
@@ -210,6 +220,7 @@
 	"dependencies": {
 		"@ai-sdk/gateway": "catalog:",
 		"ai": "catalog:",
-		"js-tiktoken": "^1.0.15"
+		"js-tiktoken": "^1.0.15",
+		"openresponses-client": "workspace:*"
 	}
 }

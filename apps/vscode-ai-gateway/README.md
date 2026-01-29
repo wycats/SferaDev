@@ -8,6 +8,7 @@ A VS Code extension that provides [Vercel AI Gateway](https://vercel.com/docs/ai
 - **Native Integration** - Works with VS Code's built-in chat interface and Copilot
 - **Streaming Responses** - Real-time streaming of AI responses
 - **Tool Calling** - Full support for VS Code tool integration
+- **OpenResponses API** - Uses the [OpenResponses](https://www.openresponses.org) wire protocol for accurate token usage
 
 ## Quick Start
 
@@ -16,11 +17,30 @@ A VS Code extension that provides [Vercel AI Gateway](https://vercel.com/docs/ai
 3. Run "Vercel AI Gateway: Manage Authentication"
 4. Enter your API key (starts with `vck_`)
 
+## Architecture
+
+This extension uses two API modes:
+
+1. **Vercel AI SDK** - For standard chat completions (legacy)
+2. **OpenResponses API** - For streaming with accurate token usage reporting
+
+### OpenResponses Integration
+
+The OpenResponses integration (`src/provider/openresponses-chat.ts`) communicates directly with the OpenResponses wire protocol.
+
+**Important**: The OpenResponses API is:
+
+- **NOT** the OpenAI Chat Completions API
+- **NOT** the Vercel AI SDK format
+- A distinct wire protocol based on (but independent from) the OpenAI Responses API
+
+See the [openresponses-client documentation](../../packages/openresponses-client/README.md) for details.
+
 ## Documentation
 
-For detailed documentation including authentication options, usage guides, and troubleshooting, visit:
-
-**[https://sferadev.com/docs/packages/vscode-extension-vercel-ai](https://sferadev.com/docs/packages/vscode-extension-vercel-ai)**
+- **Extension Docs**: [https://sferadev.com/docs/packages/vscode-extension-vercel-ai](https://sferadev.com/docs/packages/vscode-extension-vercel-ai)
+- **OpenResponses Spec**: [../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md](../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md)
+- **OpenAPI Schema**: [../../packages/openresponses-client/openapi.json](../../packages/openresponses-client/openapi.json)
 
 ## License
 

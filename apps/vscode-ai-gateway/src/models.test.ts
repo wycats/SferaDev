@@ -73,11 +73,23 @@ describe("ModelsClient", () => {
 		return transform(models);
 	};
 
+	/**
+	 * Create a properly mocked fetch response with headers support
+	 */
+	const createMockResponse = (models: Model[], etag?: string) => ({
+		ok: true,
+		status: 200,
+		json: async () => ({ data: models }),
+		headers: {
+			get: (name: string) => (name.toLowerCase() === "etag" ? (etag ?? null) : null),
+		},
+	});
+
 	beforeEach(() => {
 		originalFetch = globalThis.fetch;
 		vi.clearAllMocks();
 		hoisted.mockGetConfiguration.mockReturnValue({
-			get: vi.fn((key: string, defaultValue: unknown) => defaultValue),
+			get: vi.fn((_key: string, defaultValue: unknown) => defaultValue),
 		});
 	});
 
@@ -106,10 +118,7 @@ describe("ModelsClient", () => {
 			},
 		];
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({ data: models }),
-		});
+		const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
 
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -176,10 +185,7 @@ describe("ModelsClient", () => {
 			},
 		];
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({ data: models }),
-		});
+		const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
 
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -213,10 +219,7 @@ describe("ModelsClient", () => {
 			},
 		];
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({ data: models }),
-		});
+		const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
 
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -272,10 +275,7 @@ describe("ModelsClient", () => {
 			},
 		];
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({ data: models }),
-		});
+		const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
 
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -329,10 +329,7 @@ describe("ModelsClient", () => {
 			},
 		];
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({ data: models }),
-		});
+		const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
 
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 
@@ -379,10 +376,7 @@ describe("ModelsClient", () => {
 			},
 		];
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({ data: models }),
-		});
+		const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
 
 		globalThis.fetch = mockFetch as unknown as typeof fetch;
 

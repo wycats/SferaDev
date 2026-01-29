@@ -1,4 +1,4 @@
-import type { LanguageModelChatInformation } from "vscode";
+import type { LanguageModelChatInformation, Memento } from "vscode";
 import { ConfigService } from "./config";
 import { MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
 import { logger } from "./logger";
@@ -26,56 +26,218 @@ interface ModelsResponse {
 	data: Model[];
 }
 
-interface ModelsCache {
+/**
+ * Persistent cache structure stored in globalState.
+ * Includes ETag for conditional requests and raw model data for filtering changes.
+ */
+interface PersistentModelsCache {
+	/** Unix timestamp when the cache was last successfully fetched */
 	fetchedAt: number;
+	/** ETag from the server for conditional GET requests */
+	etag: string | null;
+	/** Raw model data from the API (before VS Code transformation) */
+	rawModels: Model[];
+	/** Transformed VS Code model information */
 	models: LanguageModelChatInformation[];
 }
 
+const MODELS_CACHE_KEY = "vercelAiGateway.modelsCache";
+
 export class ModelsClient {
-	private modelsCache?: ModelsCache;
+	/** In-memory cache for fast access during the session */
+	private memoryCache: PersistentModelsCache | null = null;
+	/** VS Code global state for persistent storage across reloads */
+	private globalState: Memento | null = null;
+	/** Track if a background revalidation is in progress */
+	private revalidationInProgress = false;
 	private modelFilter: ModelFilter;
 	private configService: ConfigService;
+	/** Event callback for when models are updated */
+	private onModelsUpdated: (() => void) | null = null;
 
 	constructor(configService: ConfigService = new ConfigService()) {
 		this.configService = configService;
 		this.modelFilter = new ModelFilter(configService);
 	}
 
-	async getModels(apiKey: string): Promise<LanguageModelChatInformation[]> {
-		if (this.isModelsCacheFresh() && this.modelsCache) {
-			return this.modelsCache.models;
-		}
-		const startTime = Date.now();
-		const url = `${this.configService.endpoint}${MODELS_ENDPOINT}`;
-		logger.info(`Fetching models from ${url}`);
-		const data = await this.fetchModels(apiKey);
-		const models = this.transformToVSCodeModels(data);
-		logger.info(`Models fetched in ${Date.now() - startTime}ms, count: ${models.length}`);
+	/**
+	 * Initialize persistent storage. Call this during extension activation.
+	 * Restores cached models from previous sessions for instant availability.
+	 */
+	initializePersistence(globalState: Memento, onModelsUpdated?: () => void): void {
+		this.globalState = globalState;
+		this.onModelsUpdated = onModelsUpdated ?? null;
 
-		this.modelsCache = { fetchedAt: Date.now(), models };
-		return models;
+		// Restore cache from persistent storage
+		const cached = globalState.get<PersistentModelsCache>(MODELS_CACHE_KEY);
+		if (cached?.models && cached.models.length > 0) {
+			this.memoryCache = cached;
+			logger.debug(`Restored ${cached.models.length} models from persistent cache`);
+		}
 	}
 
-	private async fetchModels(apiKey: string): Promise<Model[]> {
-		const response = await fetch(`${this.configService.endpoint}${MODELS_ENDPOINT}`, {
-			headers: apiKey
-				? {
-						Authorization: `Bearer ${apiKey}`,
-					}
-				: {},
-		});
-
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	/**
+	 * Get models with stale-while-revalidate semantics.
+	 *
+	 * - Returns cached models immediately if available (even if stale)
+	 * - Triggers background revalidation if cache is stale
+	 * - Only blocks on network if no cache exists at all
+	 */
+	async getModels(apiKey: string): Promise<LanguageModelChatInformation[]> {
+		// If we have any cached models, return them immediately
+		if (this.memoryCache && this.memoryCache.models.length > 0) {
+			// Check if cache is stale and trigger background revalidation
+			if (!this.isModelsCacheFresh() && !this.revalidationInProgress) {
+				this.revalidateInBackground(apiKey);
+			}
+			return this.memoryCache.models;
 		}
 
-		const { data } = (await response.json()) as ModelsResponse;
-		return this.modelFilter.filterModels(data);
+		// No cache at all - must fetch synchronously
+		const startTime = Date.now();
+		const url = `${this.configService.endpoint}${MODELS_ENDPOINT}`;
+		logger.info(`Fetching models from ${url} (no cache available)`);
+
+		try {
+			const result = await this.fetchModels(apiKey, null);
+			if (result) {
+				const models = this.transformToVSCodeModels(result.rawModels);
+				logger.info(`Models fetched in ${Date.now() - startTime}ms, count: ${models.length}`);
+				await this.updateCache(result.rawModels, models, result.etag);
+				return models;
+			}
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			logger.error(`Failed to fetch models: ${errorMessage}`);
+		}
+
+		// Fetch failed and no cache - return empty
+		return [];
+	}
+
+	/**
+	 * Revalidate the cache in the background using stale-while-revalidate pattern.
+	 * Uses ETag for conditional requests to minimize bandwidth.
+	 */
+	private async revalidateInBackground(apiKey: string): Promise<void> {
+		if (this.revalidationInProgress) return;
+
+		this.revalidationInProgress = true;
+		const currentEtag = this.memoryCache?.etag ?? null;
+
+		logger.debug("Starting background model revalidation", {
+			hasEtag: !!currentEtag,
+		});
+
+		try {
+			const result = await this.fetchModels(apiKey, currentEtag);
+
+			if (result === null) {
+				// 304 Not Modified - cache is still valid, just update timestamp
+				if (this.memoryCache) {
+					this.memoryCache.fetchedAt = Date.now();
+					await this.persistCache();
+					logger.debug("Models cache validated (304 Not Modified)");
+				}
+			} else {
+				// New data received - update cache
+				const models = this.transformToVSCodeModels(result.rawModels);
+				const previousCount = this.memoryCache?.models.length ?? 0;
+				await this.updateCache(result.rawModels, models, result.etag);
+				logger.info(`Models cache updated: ${previousCount} -> ${models.length} models`);
+
+				// Notify listeners that models have changed
+				if (this.onModelsUpdated) {
+					this.onModelsUpdated();
+				}
+			}
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			logger.warn(`Background revalidation failed: ${errorMessage} (continuing with stale cache)`);
+			// On error, keep using stale cache - don't clear it
+		} finally {
+			this.revalidationInProgress = false;
+		}
+	}
+
+	/**
+	 * Fetch models from the API with optional ETag for conditional requests.
+	 * Returns null if server responds with 304 Not Modified.
+	 */
+	private async fetchModels(
+		apiKey: string,
+		etag: string | null,
+	): Promise<{ rawModels: Model[]; etag: string | null } | null> {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+		try {
+			const headers: Record<string, string> = {};
+			if (apiKey) {
+				headers["Authorization"] = `Bearer ${apiKey}`;
+			}
+			if (etag) {
+				headers["If-None-Match"] = etag;
+			}
+
+			const response = await fetch(`${this.configService.endpoint}${MODELS_ENDPOINT}`, {
+				headers,
+				signal: controller.signal,
+			});
+
+			// 304 Not Modified - cache is still valid
+			if (response.status === 304) {
+				return null;
+			}
+
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const { data } = (await response.json()) as ModelsResponse;
+			const newEtag = response.headers.get("ETag");
+			const filteredData = this.modelFilter.filterModels(data);
+
+			return { rawModels: filteredData, etag: newEtag };
+		} catch (error) {
+			if (error instanceof Error && error.name === "AbortError") {
+				throw new Error("Request timed out while fetching models");
+			}
+			throw error;
+		} finally {
+			clearTimeout(timeoutId);
+		}
+	}
+
+	/**
+	 * Update both memory and persistent cache.
+	 */
+	private async updateCache(
+		rawModels: Model[],
+		models: LanguageModelChatInformation[],
+		etag: string | null,
+	): Promise<void> {
+		this.memoryCache = {
+			fetchedAt: Date.now(),
+			etag,
+			rawModels,
+			models,
+		};
+		await this.persistCache();
+	}
+
+	/**
+	 * Persist the current cache to globalState for cross-session persistence.
+	 */
+	private async persistCache(): Promise<void> {
+		if (this.globalState && this.memoryCache) {
+			await this.globalState.update(MODELS_CACHE_KEY, this.memoryCache);
+		}
 	}
 
 	private isModelsCacheFresh(): boolean {
 		return Boolean(
-			this.modelsCache && Date.now() - this.modelsCache.fetchedAt < MODELS_CACHE_TTL_MS,
+			this.memoryCache && Date.now() - this.memoryCache.fetchedAt < MODELS_CACHE_TTL_MS,
 		);
 	}
 
