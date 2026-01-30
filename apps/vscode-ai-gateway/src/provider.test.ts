@@ -174,9 +174,10 @@ describe("Model selection memory", () => {
   });
 
   it("returns the last selected model id from workspace state", () => {
+    const getMock = vi.fn().mockReturnValue("stored-model");
     const context = {
       workspaceState: {
-        get: vi.fn().mockReturnValue("stored-model"),
+        get: getMock,
         update: vi.fn(),
       },
     } as unknown as ExtensionContext;
@@ -184,7 +185,7 @@ describe("Model selection memory", () => {
     const provider = new VercelAIChatModelProvider(context);
 
     expect(provider.getLastSelectedModelId()).toBe("stored-model");
-    expect(context.workspaceState.get).toHaveBeenCalledWith(
+    expect(getMock).toHaveBeenCalledWith(
       LAST_SELECTED_MODEL_KEY,
     );
   });

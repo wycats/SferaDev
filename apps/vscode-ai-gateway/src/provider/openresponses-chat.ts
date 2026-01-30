@@ -98,21 +98,20 @@ export async function executeOpenResponsesChat(
 
   // TRACE: Log raw VS Code messages
   logger.trace(
-    `[OpenResponses] Received ${chatMessages.length} messages from VS Code`,
+    `[OpenResponses] Received ${chatMessages.length.toString()} messages from VS Code`,
   );
-  for (let i = 0; i < chatMessages.length; i++) {
-    const msg = chatMessages[i];
+  chatMessages.forEach((msg, i) => {
     const roleName =
       msg.role === LanguageModelChatMessageRole.User
         ? "User"
         : msg.role === LanguageModelChatMessageRole.Assistant
           ? "Assistant"
-          : `Unknown(${msg.role})`;
+          : `Unknown(${String(msg.role)})`;
     const contentTypes = msg.content.map((p) => p.constructor.name).join(", ");
     logger.trace(
-      `[OpenResponses] Message[${i}]: role=${roleName}, parts=[${contentTypes}]`,
+      `[OpenResponses] Message[${i.toString()}]: role=${roleName}, parts=[${contentTypes}]`,
     );
-  }
+  });
 
   // Create client with trace logging
   const client = createClient({
@@ -149,9 +148,9 @@ export async function executeOpenResponsesChat(
 
   // Set up abort handling
   const abortController = new AbortController();
-  const abortSubscription = token.onCancellationRequested(() =>
-    { abortController.abort(); },
-  );
+  const abortSubscription = token.onCancellationRequested(() => {
+    abortController.abort();
+  });
 
   // Start tracking in status bar
   statusBar?.startAgent(
@@ -177,8 +176,11 @@ export async function executeOpenResponsesChat(
       model: model.id,
       input,
       stream: true,
-      temperature: options.modelOptions?.temperature ?? 0.7,
-      max_output_tokens: options.modelOptions?.maxOutputTokens ?? 4096,
+      temperature:
+        (options.modelOptions?.["temperature"] as number | undefined) ?? 0.7,
+      max_output_tokens:
+        (options.modelOptions?.["maxOutputTokens"] as number | undefined) ??
+        4096,
     };
 
     if (instructions) {
@@ -198,21 +200,22 @@ export async function executeOpenResponsesChat(
     );
 
     // TRACE: Log the first few input items to debug structure
-    logger.trace(`[OpenResponses] Request has ${input.length} input items`);
-    for (let i = 0; i < Math.min(3, input.length); i++) {
-      const item = input[i];
+    logger.trace(
+      `[OpenResponses] Request has ${input.length.toString()} input items`,
+    );
+    input.slice(0, 3).forEach((item, i) => {
       logger.trace(
-        `[OpenResponses] input[${i}]: type=${item.type}, role=${"role" in item ? item.role : "N/A"}`,
+        `[OpenResponses] input[${i.toString()}]: type=${item.type}, role=${"role" in item ? String(item.role) : "N/A"}`,
       );
       if ("content" in item && Array.isArray(item.content)) {
-        const contentTypes = item.content
-          .map((c: { type?: string }) => c.type || "unknown")
+        const contentTypes = (item.content as { type?: string }[])
+          .map((c) => c.type ?? "unknown")
           .join(", ");
         logger.trace(
-          `[OpenResponses] input[${i}] content types: [${contentTypes}]`,
+          `[OpenResponses] input[${i.toString()}] content types: [${contentTypes}]`,
         );
       }
-    }
+    });
 
     // Stream the response
     let toolCallCount = 0;
@@ -289,10 +292,14 @@ export async function executeOpenResponsesChat(
 
         result = {
           success: !adapted.error,
-          usage: adapted.usage,
-          error: adapted.error,
-          responseId: adapted.responseId,
-          finishReason: adapted.finishReason,
+          ...(adapted.usage !== undefined && { usage: adapted.usage }),
+          ...(adapted.error !== undefined && { error: adapted.error }),
+          ...(adapted.responseId !== undefined && {
+            responseId: adapted.responseId,
+          }),
+          ...(adapted.finishReason !== undefined && {
+            finishReason: adapted.finishReason,
+          }),
         };
 
         // Track usage

@@ -27,6 +27,7 @@ export default tseslint.config(
       "**/*.d.ts",
       ".reference/**",
       "packages/openresponses-client/src/generated/**",
+      "**/scripts/**",
     ],
   },
 );

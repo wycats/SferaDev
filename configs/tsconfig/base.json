@@ -1,15 +1,15 @@
 {
-	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "@tsconfig/strictest/tsconfig.json",
-	"compilerOptions": {
-		"composite": false,
-		"declaration": true,
-		"declarationMap": true,
-		"inlineSources": false,
-		"preserveWatchOutput": true,
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"target": "ESNext"
-	},
-	"exclude": ["node_modules"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": false,
+    "preserveWatchOutput": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext"
+  },
+  "exclude": ["node_modules"]
 }
