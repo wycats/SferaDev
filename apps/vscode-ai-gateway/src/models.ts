@@ -155,7 +155,8 @@ export class ModelsClient {
       return this.memoryCache.models;
     }
     if (this.globalState) {
-      const cached = this.globalState.get<PersistentModelsCache>(MODELS_CACHE_KEY);
+      const cached =
+        this.globalState.get<PersistentModelsCache>(MODELS_CACHE_KEY);
       if (cached?.rawModels && cached.rawModels.length > 0) {
         const models = this.transformToVSCodeModels(cached.rawModels);
         this.memoryCache = {
@@ -367,40 +368,49 @@ export class ModelsClient {
       "grounding",
     ]);
 
-    return data
-      .filter(
-        (model) =>
-          model.type === "chat" ||
-          model.type === "language" ||
-          model.type === undefined,
-      )
-      .map((model) => {
-        const identity = parseModelIdentity(model.id);
-        const tags = (model.tags ?? []).map((tag) => tag.toLowerCase());
-        const hasImageInput = tags.some((tag) => imageInputTags.has(tag));
-        const hasToolCalling = tags.some((tag) => toolCallingTags.has(tag));
-        const hasReasoning = tags.some((tag) => reasoningTags.has(tag));
-        const hasWebSearch = tags.some((tag) => webSearchTags.has(tag));
+    const filteredModels = data.filter(
+      (model) =>
+        model.type === "chat" ||
+        model.type === "language" ||
+        model.type === undefined,
+    );
 
-        return {
-          id: model.id,
-          name: model.name,
-          detail: "Vercel AI Gateway",
-          family: identity.family,
-          version: identity.version,
-          maxInputTokens: model.context_window,
-          maxOutputTokens: model.max_tokens,
-          tooltip: model.description || "No description available.",
-          capabilities: {
-            // Check tags array for capabilities - only advertise what the model actually supports
-            imageInput: hasImageInput || false,
-            // Only advertise tool calling if explicitly supported via tags
-            // Defaulting to true could cause issues with models that don't support tools
-            toolCalling: hasToolCalling || false,
-            reasoning: hasReasoning || false,
-            webSearch: hasWebSearch || false,
-          },
-        };
-      });
+    return filteredModels.map((model, index) => {
+      const identity = parseModelIdentity(model.id);
+      const tags = (model.tags ?? []).map((tag) => tag.toLowerCase());
+      const hasImageInput = tags.some((tag) => imageInputTags.has(tag));
+      const hasToolCalling = tags.some((tag) => toolCallingTags.has(tag));
+      const hasReasoning = tags.some((tag) => reasoningTags.has(tag));
+      const hasWebSearch = tags.some((tag) => webSearchTags.has(tag));
+
+      return {
+        id: model.id,
+        name: model.name,
+        detail: "Vercel AI Gateway",
+        family: identity.family,
+        version: identity.version,
+        maxInputTokens: model.context_window,
+        maxOutputTokens: model.max_tokens,
+        tooltip: model.description || "No description available.",
+        // Models are hidden from picker by default - users enable specific models via
+        // VS Code's "Manage Models" UI (gear icon in model picker). This prevents
+        // overwhelming users with 150+ models. User preferences persist in VS Code storage.
+        isUserSelectable: false,
+        // VS Code requires at least one model to have isDefault set, otherwise it falls back
+        // to cached models. Me,
+        // VS Code requires at least one model to have isDefault set, otherwise it falls back
+        // to cached models. Mark the first model as default for all locations.
+        isDefault: index === 0,
+        capabilities: {
+          // Check tags array for capabilities - only advertise what the model actually supports
+          imageInput: hasImageInput || false,
+          // Only advertise tool calling if explicitly supported via tags
+          // Defaulting to true could cause issues with models that don't support tools
+          toolCalling: hasToolCalling || false,
+          reasoning: hasReasoning || false,
+          webSearch: hasWebSearch || false,
+        },
+      };
+    });
   }
 }

@@ -279,8 +279,9 @@ async function* parseSSEStream(
 			if (done) {
 				// Process any remaining data in buffer
 				if (buffer.trim()) {
-					const event = parseSSELine(buffer);
-					if (event) yield event;
+					for (const event of parseSSEChunk(buffer)) {
+						yield event;
+					}
 				}
 				break;
 			}
@@ -288,12 +289,13 @@ async function* parseSSEStream(
 			buffer += decoder.decode(value, { stream: true });
 
 			// SSE events are separated by double newlines
-			const lines = buffer.split("\n\n");
-			buffer = lines.pop() ?? "";
+			const chunks = buffer.split("\n\n");
+			buffer = chunks.pop() ?? "";
 
-			for (const chunk of lines) {
-				const event = parseSSELine(chunk);
-				if (event) yield event;
+			for (const chunk of chunks) {
+				for (const event of parseSSEChunk(chunk)) {
+					yield event;
+				}
 			}
 		}
 	} finally {
@@ -302,32 +304,43 @@ async function* parseSSEStream(
 }
 
 /**
- * Parse a single SSE chunk into a typed event
+ * Parse a single SSE chunk into typed events.
+ * A chunk may contain multiple data lines (e.g., when network buffers combine events).
+ * Returns an array of all parsed events.
  */
-function parseSSELine(chunk: string): StreamingEvent | null {
-	// SSE format: "data: {...}\n" or "event: name\ndata: {...}\n"
+function parseSSEChunk(chunk: string): StreamingEvent[] {
+	const events: StreamingEvent[] = [];
+	// SSE format: "event: name\ndata: {...}\n" or just "data: {...}\n"
 	const lines = chunk.split("\n");
 
 	for (const line of lines) {
 		if (line.startsWith("data: ")) {
 			const jsonStr = line.slice(6); // Remove "data: " prefix
 
-			// Handle [DONE] signal (OpenAI convention)
+			// Handle [DONE] signal (OpenAI convention) - skip silently
 			if (jsonStr.trim() === "[DONE]") {
-				return null;
+				continue;
+			}
+
+			// Skip empty data lines
+			if (!jsonStr.trim()) {
+				continue;
 			}
 
 			try {
-				return JSON.parse(jsonStr) as StreamingEvent;
-			} catch {
-				// Skip malformed JSON
-				console.warn("Failed to parse SSE data:", jsonStr);
-				return null;
+				const parsed = JSON.parse(jsonStr) as StreamingEvent;
+				events.push(parsed);
+			} catch (e) {
+				// Log parse failure with context but don't throw
+				const preview = jsonStr.length > 100 ? jsonStr.slice(0, 100) + "..." : jsonStr;
+				console.warn(`[OpenResponses] Failed to parse SSE data: ${e instanceof Error ? e.message : String(e)}. Data: ${preview}`);
 			}
 		}
+		// Note: We intentionally ignore "event:" lines since OpenResponses uses
+		// the "type" field inside the JSON payload for event discrimination
 	}
 
-	return null;
+	return events;
 }
 
 // Type guards for common event types

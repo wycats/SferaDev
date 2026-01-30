@@ -12,32 +12,32 @@
  */
 
 import {
-	type CreateResponseBody,
-	createClient,
-	type FunctionToolParam,
-	type InputImageContentParamAutoParam,
-	type InputTextContentParam,
-	type ItemParam,
-	OpenResponsesError,
-	type OutputTextContentParam,
-	type Usage,
+  type CreateResponseBody,
+  createClient,
+  type FunctionToolParam,
+  type InputImageContentParamAutoParam,
+  type InputTextContentParam,
+  type ItemParam,
+  OpenResponsesError,
+  type OutputTextContentParam,
+  type Usage,
 } from "openresponses-client";
 import {
-	type CancellationToken,
-	type LanguageModelChatInformation,
-	type LanguageModelChatMessage,
-	LanguageModelChatMessageRole,
-	LanguageModelChatToolMode,
-	LanguageModelDataPart,
-	type LanguageModelResponsePart,
-	LanguageModelTextPart,
-	LanguageModelToolCallPart,
-	LanguageModelToolResultPart,
-	type Progress,
-	type ProvideLanguageModelChatResponseOptions,
+  type CancellationToken,
+  type LanguageModelChatInformation,
+  type LanguageModelChatMessage,
+  LanguageModelChatMessageRole,
+  LanguageModelChatToolMode,
+  LanguageModelDataPart,
+  type LanguageModelResponsePart,
+  LanguageModelTextPart,
+  LanguageModelToolCallPart,
+  LanguageModelToolResultPart,
+  type Progress,
+  type ProvideLanguageModelChatResponseOptions,
 } from "vscode";
 import type { ConfigService } from "../config.js";
-import { logger } from "../logger.js";
+import { extractTokenCountFromError, logger } from "../logger.js";
 import type { TokenStatusBar } from "../status-bar.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
 import { UsageTracker } from "./usage-tracker.js";
@@ -46,32 +46,34 @@ import { UsageTracker } from "./usage-tracker.js";
  * Options for the OpenResponses chat implementation
  */
 export interface OpenResponsesChatOptions {
-	/** Configuration service for settings */
-	configService: ConfigService;
-	/** Status bar for token display */
-	statusBar: TokenStatusBar | null;
-	/** API key for authentication */
-	apiKey: string;
-	/** Estimated input tokens (for status bar) */
-	estimatedInputTokens: number;
-	/** Chat ID for logging/tracking */
-	chatId: string;
+  /** Configuration service for settings */
+  configService: ConfigService;
+  /** Status bar for token display */
+  statusBar: TokenStatusBar | null;
+  /** API key for authentication */
+  apiKey: string;
+  /** Estimated input tokens (for status bar) */
+  estimatedInputTokens: number;
+  /** Chat ID for logging/tracking */
+  chatId: string;
 }
 
 /**
  * Result of the OpenResponses chat implementation
  */
 export interface OpenResponsesChatResult {
-	/** Usage data from the API response */
-	usage?: Usage;
-	/** Whether the response completed successfully */
-	success: boolean;
-	/** Error message if the response failed */
-	error?: string;
-	/** Response ID from the API */
-	responseId?: string;
-	/** Finish reason from the API */
-	finishReason?: AdaptedEvent["finishReason"];
+  /** Usage data from the API response */
+  usage?: Usage;
+  /** Whether the response completed successfully */
+  success: boolean;
+  /** Error message if the response failed */
+  error?: string;
+  /** Response ID from the API */
+  responseId?: string;
+  /** Finish reason from the API */
+  finishReason?: AdaptedEvent["finishReason"];
+  /** Token info extracted from "input too long" errors */
+  tokenInfo?: { actualTokens: number; maxTokens?: number };
 }
 
 /**
@@ -84,289 +86,405 @@ export interface OpenResponsesChatResult {
  * 4. Report token usage
  */
 export async function executeOpenResponsesChat(
-	model: LanguageModelChatInformation,
-	chatMessages: readonly LanguageModelChatMessage[],
-	options: ProvideLanguageModelChatResponseOptions,
-	progress: Progress<LanguageModelResponsePart>,
-	token: CancellationToken,
-	chatOptions: OpenResponsesChatOptions,
+  model: LanguageModelChatInformation,
+  chatMessages: readonly LanguageModelChatMessage[],
+  options: ProvideLanguageModelChatResponseOptions,
+  progress: Progress<LanguageModelResponsePart>,
+  token: CancellationToken,
+  chatOptions: OpenResponsesChatOptions,
 ): Promise<OpenResponsesChatResult> {
-	const { configService, statusBar, apiKey, estimatedInputTokens, chatId } = chatOptions;
+  const { configService, statusBar, apiKey, estimatedInputTokens, chatId } =
+    chatOptions;
 
-	// TRACE: Log raw VS Code messages
-	logger.trace(`[OpenResponses] Received ${chatMessages.length} messages from VS Code`);
-	for (let i = 0; i < chatMessages.length; i++) {
-		const msg = chatMessages[i];
-		const roleName =
-			msg.role === LanguageModelChatMessageRole.User
-				? "User"
-				: msg.role === LanguageModelChatMessageRole.Assistant
-					? "Assistant"
-					: `Unknown(${msg.role})`;
-		const contentTypes = msg.content.map((p) => p.constructor.name).join(", ");
-		logger.trace(`[OpenResponses] Message[${i}]: role=${roleName}, parts=[${contentTypes}]`);
-	}
+  // TRACE: Log raw VS Code messages
+  logger.trace(
+    `[OpenResponses] Received ${chatMessages.length} messages from VS Code`,
+  );
+  for (let i = 0; i < chatMessages.length; i++) {
+    const msg = chatMessages[i];
+    const roleName =
+      msg.role === LanguageModelChatMessageRole.User
+        ? "User"
+        : msg.role === LanguageModelChatMessageRole.Assistant
+          ? "Assistant"
+          : `Unknown(${msg.role})`;
+    const contentTypes = msg.content.map((p) => p.constructor.name).join(", ");
+    logger.trace(
+      `[OpenResponses] Message[${i}]: role=${roleName}, parts=[${contentTypes}]`,
+    );
+  }
 
-	// Create client with trace logging
-	const client = createClient({
-		baseUrl: configService.openResponsesBaseUrl,
-		apiKey,
-		timeout: configService.timeout,
-		log: (level, message, data) => {
-			const formatted =
-				data !== undefined ? `${message}: ${JSON.stringify(data, null, 2)}` : message;
-			switch (level) {
-				case "trace":
-					logger.trace(formatted);
-					break;
-				case "debug":
-					logger.debug(formatted);
-					break;
-				case "info":
-					logger.info(formatted);
-					break;
-				case "warn":
-					logger.warn(formatted);
-					break;
-				case "error":
-					logger.error(formatted);
-					break;
-			}
-		},
-	});
+  // Create client with trace logging
+  const client = createClient({
+    baseUrl: configService.openResponsesBaseUrl,
+    apiKey,
+    timeout: configService.timeout,
+    log: (level, message, data) => {
+      const formatted =
+        data !== undefined
+          ? `${message}: ${JSON.stringify(data, null, 2)}`
+          : message;
+      switch (level) {
+        case "trace":
+          logger.trace(formatted);
+          break;
+        case "debug":
+          logger.debug(formatted);
+          break;
+        case "info":
+          logger.info(formatted);
+          break;
+        case "warn":
+          logger.warn(formatted);
+          break;
+        case "error":
+          logger.error(formatted);
+          break;
+      }
+    },
+  });
 
-	const adapter = new StreamAdapter();
-	const usageTracker = new UsageTracker();
+  const adapter = new StreamAdapter();
+  const usageTracker = new UsageTracker();
 
-	// Set up abort handling
-	const abortController = new AbortController();
-	const abortSubscription = token.onCancellationRequested(() => abortController.abort());
+  // Set up abort handling
+  const abortController = new AbortController();
+  const abortSubscription = token.onCancellationRequested(() =>
+    abortController.abort(),
+  );
 
-	// Start tracking in status bar
-	statusBar?.startAgent(chatId, estimatedInputTokens, model.maxInputTokens, model.id);
+  // Start tracking in status bar
+  statusBar?.startAgent(
+    chatId,
+    estimatedInputTokens,
+    model.maxInputTokens,
+    model.id,
+  );
 
-	let responseSent = false;
-	let result: OpenResponsesChatResult = { success: false };
+  let responseSent = false;
+  let result: OpenResponsesChatResult = { success: false };
 
-	try {
-		// Translate messages to OpenResponses format
-		const { input, instructions, tools, toolChoice } = translateRequest(
-			chatMessages,
-			options,
-			configService,
-		);
+  try {
+    // Translate messages to OpenResponses format
+    const { input, instructions, tools, toolChoice } = translateRequest(
+      chatMessages,
+      options,
+      configService,
+    );
 
-		// Build the request body
-		const requestBody: CreateResponseBody = {
-			model: model.id,
-			input,
-			stream: true,
-			temperature: options.modelOptions?.temperature ?? 0.7,
-			max_output_tokens: options.modelOptions?.maxOutputTokens ?? 4096,
-		};
+    // Build the request body
+    const requestBody: CreateResponseBody = {
+      model: model.id,
+      input,
+      stream: true,
+      temperature: options.modelOptions?.temperature ?? 0.7,
+      max_output_tokens: options.modelOptions?.maxOutputTokens ?? 4096,
+    };
 
-		if (instructions) {
-			requestBody.instructions = instructions;
-		}
+    if (instructions) {
+      requestBody.instructions = instructions;
+    }
 
-		if (tools.length > 0) {
-			requestBody.tools = tools;
-			requestBody.tool_choice = toolChoice;
-		}
+    if (tools.length > 0) {
+      requestBody.tools = tools;
+      requestBody.tool_choice = toolChoice;
+    }
 
-		logger.debug(`[OpenResponses] Starting streaming request to ${model.id}`);
+    logger.debug(`[OpenResponses] Starting streaming request to ${model.id}`);
 
-		// DEBUG: Log the full request body for troubleshooting
-		logger.debug(`[OpenResponses] Full request body: ${JSON.stringify(requestBody, null, 2)}`);
+    // DEBUG: Log the full request body for troubleshooting
+    logger.debug(
+      `[OpenResponses] Full request body: ${JSON.stringify(requestBody, null, 2)}`,
+    );
 
-		// TRACE: Log the first few input items to debug structure
-		logger.trace(`[OpenResponses] Request has ${input.length} input items`);
-		for (let i = 0; i < Math.min(3, input.length); i++) {
-			const item = input[i];
-			logger.trace(
-				`[OpenResponses] input[${i}]: type=${item.type}, role=${"role" in item ? item.role : "N/A"}`,
-			);
-			if ("content" in item && Array.isArray(item.content)) {
-				const contentTypes = item.content
-					.map((c: { type?: string }) => c.type || "unknown")
-					.join(", ");
-				logger.trace(`[OpenResponses] input[${i}] content types: [${contentTypes}]`);
-			}
-		}
+    // TRACE: Log the first few input items to debug structure
+    logger.trace(`[OpenResponses] Request has ${input.length} input items`);
+    for (let i = 0; i < Math.min(3, input.length); i++) {
+      const item = input[i];
+      logger.trace(
+        `[OpenResponses] input[${i}]: type=${item.type}, role=${"role" in item ? item.role : "N/A"}`,
+      );
+      if ("content" in item && Array.isArray(item.content)) {
+        const contentTypes = item.content
+          .map((c: { type?: string }) => c.type || "unknown")
+          .join(", ");
+        logger.trace(
+          `[OpenResponses] input[${i}] content types: [${contentTypes}]`,
+        );
+      }
+    }
 
-		// Stream the response
-		for await (const event of client.createStreamingResponse(requestBody, abortController.signal)) {
-			const adapted = adapter.adapt(event);
+    // Stream the response
+    let toolCallCount = 0;
+    let textPartCount = 0;
+    let eventCount = 0;
+    const eventTypeCounts = new Map<string, number>();
+    for await (const event of client.createStreamingResponse(
+      requestBody,
+      abortController.signal,
+    )) {
+      eventCount++;
+      const eventType = (event as { type?: string }).type ?? "unknown";
+      eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
+      if (eventCount <= 25) {
+        logger.trace(
+          `[OpenResponses] Stream event #${eventCount}: ${eventType}`,
+        );
+      }
+      if (eventType === "response.completed") {
+        const response = (
+          event as { response?: { id?: string; output?: unknown } }
+        ).response;
+        const outputIsArray = Array.isArray(response?.output);
+        const outputLength = outputIsArray
+          ? (response?.output as unknown[]).length
+          : undefined;
+        logger.debug(
+          `[OpenResponses] response.completed received (id=${response?.id ?? "unknown"}, outputArray=${outputIsArray}, outputLen=${outputLength ?? "n/a"})`,
+        );
+      }
 
-			// Report all parts to VS Code
-			for (const part of adapted.parts) {
-				progress.report(part);
-				responseSent = true;
-			}
+      const adapted = adapter.adapt(event);
 
-			// Handle completion
-			if (adapted.done) {
-				result = {
-					success: !adapted.error,
-					usage: adapted.usage,
-					error: adapted.error,
-					responseId: adapted.responseId,
-					finishReason: adapted.finishReason,
-				};
+      // Report all parts to VS Code
+      for (const part of adapted.parts) {
+        // Log part types to diagnose tool call handling
+        if (part instanceof LanguageModelToolCallPart) {
+          toolCallCount++;
+          logger.info(
+            `[OpenResponses] Emitting tool call #${toolCallCount}: ${part.name} (callId: ${part.callId})`,
+          );
+        } else if (part instanceof LanguageModelTextPart) {
+          textPartCount++;
+          // Only log first few text parts to avoid spam
+          if (textPartCount <= 3) {
+            const preview = part.value.substring(0, 50).replace(/\n/g, "\\n");
+            logger.debug(
+              `[OpenResponses] Emitting text part #${textPartCount}: "${preview}..."`,
+            );
+          }
+        }
+        progress.report(part);
+        responseSent = true;
+      }
 
-				// Track usage
-				if (adapted.usage) {
-					usageTracker.record(chatId, adapted.usage);
-					logger.info(
-						`[OpenResponses] Response completed: ${adapted.usage.input_tokens} input, ` +
-							`${adapted.usage.output_tokens} output tokens`,
-					);
+      // Handle completion
+      if (adapted.done) {
+        logger.debug(
+          `[OpenResponses] Adapter done (finishReason=${adapted.finishReason ?? "n/a"}, parts=${adapted.parts.length})`,
+        );
+        const topTypes = Array.from(eventTypeCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([t, c]) => `${t}:${c}`)
+          .join(", ");
+        logger.debug(
+          `[OpenResponses] Stream event type counts (top): ${topTypes}`,
+        );
 
-					// Update status bar with actual usage
-					statusBar?.completeAgent(chatId, {
-						inputTokens: adapted.usage.input_tokens,
-						outputTokens: adapted.usage.output_tokens,
-						maxInputTokens: model.maxInputTokens,
-						modelId: model.id,
-					});
-				}
-				break;
-			}
-		}
+        // Log summary of what was emitted
+        logger.info(
+          `[OpenResponses] Stream summary: ${eventCount} events, ${textPartCount} text parts, ${toolCallCount} tool calls emitted`,
+        );
 
-		// Safety check: emit something if no response was sent
-		if (!responseSent) {
-			logger.error(`[OpenResponses] Stream completed with no content for chat ${chatId}`);
-			progress.report(
-				new LanguageModelTextPart(
-					`**Error**: No response received from model. The request completed but the model returned no content. Please try again.`,
-				),
-			);
-			result = { success: false, error: "No content received" };
-		}
+        result = {
+          success: !adapted.error,
+          usage: adapted.usage,
+          error: adapted.error,
+          responseId: adapted.responseId,
+          finishReason: adapted.finishReason,
+        };
 
-		return result;
-	} catch (error) {
-		// Handle abort/cancellation
-		if (
-			error instanceof Error &&
-			(error.name === "AbortError" || error.message.includes("abort"))
-		) {
-			logger.debug(`[OpenResponses] Request was cancelled`);
-			return { success: false, error: "Cancelled" };
-		}
+        // Track usage
+        if (adapted.usage) {
+          usageTracker.record(chatId, adapted.usage);
+          logger.info(
+            `[OpenResponses] Response completed: ${adapted.usage.input_tokens} input, ` +
+              `${adapted.usage.output_tokens} output tokens`,
+          );
 
-		// Handle API errors
-		const errorMessage =
-			error instanceof OpenResponsesError
-				? `${error.message} (${error.code ?? error.status})`
-				: error instanceof Error
-					? error.message
-					: "Unknown error";
+          // Update status bar with actual usage
+          statusBar?.completeAgent(chatId, {
+            inputTokens: adapted.usage.input_tokens,
+            outputTokens: adapted.usage.output_tokens,
+            maxInputTokens: model.maxInputTokens,
+            modelId: model.id,
+          });
+        }
+        break;
+      }
+    }
 
-		logger.error(`[OpenResponses] Request failed: ${errorMessage}`);
+    // Safety check: emit something if no response was sent
+    if (!responseSent) {
+      logger.error(
+        `[OpenResponses] Stream completed with no content for chat ${chatId}`,
+      );
+      progress.report(
+        new LanguageModelTextPart(
+          `**Error**: No response received from model. The request completed but the model returned no content. Please try again.`,
+        ),
+      );
+      result = { success: false, error: "No content received" };
+    }
 
-		// Emit error to user if we haven't sent anything yet
-		if (!responseSent) {
-			progress.report(new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`));
-		}
+    return result;
+  } catch (error) {
+    // Handle abort/cancellation
+    if (
+      error instanceof Error &&
+      (error.name === "AbortError" || error.message.includes("abort"))
+    ) {
+      logger.debug(`[OpenResponses] Request was cancelled`);
+      return { success: false, error: "Cancelled" };
+    }
 
-		statusBar?.errorAgent(chatId);
+    // Handle API errors
+    const errorMessage =
+      error instanceof OpenResponsesError
+        ? `${error.message} (${error.code ?? error.status})`
+        : error instanceof Error
+          ? error.message
+          : "Unknown error";
 
-		return { success: false, error: errorMessage };
-	} finally {
-		abortSubscription.dispose();
-		adapter.reset();
-	}
+    logger.error(`[OpenResponses] Request failed: ${errorMessage}`);
+
+    // Extract token info from "input too long" errors for compaction triggering.
+    // First try to get structured data from OpenResponsesError.details
+    let tokenInfo = extractTokenInfoFromDetails(error);
+
+    // Fall back to regex extraction from error message
+    if (!tokenInfo) {
+      tokenInfo = extractTokenCountFromError(error);
+    }
+
+    // Final fallback: if error indicates "too long" but we couldn't parse exact count,
+    // use maxInputTokens + 1 to guarantee we trigger compaction
+    if (
+      !tokenInfo &&
+      errorMessage.toLowerCase().includes("too long") &&
+      model.maxInputTokens > 0
+    ) {
+      tokenInfo = {
+        actualTokens: model.maxInputTokens + 1,
+        maxTokens: model.maxInputTokens,
+      };
+      logger.info(
+        `[OpenResponses] Using maxInputTokens fallback for compaction trigger: ` +
+          `${tokenInfo.actualTokens} > ${model.maxInputTokens}`,
+      );
+    }
+
+    if (tokenInfo) {
+      logger.info(
+        `[OpenResponses] Token info for compaction: ${tokenInfo.actualTokens} tokens ` +
+          `(max: ${tokenInfo.maxTokens ?? "unknown"})`,
+      );
+    }
+
+    // Emit error to user if we haven't sent anything yet
+    if (!responseSent) {
+      progress.report(
+        new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`),
+      );
+    }
+
+    statusBar?.errorAgent(chatId);
+
+    return { success: false, error: errorMessage, tokenInfo };
+  } finally {
+    abortSubscription.dispose();
+    adapter.reset();
+  }
 }
 
 /**
  * Translate a VS Code chat request to OpenResponses format.
  */
 function translateRequest(
-	messages: readonly LanguageModelChatMessage[],
-	options: ProvideLanguageModelChatResponseOptions,
-	configService: ConfigService,
+  messages: readonly LanguageModelChatMessage[],
+  options: ProvideLanguageModelChatResponseOptions,
+  configService: ConfigService,
 ): {
-	input: ItemParam[];
-	instructions?: string;
-	tools: FunctionToolParam[];
-	toolChoice: "auto" | "required" | "none";
+  input: ItemParam[];
+  instructions?: string;
+  tools: FunctionToolParam[];
+  toolChoice: "auto" | "required" | "none";
 } {
-	const input: ItemParam[] = [];
+  const input: ItemParam[] = [];
 
-	// Handle system prompt
-	const systemPromptEnabled = configService.systemPromptEnabled;
-	const systemPromptMessage = configService.systemPromptMessage;
-	let instructions: string | undefined;
+  // Handle system prompt
+  const systemPromptEnabled = configService.systemPromptEnabled;
+  const systemPromptMessage = configService.systemPromptMessage;
+  let instructions: string | undefined;
 
-	if (systemPromptEnabled && systemPromptMessage?.trim()) {
-		// VS Code does not provide a system/developer role in LanguageModelChatMessageRole.
-		// System prompts are passed via options (config-driven here), so we map them to
-		// OpenResponses `instructions` instead of synthesizing a message.
-		// If VS Code introduces system/developer roles in the future, they will be mapped
-		// explicitly in translateMessage via resolveOpenResponsesRole().
-		// Use instructions field for system prompt (OpenResponses preferred approach)
-		instructions = systemPromptMessage;
-	}
+  if (systemPromptEnabled && systemPromptMessage?.trim()) {
+    // VS Code does not provide a system/developer role in LanguageModelChatMessageRole.
+    // System prompts are passed via options (config-driven here), so we map them to
+    // OpenResponses `instructions` instead of synthesizing a message.
+    // If VS Code introduces system/developer roles in the future, they will be mapped
+    // explicitly in translateMessage via resolveOpenResponsesRole().
+    // Use instructions field for system prompt (OpenResponses preferred approach)
+    instructions = systemPromptMessage;
+  }
 
-	// Build tool name map for resolving tool result -> tool call relationships
-	const toolNameMap = buildToolNameMap(messages);
+  // Build tool name map for resolving tool result -> tool call relationships
+  const toolNameMap = buildToolNameMap(messages);
 
-	// Convert each message
-	for (const message of messages) {
-		const translated = translateMessage(message, toolNameMap);
-		input.push(...translated);
-	}
+  // Convert each message
+  for (const message of messages) {
+    const translated = translateMessage(message, toolNameMap);
+    input.push(...translated);
+  }
 
-	// CRITICAL: Filter out any items with empty content to prevent API 400 errors
-	// This can happen when messages contain only unsupported parts (e.g., tool calls
-	// that we intentionally skip, or data parts in assistant roles)
-	const validInput = input.filter((item) => {
-		if (item.type !== "message") return true; // Non-message items are kept
-		const msg = item as { content?: string | unknown[] };
-		if (typeof msg.content === "string") {
-			return msg.content.length > 0;
-		}
-		if (Array.isArray(msg.content)) {
-			return msg.content.length > 0;
-		}
-		return true; // Keep if content is not string or array (shouldn't happen)
-	});
+  // CRITICAL: Filter out any items with empty content to prevent API 400 errors
+  // This can happen when messages contain only unsupported parts (e.g., tool calls
+  // that we intentionally skip, or data parts in assistant roles)
+  const validInput = input.filter((item) => {
+    if (item.type !== "message") return true; // Non-message items are kept
+    const msg = item as { content?: string | unknown[] };
+    if (typeof msg.content === "string") {
+      return msg.content.length > 0;
+    }
+    if (Array.isArray(msg.content)) {
+      return msg.content.length > 0;
+    }
+    return true; // Keep if content is not string or array (shouldn't happen)
+  });
 
-	// Log if we filtered anything
-	if (validInput.length !== input.length) {
-		logger.warn(
-			`[OpenResponses] Filtered ${input.length - validInput.length} empty message(s) from input`,
-		);
-	}
+  // Log if we filtered anything
+  if (validInput.length !== input.length) {
+    logger.warn(
+      `[OpenResponses] Filtered ${input.length - validInput.length} empty message(s) from input`,
+    );
+  }
 
-	// Convert tools
-	const tools: FunctionToolParam[] = [];
-	for (const { name, description, inputSchema } of options.tools || []) {
-		tools.push({
-			type: "function",
-			name,
-			description: description ?? undefined,
-			// Cast to null to satisfy the optional parameters field
-			// The API accepts the schema but TypeScript types are strict
-			parameters: (inputSchema ?? {
-				type: "object",
-				properties: {},
-			}) as FunctionToolParam["parameters"],
-			strict: false,
-		} as unknown as FunctionToolParam);
-	}
+  // Convert tools
+  const tools: FunctionToolParam[] = [];
+  for (const { name, description, inputSchema } of options.tools || []) {
+    tools.push({
+      type: "function",
+      name,
+      description: description ?? undefined,
+      // Cast to null to satisfy the optional parameters field
+      // The API accepts the schema but TypeScript types are strict
+      parameters: (inputSchema ?? {
+        type: "object",
+        properties: {},
+      }) as FunctionToolParam["parameters"],
+      strict: false,
+    } as unknown as FunctionToolParam);
+  }
 
-	// Determine tool choice
-	let toolChoice: "auto" | "required" | "none" = "auto";
-	if (options.toolMode === LanguageModelChatToolMode.Required) {
-		toolChoice = "required";
-	} else if (tools.length === 0) {
-		toolChoice = "none";
-	}
+  // Determine tool choice
+  let toolChoice: "auto" | "required" | "none" = "auto";
+  if (options.toolMode === LanguageModelChatToolMode.Required) {
+    toolChoice = "required";
+  } else if (tools.length === 0) {
+    toolChoice = "none";
+  }
 
-	return { input: validInput, instructions, tools, toolChoice };
+  return { input: validInput, instructions, tools, toolChoice };
 }
 
 /**
@@ -374,160 +492,186 @@ function translateRequest(
  * The API requires specific types (image/jpeg, image/png, image/gif, image/webp)
  * but VS Code may pass "image/*" wildcard which gets rejected.
  */
-function detectImageMimeType(data: Uint8Array, fallbackMimeType: string): string {
-	// If already a specific type, use it
-	if (
-		fallbackMimeType !== "image/*" &&
-		!fallbackMimeType.includes("*") &&
-		fallbackMimeType.startsWith("image/")
-	) {
-		return fallbackMimeType;
-	}
+function detectImageMimeType(
+  data: Uint8Array,
+  fallbackMimeType: string,
+): string {
+  // If already a specific type, use it
+  if (
+    fallbackMimeType !== "image/*" &&
+    !fallbackMimeType.includes("*") &&
+    fallbackMimeType.startsWith("image/")
+  ) {
+    return fallbackMimeType;
+  }
 
-	// Detect from magic bytes
-	// PNG: 89 50 4E 47 0D 0A 1A 0A
-	if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) {
-		return "image/png";
-	}
+  // Detect from magic bytes
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    data[0] === 0x89 &&
+    data[1] === 0x50 &&
+    data[2] === 0x4e &&
+    data[3] === 0x47
+  ) {
+    return "image/png";
+  }
 
-	// JPEG: FF D8 FF
-	if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
-		return "image/jpeg";
-	}
+  // JPEG: FF D8 FF
+  if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+    return "image/jpeg";
+  }
 
-	// GIF: 47 49 46 38 (GIF8)
-	if (data[0] === 0x47 && data[1] === 0x49 && data[2] === 0x46 && data[3] === 0x38) {
-		return "image/gif";
-	}
+  // GIF: 47 49 46 38 (GIF8)
+  if (
+    data[0] === 0x47 &&
+    data[1] === 0x49 &&
+    data[2] === 0x46 &&
+    data[3] === 0x38
+  ) {
+    return "image/gif";
+  }
 
-	// WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP)
-	if (
-		data[0] === 0x52 &&
-		data[1] === 0x49 &&
-		data[2] === 0x46 &&
-		data[3] === 0x46 &&
-		data[8] === 0x57 &&
-		data[9] === 0x45 &&
-		data[10] === 0x42 &&
-		data[11] === 0x50
-	) {
-		return "image/webp";
-	}
+  // WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP)
+  if (
+    data[0] === 0x52 &&
+    data[1] === 0x49 &&
+    data[2] === 0x46 &&
+    data[3] === 0x46 &&
+    data[8] === 0x57 &&
+    data[9] === 0x45 &&
+    data[10] === 0x42 &&
+    data[11] === 0x50
+  ) {
+    return "image/webp";
+  }
 
-	// Default to PNG if we can't detect (most common for screenshots)
-	logger.warn(
-		`[OpenResponses] Could not detect image type from magic bytes, defaulting to image/png`,
-	);
-	return "image/png";
+  // Default to PNG if we can't detect (most common for screenshots)
+  logger.warn(
+    `[OpenResponses] Could not detect image type from magic bytes, defaulting to image/png`,
+  );
+  return "image/png";
 }
 
 /**
  * Build a mapping of tool call IDs to tool names.
  */
-function buildToolNameMap(messages: readonly LanguageModelChatMessage[]): Map<string, string> {
-	const map = new Map<string, string>();
+function buildToolNameMap(
+  messages: readonly LanguageModelChatMessage[],
+): Map<string, string> {
+  const map = new Map<string, string>();
 
-	for (const message of messages) {
-		for (const part of message.content) {
-			if (part instanceof LanguageModelToolCallPart) {
-				map.set(part.callId, part.name);
-			}
-		}
-	}
+  for (const message of messages) {
+    for (const part of message.content) {
+      if (part instanceof LanguageModelToolCallPart) {
+        map.set(part.callId, part.name);
+      }
+    }
+  }
 
-	return map;
+  return map;
 }
 
 /**
  * Translate a single VS Code message to OpenResponses items.
  */
 function translateMessage(
-	message: LanguageModelChatMessage,
-	_toolNameMap: Map<string, string>,
+  message: LanguageModelChatMessage,
+  _toolNameMap: Map<string, string>,
 ): ItemParam[] {
-	const items: ItemParam[] = [];
-	const role = message.role;
-	const openResponsesRole = resolveOpenResponsesRole(role);
+  const items: ItemParam[] = [];
+  const role = message.role;
+  const openResponsesRole = resolveOpenResponsesRole(role);
 
-	// DEBUG: Log the incoming role
-	logger.trace(
-		`[OpenResponses] translateMessage role=${role} (User=${LanguageModelChatMessageRole.User}, Assistant=${LanguageModelChatMessageRole.Assistant}) mapped=${openResponsesRole}`,
-	);
+  // DEBUG: Log the incoming role
+  logger.trace(
+    `[OpenResponses] translateMessage role=${role} (User=${LanguageModelChatMessageRole.User}, Assistant=${LanguageModelChatMessageRole.Assistant}) mapped=${openResponsesRole}`,
+  );
 
-	// Collect content parts
-	type UserContent = InputTextContentParam | InputImageContentParamAutoParam;
-	type AssistantContent = OutputTextContentParam;
-	const contentParts: (UserContent | AssistantContent)[] = [];
+  // Collect content parts
+  type UserContent = InputTextContentParam | InputImageContentParamAutoParam;
+  type AssistantContent = OutputTextContentParam;
+  const contentParts: (UserContent | AssistantContent)[] = [];
 
-	for (const part of message.content) {
-		if (part instanceof LanguageModelTextPart) {
-			// Text content
-			// Use input_text for User role, and also for unknown roles (which become user messages)
-			// Only use output_text for Assistant role
-			if (openResponsesRole === "assistant") {
-				contentParts.push({
-					type: "output_text",
-					text: part.value,
-				});
-			} else {
-				contentParts.push({
-					type: "input_text",
-					text: part.value,
-				});
-			}
-		} else if (part instanceof LanguageModelDataPart) {
-			// Binary data - images
-			if (part.mimeType.startsWith("image/") && openResponsesRole === "user") {
-				const base64 = Buffer.from(part.data).toString("base64");
-				// Resolve the actual mime type - VS Code may pass "image/*" wildcard
-				// which the API rejects. Detect from magic bytes if needed.
-				const resolvedMimeType = detectImageMimeType(part.data, part.mimeType);
-				const imageUrl = `data:${resolvedMimeType};base64,${base64}`;
-				contentParts.push({
-					type: "input_image",
-					image_url: imageUrl,
-				});
-			}
-		} else if (part instanceof LanguageModelToolCallPart) {
-			// CRITICAL: `function_call` is NOT a valid input item in OpenResponses!
-			// See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
-			//
-			// Avoid adding any tool-call text to assistant history to reduce
-			// mimicry risk. The tool result (below) carries the useful context.
-		} else if (part instanceof LanguageModelToolResultPart) {
-			// CRITICAL: `function_call_output` requires preceding tool_use context
-			// that the Vercel AI Gateway doesn't synthesize.
-			// See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
-			//
-			// Strategy: Emit tool results as USER message text, so the assistant
-			// doesn't see tool history in its own prior turns.
-			if (contentParts.length > 0) {
-				items.push(createMessageItem(openResponsesRole, contentParts));
-				contentParts.length = 0;
-			}
+  for (const part of message.content) {
+    if (part instanceof LanguageModelTextPart) {
+      // Text content
+      // Use input_text for User role, and also for unknown roles (which become user messages)
+      // Only use output_text for Assistant role
+      if (openResponsesRole === "assistant") {
+        contentParts.push({
+          type: "output_text",
+          text: part.value,
+        });
+      } else {
+        contentParts.push({
+          type: "input_text",
+          text: part.value,
+        });
+      }
+    } else if (part instanceof LanguageModelDataPart) {
+      // Binary data - images
+      if (part.mimeType.startsWith("image/") && openResponsesRole === "user") {
+        const base64 = Buffer.from(part.data).toString("base64");
+        // Resolve the actual mime type - VS Code may pass "image/*" wildcard
+        // which the API rejects. Detect from magic bytes if needed.
+        const resolvedMimeType = detectImageMimeType(part.data, part.mimeType);
+        const imageUrl = `data:${resolvedMimeType};base64,${base64}`;
+        contentParts.push({
+          type: "input_image",
+          image_url: imageUrl,
+        });
+      }
+    } else if (part instanceof LanguageModelToolCallPart) {
+      // CRITICAL: `function_call` is NOT a valid input item in OpenResponses!
+      // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
+      //
+      // Avoid adding any tool-call text to assistant history to reduce
+      // mimicry risk. The tool result (below) carries the useful context.
+    } else if (part instanceof LanguageModelToolResultPart) {
+      // CRITICAL: `function_call_output` requires preceding tool_use context
+      // that the Vercel AI Gateway doesn't synthesize.
+      // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
+      //
+      // Strategy: Emit tool results as USER message text, so the assistant
+      // doesn't see tool history in its own prior turns.
+      if (contentParts.length > 0) {
+        const messageItem = createMessageItem(openResponsesRole, contentParts);
+        if (messageItem) {
+          items.push(messageItem);
+        }
+        contentParts.length = 0;
+      }
 
-			let output = typeof part.content === "string" ? part.content : JSON.stringify(part.content);
-			if (output.trim() === "") {
-				output = "[empty tool result]";
-			}
+      const output =
+        typeof part.content === "string"
+          ? part.content
+          : JSON.stringify(part.content);
+      if (output.trim() === "") {
+        logger.debug("[OpenResponses] Skipping empty tool result content");
+        continue;
+      }
 
-			items.push(
-				createMessageItem("user", [
-					{
-						type: "input_text",
-						text: `Context (tool result):\n${output}`,
-					},
-				]),
-			);
-		}
-	}
+      const toolResultItem = createMessageItem("user", [
+        {
+          type: "input_text",
+          text: `Context (tool result):\n${output}`,
+        },
+      ]);
+      if (toolResultItem) {
+        items.push(toolResultItem);
+      }
+    }
+  }
 
-	// Flush remaining content
-	if (contentParts.length > 0) {
-		items.push(createMessageItem(openResponsesRole, contentParts));
-	}
+  // Flush remaining content
+  if (contentParts.length > 0) {
+    const messageItem = createMessageItem(openResponsesRole, contentParts);
+    if (messageItem) {
+      items.push(messageItem);
+    }
+  }
 
-	return items;
+  return items;
 }
 
 /**
@@ -542,83 +686,91 @@ function translateMessage(
  * as an array, the API returns 400 Invalid input.
  */
 function createMessageItem(
-	role: "user" | "assistant" | "developer",
-	content: (InputTextContentParam | InputImageContentParamAutoParam | OutputTextContentParam)[],
-): ItemParam {
-	// Convert content array to string
-	// For text-only content: concatenate all text parts
-	// For mixed content (text + images): use array format (but this is rare)
+  role: "user" | "assistant" | "developer",
+  content: (
+    | InputTextContentParam
+    | InputImageContentParamAutoParam
+    | OutputTextContentParam
+  )[],
+): ItemParam | null {
+  // Convert content array to string
+  // For text-only content: concatenate all text parts
+  // For mixed content (text + images): use array format (but this is rare)
 
-	// Check if content is text-only
-	const textOnly = content.every(
-		(part) => part.type === "input_text" || part.type === "output_text",
-	);
+  // Check if content is text-only
+  const textOnly = content.every(
+    (part) => part.type === "input_text" || part.type === "output_text",
+  );
 
-	if (textOnly) {
-		// Concatenate all text parts into a single string
-		let textContent = content.map((part) => ("text" in part ? part.text : "")).join("");
-		if (textContent.trim() === "") {
-			textContent = "[empty message]";
-		}
+  if (textOnly) {
+    // Concatenate all text parts into a single string
+    let textContent = content
+      .map((part) => ("text" in part ? part.text : ""))
+      .join("");
+    if (textContent.trim() === "") {
+      return null;
+    }
 
-		return {
-			type: "message",
-			role,
-			content: textContent,
-		} as ItemParam;
-	}
+    return {
+      type: "message",
+      role,
+      content: textContent,
+    } as ItemParam;
+  }
 
-	// For mixed content (has images), keep as array
-	// This is mainly for user messages with images
-	switch (role) {
-		case "user": {
-			// For user with mixed content, keep the array but filter empty items
-			const filteredContent = content.filter((part) => {
-				if ("text" in part) return part.text.length > 0;
-				return true; // Keep images
-			});
-			if (filteredContent.length === 0) {
-				// Fallback: if all parts were empty text, add placeholder
-				return {
-					type: "message",
-					role: "user",
-					content: "[empty message]",
-				} as ItemParam;
-			}
-			return {
-				type: "message",
-				role: "user",
-				content: filteredContent as (InputTextContentParam | InputImageContentParamAutoParam)[],
-			};
-		}
+  // For mixed content (has images), keep as array
+  // This is mainly for user messages with images
+  switch (role) {
+    case "user": {
+      // For user with mixed content, keep the array but filter empty items
+      const filteredContent = content.filter((part) => {
+        if ("text" in part) return part.text.length > 0;
+        return true; // Keep images
+      });
+      if (filteredContent.length === 0) {
+        return null;
+      }
+      return {
+        type: "message",
+        role: "user",
+        content: filteredContent as (
+          | InputTextContentParam
+          | InputImageContentParamAutoParam
+        )[],
+      };
+    }
 
-		case "assistant": {
-			// Assistant should never have images, so this shouldn't happen
-			// But if it does, convert to text
-			let assText = content.map((part) => ("text" in part ? part.text : "")).join("");
-			if (assText.trim() === "") {
-				assText = "[empty message]";
-			}
-			return {
-				type: "message",
-				role: "assistant",
-				content: assText,
-			};
-		}
+    case "assistant": {
+      // Assistant should never have images, so this shouldn't happen
+      // But if it does, convert to text
+      let assText = content
+        .map((part) => ("text" in part ? part.text : ""))
+        .join("");
+      if (assText.trim() === "") {
+        return null;
+      }
+      return {
+        type: "message",
+        role: "assistant",
+        content: assText,
+      };
+    }
 
-		case "developer": {
-			// Developer messages are typically text-only
-			let devText = content.map((part) => ("text" in part ? part.text : "")).join("");
-			if (devText.trim() === "") {
-				devText = "[empty message]";
-			}
-			return {
-				type: "message",
-				role: "developer",
-				content: devText,
-			};
-		}
-	}
+    case "developer": {
+      // Developer messages are typically text-only
+      let devText = content
+        .map((part) => ("text" in part ? part.text : ""))
+        .join("");
+      if (devText.trim() === "") {
+        return null;
+      }
+      return {
+        type: "message",
+        role: "developer",
+        content: devText,
+      };
+    }
+  }
 }
 
 /**
@@ -634,13 +786,79 @@ function createMessageItem(
  * System-level instructions should go in the `instructions` field instead.
  */
 function resolveOpenResponsesRole(
-	role: LanguageModelChatMessageRole,
+  role: LanguageModelChatMessageRole,
 ): "user" | "assistant" | "developer" {
-	if (role === LanguageModelChatMessageRole.User) return "user";
-	if (role === LanguageModelChatMessageRole.Assistant) return "assistant";
+  if (role === LanguageModelChatMessageRole.User) return "user";
+  if (role === LanguageModelChatMessageRole.Assistant) return "assistant";
 
-	// Any other role (including Unknown/System from VS Code) gets mapped to
-	// "developer". This is the closest equivalent to a system message in the
-	// OpenResponses input array, and unlike "system", it's accepted by the API.
-	return "developer";
+  // Any other role (including Unknown/System from VS Code) gets mapped to
+  // "developer". This is the closest equivalent to a system message in the
+  // OpenResponses input array, and unlike "system", it's accepted by the API.
+  return "developer";
+}
+
+/**
+ * Extract token info from OpenResponsesError.details structured data.
+ *
+ * The API error response has structure like:
+ * {
+ *   error: {
+ *     message: "Input is too long for requested model.",
+ *     param: { actual_tokens?: number, max_tokens?: number, ... }
+ *   }
+ * }
+ *
+ * This gives us more reliable token counts than regex parsing.
+ */
+function extractTokenInfoFromDetails(
+  error: unknown,
+): { actualTokens: number; maxTokens?: number } | undefined {
+  if (!(error instanceof OpenResponsesError)) {
+    return undefined;
+  }
+
+  const details = error.details as
+    | {
+        error?: {
+          param?: {
+            actual_tokens?: number;
+            max_tokens?: number;
+            token_count?: number;
+            limit?: number;
+          };
+        };
+      }
+    | undefined;
+
+  const param = details?.error?.param;
+  if (!param) {
+    // Log the full details to help debug what structure we're actually getting
+    if (error.details) {
+      logger.debug(
+        `[OpenResponses] Error details structure: ${JSON.stringify(error.details)}`,
+      );
+    }
+    return undefined;
+  }
+
+  // Try various field names that APIs might use
+  const actualTokens = param.actual_tokens ?? param.token_count;
+  const maxTokens = param.max_tokens ?? param.limit;
+
+  if (typeof actualTokens === "number" && actualTokens > 0) {
+    return {
+      actualTokens,
+      maxTokens: typeof maxTokens === "number" ? maxTokens : undefined,
+    };
+  }
+
+  // If we have max but not actual, estimate actual as max + 1
+  if (typeof maxTokens === "number" && maxTokens > 0) {
+    return {
+      actualTokens: maxTokens + 1,
+      maxTokens,
+    };
+  }
+
+  return undefined;
 }

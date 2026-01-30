@@ -1,244 +1,238 @@
 {
-	"name": "vscode-extension-vercel-ai",
-	"private": true,
-	"displayName": "Vercel AI Gateway",
-	"description": "VS Code extension that provides Vercel AI models via the Language Model API",
-	"version": "0.2.3",
-	"publisher": "SferaDev",
-	"license": "MIT",
-	"icon": "images/icon.png",
-	"type": "module",
-	"engines": {
-		"vscode": "^1.108.0"
-	},
-	"categories": [
-		"AI",
-		"Chat"
-	],
-	"keywords": [
-		"ai",
-		"vercel",
-		"chat",
-		"gpt",
-		"claude",
-		"gemini",
-		"llm",
-		"tools"
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/SferaDev/SferaDev",
-		"directory": "apps/vscode-ai-gateway"
-	},
-	"homepage": "https://github.com/SferaDev/SferaDev/tree/main/apps/vscode-ai-gateway#readme",
-	"bugs": {
-		"url": "https://github.com/SferaDev/SferaDev/issues"
-	},
-	"main": "./out/extension.js",
-	"activationEvents": [
-		"onLanguageModelChatProvider:vercelAiGateway"
-	],
-	"contributes": {
-		"languageModelChatProviders": [
-			{
-				"vendor": "vercelAiGateway",
-				"displayName": "Vercel AI Gateway"
-			}
-		],
-		"commands": [
-			{
-				"command": "vercelAiGateway.manage",
-				"title": "Manage Authentication",
-				"category": "Vercel AI Gateway"
-			},
-			{
-				"command": "vercelAiGateway.showTokenDetails",
-				"title": "Show Token Usage Details",
-				"category": "Vercel AI Gateway"
-			}
-		],
-		"configuration": {
-			"title": "Vercel AI Gateway",
-			"properties": {
-				"vercelAiGateway.endpoint": {
-					"type": "string",
-					"default": "https://ai-gateway.vercel.sh",
-					"description": "AI Gateway endpoint URL. Change for self-hosted or regional deployments."
-				},
-				"vercelAiGateway.timeout": {
-					"type": "number",
-					"default": 30000,
-					"description": "Request timeout in milliseconds.",
-					"minimum": 5000,
-					"maximum": 300000
-				},
-				"vercelAiGateway.systemPrompt.enabled": {
-					"type": "boolean",
-					"default": false,
-					"description": "Inject a system prompt identifying the Vercel AI Gateway to the model."
-				},
-				"vercelAiGateway.systemPrompt.message": {
-					"type": "string",
-					"default": "You are being accessed through the Vercel AI Gateway VS Code extension. The user is interacting with you via VS Code's chat interface.",
-					"description": "The system prompt message to inject when enabled."
-				},
-				"vercelAiGateway.reasoning.defaultEffort": {
-					"type": "string",
-					"enum": [
-						"low",
-						"medium",
-						"high"
-					],
-					"default": "medium",
-					"description": "Default reasoning effort level for models that support it."
-				},
-				"vercelAiGateway.logging.level": {
-					"type": "string",
-					"enum": [
-						"off",
-						"error",
-						"warn",
-						"info",
-						"debug",
-						"trace"
-					],
-					"default": "warn",
-					"description": "Logging verbosity level.",
-					"enumDescriptions": [
-						"Disable all logging",
-						"Log only errors",
-						"Log errors and warnings",
-						"Log errors, warnings, and info messages",
-						"Log everything including debug messages",
-						"Log everything including trace-level diagnostic messages"
-					]
-				},
-				"vercelAiGateway.logging.outputChannel": {
-					"type": "boolean",
-					"default": true,
-					"description": "Show logs in 'Vercel AI Gateway' output channel."
-				},
-				"vercelAiGateway.debug.validateRequests": {
-					"type": "boolean",
-					"default": false,
-					"description": "Validate OpenResponses requests against generated Zod schemas and log validation errors."
-				},
-				"vercelAiGateway.logging.fileDirectory": {
-					"type": "string",
-					"default": "",
-					"description": "Directory for log files. When set and log level is debug/trace, logs are written to files. Use an absolute path or path relative to workspace root."
-				},
-				"vercelAiGateway.models.allowlist": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					},
-					"default": [],
-					"description": "Restrict available models to this list. Supports wildcards (e.g., 'openai/*'). Empty means all models are available."
-				},
-				"vercelAiGateway.models.denylist": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					},
-					"default": [],
-					"description": "Hide these models from the model picker. Supports wildcards (e.g., 'anthropic/*')."
-				},
-				"vercelAiGateway.models.fallbacks": {
-					"type": "object",
-					"additionalProperties": {
-						"type": "array",
-						"items": {
-							"type": "string"
-						}
-					},
-					"default": {},
-					"description": "Fallback models for each primary model. Example: { \"openai/gpt-4\": [\"openai/gpt-3.5\"] }"
-				},
-				"vercelAiGateway.models.default": {
-					"type": "string",
-					"default": "",
-					"description": "Default model ID (e.g., 'anthropic/claude-sonnet-4-20250514'). Leave empty to show model picker."
-				},
-				"vercelAiGateway.tokens.estimationMode": {
-					"type": "string",
-					"enum": [
-						"conservative",
-						"balanced",
-						"aggressive"
-					],
-					"default": "balanced",
-					"description": "Token estimation strategy.",
-					"enumDescriptions": [
-						"Overestimate tokens to avoid context overflow (3 chars/token)",
-						"Balance between accuracy and safety (4 chars/token)",
-						"Underestimate tokens for maximum context usage (5 chars/token)"
-					]
-				},
-				"vercelAiGateway.tokens.charsPerToken": {
-					"type": "number",
-					"description": "Override characters per token for estimation. Lower = more conservative.",
-					"minimum": 2,
-					"maximum": 6
-				},
-				"vercelAiGateway.models.enrichmentEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Fetch per-model metadata to refine capabilities and token limits"
-				},
-				"vercelAiGateway.statusBar.showOutputTokens": {
-					"type": "boolean",
-					"default": false,
-					"description": "Show output token count in status bar (useful for cost tracking)"
-				},
-				"vercelAiGateway.experimental.useOpenResponses": {
-					"type": "boolean",
-					"default": false,
-					"markdownDescription": "Use the OpenResponses API directly instead of the Vercel AI SDK. **Experimental**: Provides more accurate token usage reporting but may have compatibility differences. Enable this if you need reliable token counts in the status bar."
-				},
-				"vercelAiGateway.toolHistory.recentCallsToKeep": {
-					"type": "number",
-					"default": 6,
-					"minimum": 1,
-					"maximum": 50,
-					"markdownDescription": "Number of recent tool calls to keep in full detail. Older tool calls are summarized to save context tokens. Higher values preserve more history but use more tokens."
-				},
-				"vercelAiGateway.toolHistory.truncationThreshold": {
-					"type": "number",
-					"default": 10000,
-					"minimum": 1000,
-					"markdownDescription": "Token threshold at which to start truncating tool call history. When tool history exceeds this, older calls are summarized. Set higher for longer conversations, lower to save tokens."
-				}
-			}
-		}
-	},
-	"scripts": {
-		"build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --minify",
-		"dev": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --watch",
-		"compile": "tsc -p ./",
-		"tsc": "tsc --noEmit",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"clean": "rm -rf out",
-		"prepackage": "pnpm run build",
-		"package": "vsce package --no-dependencies",
-		"release": "pnpm run package && vsce publish --no-dependencies"
-	},
-	"devDependencies": {
-		"@sferadev/tsconfig": "workspace:*",
-		"@types/json-schema": "catalog:",
-		"@types/node": "catalog:",
-		"@types/vscode": "^1.108.1",
-		"@vscode/vsce": "catalog:",
-		"esbuild": "^0.24.0",
-		"fast-check": "catalog:",
-		"typescript": "catalog:",
-		"vitest": "catalog:"
-	},
-	"dependencies": {
-		"@ai-sdk/gateway": "catalog:",
-		"ai": "catalog:",
-		"js-tiktoken": "^1.0.15",
-		"openresponses-client": "workspace:*"
-	}
+  "name": "vscode-extension-vercel-ai",
+  "private": true,
+  "displayName": "Vercel AI Gateway",
+  "description": "VS Code extension that provides Vercel AI models via the Language Model API",
+  "version": "0.2.3",
+  "publisher": "SferaDev",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.108.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "keywords": [
+    "ai",
+    "vercel",
+    "chat",
+    "gpt",
+    "claude",
+    "gemini",
+    "llm",
+    "tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SferaDev/SferaDev",
+    "directory": "apps/vscode-ai-gateway"
+  },
+  "homepage": "https://github.com/SferaDev/SferaDev/tree/main/apps/vscode-ai-gateway#readme",
+  "bugs": {
+    "url": "https://github.com/SferaDev/SferaDev/issues"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguageModelChatProvider:vercelAiGateway"
+  ],
+  "contributes": {
+    "languageModelChatProviders": [
+      {
+        "vendor": "vercelAiGateway",
+        "displayName": "Vercel AI Gateway"
+      }
+    ],
+    "commands": [
+      {
+        "command": "vercelAiGateway.manage",
+        "title": "Manage Authentication",
+        "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercelAiGateway.showTokenDetails",
+        "title": "Show Token Usage Details",
+        "category": "Vercel AI Gateway"
+      }
+    ],
+    "configuration": {
+      "title": "Vercel AI Gateway",
+      "properties": {
+        "vercelAiGateway.endpoint": {
+          "type": "string",
+          "default": "https://ai-gateway.vercel.sh",
+          "description": "AI Gateway endpoint URL. Change for self-hosted or regional deployments."
+        },
+        "vercelAiGateway.timeout": {
+          "type": "number",
+          "default": 30000,
+          "description": "Request timeout in milliseconds.",
+          "minimum": 5000,
+          "maximum": 300000
+        },
+        "vercelAiGateway.systemPrompt.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Inject a system prompt identifying the Vercel AI Gateway to the model."
+        },
+        "vercelAiGateway.systemPrompt.message": {
+          "type": "string",
+          "default": "You are being accessed through the Vercel AI Gateway VS Code extension. The user is interacting with you via VS Code's chat interface.",
+          "description": "The system prompt message to inject when enabled."
+        },
+        "vercelAiGateway.reasoning.defaultEffort": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "default": "medium",
+          "description": "Default reasoning effort level for models that support it."
+        },
+        "vercelAiGateway.logging.level": {
+          "type": "string",
+          "enum": [
+            "off",
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "default": "warn",
+          "description": "Logging verbosity level.",
+          "enumDescriptions": [
+            "Disable all logging",
+            "Log only errors",
+            "Log errors and warnings",
+            "Log errors, warnings, and info messages",
+            "Log everything including debug messages",
+            "Log everything including trace-level diagnostic messages"
+          ]
+        },
+        "vercelAiGateway.logging.outputChannel": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show logs in 'Vercel AI Gateway' output channel."
+        },
+        "vercelAiGateway.debug.validateRequests": {
+          "type": "boolean",
+          "default": false,
+          "description": "Validate OpenResponses requests against generated Zod schemas and log validation errors."
+        },
+        "vercelAiGateway.logging.fileDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Directory for log files. When set and log level is debug/trace, logs are written to files. Use an absolute path or path relative to workspace root."
+        },
+        "vercelAiGateway.models.allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Restrict available models to this list. Supports wildcards (e.g., 'openai/*'). Empty means all models are available."
+        },
+        "vercelAiGateway.models.denylist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Hide these models from the model picker. Supports wildcards (e.g., 'anthropic/*')."
+        },
+        "vercelAiGateway.models.fallbacks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "default": {},
+          "description": "Fallback models for each primary model. Example: { \"openai/gpt-4\": [\"openai/gpt-3.5\"] }"
+        },
+        "vercelAiGateway.models.default": {
+          "type": "string",
+          "default": "",
+          "description": "Default model ID (e.g., 'anthropic/claude-sonnet-4-20250514'). Leave empty to show model picker."
+        },
+        "vercelAiGateway.tokens.estimationMode": {
+          "type": "string",
+          "enum": [
+            "conservative",
+            "balanced",
+            "aggressive"
+          ],
+          "default": "balanced",
+          "description": "Token estimation strategy.",
+          "enumDescriptions": [
+            "Overestimate tokens to avoid context overflow (3 chars/token)",
+            "Balance between accuracy and safety (4 chars/token)",
+            "Underestimate tokens for maximum context usage (5 chars/token)"
+          ]
+        },
+        "vercelAiGateway.tokens.charsPerToken": {
+          "type": "number",
+          "description": "Override characters per token for estimation. Lower = more conservative.",
+          "minimum": 2,
+          "maximum": 6
+        },
+        "vercelAiGateway.models.enrichmentEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fetch per-model metadata to refine capabilities and token limits"
+        },
+        "vercelAiGateway.statusBar.showOutputTokens": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show output token count in status bar (useful for cost tracking)"
+        },
+        "vercelAiGateway.toolHistory.recentCallsToKeep": {
+          "type": "number",
+          "default": 6,
+          "minimum": 1,
+          "maximum": 50,
+          "markdownDescription": "Number of recent tool calls to keep in full detail. Older tool calls are summarized to save context tokens. Higher values preserve more history but use more tokens."
+        },
+        "vercelAiGateway.toolHistory.truncationThreshold": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1000,
+          "markdownDescription": "Token threshold at which to start truncating tool call history. When tool history exceeds this, older calls are summarized. Set higher for longer conversations, lower to save tokens."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --minify",
+    "dev": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --watch",
+    "compile": "tsc -p ./",
+    "tsc": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf out",
+    "prepackage": "pnpm run build",
+    "package": "vsce package --no-dependencies",
+    "release": "pnpm run package && vsce publish --no-dependencies"
+  },
+  "devDependencies": {
+    "@sferadev/tsconfig": "workspace:*",
+    "@types/json-schema": "catalog:",
+    "@types/node": "catalog:",
+    "@types/vscode": "^1.108.1",
+    "@vscode/vsce": "catalog:",
+    "esbuild": "^0.24.0",
+    "fast-check": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "js-tiktoken": "^1.0.15",
+    "openresponses-client": "workspace:*"
+  }
 }

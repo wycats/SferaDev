@@ -13,5 +13,5 @@
 	// Enable file logging for Vercel AI Gateway when using debug/trace level
 	// Logs will be written to .logs/ directory (gitignored)
 	"vercelAiGateway.logging.fileDirectory": ".logs",
-	"vercelAiGateway.logging.level": "trace"
+	"vercelAiGateway.logging.level": "debug"
 }

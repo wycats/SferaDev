@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { VercelAIAuthenticationProvider } from "./auth";
 import { ConfigService } from "./config";
-import { EXTENSION_ID } from "./constants";
+import { EXTENSION_ID, VSCODE_EXTENSION_ID } from "./constants";
 import { initializeOutputChannel, logger } from "./logger";
 import { VercelAIChatModelProvider } from "./provider";
 import { TokenStatusBar } from "./status-bar";
@@ -10,97 +10,109 @@ import { TokenStatusBar } from "./status-bar";
 const BUILD_TIMESTAMP = new Date().toISOString();
 
 export function activate(context: vscode.ExtensionContext) {
-	// Initialize the shared output channel FIRST - before any logging
-	// This ensures there's exactly one output channel per VS Code window
-	const outputChannelDisposable = initializeOutputChannel();
-	context.subscriptions.push(outputChannelDisposable);
+  // Initialize the shared output channel FIRST - before any logging
+  // This ensures there's exactly one output channel per VS Code window
+  const outputChannelDisposable = initializeOutputChannel();
+  context.subscriptions.push(outputChannelDisposable);
 
-	// Get extension version from package.json
-	const extension = vscode.extensions.getExtension(EXTENSION_ID);
-	const version = extension?.packageJSON?.version ?? "unknown";
+  // Get extension version from package.json
+  const extension = vscode.extensions.getExtension(VSCODE_EXTENSION_ID);
+  const version = extension?.packageJSON?.version ?? "unknown";
 
-	logger.info(
-		`Vercel AI Gateway extension activating - v${version} (activated: ${BUILD_TIMESTAMP})`,
-	);
+  logger.info(
+    `Vercel AI Gateway extension activating - v${version} (activated: ${BUILD_TIMESTAMP})`,
+  );
 
-	// Register the authentication provider
-	const authProvider = new VercelAIAuthenticationProvider(context);
-	context.subscriptions.push(authProvider);
-	logger.debug("Authentication provider registered");
+  // Register the authentication provider
+  const authProvider = new VercelAIAuthenticationProvider(context);
+  context.subscriptions.push(authProvider);
+  logger.debug("Authentication provider registered");
 
-	const configService = new ConfigService();
-	context.subscriptions.push(configService);
+  const configService = new ConfigService();
+  context.subscriptions.push(configService);
 
-	// Create the token status bar
-	const statusBar = new TokenStatusBar();
-	statusBar.setConfig({
-		showOutputTokens: configService.statusBarShowOutputTokens,
-	});
-	context.subscriptions.push(statusBar);
-	logger.debug("Token status bar created");
+  // Create the token status bar
+  const statusBar = new TokenStatusBar();
+  statusBar.setConfig({
+    showOutputTokens: configService.statusBarShowOutputTokens,
+  });
+  context.subscriptions.push(statusBar);
+  logger.debug("Token status bar created");
 
-	// Watch for config changes
-	context.subscriptions.push(
-		vscode.workspace.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration("vercelAiGateway.statusBar")) {
-				statusBar.setConfig({
-					showOutputTokens: configService.statusBarShowOutputTokens,
-				});
-			}
-		}),
-	);
+  // Watch for config changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("vercelAiGateway.statusBar")) {
+        statusBar.setConfig({
+          showOutputTokens: configService.statusBarShowOutputTokens,
+        });
+      }
+    }),
+  );
 
-	// Register the language model chat provider
-	const provider = new VercelAIChatModelProvider(context, configService);
-	provider.setStatusBar(statusBar);
-	context.subscriptions.push(provider);
-	const providerDisposable = vscode.lm.registerLanguageModelChatProvider(EXTENSION_ID, provider);
-	context.subscriptions.push(providerDisposable);
-	logger.debug("Language model chat provider registered");
+  // Register the language model chat provider
+  const provider = new VercelAIChatModelProvider(context, configService);
+  provider.setStatusBar(statusBar);
+  context.subscriptions.push(provider);
+  const providerDisposable = vscode.lm.registerLanguageModelChatProvider(
+    EXTENSION_ID,
+    provider,
+  );
+  context.subscriptions.push(providerDisposable);
+  logger.debug("Language model chat provider registered");
 
-	// Register command to show token details
-	const tokenDetailsCommand = vscode.commands.registerCommand(
-		"vercelAiGateway.showTokenDetails",
-		() => {
-			const usage = statusBar.getLastUsage();
-			if (!usage) {
-				vscode.window.showInformationMessage("No token usage data available yet.");
-				return;
-			}
+  // Register command to show token details
+  const tokenDetailsCommand = vscode.commands.registerCommand(
+    "vercelAiGateway.showTokenDetails",
+    () => {
+      const usage = statusBar.getLastUsage();
+      if (!usage) {
+        vscode.window.showInformationMessage(
+          "No token usage data available yet.",
+        );
+        return;
+      }
 
-			const items: string[] = [
-				`Input tokens: ${usage.inputTokens.toLocaleString()}`,
-				`Output tokens: ${usage.outputTokens.toLocaleString()}`,
-				`Total: ${(usage.inputTokens + usage.outputTokens).toLocaleString()}`,
-			];
+      const items: string[] = [
+        `Input tokens: ${usage.inputTokens.toLocaleString()}`,
+        `Output tokens: ${usage.outputTokens.toLocaleString()}`,
+        `Total: ${(usage.inputTokens + usage.outputTokens).toLocaleString()}`,
+      ];
 
-			if (usage.maxInputTokens) {
-				const percentage = Math.round((usage.inputTokens / usage.maxInputTokens) * 100);
-				items.push(`Context used: ${percentage}%`);
-				items.push(`Remaining: ${(usage.maxInputTokens - usage.inputTokens).toLocaleString()}`);
-			}
+      if (usage.maxInputTokens) {
+        const percentage = Math.round(
+          (usage.inputTokens / usage.maxInputTokens) * 100,
+        );
+        items.push(`Context used: ${percentage}%`);
+        items.push(
+          `Remaining: ${(usage.maxInputTokens - usage.inputTokens).toLocaleString()}`,
+        );
+      }
 
-			if (usage.modelId) {
-				items.unshift(`Model: ${usage.modelId}`);
-			}
+      if (usage.modelId) {
+        items.unshift(`Model: ${usage.modelId}`);
+      }
 
-			vscode.window.showInformationMessage(items.join(" | "));
-		},
-	);
-	context.subscriptions.push(tokenDetailsCommand);
+      vscode.window.showInformationMessage(items.join(" | "));
+    },
+  );
+  context.subscriptions.push(tokenDetailsCommand);
 
-	// Register command to manage authentication
-	const commandDisposable = vscode.commands.registerCommand(`${EXTENSION_ID}.manage`, () => {
-		authProvider.manageAuthentication();
-	});
-	context.subscriptions.push(commandDisposable);
+  // Register command to manage authentication
+  const commandDisposable = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.manage`,
+    () => {
+      authProvider.manageAuthentication();
+    },
+  );
+  context.subscriptions.push(commandDisposable);
 
-	logger.info("Vercel AI Gateway extension activated successfully");
+  logger.info("Vercel AI Gateway extension activated successfully");
 
-	// Export auth provider for use by other components
-	return { authProvider };
+  // Export auth provider for use by other components
+  return { authProvider };
 }
 
 export function deactivate() {
-	logger.info("Vercel AI Gateway extension deactivating...");
+  logger.info("Vercel AI Gateway extension deactivating...");
 }
