@@ -84,6 +84,10 @@ export class ConfigService implements vscode.Disposable {
 		return this.config.get("logging.fileDirectory", "");
 	}
 
+	get debugValidateRequests(): boolean {
+		return this.config.get("debug.validateRequests", false);
+	}
+
 	get modelsAllowlist(): string[] {
 		return this.config.get("models.allowlist", []);
 	}
@@ -122,5 +126,21 @@ export class ConfigService implements vscode.Disposable {
 	 */
 	get experimentalUseOpenResponses(): boolean {
 		return this.config.get("experimental.useOpenResponses", false);
+	}
+
+	/**
+	 * Number of recent tool calls to keep in full detail (rest are summarized).
+	 * Higher values preserve more context but use more tokens.
+	 */
+	get toolTruncationRecentCalls(): number {
+		return this.config.get("toolHistory.recentCallsToKeep", 6);
+	}
+
+	/**
+	 * Token threshold at which to start truncating tool history.
+	 * Tool history exceeding this will be summarized.
+	 */
+	get toolTruncationThreshold(): number {
+		return this.config.get("toolHistory.truncationThreshold", 10000);
 	}
 }

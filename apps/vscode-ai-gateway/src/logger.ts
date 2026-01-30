@@ -280,6 +280,61 @@ export class Logger {
 		this.log("trace", message, ...args);
 	}
 
+	/**
+	 * Log an API error with full request/response as proper JSON (not string-encoded).
+	 * Writes JSONL to api-errors.log for easy parsing.
+	 *
+	 * @param context - Short description of what was being attempted
+	 * @param request - The full request body (will be logged as JSON object)
+	 * @param response - The API error response (will be logged as JSON object)
+	 * @param metadata - Additional context like URL, status code, etc.
+	 */
+	logApiError(
+		context: string,
+		request: unknown,
+		response: unknown,
+		metadata?: {
+			url?: string;
+			status?: number;
+			code?: string;
+			chatId?: string;
+		},
+	): void {
+		const logDir = this.getResolvedLogDirectory();
+		if (!logDir) {
+			// Fall back to regular error logging if no file directory configured
+			this.error(`[API Error] ${context}`, { request, response, metadata });
+			return;
+		}
+
+		try {
+			const apiErrorsPath = path.join(logDir, "api-errors.log");
+			const timestamp = new Date().toISOString();
+
+			const errorEntry = {
+				timestamp,
+				context,
+				metadata: metadata ?? {},
+				request,
+				response,
+			};
+
+			// JSONL line for easy parsing
+			fs.appendFileSync(apiErrorsPath, `${JSON.stringify(errorEntry)}\n`);
+
+			// Also log a summary to the main log
+			this.error(`[API Error] ${context} - Full details written to api-errors.log`, metadata);
+		} catch (writeError) {
+			// Fall back to regular error logging if file write fails
+			this.error(`[API Error] ${context} (file write failed)`, {
+				request,
+				response,
+				metadata,
+				writeError: String(writeError),
+			});
+		}
+	}
+
 	show(): void {
 		this.outputChannel?.show();
 	}
@@ -333,6 +388,19 @@ export const logger = {
 	},
 	trace(message: string, ...args: unknown[]): void {
 		getLogger().trace(message, ...args);
+	},
+	logApiError(
+		context: string,
+		request: unknown,
+		response: unknown,
+		metadata?: {
+			url?: string;
+			status?: number;
+			code?: string;
+			chatId?: string;
+		},
+	): void {
+		getLogger().logApiError(context, request, response, metadata);
 	},
 	show(): void {
 		getLogger().show();

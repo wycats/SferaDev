@@ -6,13 +6,22 @@ import { initializeOutputChannel, logger } from "./logger";
 import { VercelAIChatModelProvider } from "./provider";
 import { TokenStatusBar } from "./status-bar";
 
+// Build timestamp for reload detection - generated at build time
+const BUILD_TIMESTAMP = new Date().toISOString();
+
 export function activate(context: vscode.ExtensionContext) {
 	// Initialize the shared output channel FIRST - before any logging
 	// This ensures there's exactly one output channel per VS Code window
 	const outputChannelDisposable = initializeOutputChannel();
 	context.subscriptions.push(outputChannelDisposable);
 
-	logger.info("Vercel AI Gateway extension activating...");
+	// Get extension version from package.json
+	const extension = vscode.extensions.getExtension(EXTENSION_ID);
+	const version = extension?.packageJSON?.version ?? "unknown";
+
+	logger.info(
+		`Vercel AI Gateway extension activating - v${version} (activated: ${BUILD_TIMESTAMP})`,
+	);
 
 	// Register the authentication provider
 	const authProvider = new VercelAIAuthenticationProvider(context);

@@ -349,10 +349,9 @@ export class TokenStatusBar implements vscode.Disposable {
 
 			// Add compaction suffix
 			if (hasCompaction) {
-				const freed = mainAgent.contextManagement?.appliedEdits.reduce(
-					(t, e) => t + e.clearedInputTokens,
-					0,
-				);
+				const freed =
+					mainAgent.contextManagement?.appliedEdits.reduce((t, e) => t + e.clearedInputTokens, 0) ??
+					0;
 				// Use unpadded format for compaction suffix since it's less critical
 				mainText += ` ↓${this.formatTokenCount(freed, false)}`;
 			}

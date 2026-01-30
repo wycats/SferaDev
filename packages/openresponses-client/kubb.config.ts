@@ -1,6 +1,7 @@
 import { defineConfig } from "@kubb/core";
 import { pluginOas } from "@kubb/plugin-oas";
 import { pluginTs } from "@kubb/plugin-ts";
+import { pluginZod } from "@kubb/plugin-zod";
 
 export default defineConfig({
 	root: ".",
@@ -23,6 +24,16 @@ export default defineConfig({
 			},
 			// Use literal unions instead of generated enums for cleaner types
 			enumType: "inlineLiteral",
+		}),
+		pluginZod({
+			output: {
+				path: "./schemas.ts",
+				barrelType: false,
+			},
+			dateType: "string",
+			unknownType: "unknown",
+			importPath: "zod",
+			version: "4",
 		}),
 	],
 });

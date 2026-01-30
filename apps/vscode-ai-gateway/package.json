@@ -118,6 +118,11 @@
 					"default": true,
 					"description": "Show logs in 'Vercel AI Gateway' output channel."
 				},
+				"vercelAiGateway.debug.validateRequests": {
+					"type": "boolean",
+					"default": false,
+					"description": "Validate OpenResponses requests against generated Zod schemas and log validation errors."
+				},
 				"vercelAiGateway.logging.fileDirectory": {
 					"type": "string",
 					"default": "",
@@ -190,6 +195,19 @@
 					"type": "boolean",
 					"default": false,
 					"markdownDescription": "Use the OpenResponses API directly instead of the Vercel AI SDK. **Experimental**: Provides more accurate token usage reporting but may have compatibility differences. Enable this if you need reliable token counts in the status bar."
+				},
+				"vercelAiGateway.toolHistory.recentCallsToKeep": {
+					"type": "number",
+					"default": 6,
+					"minimum": 1,
+					"maximum": 50,
+					"markdownDescription": "Number of recent tool calls to keep in full detail. Older tool calls are summarized to save context tokens. Higher values preserve more history but use more tokens."
+				},
+				"vercelAiGateway.toolHistory.truncationThreshold": {
+					"type": "number",
+					"default": 10000,
+					"minimum": 1000,
+					"markdownDescription": "Token threshold at which to start truncating tool call history. When tool history exceeds this, older calls are summarized. Set higher for longer conversations, lower to save tokens."
 				}
 			}
 		}

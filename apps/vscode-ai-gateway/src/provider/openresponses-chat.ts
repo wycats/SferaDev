@@ -319,6 +319,28 @@ function translateRequest(
 		input.push(...translated);
 	}
 
+	// CRITICAL: Filter out any items with empty content to prevent API 400 errors
+	// This can happen when messages contain only unsupported parts (e.g., tool calls
+	// that we intentionally skip, or data parts in assistant roles)
+	const validInput = input.filter((item) => {
+		if (item.type !== "message") return true; // Non-message items are kept
+		const msg = item as { content?: string | unknown[] };
+		if (typeof msg.content === "string") {
+			return msg.content.length > 0;
+		}
+		if (Array.isArray(msg.content)) {
+			return msg.content.length > 0;
+		}
+		return true; // Keep if content is not string or array (shouldn't happen)
+	});
+
+	// Log if we filtered anything
+	if (validInput.length !== input.length) {
+		logger.warn(
+			`[OpenResponses] Filtered ${input.length - validInput.length} empty message(s) from input`,
+		);
+	}
+
 	// Convert tools
 	const tools: FunctionToolParam[] = [];
 	for (const { name, description, inputSchema } of options.tools || []) {
@@ -344,7 +366,59 @@ function translateRequest(
 		toolChoice = "none";
 	}
 
-	return { input, instructions, tools, toolChoice };
+	return { input: validInput, instructions, tools, toolChoice };
+}
+
+/**
+ * Detect image MIME type from magic bytes.
+ * The API requires specific types (image/jpeg, image/png, image/gif, image/webp)
+ * but VS Code may pass "image/*" wildcard which gets rejected.
+ */
+function detectImageMimeType(data: Uint8Array, fallbackMimeType: string): string {
+	// If already a specific type, use it
+	if (
+		fallbackMimeType !== "image/*" &&
+		!fallbackMimeType.includes("*") &&
+		fallbackMimeType.startsWith("image/")
+	) {
+		return fallbackMimeType;
+	}
+
+	// Detect from magic bytes
+	// PNG: 89 50 4E 47 0D 0A 1A 0A
+	if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) {
+		return "image/png";
+	}
+
+	// JPEG: FF D8 FF
+	if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+		return "image/jpeg";
+	}
+
+	// GIF: 47 49 46 38 (GIF8)
+	if (data[0] === 0x47 && data[1] === 0x49 && data[2] === 0x46 && data[3] === 0x38) {
+		return "image/gif";
+	}
+
+	// WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP)
+	if (
+		data[0] === 0x52 &&
+		data[1] === 0x49 &&
+		data[2] === 0x46 &&
+		data[3] === 0x46 &&
+		data[8] === 0x57 &&
+		data[9] === 0x45 &&
+		data[10] === 0x42 &&
+		data[11] === 0x50
+	) {
+		return "image/webp";
+	}
+
+	// Default to PNG if we can't detect (most common for screenshots)
+	logger.warn(
+		`[OpenResponses] Could not detect image type from magic bytes, defaulting to image/png`,
+	);
+	return "image/png";
 }
 
 /**
@@ -405,41 +479,46 @@ function translateMessage(
 			// Binary data - images
 			if (part.mimeType.startsWith("image/") && openResponsesRole === "user") {
 				const base64 = Buffer.from(part.data).toString("base64");
-				const imageUrl = `data:${part.mimeType};base64,${base64}`;
+				// Resolve the actual mime type - VS Code may pass "image/*" wildcard
+				// which the API rejects. Detect from magic bytes if needed.
+				const resolvedMimeType = detectImageMimeType(part.data, part.mimeType);
+				const imageUrl = `data:${resolvedMimeType};base64,${base64}`;
 				contentParts.push({
 					type: "input_image",
 					image_url: imageUrl,
 				});
 			}
 		} else if (part instanceof LanguageModelToolCallPart) {
-			// Flush content first
-			if (contentParts.length > 0) {
-				items.push(createMessageItem(openResponsesRole, [...contentParts]));
-				contentParts.length = 0;
-			}
-
-			// Add function call
-			items.push({
-				type: "function_call",
-				call_id: part.callId,
-				name: part.name,
-				arguments: JSON.stringify(part.input ?? {}),
-			});
+			// CRITICAL: `function_call` is NOT a valid input item in OpenResponses!
+			// See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
+			//
+			// Avoid adding any tool-call text to assistant history to reduce
+			// mimicry risk. The tool result (below) carries the useful context.
 		} else if (part instanceof LanguageModelToolResultPart) {
-			// Flush content first
+			// CRITICAL: `function_call_output` requires preceding tool_use context
+			// that the Vercel AI Gateway doesn't synthesize.
+			// See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
+			//
+			// Strategy: Emit tool results as USER message text, so the assistant
+			// doesn't see tool history in its own prior turns.
 			if (contentParts.length > 0) {
-				items.push(createMessageItem(openResponsesRole, [...contentParts]));
+				items.push(createMessageItem(openResponsesRole, contentParts));
 				contentParts.length = 0;
 			}
 
-			// Add function call output
-			const output = typeof part.content === "string" ? part.content : JSON.stringify(part.content);
+			let output = typeof part.content === "string" ? part.content : JSON.stringify(part.content);
+			if (output.trim() === "") {
+				output = "[empty tool result]";
+			}
 
-			items.push({
-				type: "function_call_output",
-				call_id: part.callId,
-				output,
-			});
+			items.push(
+				createMessageItem("user", [
+					{
+						type: "input_text",
+						text: `Context (tool result):\n${output}`,
+					},
+				]),
+			);
 		}
 	}
 
@@ -457,40 +536,88 @@ function translateMessage(
  * NOTE: We deliberately omit "system" role here. The OpenResponses API rejects
  * `role: "system"` in input messages. Use the `instructions` field for system
  * prompts, or use "developer" role for message-based system-like content.
+ *
+ * CRITICAL: The Vercel AI Gateway/OpenResponses API requires message content
+ * to be a STRING, not an array of content objects. If content is structured
+ * as an array, the API returns 400 Invalid input.
  */
 function createMessageItem(
 	role: "user" | "assistant" | "developer",
 	content: (InputTextContentParam | InputImageContentParamAutoParam | OutputTextContentParam)[],
 ): ItemParam {
+	// Convert content array to string
+	// For text-only content: concatenate all text parts
+	// For mixed content (text + images): use array format (but this is rare)
+
+	// Check if content is text-only
+	const textOnly = content.every(
+		(part) => part.type === "input_text" || part.type === "output_text",
+	);
+
+	if (textOnly) {
+		// Concatenate all text parts into a single string
+		let textContent = content.map((part) => ("text" in part ? part.text : "")).join("");
+		if (textContent.trim() === "") {
+			textContent = "[empty message]";
+		}
+
+		return {
+			type: "message",
+			role,
+			content: textContent,
+		} as ItemParam;
+	}
+
+	// For mixed content (has images), keep as array
+	// This is mainly for user messages with images
 	switch (role) {
-		case "user":
+		case "user": {
+			// For user with mixed content, keep the array but filter empty items
+			const filteredContent = content.filter((part) => {
+				if ("text" in part) return part.text.length > 0;
+				return true; // Keep images
+			});
+			if (filteredContent.length === 0) {
+				// Fallback: if all parts were empty text, add placeholder
+				return {
+					type: "message",
+					role: "user",
+					content: "[empty message]",
+				} as ItemParam;
+			}
 			return {
 				type: "message",
 				role: "user",
-				content: content as (InputTextContentParam | InputImageContentParamAutoParam)[],
+				content: filteredContent as (InputTextContentParam | InputImageContentParamAutoParam)[],
 			};
+		}
 
-		case "assistant":
+		case "assistant": {
+			// Assistant should never have images, so this shouldn't happen
+			// But if it does, convert to text
+			let assText = content.map((part) => ("text" in part ? part.text : "")).join("");
+			if (assText.trim() === "") {
+				assText = "[empty message]";
+			}
 			return {
 				type: "message",
 				role: "assistant",
-				content: content as OutputTextContentParam[],
+				content: assText,
 			};
+		}
 
-		case "developer":
+		case "developer": {
+			// Developer messages are typically text-only
+			let devText = content.map((part) => ("text" in part ? part.text : "")).join("");
+			if (devText.trim() === "") {
+				devText = "[empty message]";
+			}
 			return {
 				type: "message",
 				role: "developer",
-				content: content as InputTextContentParam[],
+				content: devText,
 			};
-
-		default:
-			// Treat unknown roles as user messages
-			return {
-				type: "message",
-				role: "user",
-				content: content as (InputTextContentParam | InputImageContentParamAutoParam)[],
-			};
+		}
 	}
 }
 

@@ -77,6 +77,57 @@ const SILENTLY_IGNORED_CHUNK_TYPES = new Set([
 
 const MIME_TYPE_PATTERN = /^[a-z]+\/[a-z0-9.+-]+$/i;
 
+/**
+ * Detect the actual image MIME type from binary data using magic bytes.
+ * The API requires specific types (image/jpeg, image/png, image/gif, image/webp)
+ * but VS Code may pass "image/*" wildcard which gets rejected.
+ */
+function detectImageMimeType(data: Uint8Array, fallbackMimeType: string): string {
+	// If we have a specific (non-wildcard) image mime type, trust it
+	if (
+		fallbackMimeType !== "image/*" &&
+		!fallbackMimeType.includes("*") &&
+		fallbackMimeType.startsWith("image/")
+	) {
+		return fallbackMimeType;
+	}
+
+	// PNG: 89 50 4E 47
+	if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) {
+		return "image/png";
+	}
+
+	// JPEG: FF D8 FF
+	if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+		return "image/jpeg";
+	}
+
+	// GIF: 47 49 46 38 (GIF8)
+	if (data[0] === 0x47 && data[1] === 0x49 && data[2] === 0x46 && data[3] === 0x38) {
+		return "image/gif";
+	}
+
+	// WebP: RIFF....WEBP
+	if (
+		data[0] === 0x52 &&
+		data[1] === 0x49 &&
+		data[2] === 0x46 &&
+		data[3] === 0x46 &&
+		data[8] === 0x57 &&
+		data[9] === 0x45 &&
+		data[10] === 0x42 &&
+		data[11] === 0x50
+	) {
+		return "image/webp";
+	}
+
+	// Could not detect, default to PNG as safest assumption
+	logger.warn(
+		`[OpenResponses] Could not detect image type from magic bytes, defaulting to image/png`,
+	);
+	return "image/png";
+}
+
 export function isValidMimeType(mimeType: string): boolean {
 	return MIME_TYPE_PATTERN.test(mimeType);
 }
@@ -1466,12 +1517,14 @@ export function convertSingleMessage(
 			} else if (part instanceof LanguageModelDataPart) {
 				if (part.mimeType.startsWith("image/")) {
 					// Handle image parts - convert to base64 data URL for Vercel AI SDK
+					// Resolve the actual mime type - VS Code may pass "image/*" wildcard
+					const resolvedMimeType = detectImageMimeType(part.data, part.mimeType);
 					const base64Data = Buffer.from(part.data).toString("base64");
-					const dataUrl = `data:${part.mimeType};base64,${base64Data}`;
+					const dataUrl = `data:${resolvedMimeType};base64,${base64Data}`;
 					contentParts.push({
 						type: "image",
 						image: dataUrl,
-						mimeType: part.mimeType,
+						mimeType: resolvedMimeType,
 					});
 				} else {
 					const decodedText = new TextDecoder().decode(part.data);
