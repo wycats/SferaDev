@@ -294,10 +294,32 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     _token: CancellationToken,
   ): Promise<LanguageModelChatInformation[]> {
     logger.debug("Fetching available models", { silent: options.silent });
+
+    // VS Code calls this with `silent: true` during reload/startup.
+    // Do NOT block on auth/network in that path: returning cached models immediately
+    // avoids the model picker briefly clearing while auth initializes.
+    const cachedModels = this.modelsClient.getCachedModels();
+    if (options.silent && cachedModels.length > 0) {
+      logger.debug(
+        `Silent model query: returning ${cachedModels.length} cached models immediately`,
+      );
+
+      // Kick off a background revalidation once auth is available.
+      // This should not cause flicker because we only fire change events when model IDs change.
+      void this.getApiKey(true).then((apiKey) => {
+        if (!apiKey) return;
+        void this.modelsClient.getModels(apiKey);
+      });
+
+      if (this.configService.modelsEnrichmentEnabled) {
+        return this.applyEnrichmentToModels(cachedModels);
+      }
+      return cachedModels;
+    }
+
     const apiKey = await this.getApiKey(options.silent);
     if (!apiKey) {
       // Auth temporarily unavailable - return cached models to prevent picker flicker
-      const cachedModels = this.modelsClient.getCachedModels();
       if (cachedModels.length > 0) {
         logger.debug(
           `No API key available, returning ${cachedModels.length} cached models`,
