@@ -129,15 +129,15 @@ export function createClient(options: ClientOptions) {
 		log = () => {}, // No-op by default
 	} = options;
 
-	const trace = (message: string, data?: unknown) => log("trace", message, data);
-	const debug = (message: string, data?: unknown) => log("debug", message, data);
+	const trace = (message: string, data?: unknown) => { log("trace", message, data); };
+	const debug = (message: string, data?: unknown) => { log("debug", message, data); };
 
 	/**
 	 * Create a response (non-streaming)
 	 */
 	async function createResponse(body: CreateResponseBody): Promise<ResponseResource> {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), timeout);
+		const timeoutId = setTimeout(() => { controller.abort(); }, timeout);
 		const url = `${baseUrl}/responses`;
 		const requestBody = { ...body, stream: false };
 
@@ -204,7 +204,7 @@ export function createClient(options: ClientOptions) {
 
 		// Link external signal to our controller
 		if (signal) {
-			signal.addEventListener("abort", () => controller.abort());
+			signal.addEventListener("abort", () => { controller.abort(); });
 		}
 
 		const response = await fetchImpl(url, {

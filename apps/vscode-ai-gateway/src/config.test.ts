@@ -14,7 +14,7 @@ const hoisted = vi.hoisted(() => {
     },
   );
 
-  const listeners: Array<() => void> = [];
+  const listeners: (() => void)[] = [];
   class MockEventEmitter {
     event = (listener: () => void) => {
       listeners.push(listener);

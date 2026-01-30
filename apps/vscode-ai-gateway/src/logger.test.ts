@@ -5,7 +5,7 @@ const hoisted = vi.hoisted(() => {
 	const mockEventEmitterFire = vi.fn();
 	const mockEventEmitterDispose = vi.fn();
 	const mockEventEmitterEvent = vi.fn();
-	const listeners: Array<() => void> = [];
+	const listeners: (() => void)[] = [];
 
 	class MockEventEmitter {
 		event = (listener: () => void) => {
@@ -395,7 +395,7 @@ describe("Logger", () => {
 			});
 
 			const logger = new Logger();
-			expect(() => logger.show()).not.toThrow();
+			expect(() => { logger.show(); }).not.toThrow();
 		});
 	});
 
@@ -428,7 +428,7 @@ describe("Logger", () => {
 			});
 
 			const logger = new Logger();
-			expect(() => logger.dispose()).not.toThrow();
+			expect(() => { logger.dispose(); }).not.toThrow();
 		});
 	});
 

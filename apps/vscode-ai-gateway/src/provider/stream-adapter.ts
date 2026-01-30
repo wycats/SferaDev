@@ -341,10 +341,10 @@ export class StreamAdapter {
           finishReason = "tool-calls";
 
           // Extract tool call details
-          const callId = "call_id" in item ? (item.call_id as string) : "";
-          const name = "name" in item ? (item.name as string) : "";
+          const callId = "call_id" in item ? (item.call_id) : "";
+          const name = "name" in item ? (item.name) : "";
           const argsStr =
-            "arguments" in item ? (item.arguments as string) : "{}";
+            "arguments" in item ? (item.arguments) : "{}";
 
           logger.debug(
             `[OpenResponses] Found function_call in output: name=${name}, callId=${callId}, argsLen=${argsStr.length}`,
@@ -487,7 +487,7 @@ export class StreamAdapter {
       // Fallback: detect function call by presence of call_id and name even without type field
       const callId = (item as { call_id: string }).call_id;
       const name = (item as { name: string }).name;
-      const id = ("id" in item ? (item as { id: string }).id : "") as string;
+      const id = ("id" in item ? (item as { id: string }).id : "");
 
       logger.info(
         `[OpenResponses] Function call detected via call_id/name (no type field): name=${name}, callId=${callId}, itemId=${id}`,

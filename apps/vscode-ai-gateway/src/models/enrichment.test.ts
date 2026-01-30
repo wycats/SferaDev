@@ -38,7 +38,7 @@ const hoisted = vi.hoisted(() => {
 	}
 
 	class MockEventEmitter {
-		private listeners: Set<(...args: unknown[]) => void> = new Set();
+		private listeners = new Set<(...args: unknown[]) => void>();
 		event = (listener: (...args: unknown[]) => void) => {
 			this.listeners.add(listener);
 			return { dispose: () => this.listeners.delete(listener) };

@@ -104,7 +104,7 @@ function extractFamilyAndVersion(modelPart: string): {
 		return { family: "", version: "latest" };
 	}
 
-	const match = modelPart.match(VERSION_PATTERN);
+	const match = VERSION_PATTERN.exec(modelPart);
 
 	if (match) {
 		// Found a version pattern at the end

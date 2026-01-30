@@ -242,7 +242,7 @@ export class ModelsClient {
     etag: string | null,
   ): Promise<{ rawModels: Model[]; etag: string | null } | null> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => { controller.abort(); }, 30000);
 
     try {
       const headers: Record<string, string> = {};

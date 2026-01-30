@@ -239,8 +239,8 @@ describe("computeTruncation", () => {
 		callId: string,
 		name: string,
 		args: Record<string, unknown> = {},
-		result: string = "result",
-		isError: boolean = false,
+		result = "result",
+		isError = false,
 	): ToolCallEntry {
 		const content = `${name} ${JSON.stringify(args)} ${result}`;
 		return {

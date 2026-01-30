@@ -81,7 +81,7 @@ export class TokenStatusBar implements vscode.Disposable {
 	private hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Agent tracking
-	private agents: Map<string, AgentEntry> = new Map();
+	private agents = new Map<string, AgentEntry>();
 	private mainAgentId: string | null = null;
 	private activeAgentId: string | null = null;
 	private cleanupInterval: ReturnType<typeof setInterval> | null = null;
@@ -96,7 +96,7 @@ export class TokenStatusBar implements vscode.Disposable {
 		this.statusBarItem.command = "vercelAiGateway.showTokenDetails";
 		this.hide();
 
-		this.cleanupInterval = setInterval(() => this.cleanupStaleAgents(), AGENT_CLEANUP_INTERVAL_MS);
+		this.cleanupInterval = setInterval(() => { this.cleanupStaleAgents(); }, AGENT_CLEANUP_INTERVAL_MS);
 	}
 
 	/**
@@ -287,7 +287,7 @@ export class TokenStatusBar implements vscode.Disposable {
 		this.statusBarItem.tooltip = message;
 		this.statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
 		this.statusBarItem.show();
-		this.hideTimeout = setTimeout(() => this.hide(), 60000);
+		this.hideTimeout = setTimeout(() => { this.hide(); }, 60000);
 	}
 
 	/**
@@ -410,7 +410,7 @@ export class TokenStatusBar implements vscode.Disposable {
 	 * Set background color based on usage percentage
 	 */
 	private setBackgroundColor(agent: AgentEntry | null | undefined): void {
-		if (!agent || !agent.maxInputTokens) {
+		if (!agent?.maxInputTokens) {
 			this.statusBarItem.backgroundColor = undefined;
 			return;
 		}
@@ -633,7 +633,7 @@ export class TokenStatusBar implements vscode.Disposable {
 	 */
 	private scheduleHide(): void {
 		this.clearHideTimeout();
-		this.hideTimeout = setTimeout(() => this.hide(), 30000);
+		this.hideTimeout = setTimeout(() => { this.hide(); }, 30000);
 	}
 
 	private clearHideTimeout(): void {

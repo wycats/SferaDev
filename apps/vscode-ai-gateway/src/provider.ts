@@ -70,8 +70,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   private modelsClient: ModelsClient;
   private tokenCache: TokenCache;
   private tokenCounter: TokenCounter;
-  private correctionFactor: number = 1.0;
-  private lastEstimatedInputTokens: number = 0;
+  private correctionFactor = 1.0;
+  private lastEstimatedInputTokens = 0;
   private configService: ConfigService;
   private enricher: ModelEnricher;
   // Track current request for caching API actuals and status bar
@@ -90,7 +90,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     actualTokens: number;
   } | null = null;
   /** Cache of enriched model data for the session */
-  private enrichedModels: Map<string, EnrichedModelData> = new Map();
+  private enrichedModels = new Map<string, EnrichedModelData>();
   private readonly modelInfoChangeEmitter = new vscode.EventEmitter<void>();
   readonly onDidChangeLanguageModelChatInformation =
     this.modelInfoChangeEmitter.event;
@@ -293,7 +293,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
     const abortController = new AbortController();
     const abortSubscription = token.onCancellationRequested(() =>
-      abortController.abort(),
+      { abortController.abort(); },
     );
 
     let responseSent = false;
@@ -553,7 +553,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     // Apply standard safety margins
     const margin =
       typeof text === "string" ||
-      !this.tokenCache.getCached(text as LanguageModelChatMessage, model.family)
+      !this.tokenCache.getCached(text, model.family)
         ? this.tokenCounter.usesCharacterFallback(model.family)
           ? 0.1
           : 0.05

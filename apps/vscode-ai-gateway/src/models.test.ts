@@ -10,7 +10,7 @@ const hoisted = vi.hoisted(() => {
 
 	// Mock EventEmitter class - must be inside hoisted
 	class MockEventEmitter {
-		private listeners: Set<(...args: unknown[]) => void> = new Set();
+		private listeners = new Set<(...args: unknown[]) => void>();
 		event = (listener: (...args: unknown[]) => void) => {
 			this.listeners.add(listener);
 			return { dispose: () => this.listeners.delete(listener) };
@@ -64,10 +64,10 @@ describe("ModelsClient", () => {
 		const client = new ModelsClient();
 		const transform = (
 			client as unknown as {
-				transformToVSCodeModels: (data: Model[]) => Array<{
+				transformToVSCodeModels: (data: Model[]) => {
 					id: string;
 					capabilities: { reasoning: boolean; webSearch: boolean };
-				}>;
+				}[];
 			}
 		).transformToVSCodeModels;
 		return transform(models);

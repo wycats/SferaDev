@@ -5,7 +5,7 @@ const hoisted = vi.hoisted(() => {
 	const mockEventEmitterFire = vi.fn();
 	const mockEventEmitterDispose = vi.fn();
 	const mockEventEmitterEvent = vi.fn();
-	const listeners: Array<() => void> = [];
+	const listeners: (() => void)[] = [];
 
 	class MockEventEmitter {
 		event = (listener: () => void) => {

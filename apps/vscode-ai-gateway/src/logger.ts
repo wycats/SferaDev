@@ -114,7 +114,7 @@ export class Logger {
 	private level: LogLevel = "info"; // Default to info for better visibility
 	private configService: LoggerConfigSource;
 	private readonly disposable: { dispose: () => void };
-	private logFileDirectory: string = "";
+	private logFileDirectory = "";
 	private fileLoggingInitialized = false;
 	private fileLoggingOverridePath: string | undefined;
 
@@ -548,7 +548,7 @@ export function extractTokenCountFromError(error: unknown): ExtractedTokenInfo |
 
 	// Pattern: "prompt is too long: 204716 tokens > 200000 maximum"
 	const tokenPattern = /(\d+)\s*tokens?\s*>\s*(\d+)/i;
-	const match = message.match(tokenPattern);
+	const match = tokenPattern.exec(message);
 
 	if (match) {
 		const actualTokens = parseInt(match[1], 10);
@@ -563,7 +563,7 @@ export function extractTokenCountFromError(error: unknown): ExtractedTokenInfo |
 
 	// Pattern: "exceeds context window of X tokens" or similar
 	const exceedsPattern = /exceeds.*?(\d+)\s*tokens?/i;
-	const exceedsMatch = message.match(exceedsPattern);
+	const exceedsMatch = exceedsPattern.exec(message);
 	if (exceedsMatch) {
 		const maxTokens = parseInt(exceedsMatch[1], 10);
 		// We don't know the actual count, but we know the max

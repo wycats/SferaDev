@@ -197,11 +197,11 @@ async function selectTeam(authToken: string): Promise<Team | null> {
 		const data = (await response.json()) as TeamsResponse;
 
 		// Always include "Personal Account" option at the top
-		const options: Array<{
+		const options: {
 			label: string;
 			description: string;
 			value: Team | null;
-		}> = [
+		}[] = [
 			{
 				label: "Personal Account",
 				description: "Use your personal Vercel account",

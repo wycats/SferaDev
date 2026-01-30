@@ -161,7 +161,7 @@ describe("Provider instantiation", () => {
 
   it("disposes cleanly", () => {
     const provider = createProvider();
-    expect(() => provider.dispose()).not.toThrow();
+    expect(() => { provider.dispose(); }).not.toThrow();
   });
 });
 

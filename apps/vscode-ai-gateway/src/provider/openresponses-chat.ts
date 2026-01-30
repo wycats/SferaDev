@@ -150,7 +150,7 @@ export async function executeOpenResponsesChat(
   // Set up abort handling
   const abortController = new AbortController();
   const abortSubscription = token.onCancellationRequested(() =>
-    abortController.abort(),
+    { abortController.abort(); },
   );
 
   // Start tracking in status bar
@@ -704,7 +704,7 @@ function createMessageItem(
 
   if (textOnly) {
     // Concatenate all text parts into a single string
-    let textContent = content
+    const textContent = content
       .map((part) => ("text" in part ? part.text : ""))
       .join("");
     if (textContent.trim() === "") {
@@ -743,7 +743,7 @@ function createMessageItem(
     case "assistant": {
       // Assistant should never have images, so this shouldn't happen
       // But if it does, convert to text
-      let assText = content
+      const assText = content
         .map((part) => ("text" in part ? part.text : ""))
         .join("");
       if (assText.trim() === "") {
@@ -758,7 +758,7 @@ function createMessageItem(
 
     case "developer": {
       // Developer messages are typically text-only
-      let devText = content
+      const devText = content
         .map((part) => ("text" in part ? part.text : ""))
         .join("");
       if (devText.trim() === "") {

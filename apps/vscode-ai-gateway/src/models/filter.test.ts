@@ -6,7 +6,7 @@ const hoisted = vi.hoisted(() => {
 	const mockEventEmitterFire = vi.fn();
 	const mockEventEmitterDispose = vi.fn();
 	const mockEventEmitterEvent = vi.fn();
-	const listeners: Array<() => void> = [];
+	const listeners: (() => void)[] = [];
 
 	class MockEventEmitter {
 		event = (listener: () => void) => {
@@ -320,7 +320,7 @@ describe("ModelFilter", () => {
 			const client = new ModelsClient();
 			const transform = (
 				client as unknown as {
-					transformToVSCodeModels: (data: Model[]) => Array<{ id: string }>;
+					transformToVSCodeModels: (data: Model[]) => { id: string }[];
 				}
 			).transformToVSCodeModels;
 			return transform(models);

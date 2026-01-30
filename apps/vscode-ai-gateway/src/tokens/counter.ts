@@ -4,10 +4,10 @@ import * as vscode from "vscode";
 import { logger } from "../logger";
 import { LRUCache } from "./lru-cache";
 
-type Encoding = {
+interface Encoding {
 	encode: (text: string) => number[];
 	free?: () => void;
-};
+}
 
 const FALLBACK_CHARS_PER_TOKEN = 3.5;
 

@@ -1,7 +1,7 @@
 export class LRUCache<T> {
 	private cache = new Map<string, T>();
 
-	constructor(private readonly maxSize: number = 5000) {}
+	constructor(private readonly maxSize = 5000) {}
 
 	get(key: string): T | undefined {
 		if (!this.cache.has(key)) {
@@ -21,7 +21,7 @@ export class LRUCache<T> {
 		}
 		this.cache.set(key, value);
 		if (this.cache.size > this.maxSize) {
-			const lruKey = this.cache.keys().next().value as string | undefined;
+			const lruKey = this.cache.keys().next().value;
 			if (lruKey !== undefined) {
 				this.cache.delete(lruKey);
 			}
