@@ -1,19 +1,26 @@
 {
   "name": "vercel-ai-gateway-vscode",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "pnpm --filter vscode-extension-vercel-ai build",
     "test": "pnpm --filter vscode-extension-vercel-ai test",
     "package": "pnpm --filter vscode-extension-vercel-ai package",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "knip": "knip --config configs/knip.json",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   },
   "devDependencies": {
     "@ai-sdk/openai": "catalog:",
+    "@eslint/js": "^9.39.2",
+    "@tsconfig/strictest": "^2.0.8",
     "ai": "catalog:",
+    "eslint": "^9.39.2",
     "knip": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
+    "typescript-eslint": "^8.54.0",
     "zod": "catalog:"
   },
   "packageManager": "pnpm@10.26.2",
