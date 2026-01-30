@@ -72,11 +72,28 @@ export class ModelsClient {
     this.onModelsUpdated = onModelsUpdated ?? null;
 
     // Restore cache from persistent storage
+    // IMPORTANT: We re-transform from rawModels instead of using the serialized
+    // models array because VS Code model objects don't survive JSON serialization
+    // properly (they become plain objects without the expected interface shape)
     const cached = globalState.get<PersistentModelsCache>(MODELS_CACHE_KEY);
+    if (cached?.rawModels && cached.rawModels.length > 0) {
+      // Re-transform raw models to ensure proper VS Code model structure
+      const models = this.transformToVSCodeModels(cached.rawModels);
+      this.memoryCache = {
+        ...cached,
+        models,
+      };
+      logger.debug(
+        `Restored ${models.length} models from persistent cache (re-transformed from raw)`,
+      );
+      return;
+    }
+
+    // Backward compatibility: fall back to cached models if rawModels are missing
     if (cached?.models && cached.models.length > 0) {
       this.memoryCache = cached;
       logger.debug(
-        `Restored ${cached.models.length} models from persistent cache`,
+        `Restored ${cached.models.length} models from legacy persistent cache`,
       );
     }
   }
@@ -136,6 +153,27 @@ export class ModelsClient {
         `Returning ${this.memoryCache.models.length} models from cache (no auth)`,
       );
       return this.memoryCache.models;
+    }
+    if (this.globalState) {
+      const cached = this.globalState.get<PersistentModelsCache>(MODELS_CACHE_KEY);
+      if (cached?.rawModels && cached.rawModels.length > 0) {
+        const models = this.transformToVSCodeModels(cached.rawModels);
+        this.memoryCache = {
+          ...cached,
+          models,
+        };
+        logger.debug(
+          `Hydrated ${models.length} models from persistent cache (no auth)`,
+        );
+        return models;
+      }
+      if (cached?.models && cached.models.length > 0) {
+        this.memoryCache = cached;
+        logger.debug(
+          `Hydrated ${cached.models.length} models from legacy cache (no auth)`,
+        );
+        return cached.models;
+      }
     }
     return [];
   }

@@ -270,8 +270,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       const refined: LanguageModelChatInformation = { ...model };
 
       if (
-        enriched.context_length &&
-        enriched.context_length !== model.maxInputTokens
+          enriched.context_length &&
+          enriched.context_length !== model.maxInputTokens
       ) {
         refined.maxInputTokens = enriched.context_length;
         hasChanges = true;
@@ -304,6 +304,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         );
         // Apply any enrichment we have from the previous session
         if (this.configService.modelsEnrichmentEnabled) {
+          logger.debug("Applying cached model enrichment during auth gap");
           return this.applyEnrichmentToModels(cachedModels);
         }
         return cachedModels;
@@ -322,9 +323,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         models.map((m) => m.id),
       );
       if (this.configService.modelsEnrichmentEnabled) {
-        const enrichedModels = this.applyEnrichmentToModels(models);
-        this.triggerBackgroundEnrichment(models, apiKey);
-        return enrichedModels;
+        // Avoid background enrichment + forced refresh events here: VS Code appears
+        // to briefly clear the model picker UI on `onDidChangeLanguageModelChatInformation`.
+        // We still apply any already-known enrichment, and do lazy enrichment on first use.
+        return this.applyEnrichmentToModels(models);
       }
 
       return models;
