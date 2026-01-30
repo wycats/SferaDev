@@ -1,91 +1,25 @@
 packages:
-  - apps/*
-  - packages/*
-  - configs/*
-  - content
+  - apps/vscode-ai-gateway
+  - packages/openresponses-client
+  - configs/tsconfig
 
 catalog:
-  '@ai-sdk/gateway': 3.0.23
-  '@ai-sdk/openai': 3.0.18
-  '@ai-sdk/provider': 3.0.5
-  '@ai-sdk/provider-utils': 4.0.9
-  '@auth/core': 0.41.1
-  '@auth/drizzle-adapter': 1.11.1
-  '@biomejs/biome': 2.3.12
-  '@changesets/cli': 2.29.8
-  '@kubb/cli': 4.18.5
-  '@kubb/core': 4.18.5
-  '@kubb/oas': 4.18.5
-  '@kubb/plugin-client': 4.18.5
-  '@kubb/plugin-mcp': 4.18.5
-  '@kubb/plugin-oas': 4.18.5
-  '@kubb/plugin-ts': 4.18.5
-  '@kubb/plugin-zod': 4.18.5
-  '@kubb/react': 4.3.1
-  '@kubb/react-fabric': 0.12.5
-  '@mcpauth/auth': 0.1.4
-  '@modelcontextprotocol/sdk': 1.25.3
-  '@next/third-parties': 16.1.4
-  '@openapi-codegen/cli': 3.1.0
-  '@openapi-codegen/typescript': 11.1.0
-  '@radix-ui/react-avatar': 1.1.11
-  '@radix-ui/react-slot': 1.2.4
-  '@radix-ui/react-tabs': 1.1.13
-  '@tailwindcss/postcss': 4.1.18
-  '@tailwindcss/typography': 0.5.19
-  '@types/json-schema': 7.0.15
-  '@types/node': 25.0.10
-  '@types/pg': 8.16.0
-  '@types/react': 19.2.9
-  '@types/react-dom': 19.2.3
-  '@vercel/config': 0.0.26
-  '@vercel/oidc': 3.1.0
-  '@vscode/vsce': 3.7.1
+  "@ai-sdk/gateway": 3.0.23
+  "@ai-sdk/openai": 3.0.18
+  "@ai-sdk/provider": 3.0.5
+  "@ai-sdk/provider-utils": 4.0.9
+  "@kubb/cli": 4.18.5
+  "@kubb/core": 4.18.5
+  "@kubb/plugin-oas": 4.18.5
+  "@kubb/plugin-ts": 4.18.5
+  "@kubb/plugin-zod": 4.18.5
+  "@types/json-schema": 7.0.15
+  "@types/node": 25.0.10
+  "@vscode/vsce": 3.7.1
   ai: 6.0.50
-  bunchee: 6.9.4
-  case: 1.6.3
-  class-variance-authority: 0.7.1
-  clsx: 2.1.1
-  dotenv: 17.2.3
-  drizzle-kit: 0.31.8
-  drizzle-orm: 0.45.1
-  es-module-lexer: 2.0.0
   fast-check: ^3.23.2
-  framer-motion: 12.29.0
-  geist: 1.5.1
-  gray-matter: 4.0.3
-  is-tree-shakable: 0.4.2
   knip: 5.82.1
-  lefthook: 2.0.15
-  lucide-react: 0.563.0
-  markdown-to-jsx: 9.6.1
-  mcp-handler: 1.0.7
-  mintlify: 4.2.296
-  next: 16.1.4
-  next-auth: 5.0.0-beta.29
-  next-intl: 4.7.0
-  next-themes: 0.4.6
-  openapi3-ts: 4.5.0
-  pg: 8.17.2
-  postcss: 8.5.6
-  react: 19.2.3
-  react-dom: 19.2.3
-  rimraf: 6.1.2
-  rollup: 4.56.0
-  tailwind-merge: 3.4.0
-  tailwindcss: 4.1.18
-  tailwindcss-animate: 1.0.7
-  ts-morph: 27.0.2
   tsx: 4.21.0
-  turbo: 2.7.6
-  tw-animate-css: 1.4.0
   typescript: 5.9.3
   vitest: 4.0.18
   zod: 4.3.6
-
-catalogMode: strict
-
-cleanupUnusedCatalogs: true
-
-onlyBuiltDependencies:
-  - lefthook

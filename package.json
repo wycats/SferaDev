@@ -1,59 +1,47 @@
 {
-	"name": "@sferadev/monorepo",
-	"private": true,
-	"scripts": {
-		"build": "turbo run build",
-		"dev": "turbo run dev",
-		"generate": "turbo run generate",
-		"check": "biome check . && knip --config configs/knip.json && turbo run is-tree-shakable --filter='./packages/*'",
-		"check:fix": "biome check . --write",
-		"tsc": "turbo run tsc",
-		"test": "turbo run test",
-		"knip": "knip --config configs/knip.json",
-		"clean": "turbo run clean && rm -rf node_modules",
-		"changeset": "changeset",
-		"version-packages": "changeset version",
-		"release": "./scripts/release.sh"
-	},
-	"devDependencies": {
-		"@ai-sdk/openai": "catalog:",
-		"@biomejs/biome": "catalog:",
-		"@changesets/cli": "catalog:",
-		"ai": "catalog:",
-		"is-tree-shakable": "catalog:",
-		"knip": "catalog:",
-		"lefthook": "catalog:",
-		"tsx": "catalog:",
-		"turbo": "catalog:",
-		"typescript": "catalog:",
-		"zod": "catalog:"
-	},
-	"packageManager": "pnpm@10.26.2",
-	"engines": {
-		"node": ">=22"
-	},
-	"pnpm": {
-		"overrides": {
-			"content@<3.0.7": ">=3.0.7",
-			"tar@<6.2.1": ">=6.2.1",
-			"zod@<=3.22.2": ">=3.22.3",
-			"body-parser@<1.20.3": ">=1.20.3",
-			"serve-static@<1.16.0": ">=1.16.0",
-			"express@<4.20.0": ">=4.20.0",
-			"path-to-regexp@<0.1.10": ">=0.1.10",
-			"esbuild@<=0.24.2": ">=0.25.0",
-			"cookie@<0.7.0": ">=0.7.0",
-			"path-to-regexp@<0.1.12": ">=0.1.12",
-			"next-auth@>=5.0.0-beta.0 <5.0.0-beta.30": ">=5.0.0-beta.30",
-			"send@<0.19.0": ">=0.19.0",
-			"js-yaml@>=4.0.0 <4.1.1": ">=4.1.1",
-			"express@<4.19.2": ">=4.19.2",
-			"qs@<6.14.1": ">=6.14.1",
-			"hono@<4.11.4": ">=4.11.4",
-			"axios@>=1.0.0 <1.12.0": ">=1.12.0",
-			"tar@<=7.5.2": ">=7.5.3",
-			"tar@<=7.5.3": ">=7.5.4",
-			"lodash@>=4.0.0 <=4.17.22": ">=4.17.23"
-		}
-	}
+  "name": "vercel-ai-gateway-vscode",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter vscode-extension-vercel-ai build",
+    "test": "pnpm --filter vscode-extension-vercel-ai test",
+    "package": "pnpm --filter vscode-extension-vercel-ai package",
+    "knip": "knip --config configs/knip.json",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+  },
+  "devDependencies": {
+    "@ai-sdk/openai": "catalog:",
+    "ai": "catalog:",
+    "knip": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  },
+  "packageManager": "pnpm@10.26.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "pnpm": {
+    "overrides": {
+      "content@<3.0.7": ">=3.0.7",
+      "tar@<6.2.1": ">=6.2.1",
+      "zod@<=3.22.2": ">=3.22.3",
+      "body-parser@<1.20.3": ">=1.20.3",
+      "serve-static@<1.16.0": ">=1.16.0",
+      "express@<4.20.0": ">=4.20.0",
+      "path-to-regexp@<0.1.10": ">=0.1.10",
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "cookie@<0.7.0": ">=0.7.0",
+      "path-to-regexp@<0.1.12": ">=0.1.12",
+      "next-auth@>=5.0.0-beta.0 <5.0.0-beta.30": ">=5.0.0-beta.30",
+      "send@<0.19.0": ">=0.19.0",
+      "js-yaml@>=4.0.0 <4.1.1": ">=4.1.1",
+      "express@<4.19.2": ">=4.19.2",
+      "qs@<6.14.1": ">=6.14.1",
+      "hono@<4.11.4": ">=4.11.4",
+      "axios@>=1.0.0 <1.12.0": ">=1.12.0",
+      "tar@<=7.5.2": ">=7.5.3",
+      "tar@<=7.5.3": ">=7.5.4",
+      "lodash@>=4.0.0 <=4.17.22": ">=4.17.23"
+    }
+  }
 }

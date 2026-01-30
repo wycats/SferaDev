@@ -1,3 +1,0 @@
-# This directory contains auto-generated Convex files
-# The .d.ts stub files are provided for TypeScript checking before running convex dev
-# Running `npx convex dev` or `npx convex deploy` will generate the actual files

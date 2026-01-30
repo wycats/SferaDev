@@ -1,9 +1,0 @@
-{
-	"extends": "@sferadev/tsconfig/react-library.json",
-	"compilerOptions": {
-		"module": "ESNext",
-		"moduleResolution": "bundler"
-	},
-	"include": ["."],
-	"exclude": ["dist", "build", "node_modules"]
-}
