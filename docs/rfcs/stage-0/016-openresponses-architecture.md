@@ -1,4 +1,4 @@
-# RFC 010: OpenResponses Architecture & Provider Refactoring
+# RFC 016: OpenResponses Architecture & Provider Refactoring
 
 **Status:** Draft  
 **Author:** GitHub Copilot (Claude Sonnet 4.5)  

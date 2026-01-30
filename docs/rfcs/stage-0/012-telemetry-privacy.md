@@ -1,4 +1,4 @@
-# RFC 005c: Telemetry & Privacy
+# RFC 012: Telemetry & Privacy
 
 **Status:** Triage  
 **Author:** Vercel AI Team  

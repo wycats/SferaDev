@@ -1,4 +1,4 @@
-# RFC 011: OpenResponses Cleanup and Logging Audit
+# RFC 017: OpenResponses Cleanup and Logging Audit
 
 **Status**: Stage 0 (Draft)  
 **Created**: 2026-01-29  

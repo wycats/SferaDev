@@ -1,4 +1,4 @@
-# RFC 009: Logging Infrastructure Improvements
+# RFC 015: Logging Infrastructure Improvements
 
 **Status**: Stage 0 (Draft)  
 **Created**: 2026-01-28  

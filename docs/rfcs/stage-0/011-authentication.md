@@ -1,4 +1,4 @@
-# RFC 005b: Authentication
+# RFC 011: Authentication
 
 **Status:** Triage  
 **Author:** Vercel AI Team  

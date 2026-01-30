@@ -1,4 +1,4 @@
-# RFC 003b: Token Estimation & Message Conversion
+# RFC 006: Token Estimation & Message Conversion
 
 **Status:** Implemented  
 **Author:** Vercel AI Team  

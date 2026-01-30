@@ -1,4 +1,4 @@
-# RFC 008a: Enrichment-Based Capability Refinement
+# RFC 014: Enrichment-Based Capability Refinement
 
 **Status**: ✅ Partially Implemented  
 **Created**: 2026-01-28  

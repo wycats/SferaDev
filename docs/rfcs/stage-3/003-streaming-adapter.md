@@ -1,4 +1,4 @@
-# RFC 003a: Streaming Adapter Extraction
+# RFC 003: Streaming Adapter Extraction
 
 **Status:** Implemented  
 **Author:** Vercel AI Team  

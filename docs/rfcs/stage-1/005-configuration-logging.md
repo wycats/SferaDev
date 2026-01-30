@@ -1,7 +1,7 @@
 ---
 stage: 1
 ---
-# RFC 005a: Configuration & Logging
+# RFC 005: Configuration & Logging
 
 **Status:** Ready for Review  
 **Author:** Vercel AI Team  

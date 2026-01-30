@@ -1,4 +1,4 @@
-# RFC 010a: Tool Call Truncation for OpenResponses
+# RFC 013: Tool Call Truncation for OpenResponses
 
 ## Status: Stage 0 (Strawman)
 
