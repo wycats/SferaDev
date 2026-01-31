@@ -13,7 +13,9 @@ import type { ItemParam } from "openresponses-client";
  * @param items - Array of message items to consolidate
  * @returns Consolidated array with no consecutive same-role messages
  */
-export function consolidateConsecutiveMessages(items: ItemParam[]): ItemParam[] {
+export function consolidateConsecutiveMessages(
+  items: ItemParam[],
+): ItemParam[] {
   if (items.length === 0) return items;
 
   const result: ItemParam[] = [];

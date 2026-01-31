@@ -14,27 +14,17 @@
 import {
   type CreateResponseBody,
   createClient,
-  type FunctionCallItemParam,
-  type FunctionCallOutputItemParam,
   type FunctionToolParam,
-  type InputImageContentParamAutoParam,
-  type InputTextContentParam,
   type ItemParam,
   OpenResponsesError,
-  type OutputTextContentParam,
   type Usage,
 } from "openresponses-client";
 import {
   type CancellationToken,
   type LanguageModelChatInformation,
   type LanguageModelChatMessage,
-  LanguageModelChatMessageRole,
   LanguageModelChatToolMode,
-  LanguageModelDataPart,
   type LanguageModelResponsePart,
-  LanguageModelTextPart,
-  LanguageModelToolCallPart,
-  LanguageModelToolResultPart,
   type Progress,
   type ProvideLanguageModelChatResponseOptions,
 } from "vscode";
@@ -45,18 +35,15 @@ import {
   logger,
 } from "../logger.js";
 import type { TokenStatusBar } from "../status-bar.js";
-import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
-import { UsageTracker } from "./usage-tracker.js";
-import { saveSuspiciousRequest, type SuspiciousRequestContext } from "./debug-utils.js";
-import { detectImageMimeType } from "./image-utils.js";
 import { consolidateConsecutiveMessages } from "./message-consolidation.js";
-
-/**
- * VS Code proposed API: LanguageModelChatMessageRole.System = 3
- * See: vscode.proposed.languageModelSystem.d.ts
- * This is used by VS Code Copilot to send system prompts.
- */
-const VSCODE_SYSTEM_ROLE = 3;
+import {
+  saveSuspiciousRequest,
+  type SuspiciousRequestContext,
+} from "./debug-utils.js";
+import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
+import { buildToolNameMap, translateMessage } from "./message-translation.js";
+import { VSCODE_SYSTEM_ROLE, extractSystemPrompt } from "./system-prompt.js";
+import { UsageTracker } from "./usage-tracker.js";
 
 /**
  * Options for the OpenResponses chat implementation
@@ -91,7 +78,6 @@ export interface OpenResponsesChatResult {
   /** Token info extracted from "input too long" errors */
   tokenInfo?: ExtractedTokenInfo;
 }
-
 
 /**
  * Execute a chat request using the OpenResponses API.
@@ -604,10 +590,12 @@ function translateRequest(
   // We keep `instructions` for OpenAI compatibility but also add a developer message for others.
   let finalInput = consolidatedInput;
   if (instructions) {
+    // NOTE: The API requires message content to be a STRING, not an array.
+    // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
     const developerMessage: ItemParam = {
       type: "message",
       role: "developer",
-      content: [{ type: "input_text", text: instructions }],
+      content: instructions,
     };
     finalInput = [developerMessage, ...consolidatedInput];
     logger.info(
@@ -647,379 +635,6 @@ function translateRequest(
   }
 
   return { input: finalInput, tools, toolChoice };
-}
-
-/**
- * Build a mapping of tool call IDs to tool names.
- */
-function buildToolNameMap(
-  messages: readonly LanguageModelChatMessage[],
-): Map<string, string> {
-  const map = new Map<string, string>();
-
-  for (const message of messages) {
-    for (const part of message.content) {
-      if (part instanceof LanguageModelToolCallPart) {
-        map.set(part.callId, part.name);
-      }
-    }
-  }
-
-  return map;
-}
-
-/**
- * Translate a single VS Code message to OpenResponses items.
- */
-function translateMessage(
-  message: LanguageModelChatMessage,
-  _toolNameMap: Map<string, string>,
-): ItemParam[] {
-  void _toolNameMap;
-  const items: ItemParam[] = [];
-  const role = message.role;
-  const openResponsesRole = resolveOpenResponsesRole(role);
-
-  // DEBUG: Log the incoming role
-  logger.trace(
-    `[OpenResponses] translateMessage role=${String(role)} (User=${String(LanguageModelChatMessageRole.User)}, Assistant=${String(LanguageModelChatMessageRole.Assistant)}) mapped=${openResponsesRole}`,
-  );
-
-  // Collect content parts
-  type UserContent = InputTextContentParam | InputImageContentParamAutoParam;
-  type AssistantContent = OutputTextContentParam;
-  const contentParts: (UserContent | AssistantContent)[] = [];
-
-  for (const part of message.content) {
-    if (part instanceof LanguageModelTextPart) {
-      // Text content
-      // Use input_text for User role, and also for unknown roles (which become user messages)
-      // Only use output_text for Assistant role
-      if (openResponsesRole === "assistant") {
-        contentParts.push({
-          type: "output_text",
-          text: part.value,
-        });
-      } else {
-        contentParts.push({
-          type: "input_text",
-          text: part.value,
-        });
-      }
-    } else if (part instanceof LanguageModelDataPart) {
-      // Binary data - images
-      if (part.mimeType.startsWith("image/") && openResponsesRole === "user") {
-        const base64 = Buffer.from(part.data).toString("base64");
-        // Resolve the actual mime type - VS Code may pass "image/*" wildcard
-        // which the API rejects. Detect from magic bytes if needed.
-        const resolvedMimeType = detectImageMimeType(part.data, part.mimeType);
-        const imageUrl = `data:${resolvedMimeType};base64,${base64}`;
-        contentParts.push({
-          type: "input_image",
-          image_url: imageUrl,
-        });
-      }
-    } else if (part instanceof LanguageModelToolCallPart) {
-      // Emit function_call item for tool calls.
-      // The gateway now accepts function_call as input (verified 2026-01-31).
-      // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
-      //
-      // First, flush any accumulated content
-      if (contentParts.length > 0) {
-        const messageItem = createMessageItem(openResponsesRole, contentParts);
-        if (messageItem) {
-          items.push(messageItem);
-        }
-        contentParts.length = 0;
-      }
-
-      // Emit function_call item
-      const functionCallItem: FunctionCallItemParam = {
-        type: "function_call",
-        call_id: part.callId,
-        name: part.name,
-        arguments:
-          typeof part.input === "string"
-            ? part.input
-            : JSON.stringify(part.input ?? {}),
-      };
-      items.push(functionCallItem as ItemParam);
-    } else if (part instanceof LanguageModelToolResultPart) {
-      // Emit function_call_output item for tool results.
-      // This MUST follow a corresponding function_call item with matching call_id.
-      // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
-      //
-      // First, flush any accumulated content
-      if (contentParts.length > 0) {
-        const messageItem = createMessageItem(openResponsesRole, contentParts);
-        if (messageItem) {
-          items.push(messageItem);
-        }
-        contentParts.length = 0;
-      }
-
-      const output =
-        typeof part.content === "string"
-          ? part.content
-          : JSON.stringify(part.content);
-      if (output.trim() === "") {
-        logger.debug("[OpenResponses] Skipping empty tool result content");
-        continue;
-      }
-
-      // Emit function_call_output item
-      const functionCallOutputItem: FunctionCallOutputItemParam = {
-        type: "function_call_output",
-        call_id: part.callId,
-        output,
-      };
-      items.push(functionCallOutputItem as ItemParam);
-    }
-  }
-
-  // Flush remaining content
-  if (contentParts.length > 0) {
-    const messageItem = createMessageItem(openResponsesRole, contentParts);
-    if (messageItem) {
-      items.push(messageItem);
-    }
-  }
-
-  return items;
-}
-
-/**
- * Create a message item from content parts.
- *
- * NOTE: We deliberately omit "system" role here. The OpenResponses API rejects
- * `role: "system"` in input messages. Use the `instructions` field for system
- * prompts, or use "developer" role for message-based system-like content.
- *
- * CRITICAL: The Vercel AI Gateway/OpenResponses API requires message content
- * to be a STRING, not an array of content objects. If content is structured
- * as an array, the API returns 400 Invalid input.
- */
-function createMessageItem(
-  role: "user" | "assistant" | "developer",
-  content: (
-    | InputTextContentParam
-    | InputImageContentParamAutoParam
-    | OutputTextContentParam
-  )[],
-): ItemParam | null {
-  // Convert content array to string
-  // For text-only content: concatenate all text parts
-  // For mixed content (text + images): use array format (but this is rare)
-
-  // Check if content is text-only
-  const textOnly = content.every(
-    (part) => part.type === "input_text" || part.type === "output_text",
-  );
-
-  if (textOnly) {
-    // Concatenate all text parts into a single string
-    const textContent = content
-      .map((part) => ("text" in part ? part.text : ""))
-      .join("");
-    if (textContent.trim() === "") {
-      return null;
-    }
-
-    return {
-      type: "message",
-      role,
-      content: textContent,
-    } as ItemParam;
-  }
-
-  // For mixed content (has images), keep as array
-  // This is mainly for user messages with images
-  switch (role) {
-    case "user": {
-      // For user with mixed content, keep the array but filter empty items
-      const filteredContent = content.filter((part) => {
-        if ("text" in part) return part.text.length > 0;
-        return true; // Keep images
-      });
-      if (filteredContent.length === 0) {
-        return null;
-      }
-      return {
-        type: "message",
-        role: "user",
-        content: filteredContent as (
-          | InputTextContentParam
-          | InputImageContentParamAutoParam
-        )[],
-      };
-    }
-
-    case "assistant": {
-      // Assistant should never have images, so this shouldn't happen
-      // But if it does, convert to text
-      const assText = content
-        .map((part) => ("text" in part ? part.text : ""))
-        .join("");
-      if (assText.trim() === "") {
-        return null;
-      }
-      return {
-        type: "message",
-        role: "assistant",
-        content: assText,
-      };
-    }
-
-    case "developer": {
-      // Developer messages are typically text-only
-      const devText = content
-        .map((part) => ("text" in part ? part.text : ""))
-        .join("");
-      if (devText.trim() === "") {
-        return null;
-      }
-      return {
-        type: "message",
-        role: "developer",
-        content: devText,
-      };
-    }
-  }
-}
-
-/**
- * Extract system prompt from VS Code messages.
- *
- * ⚠️ CRITICAL - DO NOT REMOVE THIS FUNCTION ⚠️
- *
- * VS Code Copilot uses the proposed System role (role=3) to send system prompts.
- * See: vscode.proposed.languageModelSystem.d.ts
- *
- * Without this extraction:
- * - The system prompt gets translated as a regular message
- * - Claude sees incorrect conversation structure
- * - Tool calling breaks
- *
- * If detected, returns the system prompt text to be used as `instructions`.
- */
-function extractSystemPrompt(
-  messages: readonly LanguageModelChatMessage[],
-): string | undefined {
-  if (messages.length === 0) return undefined;
-
-  const firstMessage = messages[0];
-
-  // Check for VS Code System role (proposed API, role=3)
-  // Cast to number for comparison since it's not in stable types
-  const messageRole = firstMessage.role as number;
-
-  logger.info(
-    `[OpenResponses] System prompt check: first message role=${String(messageRole)}, expected System=${String(VSCODE_SYSTEM_ROLE)}`,
-  );
-
-  if (messageRole !== VSCODE_SYSTEM_ROLE) {
-    // Not a system message - check if it might be a disguised system prompt
-    // (older behavior where system was sent as Assistant)
-    if (messageRole === LanguageModelChatMessageRole.Assistant) {
-      return extractDisguisedSystemPrompt(firstMessage);
-    }
-    return undefined;
-  }
-
-  // Extract text content from the system message
-  return extractMessageText(firstMessage);
-}
-
-/**
- * Extract text content from a VS Code message.
- */
-function extractMessageText(
-  message: LanguageModelChatMessage,
-): string | undefined {
-  const content = message.content;
-  let textContent = "";
-
-  if (typeof content === "string") {
-    textContent = content;
-  } else if (Array.isArray(content)) {
-    for (const part of content) {
-      if ("value" in part && typeof part.value === "string") {
-        textContent += part.value;
-      }
-    }
-  }
-
-  textContent = textContent.trim();
-  return textContent || undefined;
-}
-
-/**
- * Detect if an Assistant message is actually a disguised system prompt.
- * This is a fallback for older VS Code versions that don't have System role.
- */
-function extractDisguisedSystemPrompt(
-  message: LanguageModelChatMessage,
-): string | undefined {
-  const textContent = extractMessageText(message);
-  if (!textContent) return undefined;
-
-  // Check for common system prompt patterns
-  const systemPromptPatterns = [
-    /^You are an? /i,
-    /^<instructions>/i,
-    /^<system>/i,
-    /^As an? AI/i,
-    /^Your role is/i,
-    /^You're an? /i,
-  ];
-
-  for (const pattern of systemPromptPatterns) {
-    if (pattern.test(textContent)) {
-      logger.info(
-        `[OpenResponses] Detected disguised system prompt in Assistant message`,
-      );
-      return textContent;
-    }
-  }
-
-  // Additional heuristic: long messages with instruction keywords
-  if (textContent.length > 1000) {
-    const instructionKeywords = [
-      "follow the user",
-      "you must",
-      "your task is",
-      "you will be",
-      "expert",
-      "programming assistant",
-      "coding assistant",
-      "github copilot",
-    ];
-    const lowerContent = textContent.toLowerCase();
-    const matchCount = instructionKeywords.filter((kw) =>
-      lowerContent.includes(kw),
-    ).length;
-    if (matchCount >= 2) {
-      logger.info(
-        `[OpenResponses] Detected disguised system prompt via keyword heuristic`,
-      );
-      return textContent;
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * Resolve a VS Code chat message role to an OpenResponses role.
- *
- * VS Code currently exposes only User/Assistant roles. System/developer prompts
- * are supplied via options (handled as OpenResponses `instructions`).
- */
-function resolveOpenResponsesRole(
-  role: LanguageModelChatMessageRole,
-): "user" | "assistant" {
-  if (role === LanguageModelChatMessageRole.User) return "user";
-  return "assistant";
 }
 
 /**

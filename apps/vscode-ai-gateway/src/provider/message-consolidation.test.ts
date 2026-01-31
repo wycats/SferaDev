@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { ItemParam } from "openresponses-client";
 import { consolidateConsecutiveMessages } from "./message-consolidation.js";
 
-function userMessage(content: string | { type: "input_text"; text: string }[]): ItemParam {
+function userMessage(
+  content: string | { type: "input_text"; text: string }[],
+): ItemParam {
   return {
     type: "message",
     role: "user",
@@ -54,7 +56,11 @@ describe("consolidateConsecutiveMessages", () => {
   });
 
   it("keeps alternating roles unchanged", () => {
-    const input = [userMessage("Hi"), assistantMessage("Hello"), userMessage("Next")];
+    const input = [
+      userMessage("Hi"),
+      assistantMessage("Hello"),
+      userMessage("Next"),
+    ];
     expect(consolidateConsecutiveMessages(input)).toEqual([
       { type: "message", role: "user", content: "Hi" },
       { type: "message", role: "assistant", content: "Hello" },
