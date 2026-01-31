@@ -22,6 +22,8 @@ import {
   type LanguageModelChatInformation,
   type LanguageModelChatMessage,
   type LanguageModelResponsePart,
+  LanguageModelTextPart,
+  LanguageModelToolCallPart,
   type Progress,
   type ProvideLanguageModelChatResponseOptions,
 } from "vscode";
@@ -32,10 +34,7 @@ import {
   logger,
 } from "../logger.js";
 import type { TokenStatusBar } from "../status-bar.js";
-import {
-  saveSuspiciousRequest,
-  type SuspiciousRequestContext,
-} from "./debug-utils.js";
+import { saveSuspiciousRequest } from "./debug-utils.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";

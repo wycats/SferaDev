@@ -20,11 +20,12 @@
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
     "**/.hg/store/**": true,
-    ".reference/**": true
+    ".reference/**": true,
+    ".logs/**": true
   },
   // Enable file logging for Vercel AI Gateway when using debug/trace level
   // Logs will be written to .logs/ directory (gitignored)
   "vercelAiGateway.logging.fileDirectory": ".logs",
-  "vercelAiGateway.logging.level": "debug",
+  "vercelAiGateway.logging.level": "info",
   "vercelAiGateway.logging.capture": ["requests", "suspicious", "events"]
 }

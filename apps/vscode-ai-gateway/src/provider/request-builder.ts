@@ -93,7 +93,7 @@ export function translateRequest(
       role: "developer",
       content: instructions,
     };
-    finalInput = [developerMessage, ...consolidatedInput];
+    finalInput = [developerMessage, ...validInput];
     logger.info(
       `[OpenResponses] Prepended developer message (${instructions.length} chars)`,
     );

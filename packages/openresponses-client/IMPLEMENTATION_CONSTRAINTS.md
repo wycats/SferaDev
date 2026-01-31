@@ -158,12 +158,12 @@ but are completely ignored when using Anthropic or other non-OpenAI providers.
 
 The `metadata` field has strict validation limits:
 
-| Limit | Value | Error Message |
-|-------|-------|---------------|
-| Max keys | 16 | "Metadata cannot have more than 16 keys" |
-| Max key length | 64 characters | "Metadata keys cannot exceed 64 characters" |
+| Limit            | Value          | Error Message                                       |
+| ---------------- | -------------- | --------------------------------------------------- |
+| Max keys         | 16             | "Metadata cannot have more than 16 keys"            |
+| Max key length   | 64 characters  | "Metadata keys cannot exceed 64 characters"         |
 | Max value length | 512 characters | "Too big: expected string to have <=512 characters" |
-| Value type | strings only | Zod type validation error |
+| Value type       | strings only   | Zod type validation error                           |
 
 **Source**: Gateway validation in `lib/openresponses-compat/openresponses-compat-api-types.ts`
 
@@ -235,9 +235,9 @@ does not include the tool name - only the `call_id` and `output`.
 
 ```typescript
 const toolResult: LanguageModelV3ToolResultPart = {
-  type: 'tool-result',
+  type: "tool-result",
   toolCallId: item.call_id,
-  toolName: 'unknown', // OpenResponses doesn't include tool name in output
+  toolName: "unknown", // OpenResponses doesn't include tool name in output
   output,
 };
 ```
@@ -389,29 +389,29 @@ If `allowed_tools` is specified, each tool name must exist in the `tools` array.
 
 ### Tested: 2026-01-31 (verified)
 
-| Payload Type                                    | Result      | Notes                                       |
-| ----------------------------------------------- | ----------- | ------------------------------------------- |
-| Minimal user message                            | ✅ Success  | Basic case works                            |
-| Developer + user messages                       | ✅ Success  | `role: "developer"` works                   |
-| Message with tools defined                      | ✅ Success  | Tool schema accepted                        |
-| Multi-turn with string assistant content        | ✅ Success  | Preferred format                            |
-| Multi-turn with `output_text` array             | ✅ Success  | Accepted for assistant input                |
-| `function_call` as input item                   | ✅ Success  | **NOW WORKS** (gateway updated)             |
-| `function_call` + `function_call_output` pair   | ✅ Success  | **Recommended approach**                    |
-| `function_call_output` alone (no function_call) | ⚠️ Degraded | Provider-level confusion                    |
-| Consecutive user messages (3+)                  | ✅ Success  | Behavioral issues possible                  |
-| `instructions` field with Anthropic             | ⚠️ Ignored  | Not passed to non-OpenAI                    |
-| `developer` message with Anthropic              | ✅ Success  | Converted to system message                 |
-| 17 metadata keys                                | ❌ 400 Error | Max 16 keys                                 |
-| 65-char metadata key                            | ❌ 400 Error | Max 64 chars                                |
-| 513-char metadata value                         | ❌ 400 Error | Max 512 chars                               |
-| No user message                                 | ❌ 400 Error | User message required                       |
-| Empty input array                               | ❌ 400 Error | Min 1 item                                  |
-| Invalid tool in allowed_tools                   | ❌ 400 Error | Must match tools[]                          |
-| Invalid JSON in function_call args              | ✅ Success  | Coerced to {}                               |
-| `metadata` with Anthropic                       | ⚠️ Ignored  | OpenAI-only (code verified)                 |
-| `previous_response_id` with Anthropic           | ⚠️ Ignored  | OpenAI-only (code verified)                 |
-| `input_image` with `detail` field               | ⚠️ Ignored  | `detail` not passed to provider             |
+| Payload Type                                    | Result       | Notes                           |
+| ----------------------------------------------- | ------------ | ------------------------------- |
+| Minimal user message                            | ✅ Success   | Basic case works                |
+| Developer + user messages                       | ✅ Success   | `role: "developer"` works       |
+| Message with tools defined                      | ✅ Success   | Tool schema accepted            |
+| Multi-turn with string assistant content        | ✅ Success   | Preferred format                |
+| Multi-turn with `output_text` array             | ✅ Success   | Accepted for assistant input    |
+| `function_call` as input item                   | ✅ Success   | **NOW WORKS** (gateway updated) |
+| `function_call` + `function_call_output` pair   | ✅ Success   | **Recommended approach**        |
+| `function_call_output` alone (no function_call) | ⚠️ Degraded  | Provider-level confusion        |
+| Consecutive user messages (3+)                  | ✅ Success   | Behavioral issues possible      |
+| `instructions` field with Anthropic             | ⚠️ Ignored   | Not passed to non-OpenAI        |
+| `developer` message with Anthropic              | ✅ Success   | Converted to system message     |
+| 17 metadata keys                                | ❌ 400 Error | Max 16 keys                     |
+| 65-char metadata key                            | ❌ 400 Error | Max 64 chars                    |
+| 513-char metadata value                         | ❌ 400 Error | Max 512 chars                   |
+| No user message                                 | ❌ 400 Error | User message required           |
+| Empty input array                               | ❌ 400 Error | Min 1 item                      |
+| Invalid tool in allowed_tools                   | ❌ 400 Error | Must match tools[]              |
+| Invalid JSON in function_call args              | ✅ Success   | Coerced to {}                   |
+| `metadata` with Anthropic                       | ⚠️ Ignored   | OpenAI-only (code verified)     |
+| `previous_response_id` with Anthropic           | ⚠️ Ignored   | OpenAI-only (code verified)     |
+| `input_image` with `detail` field               | ⚠️ Ignored   | `detail` not passed to provider |
 
 ---
 
