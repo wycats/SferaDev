@@ -10,6 +10,18 @@
     "**/dist": true,
     "**/*.vsix": true
   },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    ".reference": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.hg/store/**": true,
+    ".reference/**": true
+  },
   // Enable file logging for Vercel AI Gateway when using debug/trace level
   // Logs will be written to .logs/ directory (gitignored)
   "vercelAiGateway.logging.fileDirectory": ".logs",

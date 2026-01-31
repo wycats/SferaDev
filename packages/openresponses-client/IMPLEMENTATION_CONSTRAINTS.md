@@ -141,6 +141,21 @@ are ignored by non-OpenAI providers:
 - `response_format`
 - `max_output_tokens`
 
+### 1b. Metadata Field Limits
+
+The `metadata` field has strict validation limits:
+
+| Limit | Value | Error Message |
+|-------|-------|---------------|
+| Max keys | 16 | "Metadata cannot have more than 16 keys" |
+| Max key length | 64 characters | "Metadata keys cannot exceed 64 characters" |
+| Max value length | 512 characters | "Too big: expected string to have <=512 characters" |
+| Value type | strings only | Zod type validation error |
+
+**Source**: Gateway validation in `lib/openresponses-compat/openresponses-compat-api-types.ts`
+
+**Verified**: 2026-01-31 via empirical testing
+
 **Important**: The `function_call` item can appear directly after a user message;
 an explicit assistant message is no longer required before the tool call.
 
@@ -175,6 +190,16 @@ in input.
   "content": "This is the assistant's response"
 }
 ```
+
+### 3a. Invalid `function_call` Arguments Are Coerced
+
+If the `arguments` field in a `function_call` input item contains invalid JSON,
+the gateway coerces it to an empty object `{}` rather than rejecting the request.
+
+**Verified**: 2026-01-31 - Request with `"arguments": "invalid json here"` was
+accepted and the model continued normally.
+
+**Source**: Gateway code in `lib/openresponses-compat/convert-to-aisdk-call-options.ts`
 
 ---
 
@@ -269,6 +294,33 @@ The API **returns** (in responses):
 
 ---
 
+## Input Validation Constraints
+
+### 10. User Message Required
+
+At least one `user` role message is required in the input array.
+
+**Error**: "At least one user message is required in the input"
+**Status**: 400
+
+**Source**: Gateway validation in `lib/openresponses-compat/openresponses-compat-api-types.ts`
+
+### 11. Non-Empty Input Array
+
+The `input` array must contain at least one item. Empty arrays are rejected.
+
+**Error**: "input: Too small: expected array to have >=1 items"
+**Status**: 400
+
+### 12. allowed_tools Must Reference Defined Tools
+
+If `allowed_tools` is specified, each tool name must exist in the `tools` array.
+
+**Error**: "allowed_tools contains undefined tools: [tool_name]"
+**Status**: 400
+
+---
+
 ## Empirical Test Results
 
 ### Tested: 2026-01-31 (verified)
@@ -286,6 +338,13 @@ The API **returns** (in responses):
 | Consecutive user messages (3+)                  | ✅ Success  | Behavioral issues possible      |
 | `instructions` field with Anthropic             | ⚠️ Ignored  | Not passed to non-OpenAI        |
 | `developer` message with Anthropic              | ✅ Success  | Converted to system message     |
+| 17 metadata keys                                | ❌ 400 Error | Max 16 keys                     |
+| 65-char metadata key                            | ❌ 400 Error | Max 64 chars                    |
+| 513-char metadata value                         | ❌ 400 Error | Max 512 chars                   |
+| No user message                                 | ❌ 400 Error | User message required           |
+| Empty input array                               | ❌ 400 Error | Min 1 item                      |
+| Invalid tool in allowed_tools                   | ❌ 400 Error | Must match tools[]              |
+| Invalid JSON in function_call args              | ✅ Success  | Coerced to {}                   |
 
 ---
 
