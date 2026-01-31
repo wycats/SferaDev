@@ -7,10 +7,22 @@ export const ENRICHMENT_ENDPOINT_PATTERN = "/v1/models";
 export const ENRICHMENT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 export const TOKEN_REFRESH_MARGIN = 15 * 60 * 1000; // 15 minutes
 export const LAST_SELECTED_MODEL_KEY = "vercelAiGateway.lastSelectedModel";
-export const DEFAULT_TIMEOUT_MS = 30000;
-export const DEFAULT_REASONING_EFFORT = "medium" as const;
-export const DEFAULT_SYSTEM_PROMPT_MESSAGE =
-  "You are being accessed through the Vercel AI Gateway VS Code extension. The user is interacting with you via VS Code's chat interface.";
+
+/**
+ * Conservative token limits to prevent high-context degradation.
+ *
+ * Research shows that LLM performance degrades significantly as context approaches
+ * advertised limits ("context rot"). Models may announce intent to use tools but
+ * fail to actually call them, or produce lower-quality outputs.
+ *
+ * These conservative limits match what VS Code Copilot uses, triggering VS Code's
+ * built-in summarization earlier to keep context in the reliable operating range.
+ *
+ * See: docs/rfcs/stage-0/019-high-context-tool-call-failure.md
+ * See: https://research.trychroma.com/context-rot
+ */
+export const CONSERVATIVE_MAX_INPUT_TOKENS = 128_000;
+export const CONSERVATIVE_MAX_OUTPUT_TOKENS = 16_384;
 
 export const ERROR_MESSAGES = {
   AUTH_FAILED:

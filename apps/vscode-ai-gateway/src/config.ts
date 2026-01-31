@@ -1,14 +1,25 @@
 import * as vscode from "vscode";
-import {
-  DEFAULT_BASE_URL,
-  DEFAULT_REASONING_EFFORT,
-  DEFAULT_SYSTEM_PROMPT_MESSAGE,
-  DEFAULT_TIMEOUT_MS,
-} from "./constants";
+import { DEFAULT_BASE_URL } from "./constants";
 
-export type ReasoningEffort = "low" | "medium" | "high";
 export type LogLevel = "off" | "error" | "warn" | "info" | "debug" | "trace";
-export type EstimationMode = "conservative" | "balanced" | "aggressive";
+
+/**
+ * Inference settings based on GCMP (GitHub Copilot) research.
+ * These are not configurable - they represent battle-tested defaults.
+ *
+ * Note: temperature=0 (fully deterministic) was causing tool call issues.
+ * GCMP uses temperature=0.1 which is near-deterministic but not fully.
+ */
+export const INFERENCE_DEFAULTS = {
+  /** GCMP uses 0.1 - near-deterministic but allows slight variation */
+  temperature: 0.1,
+  /** GCMP uses 1 - consider all tokens */
+  topP: 1,
+  /** Match CONSERVATIVE_MAX_OUTPUT_TOKENS for full output capacity */
+  maxOutputTokens: 16_384,
+  /** Request timeout */
+  timeoutMs: 60_000,
+} as const;
 
 export class ConfigService implements vscode.Disposable {
   private config: vscode.WorkspaceConfiguration;
@@ -20,12 +31,9 @@ export class ConfigService implements vscode.Disposable {
     this.disposable = vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration("vercelAiGateway")) {
         this.config = vscode.workspace.getConfiguration("vercelAiGateway");
-        // Note: Can't use logger here due to circular dependency
-        // Logger depends on ConfigService for configuration
         this.emitter.fire();
       }
     });
-    // Note: Can't log here - circular dependency with logger.ts
   }
 
   get onDidChange(): vscode.Event<void> {
@@ -37,100 +45,138 @@ export class ConfigService implements vscode.Disposable {
     this.emitter.dispose();
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Essential settings (user-configurable)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** AI Gateway endpoint URL */
   get endpoint(): string {
     return this.config.get("endpoint", DEFAULT_BASE_URL);
   }
 
-  /**
-   * Base URL for OpenResponses API.
-   * Per Vercel docs: https://ai-gateway.vercel.sh/v1/responses
-   * The client appends /responses, so we return just /v1
-   */
+  /** OpenResponses API base URL (endpoint + /v1) */
   get openResponsesBaseUrl(): string {
     const trimmed = this.endpoint.replace(/\/+$/, "");
     return `${trimmed}/v1`;
   }
 
-  get timeout(): number {
-    return this.config.get("timeout", DEFAULT_TIMEOUT_MS);
-  }
-
-  get reasoningEffort(): ReasoningEffort {
-    return this.config.get("reasoning.defaultEffort", DEFAULT_REASONING_EFFORT);
-  }
-
-  get systemPromptEnabled(): boolean {
-    return this.config.get("systemPrompt.enabled", false);
-  }
-
-  get systemPromptMessage(): string {
-    return this.config.get(
-      "systemPrompt.message",
-      DEFAULT_SYSTEM_PROMPT_MESSAGE,
-    );
-  }
-
-  get logLevel(): LogLevel {
-    return this.config.get("logging.level", "warn");
-  }
-
-  get logOutputChannel(): boolean {
-    return this.config.get("logging.outputChannel", true);
-  }
-
-  get logFileDirectory(): string {
-    return this.config.get("logging.fileDirectory", "");
-  }
-
-  get debugValidateRequests(): boolean {
-    return this.config.get("debug.validateRequests", false);
-  }
-
-  get modelsAllowlist(): string[] {
-    return this.config.get("models.allowlist", []);
-  }
-
-  get modelsDenylist(): string[] {
-    return this.config.get("models.denylist", []);
-  }
-
-  get modelsFallbacks(): Record<string, string[]> {
-    return this.config.get("models.fallbacks", {});
-  }
-
+  /** Default model ID (empty = show picker) */
   get modelsDefault(): string {
     return this.config.get("models.default", "");
   }
 
-  get tokensEstimationMode(): EstimationMode {
-    return this.config.get("tokens.estimationMode", "balanced");
+  /** Logging verbosity */
+  get logLevel(): LogLevel {
+    return this.config.get("logging.level", "warn");
   }
 
-  get tokensCharsPerToken(): number | undefined {
-    return this.config.get<number>("tokens.charsPerToken");
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Hardcoded defaults (not user-configurable)
+  // Match Copilot's agent mode for reliable tool calling
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  get timeout(): number {
+    return INFERENCE_DEFAULTS.timeoutMs;
   }
 
+  get defaultTemperature(): number {
+    return INFERENCE_DEFAULTS.temperature;
+  }
+
+  get defaultTopP(): number {
+    return INFERENCE_DEFAULTS.topP;
+  }
+
+  get defaultMaxOutputTokens(): number {
+    return INFERENCE_DEFAULTS.maxOutputTokens;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Logging infrastructure (always-on, no config needed)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Always show output channel */
+  get logOutputChannel(): boolean {
+    return true;
+  }
+
+  /** No file logging by default */
+  get logFileDirectory(): string {
+    return "";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Deprecated/removed settings - kept for compatibility
+  // These return sensible defaults; the settings no longer exist
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** @deprecated Use hardcoded defaults */
+  get systemPromptEnabled(): boolean {
+    return false;
+  }
+
+  /** @deprecated Use hardcoded defaults */
+  get systemPromptMessage(): string {
+    return "";
+  }
+
+  /** @deprecated No longer used */
+  get modelsAllowlist(): string[] {
+    return [];
+  }
+
+  /** @deprecated No longer used */
+  get modelsDenylist(): string[] {
+    return [];
+  }
+
+  /** @deprecated No longer used */
+  get modelsFallbacks(): Record<string, string[]> {
+    return {};
+  }
+
+  /** @deprecated Token estimation now uses balanced mode internally */
+  get tokensEstimationMode(): "balanced" {
+    return "balanced";
+  }
+
+  /** @deprecated Token estimation now uses 4 chars/token internally */
+  get tokensCharsPerToken(): number {
+    return 4;
+  }
+
+  /** @deprecated Enrichment is always enabled */
   get modelsEnrichmentEnabled(): boolean {
-    return this.config.get("models.enrichmentEnabled", true);
+    return true;
   }
 
+  /** @deprecated Status bar always shows */
   get statusBarShowOutputTokens(): boolean {
-    return this.config.get("statusBar.showOutputTokens", false);
+    return true;
   }
 
-  /**
-   * Number of recent tool calls to keep in full detail (rest are summarized).
-   * Higher values preserve more context but use more tokens.
-   */
+  /** @deprecated Tool truncation uses internal defaults */
   get toolTruncationRecentCalls(): number {
-    return this.config.get("toolHistory.recentCallsToKeep", 6);
+    return 6;
   }
 
-  /**
-   * Token threshold at which to start truncating tool history.
-   * Tool history exceeding this will be summarized.
-   */
+  /** @deprecated Tool truncation uses internal defaults */
   get toolTruncationThreshold(): number {
-    return this.config.get("toolHistory.truncationThreshold", 10000);
+    return 10000;
+  }
+
+  /** @deprecated Use hardcoded defaults */
+  get debugValidateRequests(): boolean {
+    return false;
+  }
+
+  /** @deprecated Reasoning effort not configurable */
+  get defaultReasoningEffort(): string {
+    return "";
+  }
+
+  /** @deprecated Old reasoning effort setting */
+  get reasoningEffort(): "medium" {
+    return "medium";
   }
 }

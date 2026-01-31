@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { VercelAIAuthenticationProvider } from "./auth";
-import { ConfigService } from "./config";
+import { ConfigService, INFERENCE_DEFAULTS } from "./config";
 import { EXTENSION_ID, VSCODE_EXTENSION_ID } from "./constants";
 import { initializeOutputChannel, logger } from "./logger";
 import { VercelAIChatModelProvider } from "./provider";
@@ -8,6 +8,8 @@ import { TokenStatusBar } from "./status-bar";
 
 // Build timestamp for reload detection - generated at build time
 const BUILD_TIMESTAMP = new Date().toISOString();
+// Build signature - change this when making significant changes to verify deployment
+const BUILD_SIGNATURE = "disguised-system-prompt-fix";
 
 export function activate(context: vscode.ExtensionContext) {
   // Initialize the shared output channel FIRST - before any logging
@@ -23,7 +25,10 @@ export function activate(context: vscode.ExtensionContext) {
   const version = packageJson?.version ?? "unknown";
 
   logger.info(
-    `Vercel AI Gateway extension activating - v${version} (activated: ${BUILD_TIMESTAMP})`,
+    `Vercel AI Gateway extension activating - v${version} [${BUILD_SIGNATURE}] (built: ${BUILD_TIMESTAMP})`,
+  );
+  logger.info(
+    `Inference defaults: temperature=${INFERENCE_DEFAULTS.temperature.toString()}, topP=${INFERENCE_DEFAULTS.topP.toString()}, maxOutput=${INFERENCE_DEFAULTS.maxOutputTokens.toString()}`,
   );
 
   // Register the authentication provider

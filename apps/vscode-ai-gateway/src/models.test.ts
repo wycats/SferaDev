@@ -249,123 +249,8 @@ describe("ModelsClient", () => {
     expect(capabilities["webSearch"]).toBe(true);
   });
 
-  it("filters models using allowlist config", async () => {
-    hoisted.mockGetConfiguration.mockReturnValue({
-      get: vi.fn((key: string, defaultValue: unknown) => {
-        if (key === "models.allowlist") return ["openai:*"];
-        return defaultValue;
-      }),
-    });
-
-    const models: Model[] = [
-      {
-        id: "openai:gpt-4o-2024-11-20",
-        object: "model",
-        created: 0,
-        owned_by: "openai",
-        name: "GPT-4o",
-        description: "Latest GPT-4o model",
-        context_window: 128000,
-        max_tokens: 4096,
-        type: "chat",
-        tags: [],
-        pricing: {
-          input: "0",
-          output: "0",
-        },
-      },
-      {
-        id: "anthropic:claude-3-opus-20240229",
-        object: "model",
-        created: 0,
-        owned_by: "anthropic",
-        name: "Claude 3 Opus",
-        description: "Claude 3 Opus",
-        context_window: 200000,
-        max_tokens: 4096,
-        type: "chat",
-        tags: [],
-        pricing: {
-          input: "0",
-          output: "0",
-        },
-      },
-    ];
-
-    const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
-
-    globalThis.fetch = mockFetch as unknown as typeof fetch;
-
-    const client = new ModelsClient();
-    const result = await client.getModels("test-api-key");
-
-    expect(result).toHaveLength(1);
-    const first = result[0];
-    expect(first).toBeDefined();
-    if (!first) {
-      throw new Error("Expected model to be defined");
-    }
-    expect(first.id).toBe("openai:gpt-4o-2024-11-20");
-  });
-
-  it("filters models using denylist config", async () => {
-    hoisted.mockGetConfiguration.mockReturnValue({
-      get: vi.fn((key: string, defaultValue: unknown) => {
-        if (key === "models.denylist") return ["anthropic:*"];
-        return defaultValue;
-      }),
-    });
-
-    const models: Model[] = [
-      {
-        id: "openai:gpt-4o-2024-11-20",
-        object: "model",
-        created: 0,
-        owned_by: "openai",
-        name: "GPT-4o",
-        description: "Latest GPT-4o model",
-        context_window: 128000,
-        max_tokens: 4096,
-        type: "chat",
-        tags: [],
-        pricing: {
-          input: "0",
-          output: "0",
-        },
-      },
-      {
-        id: "anthropic:claude-3-opus-20240229",
-        object: "model",
-        created: 0,
-        owned_by: "anthropic",
-        name: "Claude 3 Opus",
-        description: "Claude 3 Opus",
-        context_window: 200000,
-        max_tokens: 4096,
-        type: "chat",
-        tags: [],
-        pricing: {
-          input: "0",
-          output: "0",
-        },
-      },
-    ];
-
-    const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
-
-    globalThis.fetch = mockFetch as unknown as typeof fetch;
-
-    const client = new ModelsClient();
-    const result = await client.getModels("test-api-key");
-
-    expect(result).toHaveLength(1);
-    const first = result[0];
-    expect(first).toBeDefined();
-    if (!first) {
-      throw new Error("Expected model to be defined");
-    }
-    expect(first.id).toBe("openai:gpt-4o-2024-11-20");
-  });
+  // NOTE: Allow/deny list filter tests removed - these features are now deprecated
+  // and configService returns fixed empty arrays
 
   it("returns all models when no filter config is set", async () => {
     const models: Model[] = [
@@ -506,6 +391,105 @@ describe("ModelsClient", () => {
         ),
         { numRuns: 50 },
       );
+    });
+  });
+
+  describe("conservative token limits", () => {
+    it("caps maxInputTokens at 128k to prevent high-context degradation", async () => {
+      const models: Model[] = [
+        {
+          id: "anthropic:claude-opus-4.5-20250213",
+          object: "model",
+          created: 0,
+          owned_by: "anthropic",
+          name: "Claude Opus 4.5",
+          description: "200k context model",
+          context_window: 200000, // Model advertises 200k
+          max_tokens: 64000,
+          type: "chat",
+          tags: ["tool-use"],
+          pricing: { input: "0", output: "0" },
+        },
+      ];
+
+      const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const client = new ModelsClient();
+      const result = await client.getModels("test-api-key");
+
+      expect(result).toHaveLength(1);
+      const model = result[0];
+      expect(model).toBeDefined();
+      if (!model) throw new Error("Expected model to be defined");
+
+      // Should be capped at conservative limit, not the advertised 200k
+      expect(model.maxInputTokens).toBe(128_000);
+    });
+
+    it("caps maxOutputTokens at 16k to prevent high-context degradation", async () => {
+      const models: Model[] = [
+        {
+          id: "anthropic:claude-opus-4.5-20250213",
+          object: "model",
+          created: 0,
+          owned_by: "anthropic",
+          name: "Claude Opus 4.5",
+          description: "64k output model",
+          context_window: 128000,
+          max_tokens: 64000, // Model advertises 64k
+          type: "chat",
+          tags: ["tool-use"],
+          pricing: { input: "0", output: "0" },
+        },
+      ];
+
+      const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const client = new ModelsClient();
+      const result = await client.getModels("test-api-key");
+
+      expect(result).toHaveLength(1);
+      const model = result[0];
+      expect(model).toBeDefined();
+      if (!model) throw new Error("Expected model to be defined");
+
+      // Should be capped at conservative limit, not the advertised 64k
+      expect(model.maxOutputTokens).toBe(16_384);
+    });
+
+    it("preserves lower limits when model has smaller context than conservative cap", async () => {
+      const models: Model[] = [
+        {
+          id: "openai:gpt-3.5-turbo",
+          object: "model",
+          created: 0,
+          owned_by: "openai",
+          name: "GPT-3.5 Turbo",
+          description: "16k context model",
+          context_window: 16384, // Smaller than conservative cap
+          max_tokens: 4096, // Smaller than conservative cap
+          type: "chat",
+          tags: [],
+          pricing: { input: "0", output: "0" },
+        },
+      ];
+
+      const mockFetch = vi.fn().mockResolvedValue(createMockResponse(models));
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const client = new ModelsClient();
+      const result = await client.getModels("test-api-key");
+
+      expect(result).toHaveLength(1);
+      const model = result[0];
+      expect(model).toBeDefined();
+      if (!model) throw new Error("Expected model to be defined");
+
+      // Should use actual limits since they're below the cap
+      expect(model.maxInputTokens).toBe(16384);
+      expect(model.maxOutputTokens).toBe(4096);
     });
   });
 });

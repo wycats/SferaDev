@@ -44,58 +44,67 @@ vi.mock("vscode", () => ({
   },
 }));
 
-import { ConfigService } from "./config";
+import { ConfigService, INFERENCE_DEFAULTS } from "./config";
 
 describe("ConfigService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("reads configuration values with defaults", () => {
+  it("reads essential configuration values", () => {
     hoisted.mockGetConfiguration.mockReturnValue({
       get: vi.fn((key: string, defaultValue: unknown) => {
         if (key === "endpoint") return "https://custom.gateway";
-        if (key === "timeout") return 45000;
-        if (key === "reasoning.defaultEffort") return "high";
-        if (key === "systemPrompt.enabled") return true;
-        if (key === "systemPrompt.message") return "Custom system prompt";
+        if (key === "models.default") return "anthropic/claude-sonnet-4";
         if (key === "logging.level") return "debug";
-        if (key === "logging.outputChannel") return false;
-        if (key === "models.allowlist") return ["openai/*"];
-        if (key === "models.denylist") return ["anthropic/*"];
-        if (key === "models.fallbacks")
-          return { "openai/gpt-4": ["openai/gpt-3.5"] };
-        if (key === "models.default") return "openai/gpt-4";
-        if (key === "tokens.estimationMode") return "aggressive";
-        if (key === "tokens.charsPerToken") return 3;
         return defaultValue;
       }),
     });
 
     const config = new ConfigService();
 
+    // User-configurable settings
     expect(config.endpoint).toBe("https://custom.gateway");
-    expect(config.timeout).toBe(45000);
-    expect(config.reasoningEffort).toBe("high");
-    expect(config.systemPromptEnabled).toBe(true);
-    expect(config.systemPromptMessage).toBe("Custom system prompt");
+    expect(config.modelsDefault).toBe("anthropic/claude-sonnet-4");
     expect(config.logLevel).toBe("debug");
-    expect(config.logOutputChannel).toBe(false);
-    expect(config.modelsAllowlist).toEqual(["openai/*"]);
-    expect(config.modelsDenylist).toEqual(["anthropic/*"]);
-    expect(config.modelsFallbacks).toEqual({
-      "openai/gpt-4": ["openai/gpt-3.5"],
-    });
-    expect(config.modelsDefault).toBe("openai/gpt-4");
-    expect(config.tokensEstimationMode).toBe("aggressive");
-    expect(config.tokensCharsPerToken).toBe(3);
   });
 
-  it("notifies listeners and refreshes on configuration changes", () => {
+  it("uses hardcoded Copilot defaults for inference settings", () => {
+    hoisted.mockGetConfiguration.mockReturnValue({
+      get: vi.fn((_key: string, defaultValue: unknown) => defaultValue),
+    });
+
+    const config = new ConfigService();
+
+    // These are now hardcoded, not configurable
+    expect(config.defaultTemperature).toBe(INFERENCE_DEFAULTS.temperature);
+    expect(config.defaultTopP).toBe(INFERENCE_DEFAULTS.topP);
+    expect(config.defaultMaxOutputTokens).toBe(INFERENCE_DEFAULTS.maxOutputTokens);
+    expect(config.timeout).toBe(INFERENCE_DEFAULTS.timeoutMs);
+  });
+
+  it("returns sensible defaults for deprecated settings", () => {
+    hoisted.mockGetConfiguration.mockReturnValue({
+      get: vi.fn((_key: string, defaultValue: unknown) => defaultValue),
+    });
+
+    const config = new ConfigService();
+
+    // Deprecated settings return fixed values
+    expect(config.systemPromptEnabled).toBe(false);
+    expect(config.modelsAllowlist).toEqual([]);
+    expect(config.modelsDenylist).toEqual([]);
+    expect(config.modelsFallbacks).toEqual({});
+    expect(config.tokensEstimationMode).toBe("balanced");
+    expect(config.tokensCharsPerToken).toBe(4);
+    expect(config.modelsEnrichmentEnabled).toBe(true);
+    expect(config.statusBarShowOutputTokens).toBe(true);
+  });
+
+  it("notifies listeners on configuration changes", () => {
     hoisted.mockGetConfiguration.mockReturnValue({
       get: vi.fn((key: string, defaultValue: unknown) => {
         if (key === "endpoint") return "https://first.gateway";
-        if (key === "timeout") return 30000;
         return defaultValue;
       }),
     });
@@ -108,7 +117,6 @@ describe("ConfigService", () => {
     hoisted.mockGetConfiguration.mockReturnValue({
       get: vi.fn((key: string, defaultValue: unknown) => {
         if (key === "endpoint") return "https://second.gateway";
-        if (key === "timeout") return 60000;
         return defaultValue;
       }),
     });
@@ -119,6 +127,14 @@ describe("ConfigService", () => {
 
     expect(onChange).toHaveBeenCalled();
     expect(config.endpoint).toBe("https://second.gateway");
-    expect(config.timeout).toBe(60000);
+  });
+
+  it("disposes resources properly", () => {
+    hoisted.mockGetConfiguration.mockReturnValue({
+      get: vi.fn(),
+    });
+
+    const config = new ConfigService();
+    expect(() => config.dispose()).not.toThrow();
   });
 });

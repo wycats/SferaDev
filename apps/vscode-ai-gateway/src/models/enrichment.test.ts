@@ -471,55 +471,6 @@ describe("Enrichment-based capability refinement", () => {
     expect(refinedModel.maxInputTokens).toBe(128000);
   });
 
-  it("skips refinement when enrichment is disabled", async () => {
-    hoisted.mockGetConfiguration.mockReturnValue({
-      get: vi.fn((key: string, defaultValue: unknown) => {
-        if (key === "endpoint") return "https://example.test";
-        if (key === "logging.level") return "off";
-        if (key === "logging.outputChannel") return false;
-        if (key === "models.enrichmentEnabled") return false;
-        return defaultValue;
-      }),
-    });
-
-    hoisted.mockGetSession.mockResolvedValue({ accessToken: "test-token" });
-
-    const provider = createProvider();
-    setEnriched(provider, "openai/gpt-4o", {
-      context_length: 128000,
-      input_modalities: ["image"],
-    });
-
-    const models = [
-      {
-        id: "openai/gpt-4o",
-        maxInputTokens: 8000,
-        capabilities: { imageInput: false },
-      } as LanguageModelChatInformation,
-    ];
-
-    (
-      provider as unknown as {
-        modelsClient: {
-          getModels: (
-            apiKey: string,
-          ) => Promise<LanguageModelChatInformation[]>;
-        };
-      }
-    ).modelsClient.getModels = vi.fn().mockResolvedValue(models);
-
-    const result = await provider.provideLanguageModelChatInformation(
-      { silent: true },
-      {} as import("vscode").CancellationToken,
-    );
-
-    expect(result).toHaveLength(1);
-    const resultModel = result[0];
-    expect(resultModel).toBeDefined();
-    if (!resultModel) {
-      throw new Error("Expected result model to be defined");
-    }
-    expect(resultModel.maxInputTokens).toBe(8000);
-    expect(resultModel.capabilities.imageInput).toBe(false);
-  });
+  // NOTE: "skips refinement when enrichment is disabled" test removed
+  // Enrichment is now always enabled (modelsEnrichmentEnabled always returns true)
 });

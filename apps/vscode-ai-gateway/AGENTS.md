@@ -2,6 +2,21 @@
 
 This VS Code extension provides AI models via the Vercel AI Gateway using the OpenResponses wire protocol.
 
+## ⚠️ CRITICAL: System Prompt Extraction
+
+**DO NOT REMOVE `extractSystemPrompt()` from openresponses-chat.ts!**
+
+VS Code Copilot uses the **proposed System role** (role=3) to send system prompts.
+See: `vscode.proposed.languageModelSystem.d.ts`
+
+Without this extraction:
+- The system prompt gets translated as a regular message
+- Claude sees incorrect conversation structure
+- Tool calling breaks
+
+The function also handles **legacy fallback** for older VS Code versions that
+may send system prompts as Assistant messages (role=2).
+
 ## ⚠️ CRITICAL: API Format Disambiguation
 
 ### The OpenResponses API is NOT:

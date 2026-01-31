@@ -11,6 +11,8 @@
  * - Maintains compatibility with the existing provider interface
  */
 
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   type CreateResponseBody,
   createClient,
@@ -47,6 +49,13 @@ import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
 import { UsageTracker } from "./usage-tracker.js";
 
 /**
+ * VS Code proposed API: LanguageModelChatMessageRole.System = 3
+ * See: vscode.proposed.languageModelSystem.d.ts
+ * This is used by VS Code Copilot to send system prompts.
+ */
+const VSCODE_SYSTEM_ROLE = 3;
+
+/**
  * Options for the OpenResponses chat implementation
  */
 export interface OpenResponsesChatOptions {
@@ -81,6 +90,49 @@ export interface OpenResponsesChatResult {
 }
 
 /**
+ * Save a suspicious request for replay with the test script.
+ * This is called when we detect a premature stop pattern (text but no tool calls).
+ */
+function saveSuspiciousRequest(
+  requestBody: CreateResponseBody,
+  context: {
+    timestamp: string;
+    finishReason: string | undefined;
+    textPartCount: number;
+    toolCallCount: number;
+    toolsProvided: number;
+    textPreview: string;
+    usage: { input_tokens: number; output_tokens: number } | undefined;
+  },
+): void {
+  try {
+    // Find workspace root by looking for package.json
+    const workspaceRoot = process.cwd();
+    const logsDir = resolve(workspaceRoot, ".logs");
+
+    // Ensure logs directory exists
+    if (!existsSync(logsDir)) {
+      mkdirSync(logsDir, { recursive: true });
+    }
+
+    const filePath = resolve(logsDir, "last-suspicious-request.json");
+    const data = {
+      request: requestBody,
+      context,
+    };
+
+    writeFileSync(filePath, JSON.stringify(data, null, 2));
+    logger.info(
+      `[OpenResponses] Saved suspicious request to ${filePath} for replay`,
+    );
+  } catch (err) {
+    logger.warn(
+      `[OpenResponses] Failed to save suspicious request: ${String(err)}`,
+    );
+  }
+}
+
+/**
  * Execute a chat request using the OpenResponses API.
  *
  * This function handles the full lifecycle:
@@ -100,16 +152,22 @@ export async function executeOpenResponsesChat(
   const { configService, statusBar, apiKey, estimatedInputTokens, chatId } =
     chatOptions;
 
-  // TRACE: Log raw VS Code messages
+  // TRACE: Log raw VS Code messages with actual role values
   logger.trace(
     `[OpenResponses] Received ${chatMessages.length.toString()} messages from VS Code`,
   );
   chatMessages.forEach((msg, i) => {
-    const roleName =
-      msg.role === LanguageModelChatMessageRole.User ? "User" : "Assistant";
+    // Log the raw numeric role value to catch unknown roles (e.g., System=3)
+    const roleValue = msg.role as number;
+    const roleNames: Record<number, string> = {
+      1: "User",
+      2: "Assistant",
+      3: "System",
+    };
+    const roleName = roleNames[roleValue] ?? `Unknown(${String(roleValue)})`;
     const contentTypes = msg.content.map((p) => p.constructor.name).join(", ");
     logger.trace(
-      `[OpenResponses] Message[${i.toString()}]: role=${roleName}, parts=[${contentTypes}]`,
+      `[OpenResponses] Message[${i.toString()}]: role=${roleName}(${String(roleValue)}), parts=[${contentTypes}]`,
     );
   });
 
@@ -171,16 +229,25 @@ export async function executeOpenResponsesChat(
       configService,
     );
 
+    // Log what modelOptions we receive from VS Code
+    logger.debug(
+      `[OpenResponses] Received modelOptions: ${JSON.stringify(options.modelOptions ?? {})}`,
+    );
+
     // Build the request body
+    // Use GCMP's settings: temperature=0.1 (near-deterministic), top_p=1
+    // temperature=0 (fully deterministic) was causing tool call issues
+    // See: .reference/GCMP configManager.ts uses 0.1 default
+    // max_output_tokens: Use model's full capacity (GCMP approach) - don't artificially limit
     const requestBody: CreateResponseBody = {
       model: model.id,
       input,
       stream: true,
-      temperature:
-        (options.modelOptions?.["temperature"] as number | undefined) ?? 0.7,
+      temperature: 0.1,
+      top_p: 1,
       max_output_tokens:
         (options.modelOptions?.["maxOutputTokens"] as number | undefined) ??
-        4096,
+        model.maxOutputTokens,
     };
 
     if (instructions) {
@@ -339,6 +406,32 @@ export async function executeOpenResponsesChat(
           logger.debug(
             `[OpenResponses] Text-only response (no tool calls): ${textPartCount.toString()} text parts, finish reason: stop`,
           );
+
+          // Save suspicious request if tools were provided - this is the "pause" pattern
+          // where model says "Let me check..." but stops without making tool calls
+          if (tools.length > 0) {
+            logger.warn(
+              `[OpenResponses] SUSPICIOUS: Tools provided but model stopped without calling any. Saving request for replay.`,
+            );
+            // Get a preview of the text output for context
+            const textPreview = adapted.parts
+              .filter(
+                (p): p is LanguageModelTextPart =>
+                  p instanceof LanguageModelTextPart,
+              )
+              .map((p) => p.value)
+              .join("")
+              .substring(0, 500);
+            saveSuspiciousRequest(requestBody, {
+              timestamp: new Date().toISOString(),
+              finishReason: adapted.finishReason,
+              textPartCount,
+              toolCallCount,
+              toolsProvided: tools.length,
+              textPreview,
+              usage: adapted.usage,
+            });
+          }
         }
 
         result = {
@@ -471,7 +564,7 @@ function translateRequest(
 } {
   const input: ItemParam[] = [];
 
-  // Handle system prompt
+  // Handle system prompt from config
   const systemPromptEnabled = configService.systemPromptEnabled;
   const systemPromptMessage = configService.systemPromptMessage;
   let instructions: string | undefined;
@@ -489,8 +582,22 @@ function translateRequest(
   // Build tool name map for resolving tool result -> tool call relationships
   const toolNameMap = buildToolNameMap(messages);
 
+  // Handle VS Code System role (proposed API): VS Code Copilot sends the system
+  // prompt using role=3 (System). We extract it and use the `instructions` field.
+  let messagesToProcess = messages;
+  const systemPromptFromMessages = extractSystemPrompt(messages);
+  if (systemPromptFromMessages) {
+    logger.info(
+      `[OpenResponses] Extracted system prompt (${systemPromptFromMessages.length.toString()} chars) from VS Code System role, using as instructions`,
+    );
+    // Use the system prompt as instructions (may override config-based instructions)
+    instructions = systemPromptFromMessages;
+    // Skip the first message when processing
+    messagesToProcess = messages.slice(1);
+  }
+
   // Convert each message
-  for (const message of messages) {
+  for (const message of messagesToProcess) {
     const translated = translateMessage(message, toolNameMap);
     input.push(...translated);
   }
@@ -834,6 +941,128 @@ function createMessageItem(
       };
     }
   }
+}
+
+/**
+ * Extract system prompt from VS Code messages.
+ *
+ * ⚠️ CRITICAL - DO NOT REMOVE THIS FUNCTION ⚠️
+ *
+ * VS Code Copilot uses the proposed System role (role=3) to send system prompts.
+ * See: vscode.proposed.languageModelSystem.d.ts
+ *
+ * Without this extraction:
+ * - The system prompt gets translated as a regular message
+ * - Claude sees incorrect conversation structure
+ * - Tool calling breaks
+ *
+ * If detected, returns the system prompt text to be used as `instructions`.
+ */
+function extractSystemPrompt(
+  messages: readonly LanguageModelChatMessage[],
+): string | undefined {
+  if (messages.length === 0) return undefined;
+
+  const firstMessage = messages[0];
+
+  // Check for VS Code System role (proposed API, role=3)
+  // Cast to number for comparison since it's not in stable types
+  const messageRole = firstMessage.role as number;
+
+  logger.info(
+    `[OpenResponses] System prompt check: first message role=${String(messageRole)}, expected System=${String(VSCODE_SYSTEM_ROLE)}`,
+  );
+
+  if (messageRole !== VSCODE_SYSTEM_ROLE) {
+    // Not a system message - check if it might be a disguised system prompt
+    // (older behavior where system was sent as Assistant)
+    if (messageRole === LanguageModelChatMessageRole.Assistant) {
+      return extractDisguisedSystemPrompt(firstMessage);
+    }
+    return undefined;
+  }
+
+  // Extract text content from the system message
+  return extractMessageText(firstMessage);
+}
+
+/**
+ * Extract text content from a VS Code message.
+ */
+function extractMessageText(
+  message: LanguageModelChatMessage,
+): string | undefined {
+  const content = message.content;
+  let textContent = "";
+
+  if (typeof content === "string") {
+    textContent = content;
+  } else if (Array.isArray(content)) {
+    for (const part of content) {
+      if ("value" in part && typeof part.value === "string") {
+        textContent += part.value;
+      }
+    }
+  }
+
+  textContent = textContent.trim();
+  return textContent || undefined;
+}
+
+/**
+ * Detect if an Assistant message is actually a disguised system prompt.
+ * This is a fallback for older VS Code versions that don't have System role.
+ */
+function extractDisguisedSystemPrompt(
+  message: LanguageModelChatMessage,
+): string | undefined {
+  const textContent = extractMessageText(message);
+  if (!textContent) return undefined;
+
+  // Check for common system prompt patterns
+  const systemPromptPatterns = [
+    /^You are an? /i,
+    /^<instructions>/i,
+    /^<system>/i,
+    /^As an? AI/i,
+    /^Your role is/i,
+    /^You're an? /i,
+  ];
+
+  for (const pattern of systemPromptPatterns) {
+    if (pattern.test(textContent)) {
+      logger.info(
+        `[OpenResponses] Detected disguised system prompt in Assistant message`,
+      );
+      return textContent;
+    }
+  }
+
+  // Additional heuristic: long messages with instruction keywords
+  if (textContent.length > 1000) {
+    const instructionKeywords = [
+      "follow the user",
+      "you must",
+      "your task is",
+      "you will be",
+      "expert",
+      "programming assistant",
+      "coding assistant",
+      "github copilot",
+    ];
+    const lowerContent = textContent.toLowerCase();
+    const matchCount = instructionKeywords.filter((kw) =>
+      lowerContent.includes(kw),
+    ).length;
+    if (matchCount >= 2) {
+      logger.info(
+        `[OpenResponses] Detected disguised system prompt via keyword heuristic`,
+      );
+      return textContent;
+    }
+  }
+
+  return undefined;
 }
 
 /**

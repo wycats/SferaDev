@@ -1,6 +1,11 @@
 import type { LanguageModelChatInformation, Memento } from "vscode";
 import { ConfigService } from "./config";
-import { MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
+import {
+  CONSERVATIVE_MAX_INPUT_TOKENS,
+  CONSERVATIVE_MAX_OUTPUT_TOKENS,
+  MODELS_CACHE_TTL_MS,
+  MODELS_ENDPOINT,
+} from "./constants";
 import { logger } from "./logger";
 import { ModelFilter } from "./models/filter";
 import { parseModelIdentity } from "./models/identity";
@@ -393,8 +398,16 @@ export class ModelsClient {
         detail: "Vercel AI Gateway",
         family: identity.family,
         version: identity.version,
-        maxInputTokens: model.context_window,
-        maxOutputTokens: model.max_tokens,
+        // Apply conservative limits to prevent high-context degradation
+        // See CONSERVATIVE_MAX_INPUT_TOKENS documentation for details
+        maxInputTokens: Math.min(
+          model.context_window,
+          CONSERVATIVE_MAX_INPUT_TOKENS,
+        ),
+        maxOutputTokens: Math.min(
+          model.max_tokens,
+          CONSERVATIVE_MAX_OUTPUT_TOKENS,
+        ),
         tooltip: model.description || "No description available.",
         // Models are hidden from picker by default - users enable specific models via
         // VS Code's "Manage Models" UI (gear icon in model picker). This prevents

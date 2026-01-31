@@ -18,13 +18,11 @@ import {
   window,
 } from "vscode";
 
+import { CONSERVATIVE_MAX_INPUT_TOKENS } from "./constants";
+
 import { VERCEL_AI_AUTH_PROVIDER_ID } from "./auth";
 import { ConfigService } from "./config";
-import {
-  DEFAULT_SYSTEM_PROMPT_MESSAGE,
-  ERROR_MESSAGES,
-  LAST_SELECTED_MODEL_KEY,
-} from "./constants";
+import { ERROR_MESSAGES, LAST_SELECTED_MODEL_KEY } from "./constants";
 import {
   extractErrorMessage,
   extractTokenCountFromError,
@@ -136,11 +134,15 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
       // Check if we need to apply any enrichment
       // Only apply context_length if it's a positive number (not null)
+      // BUT cap it at CONSERVATIVE_MAX_INPUT_TOKENS to prevent high-context degradation
       const enrichedContextLength = enriched.context_length;
+      const cappedContextLength =
+        typeof enrichedContextLength === "number" && enrichedContextLength > 0
+          ? Math.min(enrichedContextLength, CONSERVATIVE_MAX_INPUT_TOKENS)
+          : null;
       const needsContextLength =
-        typeof enrichedContextLength === "number" &&
-        enrichedContextLength > 0 &&
-        enrichedContextLength !== model.maxInputTokens;
+        cappedContextLength !== null &&
+        cappedContextLength !== model.maxInputTokens;
       const needsImageInput =
         enriched.input_modalities.includes("image") &&
         !model.capabilities.imageInput;
@@ -152,9 +154,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // Create a new object with enriched properties (properties are readonly)
       return {
         ...model,
-        ...(needsContextLength
-          ? { maxInputTokens: enrichedContextLength }
-          : {}),
+        ...(needsContextLength ? { maxInputTokens: cappedContextLength } : {}),
         ...(needsImageInput
           ? {
               capabilities: {
@@ -275,25 +275,13 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // Track current request for caching API actuals after response
       this.currentRequestMessages = chatMessages;
 
-      // Get system prompt configuration for token estimation
-      const systemPromptEnabled = this.configService.systemPromptEnabled;
-      const systemPromptMessage = this.configService.systemPromptMessage;
-      const systemPrompt = systemPromptEnabled
-        ? systemPromptMessage.trim()
-          ? systemPromptMessage
-          : DEFAULT_SYSTEM_PROMPT_MESSAGE
-        : undefined;
-
       // Pre-flight check: estimate total tokens and validate against model limit
-      // Now includes tool schemas (can be 50k+ tokens) and system prompt overhead
+      // Now includes tool schemas (can be 50k+ tokens)
       const estimatedTokens = await this.estimateTotalInputTokens(
         model,
         chatMessages,
         token,
-        {
-          ...(options.tools ? { tools: options.tools } : {}),
-          ...(systemPrompt ? { systemPrompt } : {}),
-        },
+        options.tools ? { tools: options.tools } : {},
       );
       const maxInputTokens = model.maxInputTokens;
       logger.debug(
