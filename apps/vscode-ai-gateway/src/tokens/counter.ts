@@ -5,7 +5,17 @@ import { logger } from "../logger";
 import { LRUCache } from "./lru-cache";
 
 interface Encoding {
-  encode: (text: string) => number[];
+  /**
+   * Encode text to tokens.
+   * @param text - The text to encode
+   * @param allowedSpecial - Special tokens to allow (use "all" to allow all special tokens)
+   * @param disallowedSpecial - Special tokens to disallow (use "all" to disallow all)
+   */
+  encode: (
+    text: string,
+    allowedSpecial?: string[] | "all",
+    disallowedSpecial?: string[] | "all",
+  ) => number[];
   free?: () => void;
 }
 
@@ -51,7 +61,10 @@ export class TokenCounter {
     }
     const encoding = this.getEncodingForFamily(modelFamily);
     if (encoding) {
-      const count = encoding.encode(text).length;
+      // Allow all special tokens to be encoded - they may appear in tool outputs,
+      // summarized conversations, or user-provided content. Disallowing them causes
+      // errors like "The text contains a special token that is not allowed: <|endoftext|>"
+      const count = encoding.encode(text, "all", []).length;
       logger.trace(
         `Text token estimate: ${count.toString()} tokens for ${text.length.toString()} chars (family: ${modelFamily})`,
       );

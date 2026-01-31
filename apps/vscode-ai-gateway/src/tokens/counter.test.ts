@@ -43,7 +43,7 @@ const vscodeHoisted = vi.hoisted(() => {
 });
 
 const tiktokenHoisted = vi.hoisted(() => {
-	const mockEncode = vi.fn((text: string) => Array.from({ length: text.length }));
+	const mockEncode = vi.fn((text: string, _allowedSpecial?: string[] | "all", _disallowedSpecial?: string[] | "all") => Array.from({ length: text.length }));
 	const mockEncoding = { encode: mockEncode };
 	const mockGetEncoding = vi.fn(() => mockEncoding);
 
@@ -138,6 +138,21 @@ describe("TokenCounter", () => {
 		counter.estimateTextTokens("hello", "claude-3-5-sonnet");
 
 		expect(tiktokenHoisted.mockEncode).toHaveBeenCalledTimes(2);
+	});
+
+	it("passes allowedSpecial='all' to allow special tokens like <|endoftext|>", () => {
+		tiktokenHoisted.mockEncode.mockClear();
+		const counter = new TokenCounter();
+
+		// This text contains a special token that would throw without allowedSpecial
+		counter.estimateTextTokens("Hello <|endoftext|> world", "gpt-4");
+
+		// Verify encode was called with allowedSpecial="all" and disallowedSpecial=[]
+		expect(tiktokenHoisted.mockEncode).toHaveBeenCalledWith(
+			"Hello <|endoftext|> world",
+			"all",
+			[],
+		);
 	});
 });
 
