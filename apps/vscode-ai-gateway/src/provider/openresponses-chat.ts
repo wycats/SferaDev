@@ -11,8 +11,6 @@
  * - Maintains compatibility with the existing provider interface
  */
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   type CreateResponseBody,
   createClient,
@@ -49,6 +47,9 @@ import {
 import type { TokenStatusBar } from "../status-bar.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
 import { UsageTracker } from "./usage-tracker.js";
+import { saveSuspiciousRequest, type SuspiciousRequestContext } from "./debug-utils.js";
+import { detectImageMimeType } from "./image-utils.js";
+import { consolidateConsecutiveMessages } from "./message-consolidation.js";
 
 /**
  * VS Code proposed API: LanguageModelChatMessageRole.System = 3
@@ -91,48 +92,6 @@ export interface OpenResponsesChatResult {
   tokenInfo?: ExtractedTokenInfo;
 }
 
-/**
- * Save a suspicious request for replay with the test script.
- * This is called when we detect a premature stop pattern (text but no tool calls).
- */
-function saveSuspiciousRequest(
-  requestBody: CreateResponseBody,
-  context: {
-    timestamp: string;
-    finishReason: string | undefined;
-    textPartCount: number;
-    toolCallCount: number;
-    toolsProvided: number;
-    textPreview: string;
-    usage: { input_tokens: number; output_tokens: number } | undefined;
-  },
-): void {
-  try {
-    // Find workspace root by looking for package.json
-    const workspaceRoot = process.cwd();
-    const logsDir = resolve(workspaceRoot, ".logs");
-
-    // Ensure logs directory exists
-    if (!existsSync(logsDir)) {
-      mkdirSync(logsDir, { recursive: true });
-    }
-
-    const filePath = resolve(logsDir, "last-suspicious-request.json");
-    const data = {
-      request: requestBody,
-      context,
-    };
-
-    writeFileSync(filePath, JSON.stringify(data, null, 2));
-    logger.info(
-      `[OpenResponses] Saved suspicious request to ${filePath} for replay`,
-    );
-  } catch (err) {
-    logger.warn(
-      `[OpenResponses] Failed to save suspicious request: ${String(err)}`,
-    );
-  }
-}
 
 /**
  * Execute a chat request using the OpenResponses API.
@@ -423,7 +382,7 @@ export async function executeOpenResponsesChat(
             logger.warn(
               `[OpenResponses] Model output preview: "${textPreview.substring(0, 200)}${textPreview.length > 200 ? "..." : ""}"`,
             );
-            saveSuspiciousRequest(requestBody, {
+            const suspiciousContext: SuspiciousRequestContext = {
               timestamp: new Date().toISOString(),
               finishReason: adapted.finishReason,
               textPartCount,
@@ -431,7 +390,8 @@ export async function executeOpenResponsesChat(
               toolsProvided: tools.length,
               textPreview,
               usage: adapted.usage,
-            });
+            };
+            saveSuspiciousRequest(requestBody, suspiciousContext);
           }
         }
 
@@ -687,168 +647,6 @@ function translateRequest(
   }
 
   return { input: finalInput, tools, toolChoice };
-}
-
-/**
- * Consolidate consecutive messages with the same role into single messages.
- *
- * Claude models expect alternating user/assistant roles. When tool results
- * are emitted as separate user messages, patterns like user→user→user cause
- * degraded model behavior (stopping early, not calling tools).
- *
- * This function merges consecutive same-role messages by concatenating their
- * text content with a separator.
- *
- * @param items - Array of message items to consolidate
- * @returns Consolidated array with no consecutive same-role messages
- */
-function consolidateConsecutiveMessages(items: ItemParam[]): ItemParam[] {
-  if (items.length === 0) return items;
-
-  const result: ItemParam[] = [];
-  let currentRole: string | null = null;
-  let currentContent: string[] = [];
-
-  // Helper to get role from an item
-  function getRole(item: ItemParam): string | null {
-    if (item.type === "message" && "role" in item) {
-      return item.role;
-    }
-    return null;
-  }
-
-  // Helper to get text content from an item
-  function getTextContent(item: ItemParam): string | null {
-    if (item.type !== "message" || !("content" in item)) return null;
-    const content = item.content;
-
-    if (typeof content === "string") {
-      return content;
-    }
-
-    if (Array.isArray(content)) {
-      // Extract text from content arrays
-      const textParts = content
-        .filter(
-          (part): part is { type: string; text: string } =>
-            "type" in part &&
-            (part.type === "input_text" || part.type === "output_text") &&
-            "text" in part,
-        )
-        .map((part) => part.text);
-
-      return textParts.length > 0 ? textParts.join("\n") : null;
-    }
-
-    return null;
-  }
-
-  // Helper to flush accumulated content as a message
-  function flushMessage(): void {
-    if (currentRole && currentContent.length > 0) {
-      const mergedText = currentContent.join("\n\n---\n\n");
-      result.push({
-        type: "message",
-        role: currentRole as "user" | "assistant" | "developer",
-        content: mergedText,
-      } as ItemParam);
-    }
-    currentContent = [];
-  }
-
-  for (const item of items) {
-    const role = getRole(item);
-    const text = getTextContent(item);
-
-    // Non-message items (like function_call_output) pass through as-is
-    if (role === null) {
-      flushMessage();
-      result.push(item);
-      currentRole = null;
-      continue;
-    }
-
-    // If role changed, flush and start new accumulation
-    if (role !== currentRole) {
-      flushMessage();
-      currentRole = role;
-    }
-
-    // Accumulate text content
-    if (text) {
-      currentContent.push(text);
-    }
-  }
-
-  // Flush any remaining content
-  flushMessage();
-
-  return result;
-}
-
-/**
- * Detect image MIME type from magic bytes.
- * The API requires specific types (image/jpeg, image/png, image/gif, image/webp)
- * but VS Code may pass "image/*" wildcard which gets rejected.
- */
-function detectImageMimeType(
-  data: Uint8Array,
-  fallbackMimeType: string,
-): string {
-  // If already a specific type, use it
-  if (
-    fallbackMimeType !== "image/*" &&
-    !fallbackMimeType.includes("*") &&
-    fallbackMimeType.startsWith("image/")
-  ) {
-    return fallbackMimeType;
-  }
-
-  // Detect from magic bytes
-  // PNG: 89 50 4E 47 0D 0A 1A 0A
-  if (
-    data[0] === 0x89 &&
-    data[1] === 0x50 &&
-    data[2] === 0x4e &&
-    data[3] === 0x47
-  ) {
-    return "image/png";
-  }
-
-  // JPEG: FF D8 FF
-  if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
-    return "image/jpeg";
-  }
-
-  // GIF: 47 49 46 38 (GIF8)
-  if (
-    data[0] === 0x47 &&
-    data[1] === 0x49 &&
-    data[2] === 0x46 &&
-    data[3] === 0x38
-  ) {
-    return "image/gif";
-  }
-
-  // WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP)
-  if (
-    data[0] === 0x52 &&
-    data[1] === 0x49 &&
-    data[2] === 0x46 &&
-    data[3] === 0x46 &&
-    data[8] === 0x57 &&
-    data[9] === 0x45 &&
-    data[10] === 0x42 &&
-    data[11] === 0x50
-  ) {
-    return "image/webp";
-  }
-
-  // Default to PNG if we can't detect (most common for screenshots)
-  logger.warn(
-    `[OpenResponses] Could not detect image type from magic bytes, defaulting to image/png`,
-  );
-  return "image/png";
 }
 
 /**

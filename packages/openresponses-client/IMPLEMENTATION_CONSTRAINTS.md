@@ -45,13 +45,13 @@ correctly converts `developer` → `system` for all providers including Anthropi
 ```json
 {
   "model": "anthropic/claude-opus-4.5",
-  "instructions": "System prompt here",  // Still set for OpenAI compat
+  "instructions": "System prompt here", // Still set for OpenAI compat
   "input": [
     {
       "type": "message",
-      "role": "developer",  // ← Prepend this for universal provider support
+      "role": "developer", // ← Prepend this for universal provider support
       "content": "System prompt here"
-    },
+    }
     // ... rest of conversation
   ]
 }
@@ -63,6 +63,7 @@ correctly converts `developer` → `system` for all providers including Anthropi
 
 **Observed Behavior**: When multiple consecutive messages have the same role
 (e.g., `user, user, user`), Claude models may:
+
 - Output minimal text like "Now let's run the tests:" and stop
 - Fail to call tools even when tools are clearly needed
 - Return `stop_reason: "stop"` with 10-30 output tokens
@@ -82,13 +83,15 @@ before sending to the API:
 [
   { role: "user", content: "Attachment context..." },
   { role: "user", content: "Tool result 1..." },
-  { role: "user", content: "Tool result 2..." }
-]
-
-// GOOD: Consolidated into single user message
-[
-  { role: "user", content: "Attachment context...\n\n---\n\nTool result 1...\n\n---\n\nTool result 2..." }
-]
+  { role: "user", content: "Tool result 2..." },
+][
+  // GOOD: Consolidated into single user message
+  {
+    role: "user",
+    content:
+      "Attachment context...\n\n---\n\nTool result 1...\n\n---\n\nTool result 2...",
+  }
+];
 ```
 
 ---
@@ -105,12 +108,22 @@ before sending to the API:
 items in the input array. This allows proper reconstruction of tool call history.
 
 **Verified Working Pattern**:
+
 ```json
 {
   "input": [
     { "type": "message", "role": "user", "content": "What time is it?" },
-    { "type": "function_call", "call_id": "call_123", "name": "get_time", "arguments": "{}" },
-    { "type": "function_call_output", "call_id": "call_123", "output": "3:00 PM" },
+    {
+      "type": "function_call",
+      "call_id": "call_123",
+      "name": "get_time",
+      "arguments": "{}"
+    },
+    {
+      "type": "function_call_output",
+      "call_id": "call_123",
+      "output": "3:00 PM"
+    },
     { "type": "message", "role": "user", "content": "Thanks!" }
   ]
 }
@@ -173,8 +186,17 @@ the number of toolUse blocks of previous turn."
 {
   "input": [
     { "type": "message", "role": "user", "content": "..." },
-    { "type": "function_call", "call_id": "call_123", "name": "tool_name", "arguments": "{}" },
-    { "type": "function_call_output", "call_id": "call_123", "output": "result" }
+    {
+      "type": "function_call",
+      "call_id": "call_123",
+      "name": "tool_name",
+      "arguments": "{}"
+    },
+    {
+      "type": "function_call_output",
+      "call_id": "call_123",
+      "output": "result"
+    }
   ]
 }
 ```
@@ -228,19 +250,19 @@ The API **returns** (in responses):
 
 ### Tested: 2026-01-31 (updated)
 
-| Payload Type                                        | Result            | Notes                              |
-| --------------------------------------------------- | ----------------- | ---------------------------------- |
-| Minimal user message                                | ✅ Success        | Basic case works                   |
-| Developer + user messages                           | ✅ Success        | `role: "developer"` works          |
-| Message with tools defined                          | ✅ Success        | Tool schema accepted               |
-| Multi-turn with string assistant content            | ✅ Success        | Preferred format                   |
-| Multi-turn with `output_text` array                 | ❌ 400 Error      | Wrong content type for input       |
-| `function_call` as input item                       | ✅ Success        | **NOW WORKS** (gateway updated)    |
-| `function_call` + `function_call_output` pair       | ✅ Success        | **Recommended approach**           |
-| `function_call_output` alone (no function_call)     | ❌ Provider Error | Missing tool_use context           |
-| Consecutive user messages (3+)                      | ⚠️ Degraded       | Model stops early                  |
-| `instructions` field with Anthropic                 | ⚠️ Ignored        | Not passed to non-OpenAI           |
-| `developer` message with Anthropic                  | ✅ Success        | Converted to system message        |
+| Payload Type                                    | Result            | Notes                           |
+| ----------------------------------------------- | ----------------- | ------------------------------- |
+| Minimal user message                            | ✅ Success        | Basic case works                |
+| Developer + user messages                       | ✅ Success        | `role: "developer"` works       |
+| Message with tools defined                      | ✅ Success        | Tool schema accepted            |
+| Multi-turn with string assistant content        | ✅ Success        | Preferred format                |
+| Multi-turn with `output_text` array             | ❌ 400 Error      | Wrong content type for input    |
+| `function_call` as input item                   | ✅ Success        | **NOW WORKS** (gateway updated) |
+| `function_call` + `function_call_output` pair   | ✅ Success        | **Recommended approach**        |
+| `function_call_output` alone (no function_call) | ❌ Provider Error | Missing tool_use context        |
+| Consecutive user messages (3+)                  | ⚠️ Degraded       | Model stops early               |
+| `instructions` field with Anthropic             | ⚠️ Ignored        | Not passed to non-OpenAI        |
+| `developer` message with Anthropic              | ✅ Success        | Converted to system message     |
 
 ---
 
@@ -273,4 +295,3 @@ The API **returns** (in responses):
 - **Vercel AI Gateway**: Tested against production endpoint (ai-gateway.vercel.sh)
 - **Date**: 2026-01-31
 - **OpenAPI Spec Version**: See [openapi.json](./openapi.json)
-

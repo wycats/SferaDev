@@ -1,15 +1,27 @@
 # RFC 019: Provider Module Refactoring
 
-> **Stage**: 0 (Draft)
-> **Status**: Planning
+> **Stage**: 0 (Draft)  
+> **Status**: In Progress  
 > **Purpose**: Decompose `openresponses-chat.ts` (1291 lines) into focused modules
+
+## Decisions (2026-01-31)
+
+Based on prepare agent review and user decisions:
+
+1. **Test-first approach**: Write tests alongside each phase (closes coverage gaps)
+2. **Merge small modules**: Avoid 22-line files; merge into semantically relevant larger files
+3. **Slop review at end**: After all extractions, review for cruft and AI slop patterns (e.g., 100-line `createMessageItem` is suspicious)
+4. **`role-mapping.ts` merged**: Into `message-translation.ts` (too small standalone)
+5. **`createMessageItem` placement**: In `message-translation.ts` (tightly coupled)
+
+---
 
 ## Problem Statement
 
 The `provider/openresponses-chat.ts` file has grown to 1291 lines, mixing several distinct responsibilities:
 
 1. **Request orchestration** (SSE streaming lifecycle)
-2. **Message translation** (VS Code → OpenResponses format)  
+2. **Message translation** (VS Code → OpenResponses format)
 3. **Message consolidation** (consecutive same-role merging)
 4. **Image handling** (MIME detection from magic bytes)
 5. **System prompt extraction** (role=3, disguised patterns)
@@ -21,109 +33,126 @@ This violates SRP and makes the code harder to test, maintain, and extend.
 
 ## Current File Inventory
 
-| File | Lines | Responsibility |
-|------|-------|----------------|
-| `provider/openresponses-chat.ts` | 1290 | Everything (problem) |
-| `provider/stream-adapter.ts` | 1069 | SSE event → VS Code part adaptation |
-| `provider/tool-history.ts` | 671 | Tool call deduplication (proposed API workaround) |
-| `provider/synthetic-parts.ts` | 271 | Synthetic part generation |
-| `provider/usage-tracker.ts` | ~100 | Token usage accumulation |
-| `provider/index.ts` | ~20 | Module re-exports |
+| File                             | Lines | Responsibility                                    |
+| -------------------------------- | ----- | ------------------------------------------------- |
+| `provider/openresponses-chat.ts` | 1291  | Everything (problem)                              |
+| `provider/stream-adapter.ts`     | 1069  | SSE event → VS Code part adaptation               |
+| `provider/tool-history.ts`       | 671   | Tool call deduplication (proposed API workaround) |
+| `provider/synthetic-parts.ts`    | 271   | Synthetic part generation                         |
+| `provider/usage-tracker.ts`      | ~100  | Token usage accumulation                          |
+| `provider/index.ts`              | ~20   | Module re-exports                                 |
 
 ---
 
-## Proposed Module Structure
+## Proposed Module Structure (Revised)
 
 ### Phase 1: Extract Pure Functions (Low Risk)
 
-These functions have **no dependencies** on VS Code APIs or external state. They can be extracted and unit-tested in isolation.
+These functions have **no dependencies** on VS Code APIs or external state.
 
-#### 1.1 `provider/image-utils.ts` (~50 lines)
-```
-function detectImageMimeType(data: Uint8Array, fallback: string): string
-```
+#### 1.1 `provider/image-utils.ts` (~60 lines)
 
-**Rationale**: Pure function, only depends on magic bytes lookup. No external imports.
-
-#### 1.2 `provider/message-consolidation.ts` (~100 lines)
-```
-function consolidateConsecutiveMessages(items: ItemParam[]): ItemParam[]
+```typescript
+function detectImageMimeType(data: Uint8Array, fallback: string): string;
 ```
 
-**Rationale**: Already has comprehensive tests in `message-translation.test.ts`. Pure transformation function.
+**Tests needed**: Magic byte detection for PNG, JPEG, GIF, WebP, and fallback behavior.
 
-**Note**: The existing `message-translation.test.ts` should be renamed to `message-consolidation.test.ts` or split.
+#### 1.2 `provider/message-consolidation.ts` (~90 lines)
 
-#### 1.3 `provider/debug-utils.ts` (~50 lines)
+```typescript
+function consolidateConsecutiveMessages(items: ItemParam[]): ItemParam[];
 ```
+
+**Tests needed**: Role merging, non-message item passthrough, empty input handling.
+
+#### 1.3 `provider/debug-utils.ts` (~35 lines)
+
+```typescript
 function saveSuspiciousRequest(body: CreateResponseBody, context: {...}): void
 ```
 
-**Rationale**: Side-effecting but isolated. Only writes to `.logs/` directory. Used for debugging the "pause" issue.
+**Tests needed**: None (side-effect only, debugging utility).
 
 ---
 
 ### Phase 2: Extract Domain Logic (Medium Risk)
 
-These functions involve message/role translation but are still relatively self-contained.
+#### 2.1 `provider/system-prompt.ts` (~115 lines)
 
-#### 2.1 `provider/system-prompt.ts` (~150 lines)
-```
-const VSCODE_SYSTEM_ROLE = 3
+```typescript
+const VSCODE_SYSTEM_ROLE = 3;
 
-function extractSystemPrompt(messages: LanguageModelChatMessage[]): string | undefined
-function extractMessageText(message: LanguageModelChatMessage): string | undefined  
-function extractDisguisedSystemPrompt(message: LanguageModelChatMessage): string | undefined
-```
-
-**Rationale**: System prompt handling is a distinct concern. Currently interleaved with message translation.
-
-#### 2.2 `provider/role-mapping.ts` (~30 lines)
-```
-function resolveOpenResponsesRole(role: LanguageModelChatMessageRole): 'user' | 'assistant'
-function buildToolNameMap(messages: LanguageModelChatMessage[]): Map<string, string>
+function extractSystemPrompt(
+  messages: readonly LanguageModelChatMessage[],
+): string | undefined;
+function extractMessageText(
+  message: LanguageModelChatMessage,
+): string | undefined;
+function extractDisguisedSystemPrompt(
+  message: LanguageModelChatMessage,
+): string | undefined;
 ```
 
-**Rationale**: Simple lookup functions. Could be inlined into translation module, but explicit naming aids comprehension.
+**Tests needed**: Role=3 detection, disguised prompt heuristics.
 
-#### 2.3 `provider/message-translation.ts` (~200 lines)
-```
-function translateMessage(msg: LanguageModelChatMessage, toolNameMap: Map<string, string>): ItemParam[]
-function createMessageItem(role: string, content: ContentPart[]): ItemParam | null
+#### 2.2 `provider/message-translation.ts` (~250 lines)
+
+```typescript
+// Includes role-mapping functions (merged, too small standalone)
+function resolveOpenResponsesRole(
+  role: LanguageModelChatMessageRole,
+): "user" | "assistant";
+function buildToolNameMap(
+  messages: readonly LanguageModelChatMessage[],
+): Map<string, string>;
+function translateMessage(
+  msg: LanguageModelChatMessage,
+  toolNameMap: Map<string, string>,
+): ItemParam[];
+function createMessageItem(
+  role: string,
+  content: ContentPart[],
+): ItemParam | null;
 ```
 
-**Rationale**: The core message translation logic. Depends on `role-mapping.ts` and `image-utils.ts`.
+**Tests needed**: Part type handling, function_call/function_call_output emission.
+**Flag for review**: `createMessageItem` is ~100 lines—likely has slop.
 
 ---
 
 ### Phase 3: Extract Request Layer (Higher Risk)
 
-#### 3.1 `provider/request-builder.ts` (~80 lines)
-```
+#### 3.1 `provider/request-builder.ts` (~150 lines)
+
+```typescript
 function translateRequest(
-  messages: LanguageModelChatMessage[],
+  messages: readonly LanguageModelChatMessage[],
   options: ProvideLanguageModelChatResponseOptions,
-  configService: ConfigService
+  configService: ConfigService,
 ): {
-  input: ItemParam[]
-  instructions?: string
-  tools: FunctionToolParam[]
-  toolChoice: 'auto' | 'required' | 'none'
-}
+  input: ItemParam[];
+  instructions?: string;
+  tools: FunctionToolParam[];
+  toolChoice: "auto" | "required" | "none";
+};
 ```
 
-**Rationale**: Orchestrates the translation pipeline. Depends on `message-translation.ts`, `system-prompt.ts`, `message-consolidation.ts`.
+**Tests needed**: Tool translation, system prompt injection, consolidation integration.
 
 #### 3.2 `provider/error-extraction.ts` (~60 lines)
-```
-function extractTokenInfoFromDetails(error: unknown): ExtractedTokenInfo | undefined
+
+```typescript
+function extractTokenInfoFromDetails(
+  error: unknown,
+): ExtractedTokenInfo | undefined;
 ```
 
-**Rationale**: Error parsing for token info. Currently buried at the end of the file.
+**Tests needed**: Structured error parsing, fallback behavior.
 
 ---
 
-### Phase 4: Slim Down Core Orchestrator
+### Phase 4: Final Cleanup
 
 After extractions, `openresponses-chat.ts` becomes:
 
@@ -132,20 +161,14 @@ After extractions, `openresponses-chat.ts` becomes:
 export interface OpenResponsesChatOptions { ... }
 export interface OpenResponsesChatResult { ... }
 
-export async function executeOpenResponsesChat(...): Promise<OpenResponsesChatResult> {
-  // 1. Create client
-  // 2. Call translateRequest() 
-  // 3. Stream with StreamAdapter
-  // 4. Handle cancellation, errors, finish reasons
-  // 5. Extract usage/token info
-}
+export async function executeOpenResponsesChat(...): Promise<OpenResponsesChatResult>
 ```
 
-**Dependencies**:
-- `./request-builder.ts` (translateRequest)
-- `./stream-adapter.ts` (StreamAdapter, AdaptedEvent)
-- `./error-extraction.ts` (extractTokenInfoFromDetails)
-- `./debug-utils.ts` (saveSuspiciousRequest)
+**Post-extraction tasks**:
+
+- [ ] Slop review of all extracted modules
+- [ ] Identify and simplify over-engineered functions
+- [ ] Remove dead code paths
 
 ---
 
@@ -155,7 +178,6 @@ export async function executeOpenResponsesChat(...): Promise<OpenResponsesChatRe
 openresponses-chat.ts
 ├── request-builder.ts
 │   ├── message-translation.ts
-│   │   ├── role-mapping.ts
 │   │   └── image-utils.ts
 │   ├── message-consolidation.ts
 │   └── system-prompt.ts
@@ -168,49 +190,27 @@ openresponses-chat.ts
 
 ## Implementation Strategy
 
-### Incremental Approach
+### Approach: prepare → execute → review → commit
 
-Each phase can be merged independently:
+For each phase:
 
-1. **Phase 1**: Extract pure functions → 3 small PRs
-2. **Phase 2**: Extract domain logic → 3 small PRs  
-3. **Phase 3**: Extract request layer → 2 PRs
-4. **Phase 4**: Final cleanup → 1 PR
+1. **Prepare agent**: Audit extraction targets, identify edge cases
+2. **Execute agent**: Perform extraction with tests
+3. **Review agent**: Verify correctness, check for issues
+4. **Commit**: One commit per phase
 
-**Total**: 9 incremental PRs, each testable in isolation.
+### Extraction Order (Revised)
 
-### Testing Strategy
-
-- **Existing tests**: `message-translation.test.ts` already covers consolidation. Move tests with extracted functions.
-- **New tests**: Add unit tests for `detectImageMimeType`, `extractSystemPrompt`, `extractDisguisedSystemPrompt`.
-- **Integration**: Keep existing provider tests as integration tests.
-
----
-
-## Risk Mitigation
-
-| Risk | Mitigation |
-|------|------------|
-| Breaking existing tests | Move tests alongside extracted functions |
-| Import churn | Use barrel exports from `provider/index.ts` |
-| Circular dependencies | Dependency graph is DAG (no cycles) |
-| Merge conflicts | Small PRs, extract least-dependent first |
-
----
-
-## Priority Order
-
-**Recommended extraction order** (least→most dependent):
-
-1. `image-utils.ts` (zero dependencies, pure)
-2. `debug-utils.ts` (isolated side effect)
-3. `message-consolidation.ts` (pure, already tested)
-4. `role-mapping.ts` (tiny, pure)
-5. `system-prompt.ts` (VS Code types only)
-6. `message-translation.ts` (depends on 1, 4, 5)
-7. `error-extraction.ts` (OpenResponsesError only)
-8. `request-builder.ts` (orchestrates 3, 5, 6)
-9. Final cleanup of `openresponses-chat.ts`
+| Order | Module                     | Lines | Dependencies            |
+| ----- | -------------------------- | ----- | ----------------------- |
+| 1     | `image-utils.ts`           | ~60   | None                    |
+| 2     | `debug-utils.ts`           | ~35   | fs only                 |
+| 3     | `error-extraction.ts`      | ~60   | OpenResponsesError type |
+| 4     | `system-prompt.ts`         | ~115  | VS Code types           |
+| 5     | `message-consolidation.ts` | ~90   | ItemParam types         |
+| 6     | `message-translation.ts`   | ~250  | 1, 4                    |
+| 7     | `request-builder.ts`       | ~150  | 5, 6                    |
+| 8     | Final cleanup              | —     | Slim main file          |
 
 ---
 
@@ -218,17 +218,18 @@ Each phase can be merged independently:
 
 - [ ] No file in `provider/` exceeds 400 lines
 - [ ] Each extracted module has dedicated test file
-- [ ] All 236 existing tests pass
+- [ ] All existing tests pass (236+)
 - [ ] Extension builds and installs without error
 - [ ] No new lint/type errors introduced
+- [ ] Slop review completed post-extraction
 
 ---
 
-## Open Questions
+## Open Questions (Resolved)
 
-1. Should `synthetic-parts.ts` be merged into `message-translation.ts`?
-2. Is `tool-history.ts` (671 lines) a separate refactoring target?
-3. Do we want to extract types/interfaces into a `provider/types.ts`?
+1. ~~Should `synthetic-parts.ts` be merged?~~ → Out of scope
+2. ~~Is `tool-history.ts` a separate target?~~ → Out of scope, separate RFC if needed
+3. ~~Extract types to `provider/types.ts`?~~ → No, keep co-located
 
 ---
 
