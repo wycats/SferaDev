@@ -138,8 +138,21 @@ OpenAI-only pass-throughs. They are forwarded via `providerOptions.openai` and
 are ignored by non-OpenAI providers:
 
 - `parallel_tool_calls`
-- `response_format`
-- `max_output_tokens`
+- `metadata`
+- `previous_response_id`
+
+**Source**: [convert-to-aisdk-call-options.ts#L66-78](https://github.com/vercel/ai-gateway/blob/main/lib/openresponses-compat/convert-to-aisdk-call-options.ts#L66-78)
+
+```typescript
+// All of these go to providerOptions.openai only:
+openaiOptions.parallelToolCalls = request.parallel_tool_calls;
+openaiOptions.instructions = request.instructions;
+openaiOptions.metadata = request.metadata;
+openaiOptions.previousResponseId = request.previous_response_id;
+```
+
+**Implication**: `metadata` and `previous_response_id` are passed through to OpenAI
+but are completely ignored when using Anthropic or other non-OpenAI providers.
 
 ### 1b. Metadata Field Limits
 
@@ -212,6 +225,27 @@ underlying LLM providers (Anthropic, OpenAI) often expect tool results to have
 corresponding tool_use/tool_call blocks. The gateway does NOT synthesize these
 from `function_call_output` alone.
 
+### 5a. `function_call_output` Uses `toolName: "unknown"`
+
+When converting `function_call_output` to the AI SDK format, the gateway sets
+`toolName: "unknown"` because the OpenResponses schema for `function_call_output`
+does not include the tool name - only the `call_id` and `output`.
+
+**Source**: [convert-to-aisdk-call-options.ts#L260-266](https://github.com/vercel/ai-gateway/blob/main/lib/openresponses-compat/convert-to-aisdk-call-options.ts#L260-266)
+
+```typescript
+const toolResult: LanguageModelV3ToolResultPart = {
+  type: 'tool-result',
+  toolCallId: item.call_id,
+  toolName: 'unknown', // OpenResponses doesn't include tool name in output
+  output,
+};
+```
+
+**Implication**: This reinforces the recommendation to include corresponding
+`function_call` items before `function_call_output` items. The `function_call`
+item provides the tool name, ensuring proper tool call reconstruction.
+
 **Error Example** (from Anthropic API via Vercel AI Gateway):
 
 ```
@@ -274,6 +308,33 @@ For **input** messages (user, assistant, developer), use:
 - `input_image` for images
 - `input_file` for files
 
+### 8a. `input_image.detail` Field is Ignored
+
+**OpenAPI Spec Says**: The `input_image` type has an optional `detail` field with
+values `"auto"`, `"low"`, or `"high"`.
+
+**Reality**: The gateway accepts the `detail` field in the schema but completely
+ignores it during conversion. Only `image_url` is extracted from `input_image`.
+
+**Source**: [convert-to-aisdk-call-options.ts#L182-190](https://github.com/vercel/ai-gateway/blob/main/lib/openresponses-compat/convert-to-aisdk-call-options.ts#L182-190)
+
+```typescript
+} else if (part.type === 'input_image') {
+  // Handle input_image format (URL or base64 data URL)
+  if (part.image_url) {
+    content.push({
+      type: 'file',
+      data: part.image_url,
+      mediaType: 'image/*',
+    });
+  }
+  // Note: part.detail is NOT used
+}
+```
+
+**Implication**: Do not rely on `detail` to control image processing. The underlying
+provider may have its own default behavior.
+
 **Additional gateway filtering behavior** (based on code review):
 
 - **User messages**: The gateway only processes `input_text`, `input_image`,
@@ -281,6 +342,9 @@ For **input** messages (user, assistant, developer), use:
   are ignored.
 - **Assistant messages (input)**: The gateway retains only `input_text` and
   `output_text` parts. Non-text content types are filtered out.
+- **Empty assistant content**: If an assistant message has no text parts after
+  filtering, the gateway injects an empty text part: `{ type: 'text', text: '' }`.
+  This ensures assistant messages always have at least one content part.
 - **System/developer messages**: Only `input_text` is processed; other content
   types are filtered out.
 
@@ -325,26 +389,29 @@ If `allowed_tools` is specified, each tool name must exist in the `tools` array.
 
 ### Tested: 2026-01-31 (verified)
 
-| Payload Type                                    | Result      | Notes                           |
-| ----------------------------------------------- | ----------- | ------------------------------- |
-| Minimal user message                            | ✅ Success  | Basic case works                |
-| Developer + user messages                       | ✅ Success  | `role: "developer"` works       |
-| Message with tools defined                      | ✅ Success  | Tool schema accepted            |
-| Multi-turn with string assistant content        | ✅ Success  | Preferred format                |
-| Multi-turn with `output_text` array             | ✅ Success  | Accepted for assistant input    |
-| `function_call` as input item                   | ✅ Success  | **NOW WORKS** (gateway updated) |
-| `function_call` + `function_call_output` pair   | ✅ Success  | **Recommended approach**        |
-| `function_call_output` alone (no function_call) | ⚠️ Degraded | Provider-level confusion        |
-| Consecutive user messages (3+)                  | ✅ Success  | Behavioral issues possible      |
-| `instructions` field with Anthropic             | ⚠️ Ignored  | Not passed to non-OpenAI        |
-| `developer` message with Anthropic              | ✅ Success  | Converted to system message     |
-| 17 metadata keys                                | ❌ 400 Error | Max 16 keys                     |
-| 65-char metadata key                            | ❌ 400 Error | Max 64 chars                    |
-| 513-char metadata value                         | ❌ 400 Error | Max 512 chars                   |
-| No user message                                 | ❌ 400 Error | User message required           |
-| Empty input array                               | ❌ 400 Error | Min 1 item                      |
-| Invalid tool in allowed_tools                   | ❌ 400 Error | Must match tools[]              |
-| Invalid JSON in function_call args              | ✅ Success  | Coerced to {}                   |
+| Payload Type                                    | Result      | Notes                                       |
+| ----------------------------------------------- | ----------- | ------------------------------------------- |
+| Minimal user message                            | ✅ Success  | Basic case works                            |
+| Developer + user messages                       | ✅ Success  | `role: "developer"` works                   |
+| Message with tools defined                      | ✅ Success  | Tool schema accepted                        |
+| Multi-turn with string assistant content        | ✅ Success  | Preferred format                            |
+| Multi-turn with `output_text` array             | ✅ Success  | Accepted for assistant input                |
+| `function_call` as input item                   | ✅ Success  | **NOW WORKS** (gateway updated)             |
+| `function_call` + `function_call_output` pair   | ✅ Success  | **Recommended approach**                    |
+| `function_call_output` alone (no function_call) | ⚠️ Degraded | Provider-level confusion                    |
+| Consecutive user messages (3+)                  | ✅ Success  | Behavioral issues possible                  |
+| `instructions` field with Anthropic             | ⚠️ Ignored  | Not passed to non-OpenAI                    |
+| `developer` message with Anthropic              | ✅ Success  | Converted to system message                 |
+| 17 metadata keys                                | ❌ 400 Error | Max 16 keys                                 |
+| 65-char metadata key                            | ❌ 400 Error | Max 64 chars                                |
+| 513-char metadata value                         | ❌ 400 Error | Max 512 chars                               |
+| No user message                                 | ❌ 400 Error | User message required                       |
+| Empty input array                               | ❌ 400 Error | Min 1 item                                  |
+| Invalid tool in allowed_tools                   | ❌ 400 Error | Must match tools[]                          |
+| Invalid JSON in function_call args              | ✅ Success  | Coerced to {}                               |
+| `metadata` with Anthropic                       | ⚠️ Ignored  | OpenAI-only (code verified)                 |
+| `previous_response_id` with Anthropic           | ⚠️ Ignored  | OpenAI-only (code verified)                 |
+| `input_image` with `detail` field               | ⚠️ Ignored  | `detail` not passed to provider             |
 
 ---
 
