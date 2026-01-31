@@ -330,6 +330,18 @@ export class StreamAdapter {
     const response = event.response as ResponseResource;
     const usage = response.usage as Usage;
 
+    // Log the raw response for debugging stop_reason issues
+    const rawResponse = response as unknown as {
+      stop_reason?: string;
+      status?: string;
+      incomplete_details?: unknown;
+    };
+    if (rawResponse.stop_reason || rawResponse.status || rawResponse.incomplete_details) {
+      logger.info(
+        `[OpenResponses] Response metadata: stop_reason=${rawResponse.stop_reason ?? "n/a"}, status=${rawResponse.status ?? "n/a"}, incomplete_details=${JSON.stringify(rawResponse.incomplete_details ?? null)}`,
+      );
+    }
+
     // Determine finish reason from output
     let finishReason: AdaptedEvent["finishReason"] = "stop";
 

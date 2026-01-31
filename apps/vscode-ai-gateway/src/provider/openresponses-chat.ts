@@ -291,6 +291,8 @@ export async function executeOpenResponsesChat(
     let functionCallEventsReceived = 0;
     let functionCallArgsEventsReceived = 0;
     const eventTypeCounts = new Map<string, number>();
+    // Accumulate all text output for debugging suspicious requests
+    let accumulatedText = "";
     for await (const event of client.createStreamingResponse(
       requestBody,
       abortController.signal,
@@ -355,6 +357,7 @@ export async function executeOpenResponsesChat(
           );
         } else if (part instanceof LanguageModelTextPart) {
           textPartCount++;
+          accumulatedText += part.value;
           // Only log first few text parts to avoid spam
           if (textPartCount <= 3) {
             const preview = part.value.substring(0, 50).replace(/\n/g, "\\n");
@@ -413,15 +416,11 @@ export async function executeOpenResponsesChat(
             logger.warn(
               `[OpenResponses] SUSPICIOUS: Tools provided but model stopped without calling any. Saving request for replay.`,
             );
-            // Get a preview of the text output for context
-            const textPreview = adapted.parts
-              .filter(
-                (p): p is LanguageModelTextPart =>
-                  p instanceof LanguageModelTextPart,
-              )
-              .map((p) => p.value)
-              .join("")
-              .substring(0, 500);
+            // Use accumulated text from the stream
+            const textPreview = accumulatedText.substring(0, 500);
+            logger.warn(
+              `[OpenResponses] Model output preview: "${textPreview.substring(0, 200)}${textPreview.length > 200 ? "..." : ""}"`,
+            );
             saveSuspiciousRequest(requestBody, {
               timestamp: new Date().toISOString(),
               finishReason: adapted.finishReason,
@@ -624,6 +623,24 @@ function translateRequest(
     );
   }
 
+  // CRITICAL FIX: Prepend system prompt as a `developer` message for non-OpenAI providers.
+  // The Vercel AI Gateway only passes `instructions` via `providerOptions.openai.instructions`,
+  // which is ignored by Anthropic and other providers. By prepending a `developer` role message,
+  // the gateway's convertMessageItem() converts it to a system message that works universally.
+  // We keep `instructions` for OpenAI compatibility but also add a developer message for others.
+  let finalInput = validInput;
+  if (instructions) {
+    const developerMessage: ItemParam = {
+      type: "message",
+      role: "developer",
+      content: [{ type: "input_text", text: instructions }],
+    };
+    finalInput = [developerMessage, ...validInput];
+    logger.info(
+      `[OpenResponses] Prepended developer message (${instructions.length.toString()} chars) for non-OpenAI provider compatibility`,
+    );
+  }
+
   // Convert tools
   const tools: FunctionToolParam[] = [];
   for (const { name, description, inputSchema } of options.tools ?? []) {
@@ -649,11 +666,13 @@ function translateRequest(
     toolChoice = "none";
   }
 
+  // Keep `instructions` for OpenAI provider compatibility but use finalInput
+  // which includes the developer message for non-OpenAI providers
   if (instructions) {
-    return { input: validInput, instructions, tools, toolChoice };
+    return { input: finalInput, instructions, tools, toolChoice };
   }
 
-  return { input: validInput, tools, toolChoice };
+  return { input: finalInput, tools, toolChoice };
 }
 
 /**
