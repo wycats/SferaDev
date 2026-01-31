@@ -361,16 +361,18 @@ export class StreamAdapter {
 
         // Extract tool call details
         const functionCall = item as FunctionCallItem;
+        const itemId = functionCall.id; // Use itemId as unique identifier!
         const callId = functionCall.call_id;
         const name = functionCall.name;
         const argsStr = functionCall.arguments;
 
         logger.debug(
-          `[OpenResponses] Found function_call in output: name=${name}, callId=${callId}, argsLen=${argsStr.length.toString()}`,
+          `[OpenResponses] Found function_call in output: name=${name}, callId=${callId}, itemId=${itemId}, argsLen=${argsStr.length.toString()}`,
         );
 
         // Only emit if this tool call wasn't already emitted via streaming events
-        if (callId && name && !this.emittedToolCalls.has(callId)) {
+        // Use itemId for deduplication since call_id can be reused by the gateway!
+        if (itemId && name && !this.emittedToolCalls.has(itemId)) {
           let parsedArgs: ToolCallArguments = {};
           try {
             parsedArgs = JSON.parse(argsStr) as ToolCallArguments;
@@ -381,19 +383,21 @@ export class StreamAdapter {
           }
 
           logger.info(
-            `[OpenResponses] Emitting tool call from completion payload: ${name} (callId: ${callId})`,
+            `[OpenResponses] Emitting tool call from completion payload: ${name} (itemId: ${itemId})`,
           );
-          parts.push(new LanguageModelToolCallPart(callId, name, parsedArgs));
-          this.emittedToolCalls.add(callId);
+          // CRITICAL: Use itemId as the callId sent to VS Code, not the gateway's call_id!
+          // The gateway can reuse call_id for multiple function calls, but VS Code needs unique IDs.
+          parts.push(new LanguageModelToolCallPart(itemId, name, parsedArgs));
+          this.emittedToolCalls.add(itemId);
           functionCallsEmitted++;
-        } else if (this.emittedToolCalls.has(callId)) {
+        } else if (this.emittedToolCalls.has(itemId)) {
           functionCallsSkippedDuplicate++;
           logger.debug(
-            `[OpenResponses] Skipping duplicate tool call: ${name} (callId: ${callId})`,
+            `[OpenResponses] Skipping duplicate tool call: ${name} (itemId: ${itemId})`,
           );
         } else {
           logger.warn(
-            `[OpenResponses] Skipping tool call with missing callId or name: callId=${callId}, name=${name}`,
+            `[OpenResponses] Skipping tool call with missing itemId or name: itemId=${itemId}, name=${name}`,
           );
         }
       }
@@ -572,30 +576,34 @@ export class StreamAdapter {
       const functionCall = isFunctionCallByType
         ? (item as FunctionCallItem)
         : (item as FunctionCallItemFallback);
+      const itemId = isFunctionCallByType
+        ? (item as FunctionCallItem).id
+        : ((item as FunctionCallItemFallback).id ?? functionCall.call_id);
       const callId = functionCall.call_id;
       const argsStr = functionCall.arguments;
       const name = functionCall.name;
 
       // Skip if already emitted via function_call_arguments.done
-      if (this.emittedToolCalls.has(callId)) {
+      // Use itemId for deduplication since call_id can be reused!
+      if (this.emittedToolCalls.has(itemId)) {
         logger.debug(
-          `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (callId: ${callId})`,
+          `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (itemId: ${itemId})`,
         );
         return { parts: [], done: false };
       }
 
       if (typeof argsStr !== "string") {
         logger.warn(
-          `[OpenResponses] Function call missing arguments in output_item.done: name=${name}, callId=${callId}`,
+          `[OpenResponses] Function call missing arguments in output_item.done: name=${name}, itemId=${itemId}`,
         );
         return { parts: [], done: false };
       }
 
       logger.info(
-        `[OpenResponses] Function call completed via output_item.done: name=${name}, callId=${callId}`,
+        `[OpenResponses] Function call completed via output_item.done: name=${name}, itemId=${itemId}`,
       );
 
-      // Remove from tracking
+      // Remove from tracking (keyed by callId for now, but we track emission by itemId)
       this.functionCalls.delete(callId);
 
       let parsedArgs: ToolCallArguments = {};
@@ -607,10 +615,11 @@ export class StreamAdapter {
         );
       }
 
-      this.emittedToolCalls.add(callId);
+      this.emittedToolCalls.add(itemId);
 
+      // CRITICAL: Use itemId as the callId sent to VS Code!
       return {
-        parts: [new LanguageModelToolCallPart(callId, name, parsedArgs)],
+        parts: [new LanguageModelToolCallPart(itemId, name, parsedArgs)],
         done: false,
       };
     }
@@ -944,16 +953,19 @@ export class StreamAdapter {
 
       // Clean up state
       this.functionCalls.delete(foundCallId);
-      this.emittedToolCalls.add(foundCallId);
+      // Track by itemId since call_id can be reused!
+      this.emittedToolCalls.add(foundState.itemId);
 
       logger.info(
-        `[OpenResponses] Emitting tool call via function_call_arguments.done: ${foundState.name} (callId: ${foundCallId})`,
+        `[OpenResponses] Emitting tool call via function_call_arguments.done: ${foundState.name} (itemId: ${foundState.itemId})`,
       );
 
+      // CRITICAL: Use itemId as the callId sent to VS Code!
+      // The gateway can reuse call_id for multiple function calls, but VS Code needs unique IDs.
       return {
         parts: [
           new LanguageModelToolCallPart(
-            foundCallId,
+            foundState.itemId,
             foundState.name,
             parsedArgs,
           ),

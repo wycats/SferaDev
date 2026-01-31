@@ -231,9 +231,12 @@ export async function executeOpenResponsesChat(
       eventCount++;
       const eventType = (event as { type?: string }).type ?? "unknown";
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
-      
+
       // TRACE: Log raw event data for debugging (only for function-related events to avoid spam)
-      if (eventType.includes("function_call") || eventType.includes("output_item")) {
+      if (
+        eventType.includes("function_call") ||
+        eventType.includes("output_item")
+      ) {
         functionCallEventsReceived++;
         logger.debug(
           `[OpenResponses] Function-related event #${functionCallEventsReceived.toString()}: ${eventType}`,
@@ -244,15 +247,17 @@ export async function executeOpenResponsesChat(
             `[OpenResponses] Raw event data: ${JSON.stringify(event)}`,
           );
         } catch {
-          logger.trace(`[OpenResponses] Raw event (non-serializable): ${eventType}`);
+          logger.trace(
+            `[OpenResponses] Raw event (non-serializable): ${eventType}`,
+          );
         }
       }
-      
+
       // Track function_call_arguments events specifically - these indicate actual tool calls
       if (eventType.includes("function_call_arguments")) {
         functionCallArgsEventsReceived++;
       }
-      
+
       if (eventCount <= 25) {
         logger.trace(
           `[OpenResponses] Stream event #${eventCount.toString()}: ${eventType}`,
@@ -313,7 +318,7 @@ export async function executeOpenResponsesChat(
         logger.info(
           `[OpenResponses] Stream summary: ${eventCount.toString()} events, ${textPartCount.toString()} text parts, ${toolCallCount.toString()} tool calls emitted, ${functionCallArgsEventsReceived.toString()} function_call_arguments events`,
         );
-        
+
         // DIAGNOSTIC: Detect potential issues with tool call emission
         // Only warn if we received function_call_arguments events but didn't emit tool calls
         if (functionCallArgsEventsReceived > 0 && toolCallCount === 0) {
@@ -323,10 +328,14 @@ export async function executeOpenResponsesChat(
               `Finish reason: ${adapted.finishReason ?? "unknown"}`,
           );
         }
-        
+
         // Log when we have text but no tool calls and finish reason is 'stop'
         // This is the "pause" pattern but may be intentional model behavior
-        if (textPartCount > 0 && toolCallCount === 0 && adapted.finishReason === "stop") {
+        if (
+          textPartCount > 0 &&
+          toolCallCount === 0 &&
+          adapted.finishReason === "stop"
+        ) {
           logger.debug(
             `[OpenResponses] Text-only response (no tool calls): ${textPartCount.toString()} text parts, finish reason: stop`,
           );
