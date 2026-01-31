@@ -42,25 +42,6 @@ export function resolveOpenResponsesRole(
 }
 
 /**
- * Build a mapping of tool call IDs to tool names.
- */
-export function buildToolNameMap(
-  messages: readonly LanguageModelChatMessage[],
-): Map<string, string> {
-  const map = new Map<string, string>();
-
-  for (const message of messages) {
-    for (const part of message.content) {
-      if (part instanceof LanguageModelToolCallPart) {
-        map.set(part.callId, part.name);
-      }
-    }
-  }
-
-  return map;
-}
-
-/**
  * Translate a single VS Code message to OpenResponses items.
  */
 export function translateMessage(
