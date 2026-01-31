@@ -96,23 +96,14 @@ export async function executeOpenResponsesChat(
     chatOptions;
 
   // TRACE: Log raw VS Code messages with actual role values
+  const roleNames: Record<number, string> = {
+    1: "User",
+    2: "Assistant",
+    3: "System",
+  };
   logger.trace(
-    `[OpenResponses] Received ${chatMessages.length.toString()} messages from VS Code`,
+    `[OpenResponses] Received ${chatMessages.length} messages: ${chatMessages.map((m) => roleNames[m.role as number] ?? `Unknown(${m.role})`).join(", ")}`,
   );
-  chatMessages.forEach((msg, i) => {
-    // Log the raw numeric role value to catch unknown roles (e.g., System=3)
-    const roleValue = msg.role as number;
-    const roleNames: Record<number, string> = {
-      1: "User",
-      2: "Assistant",
-      3: "System",
-    };
-    const roleName = roleNames[roleValue] ?? `Unknown(${String(roleValue)})`;
-    const contentTypes = msg.content.map((p) => p.constructor.name).join(", ");
-    logger.trace(
-      `[OpenResponses] Message[${i.toString()}]: role=${roleName}(${String(roleValue)}), parts=[${contentTypes}]`,
-    );
-  });
 
   // Create client with trace logging
   const client = createClient({
@@ -120,26 +111,17 @@ export async function executeOpenResponsesChat(
     apiKey,
     timeout: configService.timeout,
     log: (level, message, data) => {
-      const formatted =
-        data !== undefined
-          ? `${message}: ${JSON.stringify(data, null, 2)}`
-          : message;
-      switch (level) {
-        case "trace":
-          logger.trace(formatted);
-          break;
-        case "debug":
-          logger.debug(formatted);
-          break;
-        case "info":
-          logger.info(formatted);
-          break;
-        case "warn":
-          logger.warn(formatted);
-          break;
-        case "error":
-          logger.error(formatted);
-          break;
+      let formatted = message;
+      if (data !== undefined) {
+        try {
+          formatted = `${message}: ${JSON.stringify(data, null, 2)}`;
+        } catch {
+          formatted = `${message}: [unserializable data]`;
+        }
+      }
+      const logFn = logger[level as keyof typeof logger];
+      if (typeof logFn === "function") {
+        (logFn as (msg: string) => void)(formatted);
       }
     },
   });
@@ -209,29 +191,15 @@ export async function executeOpenResponsesChat(
       `[OpenResponses] Full request body: ${JSON.stringify(requestBody, null, 2)}`,
     );
 
-    // TRACE: Log the first few input items to debug structure
+    // TRACE: Log input summary
     logger.trace(
-      `[OpenResponses] Request has ${input.length.toString()} input items`,
+      `[OpenResponses] Request: ${input.length} input items, ${tools.length} tools`,
     );
-    input.slice(0, 3).forEach((item, i) => {
-      logger.trace(
-        `[OpenResponses] input[${i.toString()}]: type=${item.type ?? "unknown"}, role=${"role" in item ? item.role : "N/A"}`,
-      );
-      if ("content" in item && Array.isArray(item.content)) {
-        const contentTypes = (item.content as { type?: string }[])
-          .map((c) => c.type ?? "unknown")
-          .join(", ");
-        logger.trace(
-          `[OpenResponses] input[${i.toString()}] content types: [${contentTypes}]`,
-        );
-      }
-    });
 
     // Stream the response
     let toolCallCount = 0;
     let textPartCount = 0;
     let eventCount = 0;
-    let functionCallEventsReceived = 0;
     let functionCallArgsEventsReceived = 0;
     const eventTypeCounts = new Map<string, number>();
     // Accumulate all text output for debugging suspicious requests
@@ -244,47 +212,29 @@ export async function executeOpenResponsesChat(
       const eventType = (event as { type?: string }).type ?? "unknown";
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
 
-      // TRACE: Log raw event data for debugging (only for function-related events to avoid spam)
-      if (
-        eventType.includes("function_call") ||
-        eventType.includes("output_item")
-      ) {
-        functionCallEventsReceived++;
-        logger.debug(
-          `[OpenResponses] Function-related event #${functionCallEventsReceived.toString()}: ${eventType}`,
-        );
-        // Log the full event at trace level for debugging
-        try {
-          logger.trace(
-            `[OpenResponses] Raw event data: ${JSON.stringify(event)}`,
-          );
-        } catch {
-          logger.trace(
-            `[OpenResponses] Raw event (non-serializable): ${eventType}`,
-          );
-        }
-      }
-
-      // Track function_call_arguments events specifically - these indicate actual tool calls
+      // Track function_call_arguments events - these indicate actual tool calls
       if (eventType.includes("function_call_arguments")) {
         functionCallArgsEventsReceived++;
+        logger.debug(
+          `[OpenResponses] Function call args event #${functionCallArgsEventsReceived}: ${eventType}`,
+        );
       }
 
       if (eventCount <= 25) {
         logger.trace(
-          `[OpenResponses] Stream event #${eventCount.toString()}: ${eventType}`,
+          `[OpenResponses] Stream event #${eventCount}: ${eventType}`,
         );
       }
+
       if (eventType === "response.completed") {
         const response = (
           event as { response: { id: string; output?: unknown } }
         ).response;
-        const outputIsArray = Array.isArray(response.output);
-        const outputLength = outputIsArray
-          ? (response.output as unknown[]).length
-          : undefined;
+        const outputLen = Array.isArray(response.output)
+          ? response.output.length
+          : "n/a";
         logger.debug(
-          `[OpenResponses] response.completed received (id=${response.id}, outputArray=${String(outputIsArray)}, outputLen=${String(outputLength ?? "n/a")})`,
+          `[OpenResponses] response.completed (id=${response.id}, outputLen=${outputLen})`,
         );
       }
 
@@ -296,7 +246,7 @@ export async function executeOpenResponsesChat(
         if (part instanceof LanguageModelToolCallPart) {
           toolCallCount++;
           logger.info(
-            `[OpenResponses] Emitting tool call #${toolCallCount.toString()}: ${part.name} (callId: ${part.callId})`,
+            `[OpenResponses] Emitting tool call #${toolCallCount}: ${part.name} (callId: ${part.callId})`,
           );
         } else if (part instanceof LanguageModelTextPart) {
           textPartCount++;
@@ -305,7 +255,7 @@ export async function executeOpenResponsesChat(
           if (textPartCount <= 3) {
             const preview = part.value.substring(0, 50).replace(/\n/g, "\\n");
             logger.debug(
-              `[OpenResponses] Emitting text part #${textPartCount.toString()}: "${preview}..."`,
+              `[OpenResponses] Emitting text part #${textPartCount}: "${preview}..."`,
             );
           }
         }
@@ -315,66 +265,43 @@ export async function executeOpenResponsesChat(
 
       // Handle completion
       if (adapted.done) {
-        logger.debug(
-          `[OpenResponses] Adapter done (finishReason=${adapted.finishReason ?? "n/a"}, parts=${adapted.parts.length.toString()})`,
-        );
         const topTypes = Array.from(eventTypeCounts.entries())
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 10)
-          .map(([t, c]) => `${t}:${c.toString()}`)
+          .slice(0, 5)
+          .map(([t, c]) => `${t}:${c}`)
           .join(", ");
-        logger.debug(
-          `[OpenResponses] Stream event type counts (top): ${topTypes}`,
-        );
 
-        // Log summary of what was emitted
         logger.info(
-          `[OpenResponses] Stream summary: ${eventCount.toString()} events, ${textPartCount.toString()} text parts, ${toolCallCount.toString()} tool calls emitted, ${functionCallArgsEventsReceived.toString()} function_call_arguments events`,
+          `[OpenResponses] Stream complete: ${eventCount} events, ${textPartCount} text, ${toolCallCount} tools (${topTypes})`,
         );
 
         // DIAGNOSTIC: Detect potential issues with tool call emission
-        // Only warn if we received function_call_arguments events but didn't emit tool calls
         if (functionCallArgsEventsReceived > 0 && toolCallCount === 0) {
           logger.error(
-            `[OpenResponses] BUG: Received ${functionCallArgsEventsReceived.toString()} function_call_arguments events but emitted 0 tool calls! ` +
-              `Event types: ${topTypes}. ` +
-              `Finish reason: ${adapted.finishReason ?? "unknown"}`,
+            `[OpenResponses] BUG: Received ${functionCallArgsEventsReceived} function_call_arguments events but emitted 0 tool calls!`,
           );
         }
 
-        // Log when we have text but no tool calls and finish reason is 'stop'
-        // This is the "pause" pattern but may be intentional model behavior
+        // Save suspicious request if tools were provided but model stopped without calling any
         if (
           textPartCount > 0 &&
           toolCallCount === 0 &&
-          adapted.finishReason === "stop"
+          adapted.finishReason === "stop" &&
+          tools.length > 0
         ) {
-          logger.debug(
-            `[OpenResponses] Text-only response (no tool calls): ${textPartCount.toString()} text parts, finish reason: stop`,
+          const textPreview = accumulatedText.substring(0, 500);
+          logger.warn(
+            `[OpenResponses] SUSPICIOUS: Tools provided but model stopped without calling any. Preview: "${textPreview.substring(0, 100)}..."`,
           );
-
-          // Save suspicious request if tools were provided - this is the "pause" pattern
-          // where model says "Let me check..." but stops without making tool calls
-          if (tools.length > 0) {
-            logger.warn(
-              `[OpenResponses] SUSPICIOUS: Tools provided but model stopped without calling any. Saving request for replay.`,
-            );
-            // Use accumulated text from the stream
-            const textPreview = accumulatedText.substring(0, 500);
-            logger.warn(
-              `[OpenResponses] Model output preview: "${textPreview.substring(0, 200)}${textPreview.length > 200 ? "..." : ""}"`,
-            );
-            const suspiciousContext: SuspiciousRequestContext = {
-              timestamp: new Date().toISOString(),
-              finishReason: adapted.finishReason,
-              textPartCount,
-              toolCallCount,
-              toolsProvided: tools.length,
-              textPreview,
-              usage: adapted.usage,
-            };
-            saveSuspiciousRequest(requestBody, suspiciousContext);
-          }
+          saveSuspiciousRequest(requestBody, {
+            timestamp: new Date().toISOString(),
+            finishReason: adapted.finishReason,
+            textPartCount,
+            toolCallCount,
+            toolsProvided: tools.length,
+            textPreview,
+            usage: adapted.usage,
+          });
         }
 
         result = {
@@ -393,11 +320,8 @@ export async function executeOpenResponsesChat(
         if (adapted.usage) {
           usageTracker.record(chatId, adapted.usage);
           logger.info(
-            `[OpenResponses] Response completed: ${adapted.usage.input_tokens.toString()} input, ` +
-              `${adapted.usage.output_tokens.toString()} output tokens`,
+            `[OpenResponses] Response: ${adapted.usage.input_tokens} in, ${adapted.usage.output_tokens} out tokens`,
           );
-
-          // Update status bar with actual usage
           statusBar?.completeAgent(chatId, {
             inputTokens: adapted.usage.input_tokens,
             outputTokens: adapted.usage.output_tokens,
@@ -416,7 +340,7 @@ export async function executeOpenResponsesChat(
       );
       progress.report(
         new LanguageModelTextPart(
-          `**Error**: No response received from model. The request completed but the model returned no content. Please try again.`,
+          `**Error**: No response received from model. Please try again.`,
         ),
       );
       result = { success: false, error: "No content received" };
@@ -436,22 +360,18 @@ export async function executeOpenResponsesChat(
     // Handle API errors
     const errorMessage =
       error instanceof OpenResponsesError
-        ? `${error.message} (${String(error.code ?? error.status)})`
+        ? `${error.message} (${error.code ?? error.status})`
         : error instanceof Error
           ? error.message
           : "Unknown error";
 
     logger.error(`[OpenResponses] Request failed: ${errorMessage}`);
 
-    // Extract token info from "input too long" errors for compaction triggering.
-    // First try to get structured data from OpenResponsesError.details
+    // Extract token info from "input too long" errors for compaction triggering
     let tokenInfo = extractTokenInfoFromDetails(error);
-
-    // Fall back to regex extraction from error message
     tokenInfo ??= extractTokenCountFromError(error);
 
-    // Final fallback: if error indicates "too long" but we couldn't parse exact count,
-    // use maxInputTokens + 1 to guarantee we trigger compaction
+    // Fallback: if error indicates "too long" but we couldn't parse exact count
     if (
       !tokenInfo &&
       errorMessage.toLowerCase().includes("too long") &&
@@ -462,15 +382,13 @@ export async function executeOpenResponsesChat(
         maxTokens: model.maxInputTokens,
       };
       logger.info(
-        `[OpenResponses] Using maxInputTokens fallback for compaction trigger: ` +
-          `${tokenInfo.actualTokens.toString()} > ${model.maxInputTokens.toString()}`,
+        `[OpenResponses] Using maxInputTokens fallback: ${tokenInfo.actualTokens} > ${model.maxInputTokens}`,
       );
     }
 
     if (tokenInfo) {
       logger.info(
-        `[OpenResponses] Token info for compaction: ${tokenInfo.actualTokens.toString()} tokens ` +
-          `(max: ${String(tokenInfo.maxTokens ?? "unknown")})`,
+        `[OpenResponses] Token info: ${tokenInfo.actualTokens} (max: ${tokenInfo.maxTokens ?? "unknown"})`,
       );
     }
 
@@ -482,7 +400,6 @@ export async function executeOpenResponsesChat(
     }
 
     statusBar?.errorAgent(chatId);
-
     return tokenInfo
       ? { success: false, error: errorMessage, tokenInfo }
       : { success: false, error: errorMessage };

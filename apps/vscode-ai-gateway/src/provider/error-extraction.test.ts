@@ -117,7 +117,11 @@ describe("extractTokenInfoFromDetails", () => {
     it("should prefer actual_tokens over token_count", () => {
       const error = createOpenResponsesError("message", 400, {
         error: {
-          param: { actual_tokens: 150000, token_count: 200000, max_tokens: 128000 },
+          param: {
+            actual_tokens: 150000,
+            token_count: 200000,
+            max_tokens: 128000,
+          },
         },
       });
       expect(extractTokenInfoFromDetails(error)).toEqual({
