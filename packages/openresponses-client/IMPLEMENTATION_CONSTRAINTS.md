@@ -305,35 +305,53 @@ format for each provider. However, using `developer` is preferred for clarity.
 For **input** messages (user, assistant, developer), use:
 
 - `input_text` for text content
-- `input_image` for images
+- `input_file` for images ⚠️ (see 8a below - `input_image` is broken!)
 - `input_file` for files
 
-### 8a. `input_image.detail` Field is Ignored
+### 8a. ⚠️ CRITICAL: `input_image` Hardcodes `mediaType: 'image/*'` (Use `input_file` Instead!)
 
-**OpenAPI Spec Says**: The `input_image` type has an optional `detail` field with
-values `"auto"`, `"low"`, or `"high"`.
+**OpenAPI Spec Says**: The `input_image` type accepts images with an `image_url` field.
 
-**Reality**: The gateway accepts the `detail` field in the schema but completely
-ignores it during conversion. Only `image_url` is extracted from `input_image`.
+**Reality**: The gateway hardcodes `mediaType: 'image/*'` when converting `input_image`,
+even if the data URL contains a specific MIME type like `data:image/png;base64,...`.
+This causes Anthropic (and possibly other providers) to reject the request with:
+
+```
+Error: Unsupported image mime type: image/*, expected one of: image/jpeg, image/png, image/gif, image/webp
+```
 
 **Source**: [convert-to-aisdk-call-options.ts#L182-190](https://github.com/vercel/ai-gateway/blob/main/lib/openresponses-compat/convert-to-aisdk-call-options.ts#L182-190)
 
 ```typescript
 } else if (part.type === 'input_image') {
-  // Handle input_image format (URL or base64 data URL)
   if (part.image_url) {
     content.push({
       type: 'file',
       data: part.image_url,
-      mediaType: 'image/*',
+      mediaType: 'image/*',  // ← BUG: Should extract MIME from data URL!
     });
   }
-  // Note: part.detail is NOT used
 }
 ```
 
-**Implication**: Do not rely on `detail` to control image processing. The underlying
-provider may have its own default behavior.
+**Workaround**: Use `input_file` instead of `input_image` for images. The gateway's
+`inferMediaType()` function correctly extracts the MIME type from data URLs:
+
+```typescript
+// BROKEN - gateway will send mediaType: 'image/*'
+{
+  type: "input_image",
+  image_url: "data:image/png;base64,..."
+}
+
+// WORKS - gateway extracts 'image/png' from the data URL
+{
+  type: "input_file",
+  file_data: "data:image/png;base64,..."
+}
+```
+
+**Note**: The `detail` field on `input_image` is also ignored (see source above).
 
 **Additional gateway filtering behavior** (based on code review):
 
