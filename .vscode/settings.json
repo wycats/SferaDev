@@ -1,17 +1,18 @@
 {
-	"files.exclude": {
-		"**/.git": true,
-		"**/.svn": true,
-		"**/.hg": true,
-		"**/.DS_Store": true,
-		"**/Thumbs.db": true,
-		"**/node_modules": true,
-		"**/out": true,
-		"**/dist": true,
-		"**/*.vsix": true
-	},
-	// Enable file logging for Vercel AI Gateway when using debug/trace level
-	// Logs will be written to .logs/ directory (gitignored)
-	"vercelAiGateway.logging.fileDirectory": ".logs",
-	"vercelAiGateway.logging.level": "debug"
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/node_modules": true,
+    "**/out": true,
+    "**/dist": true,
+    "**/*.vsix": true
+  },
+  // Enable file logging for Vercel AI Gateway when using debug/trace level
+  // Logs will be written to .logs/ directory (gitignored)
+  "vercelAiGateway.logging.fileDirectory": ".logs",
+  "vercelAiGateway.logging.level": "debug",
+  "vercelAiGateway.logging.capture": ["requests", "suspicious", "events"]
 }

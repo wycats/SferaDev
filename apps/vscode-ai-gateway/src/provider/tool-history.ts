@@ -7,7 +7,10 @@
  * See RFC 010a: Tool Call Truncation for design details.
  */
 
+import type { ItemParam } from "openresponses-client";
 import type { TokenCounter } from "../tokens/counter.js";
+import type { ToolHistoryStrategy } from "./tool-history-strategy.js";
+import { TextEmbedStrategy } from "./tool-history-strategy.js";
 
 /**
  * Simple logger interface for tool history.
@@ -188,6 +191,30 @@ export class ToolHistoryManager {
       truncatedCount: olderEntries.length,
       originalCount: totalCalls,
     };
+  }
+
+  /**
+   * Render tool history as OpenResponses input items using a strategy.
+   *
+   * @param strategy - The rendering strategy to use (defaults to TextEmbedStrategy)
+   * @returns Array of ItemParam to inject into the conversation
+   */
+  renderAsItems(strategy?: ToolHistoryStrategy): ItemParam[] {
+    const effectiveStrategy = strategy ?? new TextEmbedStrategy();
+    const compacted = this.getCompactedHistory();
+    const items: ItemParam[] = [];
+
+    // Render summary if present
+    if (compacted.summary) {
+      items.push(...effectiveStrategy.renderSummary(compacted.summary));
+    }
+
+    // Render each recent call
+    for (const entry of compacted.recentCalls) {
+      items.push(...effectiveStrategy.renderEntry(entry));
+    }
+
+    return items;
   }
 
   /**

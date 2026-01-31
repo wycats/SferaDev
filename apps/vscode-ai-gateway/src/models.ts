@@ -84,7 +84,7 @@ export class ModelsClient {
         models,
       };
       logger.debug(
-        `Restored ${models.length} models from persistent cache (re-transformed from raw)`,
+        `Restored ${models.length.toString()} models from persistent cache (re-transformed from raw)`,
       );
       return;
     }
@@ -93,7 +93,7 @@ export class ModelsClient {
     if (cached?.models && cached.models.length > 0) {
       this.memoryCache = cached;
       logger.debug(
-        `Restored ${cached.models.length} models from legacy persistent cache`,
+        `Restored ${cached.models.length.toString()} models from legacy persistent cache`,
       );
     }
   }
@@ -110,7 +110,7 @@ export class ModelsClient {
     if (this.memoryCache && this.memoryCache.models.length > 0) {
       // Check if cache is stale and trigger background revalidation
       if (!this.isModelsCacheFresh() && !this.revalidationInProgress) {
-        this.revalidateInBackground(apiKey);
+        void this.revalidateInBackground(apiKey);
       }
       return this.memoryCache.models;
     }
@@ -125,7 +125,7 @@ export class ModelsClient {
       if (result) {
         const models = this.transformToVSCodeModels(result.rawModels);
         logger.info(
-          `Models fetched in ${Date.now() - startTime}ms, count: ${models.length}`,
+          `Models fetched in ${(Date.now() - startTime).toString()}ms, count: ${models.length.toString()}`,
         );
         await this.updateCache(result.rawModels, models, result.etag);
         return models;
@@ -150,7 +150,7 @@ export class ModelsClient {
   getCachedModels(): LanguageModelChatInformation[] {
     if (this.memoryCache && this.memoryCache.models.length > 0) {
       logger.debug(
-        `Returning ${this.memoryCache.models.length} models from cache (no auth)`,
+        `Returning ${this.memoryCache.models.length.toString()} models from cache (no auth)`,
       );
       return this.memoryCache.models;
     }
@@ -164,14 +164,14 @@ export class ModelsClient {
           models,
         };
         logger.debug(
-          `Hydrated ${models.length} models from persistent cache (no auth)`,
+          `Hydrated ${models.length.toString()} models from persistent cache (no auth)`,
         );
         return models;
       }
       if (cached?.models && cached.models.length > 0) {
         this.memoryCache = cached;
         logger.debug(
-          `Hydrated ${cached.models.length} models from legacy cache (no auth)`,
+          `Hydrated ${cached.models.length.toString()} models from legacy cache (no auth)`,
         );
         return cached.models;
       }
@@ -210,7 +210,7 @@ export class ModelsClient {
         const previousCount = previousModels.length;
         await this.updateCache(result.rawModels, models, result.etag);
         logger.info(
-          `Models cache updated: ${previousCount} -> ${models.length} models`,
+          `Models cache updated: ${previousCount.toString()} -> ${models.length.toString()} models`,
         );
 
         // Notify listeners that models have changed
@@ -242,7 +242,9 @@ export class ModelsClient {
     etag: string | null,
   ): Promise<{ rawModels: Model[]; etag: string | null } | null> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => { controller.abort(); }, 30000);
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 30000);
 
     try {
       const headers: Record<string, string> = {};
@@ -267,7 +269,9 @@ export class ModelsClient {
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          `HTTP ${response.status.toString()}: ${response.statusText}`,
+        );
       }
 
       const { data } = (await response.json()) as ModelsResponse;

@@ -37,7 +37,11 @@ import {
   type ProvideLanguageModelChatResponseOptions,
 } from "vscode";
 import type { ConfigService } from "../config.js";
-import { extractTokenCountFromError, logger } from "../logger.js";
+import {
+  extractTokenCountFromError,
+  type ExtractedTokenInfo,
+  logger,
+} from "../logger.js";
 import type { TokenStatusBar } from "../status-bar.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
 import { UsageTracker } from "./usage-tracker.js";
@@ -73,7 +77,7 @@ export interface OpenResponsesChatResult {
   /** Finish reason from the API */
   finishReason?: AdaptedEvent["finishReason"];
   /** Token info extracted from "input too long" errors */
-  tokenInfo?: { actualTokens: number; maxTokens?: number };
+  tokenInfo?: ExtractedTokenInfo;
 }
 
 /**
@@ -102,11 +106,7 @@ export async function executeOpenResponsesChat(
   );
   chatMessages.forEach((msg, i) => {
     const roleName =
-      msg.role === LanguageModelChatMessageRole.User
-        ? "User"
-        : msg.role === LanguageModelChatMessageRole.Assistant
-          ? "Assistant"
-          : `Unknown(${String(msg.role)})`;
+      msg.role === LanguageModelChatMessageRole.User ? "User" : "Assistant";
     const contentTypes = msg.content.map((p) => p.constructor.name).join(", ");
     logger.trace(
       `[OpenResponses] Message[${i.toString()}]: role=${roleName}, parts=[${contentTypes}]`,
@@ -205,7 +205,7 @@ export async function executeOpenResponsesChat(
     );
     input.slice(0, 3).forEach((item, i) => {
       logger.trace(
-        `[OpenResponses] input[${i.toString()}]: type=${item.type}, role=${"role" in item ? String(item.role) : "N/A"}`,
+        `[OpenResponses] input[${i.toString()}]: type=${item.type ?? "unknown"}, role=${"role" in item ? item.role : "N/A"}`,
       );
       if ("content" in item && Array.isArray(item.content)) {
         const contentTypes = (item.content as { type?: string }[])
@@ -231,19 +231,19 @@ export async function executeOpenResponsesChat(
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
       if (eventCount <= 25) {
         logger.trace(
-          `[OpenResponses] Stream event #${eventCount}: ${eventType}`,
+          `[OpenResponses] Stream event #${eventCount.toString()}: ${eventType}`,
         );
       }
       if (eventType === "response.completed") {
         const response = (
-          event as { response?: { id?: string; output?: unknown } }
+          event as { response: { id: string; output?: unknown } }
         ).response;
-        const outputIsArray = Array.isArray(response?.output);
+        const outputIsArray = Array.isArray(response.output);
         const outputLength = outputIsArray
-          ? (response?.output as unknown[]).length
+          ? (response.output as unknown[]).length
           : undefined;
         logger.debug(
-          `[OpenResponses] response.completed received (id=${response?.id ?? "unknown"}, outputArray=${outputIsArray}, outputLen=${outputLength ?? "n/a"})`,
+          `[OpenResponses] response.completed received (id=${response.id}, outputArray=${String(outputIsArray)}, outputLen=${String(outputLength ?? "n/a")})`,
         );
       }
 
@@ -255,7 +255,7 @@ export async function executeOpenResponsesChat(
         if (part instanceof LanguageModelToolCallPart) {
           toolCallCount++;
           logger.info(
-            `[OpenResponses] Emitting tool call #${toolCallCount}: ${part.name} (callId: ${part.callId})`,
+            `[OpenResponses] Emitting tool call #${toolCallCount.toString()}: ${part.name} (callId: ${part.callId})`,
           );
         } else if (part instanceof LanguageModelTextPart) {
           textPartCount++;
@@ -263,7 +263,7 @@ export async function executeOpenResponsesChat(
           if (textPartCount <= 3) {
             const preview = part.value.substring(0, 50).replace(/\n/g, "\\n");
             logger.debug(
-              `[OpenResponses] Emitting text part #${textPartCount}: "${preview}..."`,
+              `[OpenResponses] Emitting text part #${textPartCount.toString()}: "${preview}..."`,
             );
           }
         }
@@ -274,12 +274,12 @@ export async function executeOpenResponsesChat(
       // Handle completion
       if (adapted.done) {
         logger.debug(
-          `[OpenResponses] Adapter done (finishReason=${adapted.finishReason ?? "n/a"}, parts=${adapted.parts.length})`,
+          `[OpenResponses] Adapter done (finishReason=${adapted.finishReason ?? "n/a"}, parts=${adapted.parts.length.toString()})`,
         );
         const topTypes = Array.from(eventTypeCounts.entries())
           .sort((a, b) => b[1] - a[1])
           .slice(0, 10)
-          .map(([t, c]) => `${t}:${c}`)
+          .map(([t, c]) => `${t}:${c.toString()}`)
           .join(", ");
         logger.debug(
           `[OpenResponses] Stream event type counts (top): ${topTypes}`,
@@ -287,7 +287,7 @@ export async function executeOpenResponsesChat(
 
         // Log summary of what was emitted
         logger.info(
-          `[OpenResponses] Stream summary: ${eventCount} events, ${textPartCount} text parts, ${toolCallCount} tool calls emitted`,
+          `[OpenResponses] Stream summary: ${eventCount.toString()} events, ${textPartCount.toString()} text parts, ${toolCallCount.toString()} tool calls emitted`,
         );
 
         result = {
@@ -306,8 +306,8 @@ export async function executeOpenResponsesChat(
         if (adapted.usage) {
           usageTracker.record(chatId, adapted.usage);
           logger.info(
-            `[OpenResponses] Response completed: ${adapted.usage.input_tokens} input, ` +
-              `${adapted.usage.output_tokens} output tokens`,
+            `[OpenResponses] Response completed: ${adapted.usage.input_tokens.toString()} input, ` +
+              `${adapted.usage.output_tokens.toString()} output tokens`,
           );
 
           // Update status bar with actual usage
@@ -349,7 +349,7 @@ export async function executeOpenResponsesChat(
     // Handle API errors
     const errorMessage =
       error instanceof OpenResponsesError
-        ? `${error.message} (${error.code ?? error.status})`
+        ? `${error.message} (${String(error.code ?? error.status)})`
         : error instanceof Error
           ? error.message
           : "Unknown error";
@@ -361,9 +361,7 @@ export async function executeOpenResponsesChat(
     let tokenInfo = extractTokenInfoFromDetails(error);
 
     // Fall back to regex extraction from error message
-    if (!tokenInfo) {
-      tokenInfo = extractTokenCountFromError(error);
-    }
+    tokenInfo ??= extractTokenCountFromError(error);
 
     // Final fallback: if error indicates "too long" but we couldn't parse exact count,
     // use maxInputTokens + 1 to guarantee we trigger compaction
@@ -378,14 +376,14 @@ export async function executeOpenResponsesChat(
       };
       logger.info(
         `[OpenResponses] Using maxInputTokens fallback for compaction trigger: ` +
-          `${tokenInfo.actualTokens} > ${model.maxInputTokens}`,
+          `${tokenInfo.actualTokens.toString()} > ${model.maxInputTokens.toString()}`,
       );
     }
 
     if (tokenInfo) {
       logger.info(
-        `[OpenResponses] Token info for compaction: ${tokenInfo.actualTokens} tokens ` +
-          `(max: ${tokenInfo.maxTokens ?? "unknown"})`,
+        `[OpenResponses] Token info for compaction: ${tokenInfo.actualTokens.toString()} tokens ` +
+          `(max: ${String(tokenInfo.maxTokens ?? "unknown")})`,
       );
     }
 
@@ -398,7 +396,9 @@ export async function executeOpenResponsesChat(
 
     statusBar?.errorAgent(chatId);
 
-    return { success: false, error: errorMessage, tokenInfo };
+    return tokenInfo
+      ? { success: false, error: errorMessage, tokenInfo }
+      : { success: false, error: errorMessage };
   } finally {
     abortSubscription.dispose();
     adapter.reset();
@@ -425,7 +425,7 @@ function translateRequest(
   const systemPromptMessage = configService.systemPromptMessage;
   let instructions: string | undefined;
 
-  if (systemPromptEnabled && systemPromptMessage?.trim()) {
+  if (systemPromptEnabled && systemPromptMessage.trim()) {
     // VS Code does not provide a system/developer role in LanguageModelChatMessageRole.
     // System prompts are passed via options (config-driven here), so we map them to
     // OpenResponses `instructions` instead of synthesizing a message.
@@ -462,17 +462,17 @@ function translateRequest(
   // Log if we filtered anything
   if (validInput.length !== input.length) {
     logger.warn(
-      `[OpenResponses] Filtered ${input.length - validInput.length} empty message(s) from input`,
+      `[OpenResponses] Filtered ${(input.length - validInput.length).toString()} empty message(s) from input`,
     );
   }
 
   // Convert tools
   const tools: FunctionToolParam[] = [];
-  for (const { name, description, inputSchema } of options.tools || []) {
+  for (const { name, description, inputSchema } of options.tools ?? []) {
     tools.push({
       type: "function",
       name,
-      description: description ?? undefined,
+      description,
       // Cast to null to satisfy the optional parameters field
       // The API accepts the schema but TypeScript types are strict
       parameters: (inputSchema ?? {
@@ -491,7 +491,11 @@ function translateRequest(
     toolChoice = "none";
   }
 
-  return { input: validInput, instructions, tools, toolChoice };
+  if (instructions) {
+    return { input: validInput, instructions, tools, toolChoice };
+  }
+
+  return { input: validInput, tools, toolChoice };
 }
 
 /**
@@ -585,13 +589,14 @@ function translateMessage(
   message: LanguageModelChatMessage,
   _toolNameMap: Map<string, string>,
 ): ItemParam[] {
+  void _toolNameMap;
   const items: ItemParam[] = [];
   const role = message.role;
   const openResponsesRole = resolveOpenResponsesRole(role);
 
   // DEBUG: Log the incoming role
   logger.trace(
-    `[OpenResponses] translateMessage role=${role} (User=${LanguageModelChatMessageRole.User}, Assistant=${LanguageModelChatMessageRole.Assistant}) mapped=${openResponsesRole}`,
+    `[OpenResponses] translateMessage role=${String(role)} (User=${String(LanguageModelChatMessageRole.User)}, Assistant=${String(LanguageModelChatMessageRole.Assistant)}) mapped=${openResponsesRole}`,
   );
 
   // Collect content parts
@@ -784,24 +789,13 @@ function createMessageItem(
  * Resolve a VS Code chat message role to an OpenResponses role.
  *
  * VS Code currently exposes only User/Assistant roles. System/developer prompts
- * are supplied via options (handled as OpenResponses `instructions`). If VS Code
- * adds system/developer roles in the future, we map them here.
- *
- * NOTE: We intentionally map unknown roles (including what VS Code might call
- * "System") to "developer" rather than "system", because the OpenResponses API
- * currently rejects `role: "system"` in input messages with a 400 error.
- * System-level instructions should go in the `instructions` field instead.
+ * are supplied via options (handled as OpenResponses `instructions`).
  */
 function resolveOpenResponsesRole(
   role: LanguageModelChatMessageRole,
-): "user" | "assistant" | "developer" {
+): "user" | "assistant" {
   if (role === LanguageModelChatMessageRole.User) return "user";
-  if (role === LanguageModelChatMessageRole.Assistant) return "assistant";
-
-  // Any other role (including Unknown/System from VS Code) gets mapped to
-  // "developer". This is the closest equivalent to a system message in the
-  // OpenResponses input array, and unlike "system", it's accepted by the API.
-  return "developer";
+  return "assistant";
 }
 
 /**
@@ -819,7 +813,7 @@ function resolveOpenResponsesRole(
  */
 function extractTokenInfoFromDetails(
   error: unknown,
-): { actualTokens: number; maxTokens?: number } | undefined {
+): ExtractedTokenInfo | undefined {
   if (!(error instanceof OpenResponsesError)) {
     return undefined;
   }
@@ -853,10 +847,9 @@ function extractTokenInfoFromDetails(
   const maxTokens = param.max_tokens ?? param.limit;
 
   if (typeof actualTokens === "number" && actualTokens > 0) {
-    return {
-      actualTokens,
-      maxTokens: typeof maxTokens === "number" ? maxTokens : undefined,
-    };
+    return typeof maxTokens === "number"
+      ? { actualTokens, maxTokens }
+      : { actualTokens };
   }
 
   // If we have max but not actual, estimate actual as max + 1

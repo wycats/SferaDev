@@ -15,82 +15,86 @@ export type EstimationMode = "conservative" | "balanced" | "aggressive";
  * Higher values = more aggressive (underestimate tokens).
  */
 export const ESTIMATION_MODES: Record<EstimationMode, number> = {
-	conservative: 3, // Overestimate tokens to avoid context overflow
-	balanced: 4, // Balance between accuracy and safety
-	aggressive: 5, // Underestimate tokens for maximum context usage
+  conservative: 3, // Overestimate tokens to avoid context overflow
+  balanced: 4, // Balance between accuracy and safety
+  aggressive: 5, // Underestimate tokens for maximum context usage
 };
 
 export interface TokenEstimatorConfig {
-	estimationMode: EstimationMode;
-	charsPerToken: number | undefined;
+  estimationMode: EstimationMode;
+  charsPerToken: number | undefined;
 }
 
 export class TokenEstimator {
-	private config: TokenEstimatorConfig;
-	private configService: ConfigService;
-	private readonly disposable: { dispose: () => void };
+  private config: TokenEstimatorConfig;
+  private configService: ConfigService;
+  private readonly disposable: { dispose: () => void };
 
-	constructor(configService: ConfigService = new ConfigService()) {
-		this.configService = configService;
-		this.config = this.loadConfig();
+  constructor(configService: ConfigService = new ConfigService()) {
+    this.configService = configService;
+    this.config = this.loadConfig();
 
-		this.disposable = this.configService.onDidChange(() => {
-			this.config = this.loadConfig();
-		});
-	}
+    this.disposable = this.configService.onDidChange(() => {
+      this.config = this.loadConfig();
+    });
+  }
 
-	private loadConfig(): TokenEstimatorConfig {
-		return {
-			estimationMode: this.configService.tokensEstimationMode as EstimationMode,
-			charsPerToken: this.configService.tokensCharsPerToken,
-		};
-	}
+  private loadConfig(): TokenEstimatorConfig {
+    return {
+      estimationMode: this.configService.tokensEstimationMode as EstimationMode,
+      charsPerToken: this.configService.tokensCharsPerToken,
+    };
+  }
 
-	dispose(): void {
-		this.disposable.dispose();
-	}
+  dispose(): void {
+    this.disposable.dispose();
+  }
 
-	/**
-	 * Get the current characters per token value.
-	 * Uses custom override if set, otherwise uses the mode's default.
-	 */
-	getCharsPerToken(): number {
-		if (this.config.charsPerToken !== undefined) {
-			return this.config.charsPerToken;
-		}
-		const value = ESTIMATION_MODES[this.config.estimationMode];
-		logger.trace(`Chars per token for ${this.config.estimationMode}: ${value}`);
-		return value;
-	}
+  /**
+   * Get the current characters per token value.
+   * Uses custom override if set, otherwise uses the mode's default.
+   */
+  getCharsPerToken(): number {
+    if (this.config.charsPerToken !== undefined) {
+      return this.config.charsPerToken;
+    }
+    const value = ESTIMATION_MODES[this.config.estimationMode];
+    logger.trace(
+      `Chars per token for ${this.config.estimationMode}: ${value.toString()}`,
+    );
+    return value;
+  }
 
-	/**
-	 * Get the current estimation mode.
-	 */
-	getMode(): EstimationMode {
-		return this.config.estimationMode;
-	}
+  /**
+   * Get the current estimation mode.
+   */
+  getMode(): EstimationMode {
+    return this.config.estimationMode;
+  }
 
-	/**
-	 * Estimate the number of tokens in a text string.
-	 * Always rounds up to be conservative.
-	 */
-	estimateTokens(text: string): number {
-		if (!text) return 0;
-		const charsPerToken = this.getCharsPerToken();
-		const result = Math.ceil(text.length / charsPerToken);
-		logger.debug(`Token estimation (${this.config.estimationMode}): ${result} tokens`);
-		return result;
-	}
+  /**
+   * Estimate the number of tokens in a text string.
+   * Always rounds up to be conservative.
+   */
+  estimateTokens(text: string): number {
+    if (!text) return 0;
+    const charsPerToken = this.getCharsPerToken();
+    const result = Math.ceil(text.length / charsPerToken);
+    logger.debug(
+      `Token estimation (${this.config.estimationMode}): ${result.toString()} tokens`,
+    );
+    return result;
+  }
 
-	/**
-	 * Calculate the percentage of context window used.
-	 * @param usedTokens - Number of tokens used
-	 * @param maxTokens - Maximum tokens in context window
-	 * @returns Percentage (0-100) of context used, rounded to 2 decimal places
-	 */
-	estimateContextUsage(usedTokens: number, maxTokens: number): number {
-		if (maxTokens <= 0) return 100;
-		const percentage = (usedTokens / maxTokens) * 100;
-		return Math.min(100, Math.round(percentage * 100) / 100);
-	}
+  /**
+   * Calculate the percentage of context window used.
+   * @param usedTokens - Number of tokens used
+   * @param maxTokens - Maximum tokens in context window
+   * @returns Percentage (0-100) of context used, rounded to 2 decimal places
+   */
+  estimateContextUsage(usedTokens: number, maxTokens: number): number {
+    if (maxTokens <= 0) return 100;
+    const percentage = (usedTokens / maxTokens) * 100;
+    return Math.min(100, Math.round(percentage * 100) / 100);
+  }
 }

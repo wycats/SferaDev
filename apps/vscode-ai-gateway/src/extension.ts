@@ -17,7 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Get extension version from package.json
   const extension = vscode.extensions.getExtension(VSCODE_EXTENSION_ID);
-  const version = extension?.packageJSON?.version ?? "unknown";
+  const packageJson = extension?.packageJSON as
+    | { version?: string }
+    | undefined;
+  const version = packageJson?.version ?? "unknown";
 
   logger.info(
     `Vercel AI Gateway extension activating - v${version} (activated: ${BUILD_TIMESTAMP})`,
@@ -83,7 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
         const percentage = Math.round(
           (usage.inputTokens / usage.maxInputTokens) * 100,
         );
-        items.push(`Context used: ${percentage}%`);
+        items.push(`Context used: ${percentage.toString()}%`);
         items.push(
           `Remaining: ${(usage.maxInputTokens - usage.inputTokens).toLocaleString()}`,
         );
@@ -102,7 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
   const commandDisposable = vscode.commands.registerCommand(
     `${EXTENSION_ID}.manage`,
     () => {
-      authProvider.manageAuthentication();
+      void authProvider.manageAuthentication();
     },
   );
   context.subscriptions.push(commandDisposable);

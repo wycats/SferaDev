@@ -19,6 +19,7 @@ This extension represents a strategic opportunity: **making Vercel the invisible
 ### Vercel's AI Gateway Vision
 
 Vercel AI Gateway provides a unified API for accessing multiple AI providers with enterprise-grade features:
+
 - **Provider abstraction** — One API, many models
 - **Usage tracking and cost management** — Centralized billing across providers
 - **Rate limiting and caching** — Enterprise controls for AI consumption
@@ -26,13 +27,13 @@ Vercel AI Gateway provides a unified API for accessing multiple AI providers wit
 
 ### How This Extension Amplifies That Vision
 
-| Vercel Goal | Extension Contribution |
-|-------------|------------------------|
-| **Unified AI Access** | Developers access OpenAI, Anthropic, Google, Mistral through one interface |
-| **Developer Experience** | AI assistance lives where developers already work—inside VS Code |
-| **Platform Stickiness** | Teams that adopt the extension become Vercel AI Gateway customers |
-| **Enterprise Adoption** | OIDC auth + model allowlists enable IT-controlled AI access |
-| **Usage Visibility** | All AI consumption flows through Vercel's metering infrastructure |
+| Vercel Goal              | Extension Contribution                                                     |
+| ------------------------ | -------------------------------------------------------------------------- |
+| **Unified AI Access**    | Developers access OpenAI, Anthropic, Google, Mistral through one interface |
+| **Developer Experience** | AI assistance lives where developers already work—inside VS Code           |
+| **Platform Stickiness**  | Teams that adopt the extension become Vercel AI Gateway customers          |
+| **Enterprise Adoption**  | OIDC auth + model allowlists enable IT-controlled AI access                |
+| **Usage Visibility**     | All AI consumption flows through Vercel's metering infrastructure          |
 
 ---
 
@@ -47,42 +48,42 @@ The extension registers as a **Language Model Chat Provider** in VS Code, implem
 3. **Tool Compatibility** — Works with any VS Code extension that uses the Language Model API
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      VS Code Chat UI                        │
+┌────────────────────────────────────────────────────────────┐
+│                      VS Code Chat UI                       │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ Model Selector: [Vercel AI Gateway: claude-sonnet ▼]│   │
 │  └─────────────────────────────────────────────────────┘   │
-│                            │                                │
-│                            ▼                                │
+│                            │                               │
+│                            ▼                               │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │        Vercel AI Gateway Extension                   │   │
+│  │        Vercel AI Gateway Extension                  │   │
 │  │  • Message conversion (VS Code ↔ AI SDK format)     │   │
 │  │  • Token estimation (tiktoken + adaptive correction)│   │
-│  │  • Streaming response handling                       │   │
-│  │  • Tool call forwarding                              │   │
+│  │  • Streaming response handling                      │   │
+│  │  • Tool call forwarding                             │   │
 │  └─────────────────────────────────────────────────────┘   │
-│                            │                                │
-│                            ▼                                │
+│                            │                               │
+│                            ▼                               │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │           Vercel AI Gateway (Cloud)                  │   │
+│  │           Vercel AI Gateway (Cloud)                 │   │
 │  │  • Model routing (openai/gpt-4o → OpenAI API)       │   │
 │  │  • Authentication (API key or OIDC)                 │   │
 │  │  • Usage metering and rate limiting                 │   │
 │  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────┘
 ```
 
 ### Model Discovery and Capabilities
 
 The extension dynamically fetches available models from `/v1/models` and maps them to VS Code's model metadata format:
 
-| API Field | VS Code Field | Purpose |
-|-----------|---------------|---------|
-| `id` | `id` | Unique model identifier (`anthropic:claude-sonnet-4-20250514`) |
-| `name` | `name` | Human-readable name |
-| `context_window` | `maxInputTokens` | Context limit for token validation |
-| `max_tokens` | `maxOutputTokens` | Response length limit |
-| `tags[]` | `capabilities` | Feature detection (vision, tool-use, reasoning) |
+| API Field        | VS Code Field     | Purpose                                                        |
+| ---------------- | ----------------- | -------------------------------------------------------------- |
+| `id`             | `id`              | Unique model identifier (`anthropic:claude-sonnet-4-20250514`) |
+| `name`           | `name`            | Human-readable name                                            |
+| `context_window` | `maxInputTokens`  | Context limit for token validation                             |
+| `max_tokens`     | `maxOutputTokens` | Response length limit                                          |
+| `tags[]`         | `capabilities`    | Feature detection (vision, tool-use, reasoning)                |
 
 **Capability Detection:** The extension parses model tags to advertise accurate capabilities:
 
@@ -96,6 +97,7 @@ capabilities: {
 ```
 
 This enables VS Code to:
+
 - Show only vision-capable models when the user attaches an image
 - Filter to tool-capable models when extensions require function calling
 - Surface reasoning models for complex problem-solving tasks
@@ -121,38 +123,41 @@ This enables VS Code's model selectors (`@family:gpt-4o`) to work correctly and 
 ### Dual Authentication Modes
 
 ```
-┌────────────────────────────────────────────────────────┐
-│              Authentication Provider                    │
-│                                                        │
+┌───────────────────────────────────────────────────────┐
+│              Authentication Provider                  │
+│                                                       │
 │  ┌──────────────────┐    ┌──────────────────┐         │
 │  │   API Key Mode   │    │    OIDC Mode     │         │
-│  │  ───────────────│    │  ───────────────│         │
+│  │  ─────────────── │    │  ─────────────── │         │
 │  │  • Manual entry  │    │  • Vercel CLI    │         │
 │  │  • vck_* format  │    │  • Auto-refresh  │         │
 │  │  • Personal use  │    │  • Project-scoped│         │
 │  └──────────────────┘    └──────────────────┘         │
-│           │                       │                    │
-│           └───────────┬───────────┘                    │
-│                       ▼                                │
+│           │                       │                   │
+│           └───────────┬───────────┘                   │
+│                       ▼                               │
 │          ┌────────────────────────┐                   │
 │          │   VS Code Secrets API  │                   │
 │          │   (Secure storage)     │                   │
 │          └────────────────────────┘                   │
-└────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────┘
 ```
 
 ### API Key Authentication
+
 - Simple onboarding: enter `vck_*` key once
 - Stored securely in VS Code's secrets storage
 - Ideal for individual developers
 
 ### OIDC Authentication
+
 - Leverages existing Vercel CLI login (`vercel login`)
 - Project-scoped tokens with automatic refresh
 - Enterprise-ready: tokens tied to team/project permissions
 - 15-minute refresh margin ensures uninterrupted sessions
 
 **Enterprise Value:** OIDC enables IT teams to:
+
 - Control which projects can access AI Gateway
 - Audit AI usage per team/project
 - Revoke access without distributing new API keys
@@ -164,6 +169,7 @@ This enables VS Code's model selectors (`@family:gpt-4o`) to work correctly and 
 ### The Token Counting Challenge
 
 VS Code asks the extension "how many tokens is this message?" to decide whether to compact/truncate context before sending. Accurate estimates are critical:
+
 - **Overestimate:** Premature truncation loses valuable context
 - **Underestimate:** API rejects request for exceeding limits
 
@@ -173,24 +179,24 @@ VS Code asks the extension "how many tokens is this message?" to decide whether 
 ┌─────────────────────────────────────────────────────────┐
 │                  Token Counting Pipeline                │
 │                                                         │
-│  1. Cache Lookup ──────────────────────────────────────│
-│     │ Check for API actuals from previous requests     │
-│     │ If found: return cached count + 2% margin        │
+│  1. Cache Lookup ────────────────────────────────────── │
+│     │ Check for API actuals from previous requests      │
+│     │ If found: return cached count + 2% margin         │
 │     ▼                                                   │
-│  2. Tiktoken Estimation ───────────────────────────────│
-│     │ Use js-tiktoken with model-appropriate encoding  │
-│     │ o200k_base for GPT-4o/o1, cl100k_base for others │
+│  2. Tiktoken Estimation ─────────────────────────────── │
+│     │ Use js-tiktoken with model-appropriate encoding   │
+│     │ o200k_base for GPT-4o/o1, cl100k_base for others  │
 │     ▼                                                   │
-│  3. Character Fallback ────────────────────────────────│
-│     │ For models without tiktoken support              │
-│     │ ~3.5 characters per token (configurable)         │
+│  3. Character Fallback ──────────────────────────────── │
+│     │ For models without tiktoken support               │
+│     │ ~3.5 characters per token (configurable)          │
 │     ▼                                                   │
-│  4. Adaptive Correction ───────────────────────────────│
-│     │ Compare estimates to API actuals after response  │
-│     │ Exponential moving average: 0.7 * old + 0.3 * new│
+│  4. Adaptive Correction ─────────────────────────────── │
+│     │ Compare estimates to API actuals after response   │
+│     │ Exponential moving average: 0.7 * old + 0.3 * new │
 │     ▼                                                   │
-│  5. Safety Margin ─────────────────────────────────────│
-│     5% for tiktoken, 10% for character fallback        │
+│  5. Safety Margin ───────────────────────────────────── │
+│     5% for tiktoken, 10% for character fallback         │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -221,17 +227,18 @@ for await (const chunk of response.fullStream) {
       // Emit text to VS Code chat
       progress.report(new LanguageModelTextPart(chunk.textDelta));
       break;
-      
+
     case "reasoning-delta":
-      // Forward thinking content (if VS Code supports it)
-      progress.report(new LanguageModelThinkingPart(chunk.delta));
+      // NOTE: VS Code has no stable "thinking" part type yet
+      // Currently suppressed; see docs/specs/lm-provider-stream-semantics.md
+      // Future: progress.report(new LanguageModelThinkingPart(chunk.delta));
       break;
-      
+
     case "tool-call":
       // Forward to VS Code for execution
       progress.report(new LanguageModelToolCallPart(...));
       break;
-      
+
     case "file":
       // Handle generated images/files
       progress.report(new LanguageModelDataPart(...));
@@ -239,6 +246,8 @@ for await (const chunk of response.fullStream) {
   }
 }
 ```
+
+**Stream Semantics:** For detailed specification of how parts should be emitted and interpreted, see [LM Provider Stream Semantics](../specs/lm-provider-stream-semantics.md).
 
 ### Tool Calling Flow
 
@@ -259,7 +268,7 @@ VS Code executes tool (e.g., file read, terminal command)
 Extension → AI Gateway → Model continues response
 ```
 
-**Key Design Decision:** Tools are defined *without* execute functions. This lets tool calls flow through to VS Code, which handles execution and sends results back. The extension is a transparent bridge.
+**Key Design Decision:** Tools are defined _without_ execute functions. This lets tool calls flow through to VS Code, which handles execution and sends results back. The extension is a transparent bridge.
 
 ---
 
@@ -267,33 +276,29 @@ Extension → AI Gateway → Model continues response
 
 ### User-Facing Settings
 
-| Setting | Purpose | Default |
-|---------|---------|---------|
-| `endpoint` | AI Gateway URL (for self-hosted) | `https://ai-gateway.vercel.sh` |
-| `timeout` | Request timeout | 30s |
-| `models.allowlist` | Restrict to specific models | `[]` (all) |
-| `models.denylist` | Hide specific models | `[]` |
-| `models.default` | Pre-select a model | `""` |
-| `reasoning.defaultEffort` | For o1/o3 models | `"medium"` |
-| `tokens.estimationMode` | Conservative/balanced/aggressive | `"balanced"` |
-| `logging.level` | Debug verbosity | `"warn"` |
+| Setting                   | Purpose                          | Default                        |
+| ------------------------- | -------------------------------- | ------------------------------ |
+| `endpoint`                | AI Gateway URL (for self-hosted) | `https://ai-gateway.vercel.sh` |
+| `timeout`                 | Request timeout                  | 30s                            |
+| `models.allowlist`        | Restrict to specific models      | `[]` (all)                     |
+| `models.denylist`         | Hide specific models             | `[]`                           |
+| `models.default`          | Pre-select a model               | `""`                           |
+| `reasoning.defaultEffort` | For o1/o3 models                 | `"medium"`                     |
+| `tokens.estimationMode`   | Conservative/balanced/aggressive | `"balanced"`                   |
+| `logging.level`           | Debug verbosity                  | `"warn"`                       |
 
 ### Enterprise Configuration Example
 
 ```json
 {
   "vercelAiGateway.endpoint": "https://ai-gateway.acme-corp.vercel.app",
-  "vercelAiGateway.models.allowlist": [
-    "anthropic/claude-*",
-    "openai/gpt-4o"
-  ],
-  "vercelAiGateway.models.denylist": [
-    "*/gpt-3.5-*"
-  ]
+  "vercelAiGateway.models.allowlist": ["anthropic/claude-*", "openai/gpt-4o"],
+  "vercelAiGateway.models.denylist": ["*/gpt-3.5-*"]
 }
 ```
 
 This allows IT to:
+
 - Route through a corporate AI Gateway deployment
 - Restrict to approved models only
 - Block deprecated or non-compliant models
@@ -304,24 +309,24 @@ This allows IT to:
 
 ### vs. GitHub Copilot
 
-| Aspect | GitHub Copilot | Vercel AI Gateway Extension |
-|--------|----------------|----------------------------|
-| Models | GPT-4o, Claude (limited) | All Vercel Gateway models |
-| Pricing | Per-seat subscription | Usage-based via Vercel |
-| Provider Choice | GitHub-controlled | User/org controlled |
-| Self-hosting | No | Yes (AI Gateway) |
-| Tool Support | Copilot ecosystem | VS Code LM API ecosystem |
+| Aspect          | GitHub Copilot           | Vercel AI Gateway Extension |
+| --------------- | ------------------------ | --------------------------- |
+| Models          | GPT-4o, Claude (limited) | All Vercel Gateway models   |
+| Pricing         | Per-seat subscription    | Usage-based via Vercel      |
+| Provider Choice | GitHub-controlled        | User/org controlled         |
+| Self-hosting    | No                       | Yes (AI Gateway)            |
+| Tool Support    | Copilot ecosystem        | VS Code LM API ecosystem    |
 
 **Value Proposition:** "Use Copilot's interface with your choice of models and Vercel's billing."
 
 ### vs. Continue.dev / Cody
 
-| Aspect | Continue/Cody | Vercel AI Gateway Extension |
-|--------|---------------|----------------------------|
-| Integration | Custom UI panels | Native VS Code chat |
-| Setup | Configure each provider | One Vercel auth |
-| Billing | Per-provider | Unified Vercel billing |
-| Enterprise | Variable | OIDC + Vercel Teams |
+| Aspect      | Continue/Cody           | Vercel AI Gateway Extension |
+| ----------- | ----------------------- | --------------------------- |
+| Integration | Custom UI panels        | Native VS Code chat         |
+| Setup       | Configure each provider | One Vercel auth             |
+| Billing     | Per-provider            | Unified Vercel billing      |
+| Enterprise  | Variable                | OIDC + Vercel Teams         |
 
 **Value Proposition:** "No separate UI, no provider configuration—just Vercel."
 
@@ -352,13 +357,13 @@ This allows IT to:
 
 ## Success Metrics
 
-| Metric | Target | Rationale |
-|--------|--------|-----------|
-| Marketplace installs | 10,000 in 6 months | Developer adoption |
-| Weekly active users | 3,000 | Stickiness indicator |
-| Avg. requests/user/day | 15+ | Engagement depth |
-| OIDC vs API key ratio | 30% OIDC | Enterprise adoption |
-| Model diversity | 5+ providers used | Gateway value proven |
+| Metric                 | Target             | Rationale            |
+| ---------------------- | ------------------ | -------------------- |
+| Marketplace installs   | 10,000 in 6 months | Developer adoption   |
+| Weekly active users    | 3,000              | Stickiness indicator |
+| Avg. requests/user/day | 15+                | Engagement depth     |
+| OIDC vs API key ratio  | 30% OIDC           | Enterprise adoption  |
+| Model diversity        | 5+ providers used  | Gateway value proven |
 
 ---
 
@@ -370,4 +375,4 @@ The extension's deep integration with VS Code's native APIs, sophisticated token
 
 ---
 
-*For technical implementation details, see [RFC 008: High-Fidelity Model Mapping](../rfcs/008-high-fidelity-model-mapping.md).*
+_For technical implementation details, see [RFC 008: High-Fidelity Model Mapping](../rfcs/008-high-fidelity-model-mapping.md)._

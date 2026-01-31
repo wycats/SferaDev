@@ -71,15 +71,11 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   private tokenCache: TokenCache;
   private tokenCounter: TokenCounter;
   private correctionFactor = 1.0;
-  private lastEstimatedInputTokens = 0;
   private configService: ConfigService;
   private enricher: ModelEnricher;
   // Track current request for caching API actuals and status bar
   private currentRequestMessages: readonly LanguageModelChatMessage[] | null =
     null;
-  private currentRequestModelFamily: string | null = null;
-  private currentRequestMaxInputTokens: number | undefined = undefined;
-  private currentRequestModelId: string | undefined = undefined;
   /**
    * Learned actual token total from "input too long" errors.
    * When set, this is distributed across messages proportionally to trigger VS Code summarization.
@@ -146,8 +142,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         enrichedContextLength > 0 &&
         enrichedContextLength !== model.maxInputTokens;
       const needsImageInput =
-        enriched.input_modalities?.includes("image") &&
-        !model.capabilities?.imageInput;
+        enriched.input_modalities.includes("image") &&
+        !model.capabilities.imageInput;
 
       if (!needsContextLength && !needsImageInput) {
         return model;
@@ -162,7 +158,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         ...(needsImageInput
           ? {
               capabilities: {
-                ...(model.capabilities ?? {}),
+                ...model.capabilities,
                 imageInput: true,
               },
             }
@@ -175,6 +171,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     options: { silent: boolean },
     _token: CancellationToken,
   ): Promise<LanguageModelChatInformation[]> {
+    void _token;
     logger.debug("Fetching available models", { silent: options.silent });
 
     // VS Code calls this with `silent: true` during reload/startup.
@@ -183,7 +180,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     const cachedModels = this.modelsClient.getCachedModels();
     if (options.silent && cachedModels.length > 0) {
       logger.debug(
-        `Silent model query: returning ${cachedModels.length} cached models immediately`,
+        `Silent model query: returning ${cachedModels.length.toString()} cached models immediately`,
       );
 
       // Kick off a background revalidation once auth is available.
@@ -204,7 +201,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // Auth temporarily unavailable - return cached models to prevent picker flicker
       if (cachedModels.length > 0) {
         logger.debug(
-          `No API key available, returning ${cachedModels.length} cached models`,
+          `No API key available, returning ${cachedModels.length.toString()} cached models`,
         );
         // Apply any enrichment we have from the previous session
         if (this.configService.modelsEnrichmentEnabled) {
@@ -221,7 +218,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
     try {
       const models = await this.modelsClient.getModels(apiKey);
-      logger.info(`Loaded ${models.length} models from Vercel AI Gateway`);
+      logger.info(
+        `Loaded ${models.length.toString()} models from Vercel AI Gateway`,
+      );
       logger.debug(
         "Available models",
         models.map((m) => m.id),
@@ -242,34 +241,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     }
   }
 
-  private triggerBackgroundEnrichment(
-    models: LanguageModelChatInformation[],
-    apiKey: string,
-  ): void {
-    const modelsToEnrich = models.filter(
-      (model) => !this.enrichedModels.has(model.id),
-    );
-
-    if (modelsToEnrich.length === 0) {
-      return;
-    }
-
-    Promise.allSettled(
-      modelsToEnrich.map((model) => this.enrichModelIfNeeded(model.id, apiKey)),
-    ).then((results) => {
-      const enrichedCount = results.filter(
-        (result) => result.status === "fulfilled" && result.value,
-      ).length;
-
-      if (enrichedCount > 0) {
-        logger.debug(
-          `Background enrichment completed for ${enrichedCount} models, firing refresh event`,
-        );
-        this.modelInfoChangeEmitter.fire();
-      }
-    });
-  }
-
   async provideLanguageModelChatResponse(
     model: LanguageModelChatInformation,
     chatMessages: readonly LanguageModelChatMessage[],
@@ -280,36 +251,35 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     // Generate a simple chat ID for per-chat logging (first 8 chars of hash + timestamp)
     const chatHash = createHash("sha256")
       .update(
-        chatMessages.map((m) => m.role + JSON.stringify(m.content)).join("|"),
+        chatMessages
+          .map((m) => `${String(m.role)}${JSON.stringify(m.content)}`)
+          .join("|"),
       )
       .digest("hex")
       .substring(0, 8);
-    const chatId = `chat-${chatHash}-${Date.now()}`;
+    const chatId = `chat-${chatHash}-${Date.now().toString()}`;
 
     logger.info(
-      `Chat request to ${model.id} with ${chatMessages.length} messages`,
+      `Chat request to ${model.id} with ${chatMessages.length.toString()} messages`,
     );
     logger.debug(`Chat ID: ${chatId}`);
 
     const abortController = new AbortController();
-    const abortSubscription = token.onCancellationRequested(() =>
-      { abortController.abort(); },
-    );
+    const abortSubscription = token.onCancellationRequested(() => {
+      abortController.abort();
+    });
 
     let responseSent = false;
 
     try {
       // Track current request for caching API actuals after response
       this.currentRequestMessages = chatMessages;
-      this.currentRequestModelFamily = model.family;
-      this.currentRequestMaxInputTokens = model.maxInputTokens;
-      this.currentRequestModelId = model.id;
 
       // Get system prompt configuration for token estimation
       const systemPromptEnabled = this.configService.systemPromptEnabled;
       const systemPromptMessage = this.configService.systemPromptMessage;
       const systemPrompt = systemPromptEnabled
-        ? systemPromptMessage?.trim()
+        ? systemPromptMessage.trim()
           ? systemPromptMessage
           : DEFAULT_SYSTEM_PROMPT_MESSAGE
         : undefined;
@@ -321,13 +291,13 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         chatMessages,
         token,
         {
-          tools: options.tools,
-          systemPrompt,
+          ...(options.tools ? { tools: options.tools } : {}),
+          ...(systemPrompt ? { systemPrompt } : {}),
         },
       );
       const maxInputTokens = model.maxInputTokens;
       logger.debug(
-        `Token estimate: ${estimatedTokens}/${maxInputTokens} (${Math.round((estimatedTokens / maxInputTokens) * 100)}%)`,
+        `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%)`,
       );
 
       // Pre-flight check: warn if estimated tokens exceed model limit
@@ -335,7 +305,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // and VS Code/consumers may implement their own compaction
       if (estimatedTokens > maxInputTokens) {
         logger.warn(
-          `Estimated ${estimatedTokens} tokens exceeds model limit of ${maxInputTokens}. ` +
+          `Estimated ${estimatedTokens.toString()} tokens exceeds model limit of ${String(maxInputTokens)}. ` +
             `Proceeding anyway - actual token count may differ from estimate.`,
         );
       }
@@ -343,12 +313,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // Warn if we're close to the limit (>90%)
       if (estimatedTokens > maxInputTokens * 0.9) {
         logger.warn(
-          `Input is ${Math.round((estimatedTokens / maxInputTokens) * 100)}% of max tokens. ` +
+          `Input is ${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}% of max tokens. ` +
             `Consider reducing context to avoid potential issues.`,
         );
       }
-
-      this.lastEstimatedInputTokens = estimatedTokens;
 
       // Start tracking this agent in the status bar
       this.currentAgentId = chatId;
@@ -419,7 +387,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
           actualTokens: tokenInfo.actualTokens,
         };
         logger.info(
-          `Learned actual token count from error: ${tokenInfo.actualTokens} tokens. ` +
+          `Learned actual token count from error: ${tokenInfo.actualTokens.toString()} tokens. ` +
             `Firing model info change to trigger VS Code re-evaluation.`,
         );
         // Fire the event so VS Code re-queries token counts
@@ -449,9 +417,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     } finally {
       // Clear current request tracking
       this.currentRequestMessages = null;
-      this.currentRequestModelFamily = null;
-      this.currentRequestMaxInputTokens = undefined;
-      this.currentRequestModelId = undefined;
       this.currentAgentId = null;
       abortSubscription.dispose();
     }
@@ -506,11 +471,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
    * 3. Use tiktoken for precise estimation (unsent messages)
    * 4. Apply safety margins (2% on actuals, 5% on estimates)
    */
-  async provideTokenCount(
+  provideTokenCount(
     model: LanguageModelChatInformation,
     text: string | LanguageModelChatMessage,
     _token: CancellationToken,
   ): Promise<number> {
+    void _token;
     // Calculate base estimate first
     let baseEstimate: number;
 
@@ -544,21 +510,22 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // The goal is to make the sum exceed maxInputTokens so VS Code summarizes
       const inflated = baseEstimate * 1.5;
       logger.trace(
-        `Applying learned token correction: ${baseEstimate} -> ${Math.ceil(inflated)} ` +
-          `(learned actual total: ${this.learnedTokenTotal.actualTokens})`,
+        `Applying learned token correction: ${baseEstimate.toString()} -> ${Math.ceil(inflated).toString()} ` +
+          `(learned actual total: ${this.learnedTokenTotal.actualTokens.toString()})`,
       );
-      return Math.ceil(inflated);
+      return Promise.resolve(Math.ceil(inflated));
     }
 
     // Apply standard safety margins
     const margin =
-      typeof text === "string" ||
-      !this.tokenCache.getCached(text, model.family)
+      typeof text === "string" || !this.tokenCache.getCached(text, model.family)
         ? this.tokenCounter.usesCharacterFallback(model.family)
           ? 0.1
           : 0.05
         : 0.02;
-    return this.tokenCounter.applySafetyMargin(baseEstimate, margin);
+    return Promise.resolve(
+      this.tokenCounter.applySafetyMargin(baseEstimate, margin),
+    );
   }
 
   /**
@@ -600,7 +567,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       );
       total += toolTokens;
       logger.debug(
-        `Added ${toolTokens} tokens for ${options.tools.length} tool schemas`,
+        `Added ${toolTokens.toString()} tokens for ${options.tools.length.toString()} tool schemas`,
       );
     }
 
@@ -611,10 +578,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         model.family,
       );
       total += systemTokens;
-      logger.debug(`Added ${systemTokens} tokens for system prompt`);
+      logger.debug(`Added ${systemTokens.toString()} tokens for system prompt`);
     }
 
-    logger.debug(`Total input token estimate: ${total} tokens`);
+    logger.debug(`Total input token estimate: ${total.toString()} tokens`);
 
     return total;
   }
@@ -627,62 +594,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
    * that when a user edits message N, messages 1..N-1 and N+1..end still have
    * cached actuals available.
    */
-  private cacheMessageTokenCounts(
-    messages: readonly LanguageModelChatMessage[],
-    modelFamily: string,
-    totalInputTokens: number,
-  ): void {
-    if (!messages.length) return;
-
-    // Get our estimates for each message to determine proportions
-    const estimates = messages.map((message) =>
-      this.tokenCounter.estimateMessageTokens(message, modelFamily),
-    );
-    const totalEstimated = estimates.reduce((sum, value) => sum + value, 0);
-
-    if (totalEstimated <= 0) {
-      // Fallback: distribute evenly if we can't estimate
-      const base = Math.floor(totalInputTokens / messages.length);
-      let remainder = totalInputTokens - base * messages.length;
-      messages.forEach((message) => {
-        const extra = remainder > 0 ? 1 : 0;
-        remainder = Math.max(0, remainder - extra);
-        this.tokenCache.cacheActual(message, modelFamily, base + extra);
-      });
-      return;
-    }
-
-    // Distribute actual tokens proportionally based on estimates
-    const allocations = estimates.map(
-      (estimate) => (estimate / totalEstimated) * totalInputTokens,
-    );
-    const floors = allocations.map((value) => Math.floor(value));
-    const remaining =
-      totalInputTokens - floors.reduce((sum, value) => sum + value, 0);
-
-    // Distribute remainder to messages with highest fractional parts
-    const fractional = allocations
-      .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
-      .sort((a, b) => b.fraction - a.fraction);
-
-    const actuals = floors.slice();
-    for (let i = 0; i < remaining; i += 1) {
-      const target = fractional[i % fractional.length];
-      if (target) {
-        actuals[target.index] += 1;
-      }
-    }
-
-    // Cache the distributed actual counts
-    messages.forEach((message, index) => {
-      this.tokenCache.cacheActual(message, modelFamily, actuals[index] ?? 0);
-    });
-
-    logger.debug(
-      `Cached token counts for ${messages.length} messages (total: ${totalInputTokens})`,
-    );
-  }
-
   public getLastSelectedModelId(): string | undefined {
     return this.context.workspaceState.get<string>(LAST_SELECTED_MODEL_KEY);
   }

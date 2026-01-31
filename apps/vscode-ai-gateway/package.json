@@ -129,6 +129,28 @@
           "default": "",
           "description": "Directory for log files. When set and log level is debug/trace, logs are written to files. Use an absolute path or path relative to workspace root."
         },
+        "vercelAiGateway.logging.capture": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "requests",
+              "events",
+              "suspicious"
+            ]
+          },
+          "default": [
+            "requests",
+            "suspicious"
+          ],
+          "description": "What to capture when file logging is enabled.",
+          "markdownEnumDescriptions": [
+            "Full OpenResponses request/response JSON files",
+            "Streaming SSE events to events.jsonl (verbose)",
+            "Requests that trigger suspicious stop heuristics"
+          ]
+        },
         "vercelAiGateway.models.allowlist": {
           "type": "array",
           "items": {
@@ -227,6 +249,7 @@
     "@types/vscode": "^1.108.1",
     "@vscode/vsce": "catalog:",
     "esbuild": "^0.24.0",
+    "eslint-interactive": "^12.0.0",
     "fast-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

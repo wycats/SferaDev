@@ -13,42 +13,59 @@ import { ConfigService, type LogLevel } from "./config";
 export type { LogLevel } from "./config";
 
 export const LOG_LEVELS: Record<LogLevel, number> = {
-	off: 0,
-	error: 1,
-	warn: 2,
-	info: 3,
-	debug: 4,
-	trace: 5,
+  off: 0,
+  error: 1,
+  warn: 2,
+  info: 3,
+  debug: 4,
+  trace: 5,
 };
 
 type LoggerConfigSource = Pick<
-	ConfigService,
-	"logLevel" | "logOutputChannel" | "logFileDirectory" | "onDidChange"
+  ConfigService,
+  "logLevel" | "logOutputChannel" | "logFileDirectory" | "onDidChange"
 >;
 
+interface GatewayRoutingAttempt {
+  error?: string;
+}
+
+interface GatewayErrorResponse {
+  providerMetadata?: {
+    gateway?: {
+      routing?: {
+        attempts?: GatewayRoutingAttempt[];
+      };
+    };
+  };
+  error?: {
+    message?: string;
+  };
+}
+
 function createFallbackConfigService(): LoggerConfigSource {
-	return {
-		logLevel: "info",
-		logOutputChannel: false,
-		logFileDirectory: "",
-		onDidChange: () => ({ dispose: () => undefined }),
-	};
+  return {
+    logLevel: "info",
+    logOutputChannel: false,
+    logFileDirectory: "",
+    onDidChange: () => ({ dispose: () => undefined }),
+  };
 }
 
 function createConfigServiceSafely(): LoggerConfigSource {
-	try {
-		return new ConfigService();
-	} catch {
-		return createFallbackConfigService();
-	}
+  try {
+    return new ConfigService();
+  } catch {
+    return createFallbackConfigService();
+  }
 }
 
 function canCreateOutputChannel(): boolean {
-	try {
-		return typeof vscode.window?.createOutputChannel === "function";
-	} catch {
-		return false;
-	}
+  try {
+    return typeof vscode.window.createOutputChannel === "function";
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -70,25 +87,34 @@ let _sharedOutputChannel: vscode.OutputChannel | null = null;
  * @returns A disposable that cleans up the output channel
  */
 export function initializeOutputChannel(): vscode.Disposable {
-	if (_sharedOutputChannel) {
-		// Already initialized - this shouldn't happen in normal operation
-		// but can happen in tests or if activate() is called multiple times
-		return { dispose: () => {} };
-	}
+  if (_sharedOutputChannel) {
+    // Already initialized - this shouldn't happen in normal operation
+    // but can happen in tests or if activate() is called multiple times
+    return {
+      dispose: () => {
+        /* intentionally empty */
+      },
+    };
+  }
 
-	try {
-		_sharedOutputChannel = vscode.window.createOutputChannel("Vercel AI Gateway");
-	} catch {
-		// Can't create output channel (e.g., in tests without VS Code context)
-		return { dispose: () => {} };
-	}
+  try {
+    _sharedOutputChannel =
+      vscode.window.createOutputChannel("Vercel AI Gateway");
+  } catch {
+    // Can't create output channel (e.g., in tests without VS Code context)
+    return {
+      dispose: () => {
+        /* intentionally empty */
+      },
+    };
+  }
 
-	return {
-		dispose: () => {
-			_sharedOutputChannel?.dispose();
-			_sharedOutputChannel = null;
-		},
-	};
+  return {
+    dispose: () => {
+      _sharedOutputChannel?.dispose();
+      _sharedOutputChannel = null;
+    },
+  };
 }
 
 /**
@@ -96,7 +122,7 @@ export function initializeOutputChannel(): vscode.Disposable {
  * Returns null if initializeOutputChannel() hasn't been called or if in a test environment.
  */
 function getSharedOutputChannel(): vscode.OutputChannel | null {
-	return _sharedOutputChannel;
+  return _sharedOutputChannel;
 }
 
 /**
@@ -105,310 +131,319 @@ function getSharedOutputChannel(): vscode.OutputChannel | null {
  * @internal
  */
 export function _resetOutputChannelForTesting(): void {
-	_sharedOutputChannel?.dispose();
-	_sharedOutputChannel = null;
+  _sharedOutputChannel?.dispose();
+  _sharedOutputChannel = null;
 }
 
 export class Logger {
-	private outputChannel: vscode.OutputChannel | null = null;
-	private level: LogLevel = "info"; // Default to info for better visibility
-	private configService: LoggerConfigSource;
-	private readonly disposable: { dispose: () => void };
-	private logFileDirectory = "";
-	private fileLoggingInitialized = false;
-	private fileLoggingOverridePath: string | undefined;
+  private outputChannel: vscode.OutputChannel | null = null;
+  private level: LogLevel = "info"; // Default to info for better visibility
+  private configService: LoggerConfigSource;
+  private readonly disposable: { dispose: () => void };
+  private logFileDirectory = "";
+  private fileLoggingInitialized = false;
+  private fileLoggingOverridePath: string | undefined;
 
-	constructor(configService?: LoggerConfigSource) {
-		this.configService = configService ?? createConfigServiceSafely();
-		this.loadConfig();
+  constructor(configService?: LoggerConfigSource) {
+    this.configService = configService ?? createConfigServiceSafely();
+    this.loadConfig();
 
-		this.disposable = this.configService.onDidChange(() => {
-			this.loadConfig();
-		});
-	}
+    this.disposable = this.configService.onDidChange(() => {
+      this.loadConfig();
+    });
+  }
 
-	private loadConfig(): void {
-		this.level = this.configService.logLevel ?? "info";
-		this.logFileDirectory = this.configService.logFileDirectory ?? "";
+  private loadConfig(): void {
+    this.level = this.configService.logLevel;
+    this.logFileDirectory = this.configService.logFileDirectory;
 
-		const useOutputChannel = this.configService.logOutputChannel ?? true;
-		const canUseOutputChannel = canCreateOutputChannel();
-		if (useOutputChannel && canUseOutputChannel && !this.outputChannel) {
-			// Use the shared output channel initialized during extension activation
-			this.outputChannel = getSharedOutputChannel();
-		} else if (!useOutputChannel && this.outputChannel) {
-			// Don't dispose the shared channel - just stop using it
-			this.outputChannel = null;
-		}
+    const useOutputChannel = this.configService.logOutputChannel;
+    const canUseOutputChannel = canCreateOutputChannel();
+    if (useOutputChannel && canUseOutputChannel && !this.outputChannel) {
+      // Use the shared output channel initialized during extension activation
+      this.outputChannel = getSharedOutputChannel();
+    } else if (!useOutputChannel && this.outputChannel) {
+      // Don't dispose the shared channel - just stop using it
+      this.outputChannel = null;
+    }
 
-		// Initialize file logging directory if configured and level is debug/trace
-		if (this.shouldUseFileLogging() && !this.fileLoggingInitialized) {
-			this.initializeFileLogging();
-		}
-	}
+    // Initialize file logging directory if configured and level is debug/trace
+    if (this.shouldUseFileLogging() && !this.fileLoggingInitialized) {
+      this.initializeFileLogging();
+    }
+  }
 
-	private shouldUseFileLogging(): boolean {
-		return this.logFileDirectory !== "" && (this.level === "debug" || this.level === "trace");
-	}
+  private shouldUseFileLogging(): boolean {
+    return (
+      this.logFileDirectory !== "" &&
+      (this.level === "debug" || this.level === "trace")
+    );
+  }
 
-	private getResolvedLogDirectory(): string | null {
-		if (!this.logFileDirectory) return null;
+  private getResolvedLogDirectory(): string | null {
+    if (!this.logFileDirectory) return null;
 
-		// If absolute path, use as-is
-		if (path.isAbsolute(this.logFileDirectory)) {
-			return this.logFileDirectory;
-		}
+    // If absolute path, use as-is
+    if (path.isAbsolute(this.logFileDirectory)) {
+      return this.logFileDirectory;
+    }
 
-		// Relative path: resolve against workspace root
-		const workspaceFolders = vscode.workspace.workspaceFolders;
-		if (workspaceFolders && workspaceFolders.length > 0) {
-			return path.join(workspaceFolders[0].uri.fsPath, this.logFileDirectory);
-		}
+    // Relative path: resolve against workspace root
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const firstFolder = workspaceFolders?.[0];
+    if (firstFolder) {
+      return path.join(firstFolder.uri.fsPath, this.logFileDirectory);
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	private initializeFileLogging(): void {
-		const logDir = this.getResolvedLogDirectory();
-		if (!logDir) return;
+  private initializeFileLogging(): void {
+    const logDir = this.getResolvedLogDirectory();
+    if (!logDir) return;
 
-		try {
-			// Create directory if it doesn't exist
-			if (!fs.existsSync(logDir)) {
-				fs.mkdirSync(logDir, { recursive: true });
-			}
+    try {
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+      }
 
-			// Rotate previous.log <- current.log
-			const currentLogPath = path.join(logDir, "current.log");
-			const previousLogPath = path.join(logDir, "previous.log");
+      // Rotate previous.log <- current.log
+      const currentLogPath = path.join(logDir, "current.log");
+      const previousLogPath = path.join(logDir, "previous.log");
 
-			if (fs.existsSync(currentLogPath)) {
-				// Move current to previous (overwrite previous)
-				fs.renameSync(currentLogPath, previousLogPath);
-			}
+      if (fs.existsSync(currentLogPath)) {
+        // Move current to previous (overwrite previous)
+        fs.renameSync(currentLogPath, previousLogPath);
+      }
 
-			// Write session start marker
-			const sessionStart = `\n${"=".repeat(80)}\nSession started: ${new Date().toISOString()}\n${"=".repeat(80)}\n\n`;
-			fs.writeFileSync(currentLogPath, sessionStart);
+      // Write session start marker
+      const sessionStart = `\n${"=".repeat(80)}\nSession started: ${new Date().toISOString()}\n${"=".repeat(80)}\n\n`;
+      fs.writeFileSync(currentLogPath, sessionStart);
 
-			this.fileLoggingInitialized = true;
-		} catch {
-			// Silently fail - file logging is optional
-			this.fileLoggingInitialized = false;
-		}
-	}
+      this.fileLoggingInitialized = true;
+    } catch {
+      // Silently fail - file logging is optional
+      this.fileLoggingInitialized = false;
+    }
+  }
 
-	private writeToFile(level: LogLevel, formatted: string): void {
-		if (!this.shouldUseFileLogging()) return;
+  private writeToFile(level: LogLevel, formatted: string): void {
+    if (!this.shouldUseFileLogging()) return;
 
-		const logDir = this.getResolvedLogDirectory();
-		if (!logDir) return;
+    const logDir = this.getResolvedLogDirectory();
+    if (!logDir) return;
 
-		try {
-			// Use override path if set (per-chat logging), otherwise default to current.log
-			const fileName = this.fileLoggingOverridePath || "current.log";
-			const currentLogPath = path.join(logDir, fileName);
-			fs.appendFileSync(currentLogPath, `${formatted}\n`);
+    try {
+      // Use override path if set (per-chat logging), otherwise default to current.log
+      const fileName = this.fileLoggingOverridePath ?? "current.log";
+      const currentLogPath = path.join(logDir, fileName);
+      fs.appendFileSync(currentLogPath, `${formatted}\n`);
 
-			// Also write errors to errors.log for quick access
-			if (level === "error") {
-				const errorsLogPath = path.join(logDir, "errors.log");
-				fs.appendFileSync(errorsLogPath, `${formatted}\n`);
-			}
-		} catch {
-			// Silently fail - don't let file logging errors break the extension
-		}
-	}
+      // Also write errors to errors.log for quick access
+      if (level === "error") {
+        const errorsLogPath = path.join(logDir, "errors.log");
+        fs.appendFileSync(errorsLogPath, `${formatted}\n`);
+      }
+    } catch {
+      // Silently fail - don't let file logging errors break the extension
+    }
+  }
 
-	private shouldLog(level: LogLevel): boolean {
-		return LOG_LEVELS[level] <= LOG_LEVELS[this.level];
-	}
+  private setFileLoggingPath(fileName: string): void {
+    this.fileLoggingOverridePath = fileName;
+  }
 
-	private log(level: LogLevel, message: string, ...args: unknown[]): void {
-		if (!this.shouldLog(level)) return;
+  private shouldLog(level: LogLevel): boolean {
+    return LOG_LEVELS[level] <= LOG_LEVELS[this.level];
+  }
 
-		const timestamp = new Date().toISOString();
-		const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
-		const formatted = `${prefix} ${message}`;
+  private log(level: LogLevel, message: string, ...args: unknown[]): void {
+    if (!this.shouldLog(level)) return;
 
-		switch (level) {
-			case "error":
-				console.error(formatted, ...args);
-				break;
-			case "warn":
-				console.warn(formatted, ...args);
-				break;
-			case "info":
-				console.info(formatted, ...args);
-				break;
-			case "debug":
-				console.debug(formatted, ...args);
-				break;
-			case "trace":
-				console.debug(formatted, ...args);
-				break;
-		}
+    const timestamp = new Date().toISOString();
+    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+    const formatted = `${prefix} ${message}`;
 
-		const argsStr = args.length > 0 ? ` ${JSON.stringify(args)}` : "";
-		const fullFormatted = formatted + argsStr;
+    switch (level) {
+      case "error":
+        console.error(formatted, ...args);
+        break;
+      case "warn":
+        console.warn(formatted, ...args);
+        break;
+      case "info":
+        console.info(formatted, ...args);
+        break;
+      case "debug":
+        console.debug(formatted, ...args);
+        break;
+      case "trace":
+        console.debug(formatted, ...args);
+        break;
+    }
 
-		if (this.outputChannel) {
-			this.outputChannel.appendLine(fullFormatted);
-		}
+    const argsStr = args.length > 0 ? ` ${JSON.stringify(args)}` : "";
+    const fullFormatted = formatted + argsStr;
 
-		// Write to file if file logging is enabled
-		this.writeToFile(level, fullFormatted);
-	}
+    if (this.outputChannel) {
+      this.outputChannel.appendLine(fullFormatted);
+    }
 
-	error(message: string, ...args: unknown[]): void {
-		this.log("error", message, ...args);
-	}
+    // Write to file if file logging is enabled
+    this.writeToFile(level, fullFormatted);
+  }
 
-	warn(message: string, ...args: unknown[]): void {
-		this.log("warn", message, ...args);
-	}
+  error(message: string, ...args: unknown[]): void {
+    this.log("error", message, ...args);
+  }
 
-	info(message: string, ...args: unknown[]): void {
-		this.log("info", message, ...args);
-	}
+  warn(message: string, ...args: unknown[]): void {
+    this.log("warn", message, ...args);
+  }
 
-	debug(message: string, ...args: unknown[]): void {
-		this.log("debug", message, ...args);
-	}
+  info(message: string, ...args: unknown[]): void {
+    this.log("info", message, ...args);
+  }
 
-	trace(message: string, ...args: unknown[]): void {
-		this.log("trace", message, ...args);
-	}
+  debug(message: string, ...args: unknown[]): void {
+    this.log("debug", message, ...args);
+  }
 
-	/**
-	 * Log an API error with full request/response as proper JSON (not string-encoded).
-	 * Writes JSONL to api-errors.log for easy parsing.
-	 *
-	 * @param context - Short description of what was being attempted
-	 * @param request - The full request body (will be logged as JSON object)
-	 * @param response - The API error response (will be logged as JSON object)
-	 * @param metadata - Additional context like URL, status code, etc.
-	 */
-	logApiError(
-		context: string,
-		request: unknown,
-		response: unknown,
-		metadata?: {
-			url?: string;
-			status?: number;
-			code?: string;
-			chatId?: string;
-		},
-	): void {
-		const logDir = this.getResolvedLogDirectory();
-		if (!logDir) {
-			// Fall back to regular error logging if no file directory configured
-			this.error(`[API Error] ${context}`, { request, response, metadata });
-			return;
-		}
+  trace(message: string, ...args: unknown[]): void {
+    this.log("trace", message, ...args);
+  }
 
-		try {
-			const apiErrorsPath = path.join(logDir, "api-errors.log");
-			const timestamp = new Date().toISOString();
+  /**
+   * Log an API error with full request/response as proper JSON (not string-encoded).
+   * Writes JSONL to api-errors.log for easy parsing.
+   *
+   * @param context - Short description of what was being attempted
+   * @param request - The full request body (will be logged as JSON object)
+   * @param response - The API error response (will be logged as JSON object)
+   * @param metadata - Additional context like URL, status code, etc.
+   */
+  logApiError(
+    context: string,
+    request: unknown,
+    response: unknown,
+    metadata?: {
+      url?: string;
+      status?: number;
+      code?: string;
+      chatId?: string;
+    },
+  ): void {
+    const logDir = this.getResolvedLogDirectory();
+    if (!logDir) {
+      // Fall back to regular error logging if no file directory configured
+      this.error(`[API Error] ${context}`, { request, response, metadata });
+      return;
+    }
 
-			const errorEntry = {
-				timestamp,
-				context,
-				metadata: metadata ?? {},
-				request,
-				response,
-			};
+    try {
+      const apiErrorsPath = path.join(logDir, "api-errors.log");
+      const timestamp = new Date().toISOString();
 
-			// JSONL line for easy parsing
-			fs.appendFileSync(apiErrorsPath, `${JSON.stringify(errorEntry)}\n`);
+      const errorEntry = {
+        timestamp,
+        context,
+        metadata: metadata ?? {},
+        request,
+        response,
+      };
 
-			// Also log a summary to the main log
-			this.error(`[API Error] ${context} - Full details written to api-errors.log`, metadata);
-		} catch (writeError) {
-			// Fall back to regular error logging if file write fails
-			this.error(`[API Error] ${context} (file write failed)`, {
-				request,
-				response,
-				metadata,
-				writeError: String(writeError),
-			});
-		}
-	}
+      // JSONL line for easy parsing
+      fs.appendFileSync(apiErrorsPath, `${JSON.stringify(errorEntry)}\n`);
 
-	show(): void {
-		this.outputChannel?.show();
-	}
+      // Also log a summary to the main log
+      this.error(
+        `[API Error] ${context} - Full details written to api-errors.log`,
+        metadata,
+      );
+    } catch (writeError) {
+      // Fall back to regular error logging if file write fails
+      this.error(`[API Error] ${context} (file write failed)`, {
+        request,
+        response,
+        metadata,
+        writeError: String(writeError),
+      });
+    }
+  }
 
-	dispose(): void {
-		this.disposable.dispose();
-		// Don't dispose the shared output channel here - it's managed by context.subscriptions
-		// via initializeOutputChannel(). Just clear our reference.
-		this.outputChannel = null;
-	}
+  show(): void {
+    this.outputChannel?.show();
+  }
 
-	/**
-	 * Create a per-chat logger for debugging individual conversations.
-	 * Useful for diagnosing issues in specific chats.
-	 */
-	createChatLogger(chatId: string): Logger {
-		const chatLogger = new Logger(this.configService);
-		// Set the same directory but override the file path to per-chat log
-		chatLogger.logFileDirectory = this.logFileDirectory;
-		chatLogger.setFileLoggingPath(`${chatId}.log`);
-		return chatLogger;
-	}
+  dispose(): void {
+    this.disposable.dispose();
+    // Don't dispose the shared output channel here - it's managed by context.subscriptions
+    // via initializeOutputChannel(). Just clear our reference.
+    this.outputChannel = null;
+  }
+
+  /**
+   * Create a per-chat logger for debugging individual conversations.
+   * Useful for diagnosing issues in specific chats.
+   */
+  createChatLogger(chatId: string): Logger {
+    const chatLogger = new Logger(this.configService);
+    // Set the same directory but override the file path to per-chat log
+    chatLogger.logFileDirectory = this.logFileDirectory;
+    chatLogger.setFileLoggingPath(`${chatId}.log`);
+    return chatLogger;
+  }
 }
 
 // Lazy singleton logger instance
 let _logger: Logger | null = null;
 
 export function getLogger(): Logger {
-	if (!_logger) {
-		_logger = new Logger();
-	}
-	return _logger;
+  _logger ??= new Logger();
+  return _logger;
 }
 
 // For backward compatibility - getter that lazily initializes
 export const logger = {
-	get instance(): Logger {
-		return getLogger();
-	},
-	error(message: string, ...args: unknown[]): void {
-		getLogger().error(message, ...args);
-	},
-	warn(message: string, ...args: unknown[]): void {
-		getLogger().warn(message, ...args);
-	},
-	info(message: string, ...args: unknown[]): void {
-		getLogger().info(message, ...args);
-	},
-	debug(message: string, ...args: unknown[]): void {
-		getLogger().debug(message, ...args);
-	},
-	trace(message: string, ...args: unknown[]): void {
-		getLogger().trace(message, ...args);
-	},
-	logApiError(
-		context: string,
-		request: unknown,
-		response: unknown,
-		metadata?: {
-			url?: string;
-			status?: number;
-			code?: string;
-			chatId?: string;
-		},
-	): void {
-		getLogger().logApiError(context, request, response, metadata);
-	},
-	show(): void {
-		getLogger().show();
-	},
-	dispose(): void {
-		getLogger().dispose();
-		_logger = null;
-	},
+  get instance(): Logger {
+    return getLogger();
+  },
+  error(message: string, ...args: unknown[]): void {
+    getLogger().error(message, ...args);
+  },
+  warn(message: string, ...args: unknown[]): void {
+    getLogger().warn(message, ...args);
+  },
+  info(message: string, ...args: unknown[]): void {
+    getLogger().info(message, ...args);
+  },
+  debug(message: string, ...args: unknown[]): void {
+    getLogger().debug(message, ...args);
+  },
+  trace(message: string, ...args: unknown[]): void {
+    getLogger().trace(message, ...args);
+  },
+  logApiError(
+    context: string,
+    request: unknown,
+    response: unknown,
+    metadata?: {
+      url?: string;
+      status?: number;
+      code?: string;
+      chatId?: string;
+    },
+  ): void {
+    getLogger().logApiError(context, request, response, metadata);
+  },
+  show(): void {
+    getLogger().show();
+  },
+  dispose(): void {
+    getLogger().dispose();
+    _logger = null;
+  },
 };
 
 /**
@@ -420,42 +455,46 @@ export const logger = {
  * - Standard Error: Stack trace and message
  */
 export function logError(context: string, error: unknown): void {
-	logger.error(`${context}:`, error);
+  logger.error(`${context}:`, error);
 
-	if (error && typeof error === "object") {
-		const errorObj = error as Record<string, unknown>;
+  if (error && typeof error === "object") {
+    const errorObj = error as Record<string, unknown>;
 
-		// Log structured error details if available
-		const details: Record<string, unknown> = {};
+    // Log structured error details if available
+    const details: Record<string, unknown> = {};
 
-		if ("name" in errorObj) details.name = errorObj.name;
-		if ("message" in errorObj) details.message = errorObj.message;
-		if ("statusCode" in errorObj) details.statusCode = errorObj.statusCode;
-		if ("status" in errorObj) details.status = errorObj.status;
-		if ("responseBody" in errorObj) details.responseBody = errorObj.responseBody;
-		if ("url" in errorObj) details.url = errorObj.url;
-		if ("requestBodyValues" in errorObj) details.requestBodyValues = errorObj.requestBodyValues;
-		if ("cause" in errorObj) details.cause = errorObj.cause;
-		if ("data" in errorObj) details.data = errorObj.data;
-		if ("generationId" in errorObj) details.generationId = errorObj.generationId;
+    if ("name" in errorObj) details["name"] = errorObj["name"];
+    if ("message" in errorObj) details["message"] = errorObj["message"];
+    if ("statusCode" in errorObj)
+      details["statusCode"] = errorObj["statusCode"];
+    if ("status" in errorObj) details["status"] = errorObj["status"];
+    if ("responseBody" in errorObj)
+      details["responseBody"] = errorObj["responseBody"];
+    if ("url" in errorObj) details["url"] = errorObj["url"];
+    if ("requestBodyValues" in errorObj)
+      details["requestBodyValues"] = errorObj["requestBodyValues"];
+    if ("cause" in errorObj) details["cause"] = errorObj["cause"];
+    if ("data" in errorObj) details["data"] = errorObj["data"];
+    if ("generationId" in errorObj)
+      details["generationId"] = errorObj["generationId"];
 
-		if (Object.keys(details).length > 0) {
-			logger.error(`${context} - Details:`, details);
-		}
+    if (Object.keys(details).length > 0) {
+      logger.error(`${context} - Details:`, details);
+    }
 
-		// Log stack trace if available
-		if (error instanceof Error && error.stack) {
-			logger.debug(`${context} - Stack:`, error.stack);
-		}
-	}
+    // Log stack trace if available
+    if (error instanceof Error && error.stack) {
+      logger.debug(`${context} - Stack:`, error.stack);
+    }
+  }
 }
 
 /**
  * Clean up error messages that have malformed prefixes like "undefined: ".
  */
 function cleanErrorMessage(message: string): string {
-	// Remove "undefined: " prefix that can come from some providers (e.g., AWS Bedrock)
-	return message.replace(/^undefined:\s*/i, "");
+  // Remove "undefined: " prefix that can come from some providers (e.g., AWS Bedrock)
+  return message.replace(/^undefined:\s*/i, "");
 }
 
 /**
@@ -465,72 +504,77 @@ function cleanErrorMessage(message: string): string {
  * from provider routing attempts (e.g., Anthropic's "prompt is too long: X tokens > Y maximum").
  */
 export function extractErrorMessage(error: unknown): string {
-	if (error && typeof error === "object") {
-		const errorObj = error as Record<string, unknown>;
+  if (error && typeof error === "object") {
+    const errorObj = error as Record<string, unknown>;
 
-		// Try to extract message from response body (often contains more detail)
-		if ("responseBody" in errorObj && typeof errorObj.responseBody === "string") {
-			try {
-				const parsed = JSON.parse(errorObj.responseBody);
+    // Try to extract message from response body (often contains more detail)
+    if (
+      "responseBody" in errorObj &&
+      typeof errorObj["responseBody"] === "string"
+    ) {
+      try {
+        const parsed = JSON.parse(
+          errorObj["responseBody"],
+        ) as GatewayErrorResponse;
 
-				// Try to find the best error from routing attempts
-				// Prefer the first error with specific details over generic ones
-				const attempts = parsed.providerMetadata?.gateway?.routing?.attempts;
-				if (Array.isArray(attempts)) {
-					for (const attempt of attempts) {
-						if (attempt.error && typeof attempt.error === "string") {
-							const cleaned = cleanErrorMessage(attempt.error);
-							// Prefer more informative errors (e.g., with token counts)
-							if (
-								cleaned.includes("tokens") ||
-								cleaned.includes("too long") ||
-								cleaned.includes("exceeds")
-							) {
-								return cleaned;
-							}
-						}
-					}
-					// Fall back to first attempt's error if no informative one found
-					const firstError = attempts[0]?.error;
-					if (firstError && typeof firstError === "string") {
-						return cleanErrorMessage(firstError);
-					}
-				}
+        // Try to find the best error from routing attempts
+        // Prefer the first error with specific details over generic ones
+        const attempts = parsed.providerMetadata?.gateway?.routing?.attempts;
+        if (Array.isArray(attempts)) {
+          for (const attempt of attempts) {
+            if (attempt.error && typeof attempt.error === "string") {
+              const cleaned = cleanErrorMessage(attempt.error);
+              // Prefer more informative errors (e.g., with token counts)
+              if (
+                cleaned.includes("tokens") ||
+                cleaned.includes("too long") ||
+                cleaned.includes("exceeds")
+              ) {
+                return cleaned;
+              }
+            }
+          }
+          // Fall back to first attempt's error if no informative one found
+          const firstError = attempts[0]?.error;
+          if (firstError && typeof firstError === "string") {
+            return cleanErrorMessage(firstError);
+          }
+        }
 
-				// Fall back to top-level error message
-				if (parsed.error?.message) {
-					return cleanErrorMessage(parsed.error.message);
-				}
-			} catch {
-				// Fall through to other extraction methods
-			}
-		}
+        // Fall back to top-level error message
+        if (parsed.error?.message) {
+          return cleanErrorMessage(parsed.error.message);
+        }
+      } catch {
+        // Fall through to other extraction methods
+      }
+    }
 
-		// Use error message if available
-		if ("message" in errorObj && typeof errorObj.message === "string") {
-			return cleanErrorMessage(errorObj.message);
-		}
-	}
+    // Use error message if available
+    if ("message" in errorObj && typeof errorObj["message"] === "string") {
+      return cleanErrorMessage(errorObj["message"]);
+    }
+  }
 
-	if (error instanceof Error) {
-		return cleanErrorMessage(error.message);
-	}
+  if (error instanceof Error) {
+    return cleanErrorMessage(error.message);
+  }
 
-	if (typeof error === "string") {
-		return cleanErrorMessage(error);
-	}
+  if (typeof error === "string") {
+    return cleanErrorMessage(error);
+  }
 
-	return "An unexpected error occurred";
+  return "An unexpected error occurred";
 }
 
 /**
  * Token count information extracted from an error message.
  */
 export interface ExtractedTokenInfo {
-	/** The actual number of input tokens that caused the error */
-	actualTokens: number;
-	/** The maximum allowed tokens (if parseable) */
-	maxTokens?: number;
+  /** The actual number of input tokens that caused the error */
+  actualTokens: number;
+  /** The maximum allowed tokens (if parseable) */
+  maxTokens?: number | undefined;
 }
 
 /**
@@ -542,35 +586,36 @@ export interface ExtractedTokenInfo {
  *
  * Returns the actual token count if parseable, undefined otherwise.
  */
-export function extractTokenCountFromError(error: unknown): ExtractedTokenInfo | undefined {
-	// First, get the error message using existing extraction logic
-	const message = extractErrorMessage(error);
+export function extractTokenCountFromError(
+  error: unknown,
+): ExtractedTokenInfo | undefined {
+  // First, get the error message using existing extraction logic
+  const message = extractErrorMessage(error);
 
-	// Pattern: "prompt is too long: 204716 tokens > 200000 maximum"
-	const tokenPattern = /(\d+)\s*tokens?\s*>\s*(\d+)/i;
-	const match = tokenPattern.exec(message);
+  // Pattern: "prompt is too long: 204716 tokens > 200000 maximum"
+  const tokenPattern = /(\d+)\s*tokens?\s*>\s*(\d+)/i;
+  const match = tokenPattern.exec(message);
 
-	if (match) {
-		const actualTokens = parseInt(match[1], 10);
-		const maxTokens = parseInt(match[2], 10);
-		if (!Number.isNaN(actualTokens) && actualTokens > 0) {
-			return {
-				actualTokens,
-				maxTokens: !Number.isNaN(maxTokens) ? maxTokens : undefined,
-			};
-		}
-	}
+  if (match?.[1] && match[2]) {
+    const actualTokens = parseInt(match[1], 10);
+    const maxTokens = parseInt(match[2], 10);
+    if (!Number.isNaN(actualTokens) && actualTokens > 0) {
+      return !Number.isNaN(maxTokens)
+        ? { actualTokens, maxTokens }
+        : { actualTokens };
+    }
+  }
 
-	// Pattern: "exceeds context window of X tokens" or similar
-	const exceedsPattern = /exceeds.*?(\d+)\s*tokens?/i;
-	const exceedsMatch = exceedsPattern.exec(message);
-	if (exceedsMatch) {
-		const maxTokens = parseInt(exceedsMatch[1], 10);
-		// We don't know the actual count, but we know the max
-		if (!Number.isNaN(maxTokens)) {
-			return { actualTokens: maxTokens + 1, maxTokens };
-		}
-	}
+  // Pattern: "exceeds context window of X tokens" or similar
+  const exceedsPattern = /exceeds.*?(\d+)\s*tokens?/i;
+  const exceedsMatch = exceedsPattern.exec(message);
+  if (exceedsMatch?.[1]) {
+    const maxTokens = parseInt(exceedsMatch[1], 10);
+    // We don't know the actual count, but we know the max
+    if (!Number.isNaN(maxTokens)) {
+      return { actualTokens: maxTokens + 1, maxTokens };
+    }
+  }
 
-	return undefined;
+  return undefined;
 }
