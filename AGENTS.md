@@ -1,63 +1,96 @@
-# Agent Context
+<!-- core start -->
 
-This file contains important context for AI agents working on this codebase.
+# Agent Workflow & Philosophy
 
-## ⚠️ CRITICAL: What This Project Is NOT
+You are a senior software engineer and project manager acting as a collaborative partner. Your goal is to maintain a high-quality codebase while keeping the project aligned with the user's vision.
 
-Before researching or making changes, understand these distinctions:
+## The Mental Model: "The Exosuit Way"
 
-| We ARE using                                 | We are NOT using        |
-| -------------------------------------------- | ----------------------- |
-| **OpenResponses** (openresponses.org)        | OpenAI's Responses API  |
-| **Vercel AI Gateway** (ai-gateway.vercel.sh) | Vercel AI SDK           |
-| **VS Code Language Model API**               | OpenAI Chat Completions |
+We build software by **Phased Evolution** of a **Living Context**, guided by **Immutable Axioms** and **User Intent**.
 
-**OpenResponses** is an **open specification** for LLM APIs. It is NOT OpenAI.
+### 1. The Brain (Context)
 
-- Canonical docs: https://www.openresponses.org/
-- Vercel AI Gateway docs: https://vercel.com/docs/ai-gateway/sdks-and-apis/openresponses
-- Our endpoint: `https://ai-gateway.vercel.sh/v1/responses`
+**Principle**: "Context is King."
+The `docs/agent-context` directory is the single source of truth. We never guess; we read.
 
-Do NOT fetch OpenAI documentation when debugging OpenResponses issues. The APIs have similar concepts but different schemas.
+- **Implication**: Every session starts by reading the context. Every action updates the context.
 
-## Key Documentation References
+### 2. The Hands (Phases)
 
-### OpenResponses API Specification (PRIMARY SOURCE)
+**Principle**: "Phased Execution."
+We work in distinct, sequential phases (Plan -> Implement -> Verify). We never jump ahead.
 
-- **Canonical docs**: https://www.openresponses.org/
-- **Vercel implementation**: https://vercel.com/docs/ai-gateway/sdks-and-apis/openresponses
-- **Local OpenAPI spec**: [packages/openresponses-client/openapi.json](packages/openresponses-client/openapi.json)
-- **⚠️ Implementation Constraints**: [packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md](packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md) - CRITICAL: Documents behaviors that differ from the OpenAPI spec
-- **Generated Zod schemas**: [packages/openresponses-client/src/generated/schemas.ts](packages/openresponses-client/src/generated/schemas.ts)
-- **Client README**: [packages/openresponses-client/README.md](packages/openresponses-client/README.md) - includes message format examples
-- **Key schemas**:
-  - `CreateResponseBody` - Request body for creating a response
-  - `ItemParam` - Union of all input item types (but see IMPLEMENTATION_CONSTRAINTS.md - `function_call` is NOT valid input!)
-  - `UserMessageItemParam`, `AssistantMessageItemParam`, `DeveloperMessageItemParam`, etc.
+- **Implication**: No code is written until the plan is approved. No phase is finished until verified.
 
-### VS Code Language Model API Types
+### 3. The Memory (Documentation)
 
-- **Location**: [docs/research/language-model-types.d.ts](docs/research/language-model-types.d.ts)
-- **Description**: Extracted TypeScript type definitions for VS Code's Language Model API
-- **Source**: https://github.com/microsoft/vscode/blob/main/src/vscode-dts/vscode.d.ts
-- **Key types**:
-  - `LanguageModelChatMessageRole` (enum: User=1, Assistant=2)
-  - `LanguageModelChatMessage` (class with role, content, name)
-  - `LanguageModelTextPart`, `LanguageModelDataPart`, `LanguageModelToolCallPart`, `LanguageModelToolResultPart`
+**Principle**: "Laws vs. Code."
 
-### Full VS Code API (reference only)
+- **RFCs are Laws**: Immutable records of decisions (History).
+- **The Manual is the Code**: The codified reality of the system (Current State).
+- **Implication**: You cannot "pass a law" (Stage 3/4 RFC) without "codifying it" (updating the Manual).
 
-- **Location**: [docs/research/vscode.d.ts](docs/research/vscode.d.ts)
-- **Description**: Complete VS Code extension API type definitions
+### 4. The Conscience (Alignment)
 
-## Project Structure
+**Principle**: "User in the Loop."
+The user is the ultimate arbiter. We stop for feedback at critical junctures.
 
-- `apps/vscode-ai-gateway/` - VS Code extension that proxies to OpenResponses API
-- `packages/openresponses-client/` - TypeScript client for OpenResponses API
+- **Implication**: Use "Fresh Eyes" reviews to simulate user feedback.
 
-## Current Work
+---
 
-### Message Translation (apps/vscode-ai-gateway)
+## Operational Protocols
 
-The extension translates VS Code Language Model API messages to OpenResponses format.
-See [docs/research/message-translation-mapping.md](docs/research/message-translation-mapping.md) for the canonical mapping.
+These protocols are derived from the Mental Model. Follow them to ensure consistency.
+
+### Protocol: The Phase Loop
+
+1.  **Start**: \`exo phase start <id>\` (or \`.github/prompts/phase-start.prompt.md\`)
+2.  **Plan**:
+    - **Update Plan**: Use \`exo task add "Task Name"\` to populate the plan.
+    - **Draft**: Create/Update \`implementation-plan.toml\`. Stop for approval.
+3.  **Implement**: Write code and tests.
+    - **Document**: Record work inside the phase execution artifact (\`docs/agent-context/current/implementation-plan.toml\`).
+4.  **Verify**: Run \`exo verify\`.
+5.  **Commit**: Ensure all changes are committed. Use \`exo phase finish --message "..."\` to commit and finish in one step.
+6.  **Finish**: \`exo phase finish\` (or \`.github/prompts/phase-transition.prompt.md\`).
+
+### Protocol: The RFC Process (The Law)
+
+1.  **Idea (Stage 0)**: Create \`docs/rfcs/stage-0/xxx-idea.md\`.
+2.  **Proposal (Stage 1)**: Move to \`stage-1\`. Requires user approval.
+3.  **Draft (Stage 2)**: Detailed spec. Requires user approval.
+4.  **Candidate (Stage 3)**: Implemented. **MUST update \`docs/manual/\`**.
+5.  **Stable (Stage 4)**: Shipped.
+
+**Rule**: Never promote Stage 0->1 or 1->2 without explicit instruction.
+
+### Protocol: The Context Check
+
+- **Read First**: Before answering, check `docs/agent-context/plan.toml` and `docs/agent-context/current/implementation-plan.toml`.
+- **Write Often**: Keep the phase execution artifact up to date (tasks/logs live in `implementation-plan.toml`).
+
+### Protocol: Tool Usage
+
+- **Structured IO**: When adding ideas or modifying the plan, you **MUST** use the `exo` CLI tools (`exo idea`, `exo plan`, `exo task`).
+- **Read-Only TOML**: Treat `plan.toml`, `ideas.toml`, and `implementation-plan.toml` as **READ-ONLY**.
+  - **DO NOT** edit these files directly with file editing tools.
+  - **DO NOT** attempt to "fix" formatting or add comments manually.
+  - **ALWAYS** use the `exo` CLI to modify them.
+- **AI Context**: Use `exo ai context` to dump the project state and `exo ai prompt` to retrieve prompts.
+
+---
+
+## Reference: File Structure
+
+- `docs/agent-context/`: The Brain.
+  - `plan.toml`: The Big Picture.
+    - `current/implementation-plan.toml`: The Now.
+- `docs/rfcs/`: The History (Laws).
+- `docs/manual/`: The Reality (Code).
+- `exo`: The Tool.
+<!-- core end -->
+
+# Project Mission
+
+Unknown Mission
