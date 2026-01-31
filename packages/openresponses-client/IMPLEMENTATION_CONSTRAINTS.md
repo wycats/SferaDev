@@ -95,32 +95,33 @@ before sending to the API:
 
 ## Input Item Constraints
 
-### 3. `function_call` is NOT a Valid Input Item
+### 3. `function_call` IS Now a Valid Input Item ✅
 
 **OpenAPI Spec Says**: `ItemParam` is a union that includes `FunctionCallItemParam`
 
-**Reality**: The Vercel AI Gateway `inputItemSchema` only accepts:
+**Previous Reality (before 2026-01-31)**: The gateway rejected `function_call` in input.
 
-- `functionCallOutputItemSchema` (for `function_call_output`)
-- `messageInputItemSchema` (for `message`)
+**Current Reality (as of 2026-01-31)**: The Vercel AI Gateway now accepts `function_call`
+items in the input array. This allows proper reconstruction of tool call history.
 
-**Source**: [vercel/ai-gateway - openresponses-compat-api-types.ts](https://github.com/vercel/ai-gateway/blob/main/lib/openresponses-compat/openresponses-compat-api-types.ts#L51-L54)
-
-```typescript
-const inputItemSchema = z.union([
-  functionCallOutputItemSchema, // ✅ Accepted
-  messageInputItemSchema, // ✅ Accepted
-  // NO function_call!           // ❌ NOT accepted as input
-]);
+**Verified Working Pattern**:
+```json
+{
+  "input": [
+    { "type": "message", "role": "user", "content": "What time is it?" },
+    { "type": "function_call", "call_id": "call_123", "name": "get_time", "arguments": "{}" },
+    { "type": "function_call_output", "call_id": "call_123", "output": "3:00 PM" },
+    { "type": "message", "role": "user", "content": "Thanks!" }
+  ]
+}
 ```
 
-**Implication**: When reconstructing conversation history that includes tool calls,
-you CANNOT pass `function_call` items back to the API. Tool calls are OUTPUT-only.
+**Important**: The `function_call` item can appear directly after a user message;
+an explicit assistant message is no longer required before the tool call.
 
-**Critical Note on Hallucination Risk**: Do NOT include tool call summaries or
-representations in assistant message content. This causes the model to mimic
-the tool call format in its output, producing hallucinated tool calls that
-don't match the schema or contain invalid arguments.
+**Hallucination Warning**: While tool calls can now be properly represented in
+history, do NOT include text representations of tool calls in assistant message
+content. This causes the model to mimic the format, producing hallucinated calls.
 
 ---
 
@@ -150,12 +151,13 @@ Using `output_text` in input assistant messages causes validation errors.
 
 ---
 
-### 5. `function_call_output` Requires Preceding Context
+### 5. `function_call_output` Requires Preceding `function_call`
 
 **OpenAPI Spec Says**: `function_call_output` is a standalone item type.
 
 **Reality**: The underlying LLM providers (Anthropic, OpenAI) expect tool results
-to have corresponding tool_use/tool_call blocks in the preceding assistant message.
+to have corresponding tool_use/tool_call blocks. The gateway does NOT synthesize
+these from `function_call_output` alone.
 
 **Error Example** (from Anthropic API via Vercel AI Gateway):
 
@@ -164,12 +166,20 @@ to have corresponding tool_use/tool_call blocks in the preceding assistant messa
 the number of toolUse blocks of previous turn."
 ```
 
-**Analysis**: The OpenResponses input schema does support `function_call_output`,
-but the current Vercel AI Gateway implementation doesn't synthesize the corresponding
-`tool_use` blocks when converting to AI SDK format.
+**Solution**: Always include the corresponding `function_call` item before
+`function_call_output`:
 
-**Current Strategy**: Emit tool results as user message content with context prefix.
-This works but creates consecutive user messages (see constraint #2).
+```json
+{
+  "input": [
+    { "type": "message", "role": "user", "content": "..." },
+    { "type": "function_call", "call_id": "call_123", "name": "tool_name", "arguments": "{}" },
+    { "type": "function_call_output", "call_id": "call_123", "output": "result" }
+  ]
+}
+```
+
+**This is now the recommended approach** since `function_call` is accepted as input.
 
 ---
 
@@ -216,20 +226,21 @@ The API **returns** (in responses):
 
 ## Empirical Test Results
 
-### Tested: 2026-01-31
+### Tested: 2026-01-31 (updated)
 
-| Payload Type                                        | Result            | Notes                        |
-| --------------------------------------------------- | ----------------- | ---------------------------- |
-| Minimal user message                                | ✅ Success        | Basic case works             |
-| Developer + user messages                           | ✅ Success        | `role: "developer"` works    |
-| Message with tools defined                          | ✅ Success        | Tool schema accepted         |
-| Multi-turn with string assistant content            | ✅ Success        | Preferred format             |
-| Multi-turn with `output_text` array                 | ❌ 400 Error      | Wrong content type for input |
-| `function_call` as input item                       | ❌ 400 Error      | Not in input schema          |
-| `function_call_output` alone (no assistant context) | ❌ Provider Error | Missing tool_use context     |
-| Consecutive user messages (3+)                      | ⚠️ Degraded       | Model stops early            |
-| `instructions` field with Anthropic                 | ⚠️ Ignored        | Not passed to non-OpenAI     |
-| `developer` message with Anthropic                  | ✅ Success        | Converted to system message  |
+| Payload Type                                        | Result            | Notes                              |
+| --------------------------------------------------- | ----------------- | ---------------------------------- |
+| Minimal user message                                | ✅ Success        | Basic case works                   |
+| Developer + user messages                           | ✅ Success        | `role: "developer"` works          |
+| Message with tools defined                          | ✅ Success        | Tool schema accepted               |
+| Multi-turn with string assistant content            | ✅ Success        | Preferred format                   |
+| Multi-turn with `output_text` array                 | ❌ 400 Error      | Wrong content type for input       |
+| `function_call` as input item                       | ✅ Success        | **NOW WORKS** (gateway updated)    |
+| `function_call` + `function_call_output` pair       | ✅ Success        | **Recommended approach**           |
+| `function_call_output` alone (no function_call)     | ❌ Provider Error | Missing tool_use context           |
+| Consecutive user messages (3+)                      | ⚠️ Degraded       | Model stops early                  |
+| `instructions` field with Anthropic                 | ⚠️ Ignored        | Not passed to non-OpenAI           |
+| `developer` message with Anthropic                  | ✅ Success        | Converted to system message        |
 
 ---
 
@@ -238,11 +249,11 @@ The API **returns** (in responses):
 1. **For system prompts**: Prepend a `developer` role message AND set `instructions`
    for maximum compatibility across all providers.
 
-2. **For assistant messages in history**: Use plain string `content`, not arrays.
-   Do NOT include tool call representations - this causes hallucinations.
+2. **For tool calls in history**: Use `function_call` + `function_call_output` pairs.
+   This is now supported and is the cleanest approach.
 
-3. **For tool results in history**: Convert to user message text. However, be aware
-   this creates consecutive user messages if multiple tools are called.
+3. **For assistant messages in history**: Use plain string `content`, not arrays.
+   Do NOT include tool call text representations - this causes hallucinations.
 
 4. **For message structure**: Consolidate consecutive same-role messages before
    sending to avoid model confusion (especially with Claude models).

@@ -16,6 +16,8 @@ import { resolve } from "node:path";
 import {
   type CreateResponseBody,
   createClient,
+  type FunctionCallItemParam,
+  type FunctionCallOutputItemParam,
   type FunctionToolParam,
   type InputImageContentParamAutoParam,
   type InputTextContentParam,
@@ -920,18 +922,36 @@ function translateMessage(
         });
       }
     } else if (part instanceof LanguageModelToolCallPart) {
-      // CRITICAL: `function_call` is NOT a valid input item in OpenResponses!
+      // Emit function_call item for tool calls.
+      // The gateway now accepts function_call as input (verified 2026-01-31).
       // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
       //
-      // Avoid adding any tool-call text to assistant history to reduce
-      // mimicry risk. The tool result (below) carries the useful context.
+      // First, flush any accumulated content
+      if (contentParts.length > 0) {
+        const messageItem = createMessageItem(openResponsesRole, contentParts);
+        if (messageItem) {
+          items.push(messageItem);
+        }
+        contentParts.length = 0;
+      }
+
+      // Emit function_call item
+      const functionCallItem: FunctionCallItemParam = {
+        type: "function_call",
+        call_id: part.callId,
+        name: part.name,
+        arguments:
+          typeof part.input === "string"
+            ? part.input
+            : JSON.stringify(part.input ?? {}),
+      };
+      items.push(functionCallItem as ItemParam);
     } else if (part instanceof LanguageModelToolResultPart) {
-      // CRITICAL: `function_call_output` requires preceding tool_use context
-      // that the Vercel AI Gateway doesn't synthesize.
+      // Emit function_call_output item for tool results.
+      // This MUST follow a corresponding function_call item with matching call_id.
       // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
       //
-      // Strategy: Emit tool results as USER message text, so the assistant
-      // doesn't see tool history in its own prior turns.
+      // First, flush any accumulated content
       if (contentParts.length > 0) {
         const messageItem = createMessageItem(openResponsesRole, contentParts);
         if (messageItem) {
@@ -949,15 +969,13 @@ function translateMessage(
         continue;
       }
 
-      const toolResultItem = createMessageItem("user", [
-        {
-          type: "input_text",
-          text: `Context (tool result):\n${output}`,
-        },
-      ]);
-      if (toolResultItem) {
-        items.push(toolResultItem);
-      }
+      // Emit function_call_output item
+      const functionCallOutputItem: FunctionCallOutputItemParam = {
+        type: "function_call_output",
+        call_id: part.callId,
+        output,
+      };
+      items.push(functionCallOutputItem as ItemParam);
     }
   }
 
