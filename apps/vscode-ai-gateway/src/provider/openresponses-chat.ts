@@ -222,6 +222,7 @@ export async function executeOpenResponsesChat(
     let textPartCount = 0;
     let eventCount = 0;
     let functionCallEventsReceived = 0;
+    let functionCallArgsEventsReceived = 0;
     const eventTypeCounts = new Map<string, number>();
     for await (const event of client.createStreamingResponse(
       requestBody,
@@ -237,6 +238,11 @@ export async function executeOpenResponsesChat(
         logger.debug(
           `[OpenResponses] Function-related event #${functionCallEventsReceived.toString()}: ${eventType}`,
         );
+      }
+      
+      // Track function_call_arguments events specifically - these indicate actual tool calls
+      if (eventType.includes("function_call_arguments")) {
+        functionCallArgsEventsReceived++;
       }
       
       if (eventCount <= 25) {
@@ -297,16 +303,24 @@ export async function executeOpenResponsesChat(
 
         // Log summary of what was emitted
         logger.info(
-          `[OpenResponses] Stream summary: ${eventCount.toString()} events, ${textPartCount.toString()} text parts, ${toolCallCount.toString()} tool calls emitted, ${functionCallEventsReceived.toString()} function-related events received`,
+          `[OpenResponses] Stream summary: ${eventCount.toString()} events, ${textPartCount.toString()} text parts, ${toolCallCount.toString()} tool calls emitted, ${functionCallArgsEventsReceived.toString()} function_call_arguments events`,
         );
         
-        // DIAGNOSTIC: Log when we have text but no tool calls - this is the "pause" pattern
-        if (textPartCount > 0 && toolCallCount === 0) {
-          logger.warn(
-            `[OpenResponses] PAUSE PATTERN DETECTED: Response had ${textPartCount.toString()} text parts but ${toolCallCount.toString()} tool calls. ` +
-              `Function-related events: ${functionCallEventsReceived.toString()}. ` +
+        // DIAGNOSTIC: Detect potential issues with tool call emission
+        // Only warn if we received function_call_arguments events but didn't emit tool calls
+        if (functionCallArgsEventsReceived > 0 && toolCallCount === 0) {
+          logger.error(
+            `[OpenResponses] BUG: Received ${functionCallArgsEventsReceived.toString()} function_call_arguments events but emitted 0 tool calls! ` +
               `Event types: ${topTypes}. ` +
               `Finish reason: ${adapted.finishReason ?? "unknown"}`,
+          );
+        }
+        
+        // Log when we have text but no tool calls and finish reason is 'stop'
+        // This is the "pause" pattern but may be intentional model behavior
+        if (textPartCount > 0 && toolCallCount === 0 && adapted.finishReason === "stop") {
+          logger.debug(
+            `[OpenResponses] Text-only response (no tool calls): ${textPartCount.toString()} text parts, finish reason: stop`,
           );
         }
 

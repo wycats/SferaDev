@@ -576,6 +576,14 @@ export class StreamAdapter {
       const argsStr = functionCall.arguments;
       const name = functionCall.name;
 
+      // Skip if already emitted via function_call_arguments.done
+      if (this.emittedToolCalls.has(callId)) {
+        logger.debug(
+          `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (callId: ${callId})`,
+        );
+        return { parts: [], done: false };
+      }
+
       if (typeof argsStr !== "string") {
         logger.warn(
           `[OpenResponses] Function call missing arguments in output_item.done: name=${name}, callId=${callId}`,
