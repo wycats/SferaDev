@@ -80,14 +80,18 @@ export function translateRequest(
   });
 
   if (validInput.length !== input.length) {
-    logger.warn(`[OpenResponses] Filtered ${input.length - validInput.length} empty message(s)`);
+    logger.warn(
+      `[OpenResponses] Filtered ${input.length - validInput.length} empty message(s)`,
+    );
   }
 
   // Consolidate consecutive same-role messages for Claude compatibility
   // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
   const consolidatedInput = consolidateConsecutiveMessages(validInput);
   if (consolidatedInput.length !== validInput.length) {
-    logger.info(`[OpenResponses] Consolidated ${validInput.length} → ${consolidatedInput.length} messages`);
+    logger.info(
+      `[OpenResponses] Consolidated ${validInput.length} → ${consolidatedInput.length} messages`,
+    );
   }
 
   // Prepend developer message for non-OpenAI providers (they ignore `instructions` field)
@@ -99,7 +103,9 @@ export function translateRequest(
       content: instructions,
     };
     finalInput = [developerMessage, ...consolidatedInput];
-    logger.info(`[OpenResponses] Prepended developer message (${instructions.length} chars)`);
+    logger.info(
+      `[OpenResponses] Prepended developer message (${instructions.length} chars)`,
+    );
   }
 
   // Convert tools

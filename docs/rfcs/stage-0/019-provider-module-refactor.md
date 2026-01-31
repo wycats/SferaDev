@@ -7,6 +7,7 @@
 ## Completion Summary (2026-01-31)
 
 ### Commits
+
 - `54b4777` - Phase 1: Extract pure functions
 - `1a67ad3` - Phase 2: Extract domain logic
 - `fe8928c` - Phase 3: Extract request layer
@@ -14,19 +15,21 @@
 - `b94837d` - Slop cleanup
 
 ### Final Module Structure
-| File | Lines | Responsibility |
-|------|-------|----------------|
-| `openresponses-chat.ts` | 410 | Orchestration only |
-| `request-builder.ts` | 137 | Request translation |
-| `message-translation.ts` | 193 | Message conversion |
-| `message-consolidation.ts` | 95 | Same-role merging |
-| `system-prompt.ts` | 132 | System prompt extraction |
-| `error-extraction.ts` | 70 | Token info from errors |
-| `image-utils.ts` | 66 | MIME detection |
-| `debug-utils.ts` | 49 | Suspicious request saving |
-| **Total** | **1152** | Down from 1291 |
+
+| File                       | Lines    | Responsibility            |
+| -------------------------- | -------- | ------------------------- |
+| `openresponses-chat.ts`    | 410      | Orchestration only        |
+| `request-builder.ts`       | 137      | Request translation       |
+| `message-translation.ts`   | 193      | Message conversion        |
+| `message-consolidation.ts` | 95       | Same-role merging         |
+| `system-prompt.ts`         | 132      | System prompt extraction  |
+| `error-extraction.ts`      | 70       | Token info from errors    |
+| `image-utils.ts`           | 66       | MIME detection            |
+| `debug-utils.ts`           | 49       | Suspicious request saving |
+| **Total**                  | **1152** | Down from 1291            |
 
 ### Test Coverage
+
 - Tests: 236 → 293 (+57 tests)
 - Test files: 14 → 21 (+7 files)
 

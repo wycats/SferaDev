@@ -208,7 +208,9 @@ export function createMessageItem(
 
   if (textOnly) {
     const text = joinText();
-    return text ? ({ type: "message", role, content: text } as ItemParam) : null;
+    return text
+      ? ({ type: "message", role, content: text } as ItemParam)
+      : null;
   }
 
   // Mixed content (has images) - only user messages support this
@@ -220,7 +222,10 @@ export function createMessageItem(
     return {
       type: "message",
       role: "user",
-      content: filtered as (InputTextContentParam | InputImageContentParamAutoParam)[],
+      content: filtered as (
+        | InputTextContentParam
+        | InputImageContentParamAutoParam
+      )[],
     };
   }
 
