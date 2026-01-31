@@ -14,7 +14,7 @@ import {
 } from "vscode";
 import type { ConfigService } from "../config.js";
 import { logger } from "../logger.js";
-import { consolidateConsecutiveMessages } from "./message-consolidation.js";
+
 import { translateMessage } from "./message-translation.js";
 import { extractSystemPrompt } from "./system-prompt.js";
 
@@ -85,17 +85,8 @@ export function translateRequest(
     );
   }
 
-  // Consolidate consecutive same-role messages for Claude compatibility
-  // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
-  const consolidatedInput = consolidateConsecutiveMessages(validInput);
-  if (consolidatedInput.length !== validInput.length) {
-    logger.info(
-      `[OpenResponses] Consolidated ${validInput.length} → ${consolidatedInput.length} messages`,
-    );
-  }
-
   // Prepend developer message for non-OpenAI providers (they ignore `instructions` field)
-  let finalInput = consolidatedInput;
+  let finalInput = validInput;
   if (instructions) {
     const developerMessage: ItemParam = {
       type: "message",
