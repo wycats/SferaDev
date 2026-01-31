@@ -1,0 +1,80 @@
+version = 2
+
+# This file defines commit-time validations for the VS Code AI Gateway extension.
+# It prevents broken builds from being committed.
+
+[defaults]
+non_interactive = true
+timeout_seconds = 300
+
+[projections]
+
+# Map git hooks to lanes.
+[projections.git_hooks]
+pre_commit = "coherence"
+pre_push = "gate"
+
+# ============================================================================
+# LANES
+# ============================================================================
+
+[lane.dev]
+label = "Dev (uncommitted)"
+description = "Run the same checks as pre-commit, but against uncommitted changes."
+scope = { op = "base", base = "uncommitted" }
+checks = [
+  "typecheck",
+  "lint",
+  "test",
+]
+
+[lane.coherence]
+label = "pre-commit (staged)"
+description = "Runs on the staged snapshot; mirrors the pre-commit hook."
+scope = { op = "base", base = "staged" }
+parallel = true
+checks = [
+  "typecheck",
+  "lint",
+]
+
+[lane.gate]
+label = "pre-push (committed not pushed)"
+description = "Runs on commits that are local-only; mirrors the pre-push hook."
+scope = { op = "base", base = "committed_not_pushed" }
+parallel = true
+checks = ["test"]
+
+[lane.ci]
+label = "CI (HEAD)"
+description = "Runs the pre-push lane checks against HEAD (best-effort mirror)."
+scope = { op = "base", base = "head" }
+checks = ["typecheck", "lint", "test"]
+
+# ============================================================================
+# CHECKS
+# ============================================================================
+
+[check.typecheck]
+label = "TypeScript Typecheck"
+description = "Runs tsc --noEmit to catch type errors before commit."
+input_mode = "none"
+run = "pnpm --filter vscode-extension-vercel-ai run tsc"
+
+[check.lint]
+label = "ESLint"
+description = "Runs ESLint across the workspace."
+input_mode = "none"
+run = "pnpm run lint"
+
+[check.test]
+label = "Tests"
+description = "Runs the test suite."
+input_mode = "none"
+run = "pnpm --filter vscode-extension-vercel-ai run test"
+
+[check.build]
+label = "Build"
+description = "Builds the extension to verify it compiles."
+input_mode = "none"
+run = "pnpm --filter vscode-extension-vercel-ai run build"
