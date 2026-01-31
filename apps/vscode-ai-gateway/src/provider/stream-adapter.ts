@@ -165,11 +165,11 @@ type ToolCallArguments = Record<string, unknown>;
  * ```
  */
 export class StreamAdapter {
-  /** Function calls being assembled from streaming deltas, keyed by itemId (unique per call) */
+  /** Function calls being assembled from streaming deltas */
   private functionCalls = new Map<string, FunctionCallState>();
 
-  /** Tool calls already emitted to VS Code, tracked by itemId to handle duplicate call_ids */
-  private emittedItemIds = new Set<string>();
+  /** Tool calls already emitted to VS Code */
+  private emittedToolCalls = new Set<string>();
 
   /** Text content being assembled (for reference, not needed for delta streaming) */
   private textContent = new Map<string, TextContentState>();
@@ -361,18 +361,16 @@ export class StreamAdapter {
 
         // Extract tool call details
         const functionCall = item as FunctionCallItem;
-        const itemId = functionCall.id; // Use item id for deduplication, NOT call_id!
         const callId = functionCall.call_id;
         const name = functionCall.name;
         const argsStr = functionCall.arguments;
 
         logger.debug(
-          `[OpenResponses] Found function_call in output: name=${name}, callId=${callId}, itemId=${itemId}, argsLen=${argsStr.length.toString()}`,
+          `[OpenResponses] Found function_call in output: name=${name}, callId=${callId}, argsLen=${argsStr.length.toString()}`,
         );
 
-        // Only emit if this item wasn't already emitted via streaming events
-        // CRITICAL: Check by itemId (unique per call), NOT callId (gateway reuses these!)
-        if (callId && name && itemId && !this.emittedItemIds.has(itemId)) {
+        // Only emit if this tool call wasn't already emitted via streaming events
+        if (callId && name && !this.emittedToolCalls.has(callId)) {
           let parsedArgs: ToolCallArguments = {};
           try {
             parsedArgs = JSON.parse(argsStr) as ToolCallArguments;
@@ -383,20 +381,19 @@ export class StreamAdapter {
           }
 
           logger.info(
-            `[OpenResponses] Emitting tool call from completion payload: ${name} (callId: ${callId}, itemId: ${itemId})`,
+            `[OpenResponses] Emitting tool call from completion payload: ${name} (callId: ${callId})`,
           );
-          // Emit with call_id for VS Code (that's what Copilot matches)
           parts.push(new LanguageModelToolCallPart(callId, name, parsedArgs));
-          this.emittedItemIds.add(itemId);
+          this.emittedToolCalls.add(callId);
           functionCallsEmitted++;
-        } else if (itemId && this.emittedItemIds.has(itemId)) {
+        } else if (this.emittedToolCalls.has(callId)) {
           functionCallsSkippedDuplicate++;
           logger.debug(
-            `[OpenResponses] Skipping duplicate tool call: ${name} (callId: ${callId}, itemId: ${itemId})`,
+            `[OpenResponses] Skipping duplicate tool call: ${name} (callId: ${callId})`,
           );
         } else {
           logger.warn(
-            `[OpenResponses] Skipping tool call with missing callId, name, or itemId: callId=${callId}, name=${name}, itemId=${itemId}`,
+            `[OpenResponses] Skipping tool call with missing callId or name: callId=${callId}, name=${name}`,
           );
         }
       }
@@ -411,7 +408,7 @@ export class StreamAdapter {
     // DIAGNOSTIC: Log if there are pending function calls that were never completed
     if (this.functionCalls.size > 0) {
       const pending = Array.from(this.functionCalls.entries())
-        .map(([itemId, state]) => `${state.name}(itemId=${itemId}, callId=${state.callId})`)
+        .map(([callId, state]) => `${state.name}(${callId})`)
         .join(", ");
       logger.warn(
         `[OpenResponses] INCOMPLETE FUNCTION CALLS at stream end: ${this.functionCalls.size.toString()} pending: ${pending}`,
@@ -420,7 +417,7 @@ export class StreamAdapter {
 
     // DIAGNOSTIC: Log total emitted tool calls
     logger.debug(
-      `[OpenResponses] Total tool calls emitted during stream: ${this.emittedItemIds.size.toString()} (tracked by itemId)`,
+      `[OpenResponses] Total tool calls emitted during stream: ${this.emittedToolCalls.size.toString()}`,
     );
 
     return {
@@ -507,13 +504,12 @@ export class StreamAdapter {
       const name = functionCall.name;
       const id = functionCall.id;
 
-      if (id && callId && name) {
+      if (callId && name) {
         logger.info(
           `[OpenResponses] Function call streaming started: name=${name}, callId=${callId}, itemId=${id}`,
         );
 
-        // Key by itemId (unique per call) since call_id may be reused
-        this.functionCalls.set(id, {
+        this.functionCalls.set(callId, {
           callId,
           name,
           argumentsBuffer: "",
@@ -521,7 +517,7 @@ export class StreamAdapter {
         });
       } else {
         logger.warn(
-          `[OpenResponses] Function call item missing id, callId, or name: id=${id}, callId=${callId}, name=${name}`,
+          `[OpenResponses] Function call item missing callId or name: callId=${callId}, name=${name}`,
         );
       }
     } else if ("call_id" in item && "name" in item) {
@@ -529,14 +525,13 @@ export class StreamAdapter {
       const fallbackItem = item as FunctionCallItemFallback;
       const callId = fallbackItem.call_id;
       const name = fallbackItem.name;
-      const id = fallbackItem.id ?? callId; // Use callId as fallback if no id
+      const id = fallbackItem.id ?? "";
 
       logger.info(
         `[OpenResponses] Function call detected via call_id/name (no type field): name=${name}, callId=${callId}, itemId=${id}`,
       );
 
-      // Key by itemId (or callId if no itemId available)
-      this.functionCalls.set(id, {
+      this.functionCalls.set(callId, {
         callId,
         name,
         argumentsBuffer: "",
@@ -580,14 +575,11 @@ export class StreamAdapter {
       const callId = functionCall.call_id;
       const argsStr = functionCall.arguments;
       const name = functionCall.name;
-      const itemId = isFunctionCallByType
-        ? (item as FunctionCallItem).id
-        : (item as FunctionCallItemFallback).id ?? callId;
 
-      // Skip if already emitted via function_call_arguments.done (track by itemId)
-      if (this.emittedItemIds.has(itemId)) {
+      // Skip if already emitted via function_call_arguments.done
+      if (this.emittedToolCalls.has(callId)) {
         logger.debug(
-          `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (itemId: ${itemId}, callId: ${callId})`,
+          `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (callId: ${callId})`,
         );
         return { parts: [], done: false };
       }
@@ -600,11 +592,11 @@ export class StreamAdapter {
       }
 
       logger.info(
-        `[OpenResponses] Function call completed via output_item.done: name=${name}, callId=${callId}, itemId=${itemId}`,
+        `[OpenResponses] Function call completed via output_item.done: name=${name}, callId=${callId}`,
       );
 
-      // Remove from tracking (keyed by itemId)
-      this.functionCalls.delete(itemId);
+      // Remove from tracking
+      this.functionCalls.delete(callId);
 
       let parsedArgs: ToolCallArguments = {};
       try {
@@ -615,7 +607,7 @@ export class StreamAdapter {
         );
       }
 
-      this.emittedItemIds.add(itemId);
+      this.emittedToolCalls.add(callId);
 
       return {
         parts: [new LanguageModelToolCallPart(callId, name, parsedArgs)],
@@ -873,16 +865,24 @@ export class StreamAdapter {
     const delta = event.delta;
     const itemId = event.item_id;
 
-    // functionCalls is now keyed by itemId, so direct lookup
-    let state = this.functionCalls.get(itemId);
+    // Find the function call state by item_id
+    // Note: The Vercel AI Gateway sometimes sends call_id in the item_id field,
+    // so we also check if item_id matches the callId key directly
+    let state: FunctionCallState | undefined;
+    for (const s of this.functionCalls.values()) {
+      if (s.itemId === itemId) {
+        state = s;
+        break;
+      }
+    }
 
-    // Fallback: iterate to find by itemId field (in case keying is inconsistent)
+    // Fallback: check if item_id is actually the call_id
     if (!state) {
-      for (const s of this.functionCalls.values()) {
-        if (s.itemId === itemId) {
-          state = s;
-          break;
-        }
+      state = this.functionCalls.get(itemId);
+      if (state) {
+        logger.debug(
+          `[OpenResponses] function_call_arguments.delta: found state via callId lookup (itemId=${itemId})`,
+        );
       }
     }
 
@@ -905,20 +905,31 @@ export class StreamAdapter {
       `[OpenResponses] function_call_arguments.done: itemId=${itemId}, argsLen=${String(finalArguments.length)}`,
     );
 
-    // functionCalls is now keyed by itemId, so direct lookup
-    let foundState = this.functionCalls.get(itemId);
+    // Find the function call state by item_id first
+    let foundCallId: string | undefined;
+    let foundState: FunctionCallState | undefined;
 
-    // Fallback: iterate to find by itemId field (in case keying is inconsistent)
-    if (!foundState) {
-      for (const state of this.functionCalls.values()) {
-        if (state.itemId === itemId) {
-          foundState = state;
-          break;
-        }
+    for (const [callId, state] of this.functionCalls) {
+      if (state.itemId === itemId) {
+        foundCallId = callId;
+        foundState = state;
+        break;
       }
     }
 
-    if (foundState) {
+    // Fallback: check if item_id is actually the call_id
+    // The Vercel AI Gateway sometimes sends call_id in the item_id field
+    if (!foundState) {
+      foundState = this.functionCalls.get(itemId);
+      if (foundState) {
+        foundCallId = itemId;
+        logger.debug(
+          `[OpenResponses] function_call_arguments.done: found state via callId lookup (itemId=${itemId}, name=${foundState.name})`,
+        );
+      }
+    }
+
+    if (foundCallId && foundState) {
       // Use final arguments from done event
       const argsString = finalArguments;
 
@@ -931,20 +942,18 @@ export class StreamAdapter {
         );
       }
 
-      // Clean up state and track emission BY ITEM ID (not call_id!)
-      // This is critical because the gateway sometimes reuses call_id for different items
-      this.functionCalls.delete(itemId);
-      this.emittedItemIds.add(itemId);
+      // Clean up state
+      this.functionCalls.delete(foundCallId);
+      this.emittedToolCalls.add(foundCallId);
 
       logger.info(
-        `[OpenResponses] Emitting tool call via function_call_arguments.done: ${foundState.name} (callId: ${foundState.callId}, itemId: ${itemId})`,
+        `[OpenResponses] Emitting tool call via function_call_arguments.done: ${foundState.name} (callId: ${foundCallId})`,
       );
 
-      // Emit using the call_id for VS Code (that's what Copilot matches against)
       return {
         parts: [
           new LanguageModelToolCallPart(
-            foundState.callId,
+            foundCallId,
             foundState.name,
             parsedArgs,
           ),
@@ -992,7 +1001,7 @@ export class StreamAdapter {
    */
   reset(): void {
     this.functionCalls.clear();
-    this.emittedItemIds.clear();
+    this.emittedToolCalls.clear();
     this.textContent.clear();
     this.refusalContent.clear();
     this.reasoningContent.clear();
