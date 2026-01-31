@@ -21,10 +21,8 @@ function createOpenResponsesError(
   status: number,
   details?: unknown,
 ): OpenResponsesError {
-  const error = new OpenResponsesError(message, { status });
-  // Manually set details since the constructor doesn't accept it directly
-  (error as unknown as { details: unknown }).details = details;
-  return error;
+  // Constructor signature: (message, status, code?, details?)
+  return new OpenResponsesError(message, status, undefined, details);
 }
 
 describe("extractTokenInfoFromDetails", () => {

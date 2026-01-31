@@ -52,7 +52,7 @@ export function translateMessage(
   const openResponsesRole = resolveOpenResponsesRole(role);
 
   logger.trace(
-    `[OpenResponses] translateMessage role=${role} mapped=${openResponsesRole}`,
+    `[OpenResponses] translateMessage role=${String(role)} mapped=${openResponsesRole}`,
   );
 
   // Collect content parts
@@ -102,14 +102,16 @@ export function translateMessage(
       }
 
       // Emit function_call item
+      // Note: part.input may be undefined at runtime despite types
+      const inputValue: unknown = part.input;
       const functionCallItem: FunctionCallItemParam = {
         type: "function_call",
         call_id: part.callId,
         name: part.name,
         arguments:
-          typeof part.input === "string"
-            ? part.input
-            : JSON.stringify(part.input ?? {}),
+          typeof inputValue === "string"
+            ? inputValue
+            : JSON.stringify(inputValue ?? {}),
       };
       items.push(functionCallItem as ItemParam);
     } else if (part instanceof LanguageModelToolResultPart) {

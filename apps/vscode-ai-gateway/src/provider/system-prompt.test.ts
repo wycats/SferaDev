@@ -87,8 +87,16 @@ import {
   extractMessageText,
   extractDisguisedSystemPrompt,
 } from "./system-prompt.js";
+import type { LanguageModelChatMessage } from "vscode";
 
 const { MockLanguageModelChatMessage, MockLanguageModelTextPart } = hoisted;
+
+// Type helpers to avoid `as any` while keeping test readability
+// The mock classes implement the same interface as the real VS Code classes
+type MockMessage = InstanceType<typeof MockLanguageModelChatMessage>;
+const asMessage = (m: MockMessage) => m as unknown as LanguageModelChatMessage;
+const asMessages = (m: MockMessage[]) =>
+  m as unknown as readonly LanguageModelChatMessage[];
 
 describe("system-prompt", () => {
   describe("VSCODE_SYSTEM_ROLE", () => {
@@ -106,13 +114,13 @@ describe("system-prompt", () => {
       const messages = [
         MockLanguageModelChatMessage.System("You are a helpful assistant."),
       ];
-      const result = extractSystemPrompt(messages as any);
+      const result = extractSystemPrompt(asMessages(messages));
       expect(result).toBe("You are a helpful assistant.");
     });
 
     it("should return undefined for User role message", () => {
       const messages = [MockLanguageModelChatMessage.User("Hello")];
-      const result = extractSystemPrompt(messages as any);
+      const result = extractSystemPrompt(asMessages(messages));
       expect(result).toBeUndefined();
     });
 
@@ -122,7 +130,7 @@ describe("system-prompt", () => {
           "You are a helpful coding assistant.",
         ),
       ];
-      const result = extractSystemPrompt(messages as any);
+      const result = extractSystemPrompt(asMessages(messages));
       expect(result).toBe("You are a helpful coding assistant.");
     });
 
@@ -130,7 +138,7 @@ describe("system-prompt", () => {
       const messages = [
         MockLanguageModelChatMessage.Assistant("Hello, how can I help you?"),
       ];
-      const result = extractSystemPrompt(messages as any);
+      const result = extractSystemPrompt(asMessages(messages));
       expect(result).toBeUndefined();
     });
 
@@ -141,7 +149,7 @@ describe("system-prompt", () => {
           new MockLanguageModelTextPart("Part two."),
         ]),
       ];
-      const result = extractSystemPrompt(messages as any);
+      const result = extractSystemPrompt(asMessages(messages));
       expect(result).toBe("Part one. Part two.");
     });
   });
@@ -149,7 +157,7 @@ describe("system-prompt", () => {
   describe("extractMessageText", () => {
     it("should extract text from array content", () => {
       const message = MockLanguageModelChatMessage.User("Hello world");
-      const result = extractMessageText(message as any);
+      const result = extractMessageText(asMessage(message));
       expect(result).toBe("Hello world");
     });
 
@@ -158,25 +166,25 @@ describe("system-prompt", () => {
         new MockLanguageModelTextPart("Hello "),
         new MockLanguageModelTextPart("world"),
       ]);
-      const result = extractMessageText(message as any);
+      const result = extractMessageText(asMessage(message));
       expect(result).toBe("Hello world");
     });
 
     it("should return undefined for empty content", () => {
       const message = new MockLanguageModelChatMessage(1, []);
-      const result = extractMessageText(message as any);
+      const result = extractMessageText(asMessage(message));
       expect(result).toBeUndefined();
     });
 
     it("should trim whitespace", () => {
       const message = MockLanguageModelChatMessage.User("  trimmed  ");
-      const result = extractMessageText(message as any);
+      const result = extractMessageText(asMessage(message));
       expect(result).toBe("trimmed");
     });
 
     it("should return undefined for whitespace-only content", () => {
       const message = MockLanguageModelChatMessage.User("   ");
-      const result = extractMessageText(message as any);
+      const result = extractMessageText(asMessage(message));
       expect(result).toBeUndefined();
     });
   });
@@ -186,7 +194,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "You are a helpful assistant.",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe("You are a helpful assistant.");
     });
 
@@ -194,7 +202,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "You are an expert programmer.",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe("You are an expert programmer.");
     });
 
@@ -202,7 +210,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "<instructions>Follow these rules...</instructions>",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe("<instructions>Follow these rules...</instructions>");
     });
 
@@ -210,7 +218,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "<system>You are helpful.</system>",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe("<system>You are helpful.</system>");
     });
 
@@ -218,7 +226,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "As an AI assistant, I will help you.",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe("As an AI assistant, I will help you.");
     });
 
@@ -226,7 +234,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "Your role is to assist with coding.",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe("Your role is to assist with coding.");
     });
 
@@ -234,7 +242,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "You're a coding expert.",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe("You're a coding expert.");
     });
 
@@ -242,7 +250,7 @@ describe("system-prompt", () => {
       const message = MockLanguageModelChatMessage.Assistant(
         "Hello, how can I help you today?",
       );
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBeUndefined();
     });
 
@@ -250,27 +258,27 @@ describe("system-prompt", () => {
       const longMessage =
         "x".repeat(1001) + " follow the user and you must help them";
       const message = MockLanguageModelChatMessage.Assistant(longMessage);
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBe(longMessage);
     });
 
     it("should not trigger on short messages with keywords", () => {
       const shortMessage = "follow the user and you must help";
       const message = MockLanguageModelChatMessage.Assistant(shortMessage);
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBeUndefined();
     });
 
     it("should not trigger on long messages with <2 keywords", () => {
       const longMessage = "x".repeat(1001) + " follow the user";
       const message = MockLanguageModelChatMessage.Assistant(longMessage);
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBeUndefined();
     });
 
     it("should return undefined for empty message", () => {
       const message = MockLanguageModelChatMessage.Assistant("");
-      const result = extractDisguisedSystemPrompt(message as any);
+      const result = extractDisguisedSystemPrompt(asMessage(message));
       expect(result).toBeUndefined();
     });
   });

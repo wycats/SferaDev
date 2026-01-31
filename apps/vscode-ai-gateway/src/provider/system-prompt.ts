@@ -27,13 +27,13 @@ export const VSCODE_SYSTEM_ROLE = 3;
 export function extractSystemPrompt(
   messages: readonly LanguageModelChatMessage[],
 ): string | undefined {
-  if (messages.length === 0) return undefined;
-
   const firstMessage = messages[0];
+  if (!firstMessage) return undefined;
 
   // Check for VS Code System role (proposed API, role=3)
   // Cast to number for comparison since it's not in stable types
   const messageRole = firstMessage.role as number;
+  const assistantRole = LanguageModelChatMessageRole.Assistant as number;
 
   logger.info(
     `[OpenResponses] System prompt check: first message role=${String(messageRole)}, expected System=${String(VSCODE_SYSTEM_ROLE)}`,
@@ -42,7 +42,7 @@ export function extractSystemPrompt(
   if (messageRole !== VSCODE_SYSTEM_ROLE) {
     // Not a system message - check if it might be a disguised system prompt
     // (older behavior where system was sent as Assistant)
-    if (messageRole === LanguageModelChatMessageRole.Assistant) {
+    if (messageRole === assistantRole) {
       return extractDisguisedSystemPrompt(firstMessage);
     }
     return undefined;
