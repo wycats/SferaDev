@@ -1,17 +1,14 @@
 import type { ItemParam } from "openresponses-client";
 
+/** Separator used when merging consecutive same-role messages */
+const MESSAGE_SEPARATOR = "\n\n---\n\n";
+
 /**
  * Consolidate consecutive messages with the same role into single messages.
  *
  * Claude models expect alternating user/assistant roles. When tool results
  * are emitted as separate user messages, patterns like user→user→user cause
  * degraded model behavior (stopping early, not calling tools).
- *
- * This function merges consecutive same-role messages by concatenating their
- * text content with a separator.
- *
- * @param items - Array of message items to consolidate
- * @returns Consolidated array with no consecutive same-role messages
  */
 export function consolidateConsecutiveMessages(
   items: ItemParam[],
@@ -22,7 +19,6 @@ export function consolidateConsecutiveMessages(
   let currentRole: string | null = null;
   let currentContent: string[] = [];
 
-  // Helper to get role from an item
   function getRole(item: ItemParam): string | null {
     if (item.type === "message" && "role" in item) {
       return item.role;
@@ -30,7 +26,6 @@ export function consolidateConsecutiveMessages(
     return null;
   }
 
-  // Helper to get text content from an item
   function getTextContent(item: ItemParam): string | null {
     if (item.type !== "message" || !("content" in item)) return null;
     const content = item.content;
@@ -40,7 +35,6 @@ export function consolidateConsecutiveMessages(
     }
 
     if (Array.isArray(content)) {
-      // Extract text from content arrays
       const textParts = content
         .filter(
           (part): part is { type: string; text: string } =>
@@ -56,14 +50,12 @@ export function consolidateConsecutiveMessages(
     return null;
   }
 
-  // Helper to flush accumulated content as a message
   function flushMessage(): void {
     if (currentRole && currentContent.length > 0) {
-      const mergedText = currentContent.join("\n\n---\n\n");
       result.push({
         type: "message",
         role: currentRole as "user" | "assistant" | "developer",
-        content: mergedText,
+        content: currentContent.join(MESSAGE_SEPARATOR),
       } as ItemParam);
     }
     currentContent = [];

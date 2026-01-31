@@ -2,11 +2,8 @@
  * Request Builder
  *
  * Translates VS Code chat requests to OpenResponses API format.
- * Orchestrates the full translation pipeline:
- * - System prompt extraction and injection
- * - Message translation via message-translation.ts
- * - Message consolidation for Claude compatibility
- * - Tool conversion to OpenResponses format
+ * Orchestrates the translation pipeline: system prompt extraction,
+ * message translation, consolidation, and tool conversion.
  */
 
 import type { FunctionToolParam, ItemParam } from "openresponses-client";
@@ -18,20 +15,16 @@ import {
 import type { ConfigService } from "../config.js";
 import { logger } from "../logger.js";
 import { consolidateConsecutiveMessages } from "./message-consolidation.js";
-import { buildToolNameMap, translateMessage } from "./message-translation.js";
+import { translateMessage } from "./message-translation.js";
 import { extractSystemPrompt } from "./system-prompt.js";
 
 /**
  * Result of translating a VS Code chat request to OpenResponses format.
  */
 export interface TranslateRequestResult {
-  /** Translated input items for the API */
   input: ItemParam[];
-  /** System/developer instructions (if any) */
   instructions?: string;
-  /** Converted tool definitions */
   tools: FunctionToolParam[];
-  /** Tool choice mode */
   toolChoice: "auto" | "required" | "none";
 }
 
@@ -60,81 +53,53 @@ export function translateRequest(
     instructions = systemPromptMessage;
   }
 
-  // Build tool name map for resolving tool result -> tool call relationships
-  const toolNameMap = buildToolNameMap(messages);
-
   // Handle VS Code System role (proposed API): VS Code Copilot sends the system
   // prompt using role=3 (System). We extract it and use the `instructions` field.
   let messagesToProcess = messages;
   const systemPromptFromMessages = extractSystemPrompt(messages);
   if (systemPromptFromMessages) {
     logger.info(
-      `[OpenResponses] Extracted system prompt (${systemPromptFromMessages.length.toString()} chars) from VS Code System role, using as instructions`,
+      `[OpenResponses] Extracted system prompt (${systemPromptFromMessages.length} chars) from VS Code System role`,
     );
-    // Use the system prompt as instructions (may override config-based instructions)
     instructions = systemPromptFromMessages;
-    // Skip the first message when processing
     messagesToProcess = messages.slice(1);
   }
 
   // Convert each message
   for (const message of messagesToProcess) {
-    const translated = translateMessage(message, toolNameMap);
-    input.push(...translated);
+    input.push(...translateMessage(message));
   }
 
-  // CRITICAL: Filter out any items with empty content to prevent API 400 errors
-  // This can happen when messages contain only unsupported parts (e.g., tool calls
-  // that we intentionally skip, or data parts in assistant roles)
+  // Filter out empty messages to prevent API 400 errors
   const validInput = input.filter((item) => {
-    if (item.type !== "message") return true; // Non-message items are kept
+    if (item.type !== "message") return true;
     const msg = item as { content?: string | unknown[] };
-    if (typeof msg.content === "string") {
-      return msg.content.length > 0;
-    }
-    if (Array.isArray(msg.content)) {
-      return msg.content.length > 0;
-    }
-    return true; // Keep if content is not string or array (shouldn't happen)
+    if (typeof msg.content === "string") return msg.content.length > 0;
+    if (Array.isArray(msg.content)) return msg.content.length > 0;
+    return true;
   });
 
-  // Log if we filtered anything
   if (validInput.length !== input.length) {
-    logger.warn(
-      `[OpenResponses] Filtered ${(input.length - validInput.length).toString()} empty message(s) from input`,
-    );
+    logger.warn(`[OpenResponses] Filtered ${input.length - validInput.length} empty message(s)`);
   }
 
-  // CRITICAL FIX #1: Consolidate consecutive same-role messages.
-  // Claude models expect alternating user/assistant messages. When tool results
-  // are emitted as separate user messages, we get patterns like user→user→user
-  // which causes the model to stop early with minimal output.
+  // Consolidate consecutive same-role messages for Claude compatibility
   // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
   const consolidatedInput = consolidateConsecutiveMessages(validInput);
   if (consolidatedInput.length !== validInput.length) {
-    logger.info(
-      `[OpenResponses] Consolidated ${validInput.length.toString()} messages to ${consolidatedInput.length.toString()} (merged consecutive same-role messages)`,
-    );
+    logger.info(`[OpenResponses] Consolidated ${validInput.length} → ${consolidatedInput.length} messages`);
   }
 
-  // CRITICAL FIX #2: Prepend system prompt as a `developer` message for non-OpenAI providers.
-  // The Vercel AI Gateway only passes `instructions` via `providerOptions.openai.instructions`,
-  // which is ignored by Anthropic and other providers. By prepending a `developer` role message,
-  // the gateway's convertMessageItem() converts it to a system message that works universally.
-  // We keep `instructions` for OpenAI compatibility but also add a developer message for others.
+  // Prepend developer message for non-OpenAI providers (they ignore `instructions` field)
   let finalInput = consolidatedInput;
   if (instructions) {
-    // NOTE: The API requires message content to be a STRING, not an array.
-    // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
     const developerMessage: ItemParam = {
       type: "message",
       role: "developer",
       content: instructions,
     };
     finalInput = [developerMessage, ...consolidatedInput];
-    logger.info(
-      `[OpenResponses] Prepended developer message (${instructions.length.toString()} chars) for non-OpenAI provider compatibility`,
-    );
+    logger.info(`[OpenResponses] Prepended developer message (${instructions.length} chars)`);
   }
 
   // Convert tools

@@ -65,16 +65,13 @@ export function buildToolNameMap(
  */
 export function translateMessage(
   message: LanguageModelChatMessage,
-  _toolNameMap: Map<string, string>,
 ): ItemParam[] {
-  void _toolNameMap;
   const items: ItemParam[] = [];
   const role = message.role;
   const openResponsesRole = resolveOpenResponsesRole(role);
 
-  // DEBUG: Log the incoming role
   logger.trace(
-    `[OpenResponses] translateMessage role=${String(role)} (User=${String(LanguageModelChatMessageRole.User)}, Assistant=${String(LanguageModelChatMessageRole.Assistant)}) mapped=${openResponsesRole}`,
+    `[OpenResponses] translateMessage role=${role} mapped=${openResponsesRole}`,
   );
 
   // Collect content parts
@@ -84,9 +81,7 @@ export function translateMessage(
 
   for (const part of message.content) {
     if (part instanceof LanguageModelTextPart) {
-      // Text content
-      // Use input_text for User role, and also for unknown roles (which become user messages)
-      // Only use output_text for Assistant role
+      // Use input_text for User role, output_text for Assistant
       if (openResponsesRole === "assistant") {
         contentParts.push({
           type: "output_text",
@@ -199,82 +194,37 @@ export function createMessageItem(
     | OutputTextContentParam
   )[],
 ): ItemParam | null {
-  // Convert content array to string
-  // For text-only content: concatenate all text parts
-  // For mixed content (text + images): use array format (but this is rare)
+  // Helper to extract and join text from content parts
+  const joinText = () =>
+    content
+      .map((part) => ("text" in part ? part.text : ""))
+      .join("")
+      .trim();
 
-  // Check if content is text-only
+  // Text-only content → single string
   const textOnly = content.every(
     (part) => part.type === "input_text" || part.type === "output_text",
   );
 
   if (textOnly) {
-    // Concatenate all text parts into a single string
-    const textContent = content
-      .map((part) => ("text" in part ? part.text : ""))
-      .join("");
-    if (textContent.trim() === "") {
-      return null;
-    }
+    const text = joinText();
+    return text ? ({ type: "message", role, content: text } as ItemParam) : null;
+  }
 
+  // Mixed content (has images) - only user messages support this
+  if (role === "user") {
+    const filtered = content.filter((part) =>
+      "text" in part ? part.text.length > 0 : true,
+    );
+    if (filtered.length === 0) return null;
     return {
       type: "message",
-      role,
-      content: textContent,
-    } as ItemParam;
+      role: "user",
+      content: filtered as (InputTextContentParam | InputImageContentParamAutoParam)[],
+    };
   }
 
-  // For mixed content (has images), keep as array
-  // This is mainly for user messages with images
-  switch (role) {
-    case "user": {
-      // For user with mixed content, keep the array but filter empty items
-      const filteredContent = content.filter((part) => {
-        if ("text" in part) return part.text.length > 0;
-        return true; // Keep images
-      });
-      if (filteredContent.length === 0) {
-        return null;
-      }
-      return {
-        type: "message",
-        role: "user",
-        content: filteredContent as (
-          | InputTextContentParam
-          | InputImageContentParamAutoParam
-        )[],
-      };
-    }
-
-    case "assistant": {
-      // Assistant should never have images, so this shouldn't happen
-      // But if it does, convert to text
-      const assText = content
-        .map((part) => ("text" in part ? part.text : ""))
-        .join("");
-      if (assText.trim() === "") {
-        return null;
-      }
-      return {
-        type: "message",
-        role: "assistant",
-        content: assText,
-      };
-    }
-
-    case "developer": {
-      // Developer messages are typically text-only
-      const devText = content
-        .map((part) => ("text" in part ? part.text : ""))
-        .join("");
-      if (devText.trim() === "") {
-        return null;
-      }
-      return {
-        type: "message",
-        role: "developer",
-        content: devText,
-      };
-    }
-  }
+  // Assistant/developer with mixed content (shouldn't happen) → fallback to text
+  const text = joinText();
+  return text ? ({ type: "message", role, content: text } as ItemParam) : null;
 }
