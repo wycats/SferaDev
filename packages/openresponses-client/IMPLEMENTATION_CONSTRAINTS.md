@@ -59,24 +59,26 @@ correctly converts `developer` → `system` for all providers including Anthropi
 
 ---
 
-### 2. Consecutive Same-Role Messages Cause Model Confusion
+### 2. Consecutive Same-Role Messages Can Cause Model Confusion
 
-**Observed Behavior**: When multiple consecutive messages have the same role
-(e.g., `user, user, user`), Claude models may:
+**Observed Behavior**: In some model/provider combinations, multiple consecutive
+messages with the same role (e.g., `user, user, user`) can lead to degraded
+behavior. However, the gateway **accepts** consecutive same-role messages without
+validation errors.
 
 - Output minimal text like "Now let's run the tests:" and stop
 - Fail to call tools even when tools are clearly needed
 - Return `stop_reason: "stop"` with 10-30 output tokens
 
-**Root Cause**: The Anthropic API expects alternating user/assistant messages.
-While the API may accept consecutive same-role messages, the model's behavior
-degrades significantly.
+**Root Cause**: This appears to be a model-level behavior rather than an API
+constraint. Some providers (notably Anthropic) are more sensitive to alternating
+roles, but the gateway does not enforce alternation.
 
 **Common Trigger**: Tool results being emitted as separate user messages creates
 `assistant → user → user → user` patterns when multiple tools are called.
 
-**Workaround**: Consolidate consecutive same-role messages into a single message
-before sending to the API:
+**Optional Workaround**: Consolidate consecutive same-role messages into a
+single message if you observe degraded model behavior:
 
 ```typescript
 // BAD: Creates user, user, user pattern
@@ -129,6 +131,16 @@ items in the input array. This allows proper reconstruction of tool call history
 }
 ```
 
+### 1a. Additional OpenAI-Only Pass-Through Fields
+
+In addition to `instructions`, the gateway treats the following fields as
+OpenAI-only pass-throughs. They are forwarded via `providerOptions.openai` and
+are ignored by non-OpenAI providers:
+
+- `parallel_tool_calls`
+- `response_format`
+- `max_output_tokens`
+
 **Important**: The `function_call` item can appear directly after a user message;
 an explicit assistant message is no longer required before the tool call.
 
@@ -145,14 +157,16 @@ content. This causes the model to mimic the format, producing hallucinated calls
 - `content: string`
 - `content: OutputTextContentParam[]` (array with `type: "output_text"`)
 
-**Reality**: For INPUT messages, the implementation expects:
+**Reality**: For INPUT messages, the implementation accepts:
 
 - `content: string` ✅ (preferred, most reliable)
 - `content: InputTextContentParam[]` with `type: "input_text"` ✅
+- `content: OutputTextContentParam[]` with `type: "output_text"` ✅
 
-Using `output_text` in input assistant messages causes validation errors.
+Both `input_text` and `output_text` arrays are accepted for assistant messages
+in input.
 
-**Recommendation**: Always use plain string content for assistant messages in input:
+**Recommendation**: Prefer plain string content for assistant messages in input:
 
 ```json
 {
@@ -164,13 +178,14 @@ Using `output_text` in input assistant messages causes validation errors.
 
 ---
 
-### 5. `function_call_output` Requires Preceding `function_call`
+### 5. `function_call_output` and Preceding `function_call`
 
 **OpenAPI Spec Says**: `function_call_output` is a standalone item type.
 
-**Reality**: The underlying LLM providers (Anthropic, OpenAI) expect tool results
-to have corresponding tool_use/tool_call blocks. The gateway does NOT synthesize
-these from `function_call_output` alone.
+**Reality**: The gateway accepts orphaned `function_call_output` items, but the
+underlying LLM providers (Anthropic, OpenAI) often expect tool results to have
+corresponding tool_use/tool_call blocks. The gateway does NOT synthesize these
+from `function_call_output` alone.
 
 **Error Example** (from Anthropic API via Vercel AI Gateway):
 
@@ -179,8 +194,8 @@ these from `function_call_output` alone.
 the number of toolUse blocks of previous turn."
 ```
 
-**Solution**: Always include the corresponding `function_call` item before
-`function_call_output`:
+**Recommendation**: Include the corresponding `function_call` item before
+`function_call_output` to avoid provider-level errors or degraded results:
 
 ```json
 {
@@ -234,7 +249,15 @@ For **input** messages (user, assistant, developer), use:
 - `input_image` for images
 - `input_file` for files
 
-Do NOT use `output_text` in input messages.
+**Additional gateway filtering behavior** (based on code review):
+
+- **User messages**: The gateway only processes `input_text`, `input_image`,
+  `input_file`, and `input_video`. Other content types (including `output_text`)
+  are ignored.
+- **Assistant messages (input)**: The gateway retains only `input_text` and
+  `output_text` parts. Non-text content types are filtered out.
+- **System/developer messages**: Only `input_text` is processed; other content
+  types are filtered out.
 
 ### 9. Output Content Types
 
@@ -248,21 +271,21 @@ The API **returns** (in responses):
 
 ## Empirical Test Results
 
-### Tested: 2026-01-31 (updated)
+### Tested: 2026-01-31 (verified)
 
-| Payload Type                                    | Result            | Notes                           |
-| ----------------------------------------------- | ----------------- | ------------------------------- |
-| Minimal user message                            | ✅ Success        | Basic case works                |
-| Developer + user messages                       | ✅ Success        | `role: "developer"` works       |
-| Message with tools defined                      | ✅ Success        | Tool schema accepted            |
-| Multi-turn with string assistant content        | ✅ Success        | Preferred format                |
-| Multi-turn with `output_text` array             | ❌ 400 Error      | Wrong content type for input    |
-| `function_call` as input item                   | ✅ Success        | **NOW WORKS** (gateway updated) |
-| `function_call` + `function_call_output` pair   | ✅ Success        | **Recommended approach**        |
-| `function_call_output` alone (no function_call) | ❌ Provider Error | Missing tool_use context        |
-| Consecutive user messages (3+)                  | ⚠️ Degraded       | Model stops early               |
-| `instructions` field with Anthropic             | ⚠️ Ignored        | Not passed to non-OpenAI        |
-| `developer` message with Anthropic              | ✅ Success        | Converted to system message     |
+| Payload Type                                    | Result      | Notes                           |
+| ----------------------------------------------- | ----------- | ------------------------------- |
+| Minimal user message                            | ✅ Success  | Basic case works                |
+| Developer + user messages                       | ✅ Success  | `role: "developer"` works       |
+| Message with tools defined                      | ✅ Success  | Tool schema accepted            |
+| Multi-turn with string assistant content        | ✅ Success  | Preferred format                |
+| Multi-turn with `output_text` array             | ✅ Success  | Accepted for assistant input    |
+| `function_call` as input item                   | ✅ Success  | **NOW WORKS** (gateway updated) |
+| `function_call` + `function_call_output` pair   | ✅ Success  | **Recommended approach**        |
+| `function_call_output` alone (no function_call) | ⚠️ Degraded | Provider-level confusion        |
+| Consecutive user messages (3+)                  | ✅ Success  | Behavioral issues possible      |
+| `instructions` field with Anthropic             | ⚠️ Ignored  | Not passed to non-OpenAI        |
+| `developer` message with Anthropic              | ✅ Success  | Converted to system message     |
 
 ---
 
@@ -274,11 +297,12 @@ The API **returns** (in responses):
 2. **For tool calls in history**: Use `function_call` + `function_call_output` pairs.
    This is now supported and is the cleanest approach.
 
-3. **For assistant messages in history**: Use plain string `content`, not arrays.
+3. **For assistant messages in history**: Prefer plain string `content`. Arrays
+   with `input_text` or `output_text` are accepted, but keep them text-only.
    Do NOT include tool call text representations - this causes hallucinations.
 
-4. **For message structure**: Consolidate consecutive same-role messages before
-   sending to avoid model confusion (especially with Claude models).
+4. **For user messages**: Use `input_text` for text content. `output_text` parts
+   are ignored for user messages by the gateway.
 
 5. **Avoid in assistant content**:
    - Tool call summaries like `[Tool Call: ...]`
