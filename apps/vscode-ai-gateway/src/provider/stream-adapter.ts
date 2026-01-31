@@ -843,11 +843,28 @@ export class StreamAdapter {
     const itemId = event.item_id;
 
     // Find the function call state by item_id
-    for (const state of this.functionCalls.values()) {
-      if (state.itemId === itemId) {
-        state.argumentsBuffer += delta;
+    // Note: The Vercel AI Gateway sometimes sends call_id in the item_id field,
+    // so we also check if item_id matches the callId key directly
+    let state: FunctionCallState | undefined;
+    for (const s of this.functionCalls.values()) {
+      if (s.itemId === itemId) {
+        state = s;
         break;
       }
+    }
+    
+    // Fallback: check if item_id is actually the call_id
+    if (!state) {
+      state = this.functionCalls.get(itemId);
+      if (state) {
+        logger.debug(
+          `[OpenResponses] function_call_arguments.delta: found state via callId lookup (itemId=${itemId})`,
+        );
+      }
+    }
+
+    if (state) {
+      state.argumentsBuffer += delta;
     }
 
     // We don't emit anything during delta streaming for tool calls
@@ -865,40 +882,60 @@ export class StreamAdapter {
       `[OpenResponses] function_call_arguments.done: itemId=${itemId}, argsLen=${String(finalArguments.length)}`,
     );
 
-    // Find and emit the complete function call
+    // Find the function call state by item_id first
+    let foundCallId: string | undefined;
+    let foundState: FunctionCallState | undefined;
+
     for (const [callId, state] of this.functionCalls) {
       if (state.itemId === itemId) {
-        // Use final arguments from done event, or buffered
-        const argsString = finalArguments;
-
-        let parsedArgs: ToolCallArguments = {};
-        try {
-          parsedArgs = JSON.parse(argsString) as ToolCallArguments;
-        } catch (e) {
-          logger.warn(
-            `[OpenResponses] Failed to parse function call args in args.done: ${e instanceof Error ? e.message : String(e)}`,
-          );
-        }
-
-        // Clean up state
-        this.functionCalls.delete(callId);
-
-        this.emittedToolCalls.add(callId);
-
-        logger.info(
-          `[OpenResponses] Emitting tool call via function_call_arguments.done: ${state.name} (callId: ${callId})`,
-        );
-
-        return {
-          parts: [
-            new LanguageModelToolCallPart(callId, state.name, parsedArgs),
-          ],
-          done: false,
-        };
+        foundCallId = callId;
+        foundState = state;
+        break;
       }
     }
 
-    // Log if we didn't find the function call - this indicates a bug
+    // Fallback: check if item_id is actually the call_id
+    // The Vercel AI Gateway sometimes sends call_id in the item_id field
+    if (!foundState) {
+      foundState = this.functionCalls.get(itemId);
+      if (foundState) {
+        foundCallId = itemId;
+        logger.debug(
+          `[OpenResponses] function_call_arguments.done: found state via callId lookup (itemId=${itemId}, name=${foundState.name})`,
+        );
+      }
+    }
+
+    if (foundCallId && foundState) {
+      // Use final arguments from done event
+      const argsString = finalArguments;
+
+      let parsedArgs: ToolCallArguments = {};
+      try {
+        parsedArgs = JSON.parse(argsString) as ToolCallArguments;
+      } catch (e) {
+        logger.warn(
+          `[OpenResponses] Failed to parse function call args in args.done: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+
+      // Clean up state
+      this.functionCalls.delete(foundCallId);
+      this.emittedToolCalls.add(foundCallId);
+
+      logger.info(
+        `[OpenResponses] Emitting tool call via function_call_arguments.done: ${foundState.name} (callId: ${foundCallId})`,
+      );
+
+      return {
+        parts: [
+          new LanguageModelToolCallPart(foundCallId, foundState.name, parsedArgs),
+        ],
+        done: false,
+      };
+    }
+
+    // Log if we didn't find the function call - this indicates a bug or timing issue
     logger.warn(
       `[OpenResponses] function_call_arguments.done received but no matching function call found for itemId=${itemId}. ` +
         `Tracked function calls: ${
