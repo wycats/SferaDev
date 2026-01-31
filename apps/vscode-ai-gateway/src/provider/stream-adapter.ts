@@ -336,7 +336,11 @@ export class StreamAdapter {
       status?: string;
       incomplete_details?: unknown;
     };
-    if (rawResponse.stop_reason || rawResponse.status || rawResponse.incomplete_details) {
+    if (
+      rawResponse.stop_reason ||
+      rawResponse.status ||
+      rawResponse.incomplete_details
+    ) {
       logger.info(
         `[OpenResponses] Response metadata: stop_reason=${rawResponse.stop_reason ?? "n/a"}, status=${rawResponse.status ?? "n/a"}, incomplete_details=${JSON.stringify(rawResponse.incomplete_details ?? null)}`,
       );

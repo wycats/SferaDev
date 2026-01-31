@@ -623,19 +623,31 @@ function translateRequest(
     );
   }
 
-  // CRITICAL FIX: Prepend system prompt as a `developer` message for non-OpenAI providers.
+  // CRITICAL FIX #1: Consolidate consecutive same-role messages.
+  // Claude models expect alternating user/assistant messages. When tool results
+  // are emitted as separate user messages, we get patterns like user→user→user
+  // which causes the model to stop early with minimal output.
+  // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
+  const consolidatedInput = consolidateConsecutiveMessages(validInput);
+  if (consolidatedInput.length !== validInput.length) {
+    logger.info(
+      `[OpenResponses] Consolidated ${validInput.length.toString()} messages to ${consolidatedInput.length.toString()} (merged consecutive same-role messages)`,
+    );
+  }
+
+  // CRITICAL FIX #2: Prepend system prompt as a `developer` message for non-OpenAI providers.
   // The Vercel AI Gateway only passes `instructions` via `providerOptions.openai.instructions`,
   // which is ignored by Anthropic and other providers. By prepending a `developer` role message,
   // the gateway's convertMessageItem() converts it to a system message that works universally.
   // We keep `instructions` for OpenAI compatibility but also add a developer message for others.
-  let finalInput = validInput;
+  let finalInput = consolidatedInput;
   if (instructions) {
     const developerMessage: ItemParam = {
       type: "message",
       role: "developer",
       content: [{ type: "input_text", text: instructions }],
     };
-    finalInput = [developerMessage, ...validInput];
+    finalInput = [developerMessage, ...consolidatedInput];
     logger.info(
       `[OpenResponses] Prepended developer message (${instructions.length.toString()} chars) for non-OpenAI provider compatibility`,
     );
@@ -673,6 +685,103 @@ function translateRequest(
   }
 
   return { input: finalInput, tools, toolChoice };
+}
+
+/**
+ * Consolidate consecutive messages with the same role into single messages.
+ *
+ * Claude models expect alternating user/assistant roles. When tool results
+ * are emitted as separate user messages, patterns like user→user→user cause
+ * degraded model behavior (stopping early, not calling tools).
+ *
+ * This function merges consecutive same-role messages by concatenating their
+ * text content with a separator.
+ *
+ * @param items - Array of message items to consolidate
+ * @returns Consolidated array with no consecutive same-role messages
+ */
+function consolidateConsecutiveMessages(items: ItemParam[]): ItemParam[] {
+  if (items.length === 0) return items;
+
+  const result: ItemParam[] = [];
+  let currentRole: string | null = null;
+  let currentContent: string[] = [];
+
+  // Helper to get role from an item
+  function getRole(item: ItemParam): string | null {
+    if (item.type === "message" && "role" in item) {
+      return item.role;
+    }
+    return null;
+  }
+
+  // Helper to get text content from an item
+  function getTextContent(item: ItemParam): string | null {
+    if (item.type !== "message" || !("content" in item)) return null;
+    const content = item.content;
+
+    if (typeof content === "string") {
+      return content;
+    }
+
+    if (Array.isArray(content)) {
+      // Extract text from content arrays
+      const textParts = content
+        .filter(
+          (part): part is { type: string; text: string } =>
+            "type" in part &&
+            (part.type === "input_text" || part.type === "output_text") &&
+            "text" in part,
+        )
+        .map((part) => part.text);
+
+      return textParts.length > 0 ? textParts.join("\n") : null;
+    }
+
+    return null;
+  }
+
+  // Helper to flush accumulated content as a message
+  function flushMessage(): void {
+    if (currentRole && currentContent.length > 0) {
+      const mergedText = currentContent.join("\n\n---\n\n");
+      result.push({
+        type: "message",
+        role: currentRole as "user" | "assistant" | "developer",
+        content: mergedText,
+      } as ItemParam);
+    }
+    currentContent = [];
+  }
+
+  for (const item of items) {
+    const role = getRole(item);
+    const text = getTextContent(item);
+
+    // Non-message items (like function_call_output) pass through as-is
+    if (role === null) {
+      flushMessage();
+      result.push(item);
+      currentRole = null;
+      continue;
+    }
+
+    // If role changed, flush and start new accumulation
+    if (role !== currentRole) {
+      flushMessage();
+      currentRole = role;
+    }
+
+    // Accumulate text content
+    if (text) {
+      currentContent.push(text);
+    }
+  }
+
+  // Flush any remaining content
+  flushMessage();
+
+  return result;
 }
 
 /**

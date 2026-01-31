@@ -10,6 +10,7 @@ VS Code Copilot uses the **proposed System role** (role=3) to send system prompt
 See: `vscode.proposed.languageModelSystem.d.ts`
 
 Without this extraction:
+
 - The system prompt gets translated as a regular message
 - Claude sees incorrect conversation structure
 - Tool calling breaks
