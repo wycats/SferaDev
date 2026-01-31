@@ -405,6 +405,21 @@ export class StreamAdapter {
       );
     }
 
+    // DIAGNOSTIC: Log if there are pending function calls that were never completed
+    if (this.functionCalls.size > 0) {
+      const pending = Array.from(this.functionCalls.entries())
+        .map(([callId, state]) => `${state.name}(${callId})`)
+        .join(", ");
+      logger.warn(
+        `[OpenResponses] INCOMPLETE FUNCTION CALLS at stream end: ${this.functionCalls.size.toString()} pending: ${pending}`,
+      );
+    }
+
+    // DIAGNOSTIC: Log total emitted tool calls
+    logger.debug(
+      `[OpenResponses] Total tool calls emitted during stream: ${this.emittedToolCalls.size.toString()}`,
+    );
+
     return {
       parts,
       usage,
@@ -852,7 +867,7 @@ export class StreamAdapter {
         break;
       }
     }
-    
+
     // Fallback: check if item_id is actually the call_id
     if (!state) {
       state = this.functionCalls.get(itemId);
@@ -929,7 +944,11 @@ export class StreamAdapter {
 
       return {
         parts: [
-          new LanguageModelToolCallPart(foundCallId, foundState.name, parsedArgs),
+          new LanguageModelToolCallPart(
+            foundCallId,
+            foundState.name,
+            parsedArgs,
+          ),
         ],
         done: false,
       };

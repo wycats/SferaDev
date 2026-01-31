@@ -221,6 +221,7 @@ export async function executeOpenResponsesChat(
     let toolCallCount = 0;
     let textPartCount = 0;
     let eventCount = 0;
+    let functionCallEventsReceived = 0;
     const eventTypeCounts = new Map<string, number>();
     for await (const event of client.createStreamingResponse(
       requestBody,
@@ -229,6 +230,15 @@ export async function executeOpenResponsesChat(
       eventCount++;
       const eventType = (event as { type?: string }).type ?? "unknown";
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
+      
+      // Track function call related events specifically
+      if (eventType.includes("function_call") || eventType.includes("output_item")) {
+        functionCallEventsReceived++;
+        logger.debug(
+          `[OpenResponses] Function-related event #${functionCallEventsReceived.toString()}: ${eventType}`,
+        );
+      }
+      
       if (eventCount <= 25) {
         logger.trace(
           `[OpenResponses] Stream event #${eventCount.toString()}: ${eventType}`,
@@ -287,8 +297,18 @@ export async function executeOpenResponsesChat(
 
         // Log summary of what was emitted
         logger.info(
-          `[OpenResponses] Stream summary: ${eventCount.toString()} events, ${textPartCount.toString()} text parts, ${toolCallCount.toString()} tool calls emitted`,
+          `[OpenResponses] Stream summary: ${eventCount.toString()} events, ${textPartCount.toString()} text parts, ${toolCallCount.toString()} tool calls emitted, ${functionCallEventsReceived.toString()} function-related events received`,
         );
+        
+        // DIAGNOSTIC: Log when we have text but no tool calls - this is the "pause" pattern
+        if (textPartCount > 0 && toolCallCount === 0) {
+          logger.warn(
+            `[OpenResponses] PAUSE PATTERN DETECTED: Response had ${textPartCount.toString()} text parts but ${toolCallCount.toString()} tool calls. ` +
+              `Function-related events: ${functionCallEventsReceived.toString()}. ` +
+              `Event types: ${topTypes}. ` +
+              `Finish reason: ${adapted.finishReason ?? "unknown"}`,
+          );
+        }
 
         result = {
           success: !adapted.error,
