@@ -232,12 +232,20 @@ export async function executeOpenResponsesChat(
       const eventType = (event as { type?: string }).type ?? "unknown";
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
       
-      // Track function call related events specifically
+      // TRACE: Log raw event data for debugging (only for function-related events to avoid spam)
       if (eventType.includes("function_call") || eventType.includes("output_item")) {
         functionCallEventsReceived++;
         logger.debug(
           `[OpenResponses] Function-related event #${functionCallEventsReceived.toString()}: ${eventType}`,
         );
+        // Log the full event at trace level for debugging
+        try {
+          logger.trace(
+            `[OpenResponses] Raw event data: ${JSON.stringify(event)}`,
+          );
+        } catch {
+          logger.trace(`[OpenResponses] Raw event (non-serializable): ${eventType}`);
+        }
       }
       
       // Track function_call_arguments events specifically - these indicate actual tool calls
