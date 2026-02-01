@@ -24,6 +24,7 @@ While the spec does not explicitly state "exactly once per item," the language s
 ### Schema Context
 
 From the OpenResponses OpenAPI schema:
+
 - `id`: "The unique ID of the function call item" (e.g., `fc_123`) — the **item identifier**
 - `call_id`: "The unique ID of the function tool call that was generated" — the **upstream/model-generated identifier**
 
@@ -35,13 +36,14 @@ When the same `call_id` appears with different `id` values, consumers cannot det
 
 Two independent code paths in `convert-aisdk-stream-to-openresponses.ts` can both fire for the same logical tool call:
 
-| Path | SDK Event | Line | Identifier Used |
-|------|-----------|------|-----------------|
-| Streaming | `tool-input-start` | L453-485 | `sdkChunk.id` |
-| Non-streaming | `tool-call` | L596-655 | `sdkChunk.toolCallId` |
+| Path          | SDK Event          | Line     | Identifier Used       |
+| ------------- | ------------------ | -------- | --------------------- |
+| Streaming     | `tool-input-start` | L453-485 | `sdkChunk.id`         |
+| Non-streaming | `tool-call`        | L596-655 | `sdkChunk.toolCallId` |
 
 **Both paths:**
-1. Generate a **new** `functionCallId` via `generateFunctionCallId()` 
+
+1. Generate a **new** `functionCallId` via `generateFunctionCallId()`
 2. Emit `response.output_item.added` unconditionally
 3. Do **not** check if the tool call was already emitted
 
@@ -115,7 +117,7 @@ case 'tool-call': {
     },
   };
   controller.enqueue(`event: response.output_item.added\ndata: ${JSON.stringify(addedEvent)}\n\n`);
-  
+
   // ... continues to emit arguments.done and output_item.done
 }
 ```
@@ -136,6 +138,7 @@ This bug manifests when the AI SDK emits **both** streaming and non-streaming ev
 2. Model completes the tool call → `tool-call` fires → `output_item.added` emitted with `id: "fc_xyz"`
 
 Result: Two items in the output array with:
+
 - Different `id` values (`fc_abc`, `fc_xyz`)
 - Same `call_id` value
 - Same tool name and arguments
@@ -162,11 +165,14 @@ The SferaDev VS Code extension works around this by deduplicating on **both** `i
 
 ```typescript
 // Add near the top of the transform function
-const emittedToolCalls = new Map<string, {
-  functionCallId: string;
-  outputIndex: number;
-  emittedAdded: boolean;
-}>();
+const emittedToolCalls = new Map<
+  string,
+  {
+    functionCallId: string;
+    outputIndex: number;
+    emittedAdded: boolean;
+  }
+>();
 ```
 
 ### 2. Modify `tool-input-start` Handler
@@ -174,7 +180,7 @@ const emittedToolCalls = new Map<string, {
 ```typescript
 case 'tool-input-start': {
   const callId = sdkChunk.id;
-  
+
   // Check if already tracking this tool call
   let toolCallState = emittedToolCalls.get(callId);
   if (!toolCallState) {
@@ -183,7 +189,7 @@ case 'tool-input-start': {
     toolCallState = { functionCallId, outputIndex, emittedAdded: false };
     emittedToolCalls.set(callId, toolCallState);
   }
-  
+
   // Also update itemBuffers for streaming deltas
   itemBuffers.set(callId, {
     type: 'function_call',
@@ -194,7 +200,7 @@ case 'tool-input-start': {
     toolName: sdkChunk.toolName,
     functionCallId: toolCallState.functionCallId,
   });
-  
+
   if (!toolCallState.emittedAdded) {
     toolCallState.emittedAdded = true;
     // Emit output_item.added ONCE
@@ -210,10 +216,10 @@ case 'tool-input-start': {
 ```typescript
 case 'tool-call': {
   const callId = sdkChunk.toolCallId;
-  
+
   // Check if streaming already handled this tool call
   let toolCallState = emittedToolCalls.get(callId);
-  
+
   if (toolCallState?.emittedAdded) {
     // Streaming already emitted output_item.added
     // Only emit arguments.done and output_item.done using existing IDs
@@ -226,7 +232,7 @@ case 'tool-call': {
     // ... emit done events only
     return;
   }
-  
+
   // First time seeing this tool call - emit full lifecycle
   if (!toolCallState) {
     const functionCallId = generateFunctionCallId();
@@ -234,7 +240,7 @@ case 'tool-call': {
     toolCallState = { functionCallId, outputIndex, emittedAdded: true };
     emittedToolCalls.set(callId, toolCallState);
   }
-  
+
   // Emit output_item.added, arguments.done, output_item.done
   // ... using toolCallState.functionCallId consistently
 }
@@ -247,21 +253,30 @@ case 'tool-call': {
 Add a test that verifies deduplication:
 
 ```typescript
-it('should emit only one output_item.added when both tool-input-start and tool-call fire', async () => {
+it("should emit only one output_item.added when both tool-input-start and tool-call fire", async () => {
   const chunks = [
-    { type: 'tool-input-start', id: 'call_123', toolName: 'get_weather' },
-    { type: 'tool-input-delta', id: 'call_123', delta: '{"loc' },
-    { type: 'tool-input-delta', id: 'call_123', delta: 'ation":"NYC"}' },
-    { type: 'tool-call', toolCallId: 'call_123', toolName: 'get_weather', input: { location: 'NYC' } },
+    { type: "tool-input-start", id: "call_123", toolName: "get_weather" },
+    { type: "tool-input-delta", id: "call_123", delta: '{"loc' },
+    { type: "tool-input-delta", id: "call_123", delta: 'ation":"NYC"}' },
+    {
+      type: "tool-call",
+      toolCallId: "call_123",
+      toolName: "get_weather",
+      input: { location: "NYC" },
+    },
   ];
-  
+
   const events = await collectStreamEvents(chunks);
-  
-  const addedEvents = events.filter(e => e.type === 'response.output_item.added');
-  expect(addedEvents).toHaveLength(1);  // NOT 2!
-  
+
+  const addedEvents = events.filter(
+    (e) => e.type === "response.output_item.added",
+  );
+  expect(addedEvents).toHaveLength(1); // NOT 2!
+
   // All events should reference the same item ID
-  const itemIds = new Set(events.map(e => e.item?.id || e.item_id).filter(Boolean));
+  const itemIds = new Set(
+    events.map((e) => e.item?.id || e.item_id).filter(Boolean),
+  );
   expect(itemIds.size).toBe(1);
 });
 ```

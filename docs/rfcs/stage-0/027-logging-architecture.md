@@ -146,7 +146,7 @@ For each chat request:
   "vercelAI.logging.captureRequests": true,
   "vercelAI.logging.captureEvents": false,
   "vercelAIGateway.logLevel": "info",
-  "vercelAIGateway.logFormat": "text"
+  "vercelAIGateway.logFormat": "text",
 }
 ```
 

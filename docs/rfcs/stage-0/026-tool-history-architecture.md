@@ -90,12 +90,12 @@ TIER 4: Current Turn
 
 ### Tool Call Categories
 
-| Category            | Examples                                | Truncation Strategy                         |
-| ------------------- | --------------------------------------- | ------------------------------------------- |
-| Read operations     | `read_file`, `list_dir`, `grep_search`  | Aggressive: summarize what was read         |
-| Write operations    | `create_file`, `apply_patch`            | Summarize what changed                      |
-| Executions          | `run_in_terminal`                       | Keep errors; summarize successes            |
-| Queries             | `semantic_search`, `list_code_usages`   | Very aggressive: summarize only             |
+| Category         | Examples                               | Truncation Strategy                 |
+| ---------------- | -------------------------------------- | ----------------------------------- |
+| Read operations  | `read_file`, `list_dir`, `grep_search` | Aggressive: summarize what was read |
+| Write operations | `create_file`, `apply_patch`           | Summarize what changed              |
+| Executions       | `run_in_terminal`                      | Keep errors; summarize successes    |
+| Queries          | `semantic_search`, `list_code_usages`  | Very aggressive: summarize only     |
 
 ### Example Truncation
 
@@ -150,7 +150,7 @@ Existing configuration remains valid for truncation control:
 ```jsonc
 {
   "vercelAiGateway.toolHistory.recentCallsToKeep": 6,
-  "vercelAiGateway.toolHistory.truncationThreshold": 10000
+  "vercelAiGateway.toolHistory.truncationThreshold": 10000,
 }
 ```
 

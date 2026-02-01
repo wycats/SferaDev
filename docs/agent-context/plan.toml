@@ -1,4 +1,3 @@
-
 [meta]
 schema_version = "1.0.0"
 exo_version = "0.1.0"
@@ -302,6 +301,85 @@ status = "completed"
 ulid = "01KGB6909WC4Y4S3SZNPPJZJS3"
 slug = "integration-tests"
 aliases = ["integration-tests"]
+
+[[epochs]]
+id = "01kgbg5kb1b3pn7m86wem0515t"
+title = "Hybrid Token Calibration (RFC 029)"
+status = "active"
+ulid = "01KGBG8XGSGZC1MNV4QBR6XCAV"
+slug = "01kgbg5kb1b3pn7m86wem0515t"
+aliases = ["01kgbg5kb1b3pn7m86wem0515t"]
+
+[[epochs.phases]]
+id = "01kgbg5xerpb8p6k43j691t63k"
+title = "Phase 1: Core Infrastructure"
+status = "active"
+rfcs = ["029"]
+ulid = "01KGBG8XGSRRSC5QMXEP89BWVS"
+slug = "01kgbg5xerpb8p6k43j691t63k"
+aliases = ["01kgbg5xerpb8p6k43j691t63k"]
+
+[[epochs.phases.goals]]
+id = "call-sequence-tracker"
+label = "Implement CallSequenceTracker class with 500ms gap detection"
+status = "pending"
+ulid = "01KGBG8XGSG6FVNADN1Q3XG5VK"
+slug = "call-sequence-tracker"
+aliases = ["call-sequence-tracker"]
+
+[[epochs.phases.goals]]
+id = "calibration-manager"
+label = "Implement CalibrationManager with EMA learning and globalState persistence"
+status = "pending"
+ulid = "01KGBG8XGSA10C6XS99Y3QFTH3"
+slug = "calibration-manager"
+aliases = ["calibration-manager"]
+
+[[epochs.phases.goals]]
+id = "hybrid-estimator"
+label = "Implement HybridTokenEstimator facade integrating tracker and calibration"
+status = "pending"
+ulid = "01KGBG8XGSK31QJM5T4XZJ5RC5"
+slug = "hybrid-estimator"
+aliases = ["hybrid-estimator"]
+
+[[epochs.phases.goals]]
+id = "unit-tests"
+label = "Write unit tests for all three components"
+status = "pending"
+ulid = "01KGBG8XGS8QY7JD391R47S3JJ"
+slug = "unit-tests"
+aliases = ["unit-tests"]
+
+[[epochs.phases]]
+id = "01kgbg61xj3mgs7fjfj674t4cp"
+title = "Phase 2: Provider Integration"
+status = "pending"
+goals = []
+rfcs = ["029"]
+ulid = "01KGBG8XGS0K6KHEMNZB4JVQ2M"
+slug = "01kgbg61xj3mgs7fjfj674t4cp"
+aliases = ["01kgbg61xj3mgs7fjfj674t4cp"]
+
+[[epochs.phases]]
+id = "01kgbg66ynthsrx3mqn2fzadxn"
+title = "Phase 3: Calibration Loop"
+status = "pending"
+goals = []
+rfcs = ["029"]
+ulid = "01KGBG8XGSMGS0RRVTC7JFHNE6"
+slug = "01kgbg66ynthsrx3mqn2fzadxn"
+aliases = ["01kgbg66ynthsrx3mqn2fzadxn"]
+
+[[epochs.phases]]
+id = "01kgbg6cpxvd67bq84rbcq3zzj"
+title = "Phase 4: Cleanup & Migration"
+status = "pending"
+goals = []
+rfcs = ["029"]
+ulid = "01KGBG8XGSNQJ3ZY18DGNFQKG0"
+slug = "01kgbg6cpxvd67bq84rbcq3zzj"
+aliases = ["01kgbg6cpxvd67bq84rbcq3zzj"]
 
 [[epochs]]
 id = "vercel-transition-epoch"

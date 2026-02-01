@@ -83,7 +83,10 @@ Use runtime guards and fallbacks:
 
 ```typescript
 export const ThinkingPart = (vscode as any).LanguageModelThinkingPart as
-  | (new (value: string | string[], id?: string) => vscode.LanguageModelTextPart)
+  | (new (
+      value: string | string[],
+      id?: string,
+    ) => vscode.LanguageModelTextPart)
   | undefined;
 
 export function hasThinkingPartSupport(): boolean {
@@ -143,12 +146,12 @@ For each API:
 
 ## Risks & Mitigations
 
-| Risk                        | Mitigation                         |
-| --------------------------- | ---------------------------------- |
-| Proposed API changes        | Runtime detection & fallback       |
-| Marketplace rejection       | Stable build contains no proposals |
-| Type mismatch               | Loose typing with `as any`         |
-| User confusion              | Clear build naming & docs          |
+| Risk                  | Mitigation                         |
+| --------------------- | ---------------------------------- |
+| Proposed API changes  | Runtime detection & fallback       |
+| Marketplace rejection | Stable build contains no proposals |
+| Type mismatch         | Loose typing with `as any`         |
+| User confusion        | Clear build naming & docs          |
 
 ## References
 

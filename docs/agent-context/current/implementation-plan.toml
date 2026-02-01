@@ -2,17 +2,37 @@
 # Implementation Plan
 
 [phase]
-id = "phase-1"
-title = "Phase 1: It works well enough to use as a daily driver"
-rfcs = []
+id = "01kgbg5xerpb8p6k43j691t63k"
+title = "Phase 1: Core Infrastructure"
+rfcs = ["029"]
 
 [plan]
-[[plan.changes]]
-name = "First Step"
-type = "feat"
-details = "It works well enough to use as a daily driver"
-files = []
-tests = []
+
+[[plan.goals]]
+id = "phase-tasks"
+title = "Phase Tasks"
+status = "in-progress"
+
+[[plan.goals.tasks]]
+id = "sequence-tracker"
+title = "Create tokens/sequence-tracker.ts with CallSequenceTracker class"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "calibration-mgr"
+title = "Create tokens/calibration-manager.ts with CalibrationManager class"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "hybrid-est"
+title = "Create tokens/hybrid-estimator.ts with HybridTokenEstimator facade"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "tests"
+title = "Write unit tests for all three components"
+status = "pending"
+# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 [verification]
 automated = ["Run scripts/verify-phase.sh"]

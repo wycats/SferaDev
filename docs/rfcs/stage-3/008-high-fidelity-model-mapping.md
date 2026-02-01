@@ -13,13 +13,13 @@ Improve the fidelity of model metadata fetching from Vercel AI Gateway and mappi
 
 All phases are complete and deployed:
 
-| Phase | Feature | Status | Location |
-|-------|---------|--------|----------|
-| 1 | Model Identity Parsing | ✅ | models/identity.ts |
-| 2 | Accurate Token Limits | ✅ | models.ts |
-| 3 | Model Type Filtering | ✅ | models.ts |
-| 4 | Enhanced Capability Detection | ✅ | models.ts |
-| 5 | Per-Model Enrichment | ✅ | models/enrichment.ts |
+| Phase | Feature                       | Status | Location             |
+| ----- | ----------------------------- | ------ | -------------------- |
+| 1     | Model Identity Parsing        | ✅     | models/identity.ts   |
+| 2     | Accurate Token Limits         | ✅     | models.ts            |
+| 3     | Model Type Filtering          | ✅     | models.ts            |
+| 4     | Enhanced Capability Detection | ✅     | models.ts            |
+| 5     | Per-Model Enrichment          | ✅     | models/enrichment.ts |
 
 ## Detailed Design
 
@@ -29,20 +29,20 @@ Parse `family` and `version` from the model ID string:
 
 ```typescript
 interface ParsedModelIdentity {
-  provider: string;   // "openai"
-  family: string;     // "gpt-4o"
-  version: string;    // "2024-11-20"
-  fullId: string;     // "openai:gpt-4o-2024-11-20"
+  provider: string; // "openai"
+  family: string; // "gpt-4o"
+  version: string; // "2024-11-20"
+  fullId: string; // "openai:gpt-4o-2024-11-20"
 }
 ```
 
 **Examples:**
 
-| Model ID | Provider | Family | Version |
-|----------|----------|--------|---------|
-| `openai:gpt-4o-2024-11-20` | openai | gpt-4o | 2024-11-20 |
-| `anthropic:claude-3.5-sonnet-20241022` | anthropic | claude-3.5-sonnet | 20241022 |
-| `google:gemini-2.0-flash` | google | gemini-2.0-flash | latest |
+| Model ID                               | Provider  | Family            | Version    |
+| -------------------------------------- | --------- | ----------------- | ---------- |
+| `openai:gpt-4o-2024-11-20`             | openai    | gpt-4o            | 2024-11-20 |
+| `anthropic:claude-3.5-sonnet-20241022` | anthropic | claude-3.5-sonnet | 20241022   |
+| `google:gemini-2.0-flash`              | google    | gemini-2.0-flash  | latest     |
 
 ### Phase 2: Accurate Token Limits
 
@@ -60,8 +60,8 @@ Preflight validation warns when approaching limits (90% threshold).
 Models are filtered by `type` field to only include language models:
 
 ```typescript
-return models.filter(model => 
-  model.type === "language" || model.type === "chat" || !model.type
+return models.filter(
+  (model) => model.type === "language" || model.type === "chat" || !model.type,
 );
 ```
 
@@ -71,11 +71,11 @@ Capability detection includes all supported tags:
 
 ```typescript
 interface ModelCapabilities {
-  supportsVision: boolean;      // "vision" tag
-  supportsToolUse: boolean;     // "tool-use" tag
-  supportsReasoning: boolean;   // "reasoning" tag
-  supportsWebSearch: boolean;   // "web-search" tag
-  supportsStreaming: boolean;   // Always true for language models
+  supportsVision: boolean; // "vision" tag
+  supportsToolUse: boolean; // "tool-use" tag
+  supportsReasoning: boolean; // "reasoning" tag
+  supportsWebSearch: boolean; // "web-search" tag
+  supportsStreaming: boolean; // Always true for language models
 }
 ```
 
@@ -89,21 +89,24 @@ interface EnrichedModelData {
   max_completion_tokens: number | null;
   supported_parameters: string[];
   supports_implicit_caching: boolean;
-  input_modalities: string[];  // e.g., ["text", "image"]
+  input_modalities: string[]; // e.g., ["text", "image"]
 }
 ```
 
 **Key Features:**
+
 - **Lazy enrichment**: Models are enriched on first use, not at startup
 - **Persistent caching**: Cache survives extension restarts via `globalState`
 - **Event-based refresh**: `onDidEnrichModel` fires after enrichment
 - **Graceful fallback**: Enrichment failures don't block chat functionality
 
 **Capability Refinement:**
+
 - `input_modalities` containing "image" → `supportsVision = true`
 - `max_completion_tokens` overrides base `maxOutputTokens` (capped at conservative limit)
 
 **Configuration:**
+
 ```json
 {
   "vercelAiGateway.models.enrichmentEnabled": {
@@ -116,20 +119,25 @@ interface EnrichedModelData {
 
 ## Future Work
 
-> *Folded from RFC 014: Enrichment Capability Refinement*
+> _Folded from RFC 014: Enrichment Capability Refinement_
 
 ### Batch Enrichment
+
 If the enrichment endpoint supports batch requests, we could reduce API calls when the model picker opens with many models.
 
 ### Configurable TTL
+
 The current 5-minute TTL is hardcoded. A user setting could allow tuning freshness vs API load.
 
 ### Extended Capability Exposure
+
 Additional enrichment fields could be surfaced:
+
 - `supports_implicit_caching` → inform users of prompt caching availability
 - `supported_parameters` → enable/disable UI for unsupported parameters
 
 ### Multi-Provider Aggregation
+
 Currently uses the first endpoint from the enrichment response. Could aggregate across providers (azure, openai, etc.) for better availability.
 
 ## Drawbacks
