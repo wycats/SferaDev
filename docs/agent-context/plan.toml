@@ -305,7 +305,7 @@ aliases = ["integration-tests"]
 [[epochs]]
 id = "01kgbg5kb1b3pn7m86wem0515t"
 title = "Hybrid Token Calibration (RFC 029)"
-status = "active"
+status = "pending"
 ulid = "01KGBG8XGSGZC1MNV4QBR6XCAV"
 slug = "01kgbg5kb1b3pn7m86wem0515t"
 aliases = ["01kgbg5kb1b3pn7m86wem0515t"]
@@ -313,7 +313,7 @@ aliases = ["01kgbg5kb1b3pn7m86wem0515t"]
 [[epochs.phases]]
 id = "01kgbg5xerpb8p6k43j691t63k"
 title = "Phase 1: Core Infrastructure"
-status = "active"
+status = "completed"
 rfcs = ["029"]
 ulid = "01KGBG8XGSRRSC5QMXEP89BWVS"
 slug = "01kgbg5xerpb8p6k43j691t63k"

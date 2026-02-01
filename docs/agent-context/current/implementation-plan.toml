@@ -16,22 +16,30 @@ status = "in-progress"
 [[plan.goals.tasks]]
 id = "sequence-tracker"
 title = "Create tokens/sequence-tracker.ts with CallSequenceTracker class"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-01T02:37:37.363992649+00:00"
+completion_log = "Created tokens/sequence-tracker.ts with CallSequenceTracker class implementing 500ms gap detection using lastCallTime"
 
 [[plan.goals.tasks]]
 id = "calibration-mgr"
 title = "Create tokens/calibration-manager.ts with CalibrationManager class"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-01T02:37:42.969733096+00:00"
+completion_log = "Created tokens/calibration-manager.ts with CalibrationManager class using EMA (0.2 learning rate) and globalState persistence"
 
 [[plan.goals.tasks]]
 id = "hybrid-est"
 title = "Create tokens/hybrid-estimator.ts with HybridTokenEstimator facade"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-01T02:37:48.428616337+00:00"
+completion_log = "Created tokens/hybrid-estimator.ts with HybridTokenEstimator facade integrating CallSequenceTracker, CalibrationManager, TokenCounter, and TokenCache"
 
 [[plan.goals.tasks]]
 id = "tests"
 title = "Write unit tests for all three components"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-01T02:37:54.026512572+00:00"
+completion_log = "Created unit tests for all three components: sequence-tracker.test.ts (9 tests), calibration-manager.test.ts (14 tests), hybrid-estimator.test.ts (13 tests) - all 323 tests pass"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 [verification]
