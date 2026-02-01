@@ -114,7 +114,8 @@ class CallSequenceTracker {
   private knownHashes = new LRUCache<string, number>(10000);
   
   // Gap threshold to detect new sequence (ms)
-  private readonly SEQUENCE_GAP = 100;
+  // 500ms is forgiving for slow renders with large tool schemas
+  private readonly SEQUENCE_GAP = 500;
 
   onCall(hash: string, estimate: TokenEstimate): void {
     const now = Date.now();
@@ -165,7 +166,9 @@ class CompactionDetector {
     const current = this.tracker.getCurrentSequence();
     const previous = this.tracker.getPreviousSequence();
     
-    if (!current || !previous) return false;
+    // Need both sequences with meaningful data to detect compaction
+    // This prevents false positives on new conversations or first messages
+    if (!current || !previous || previous.calls.length < 3) return false;
     
     // Heuristic 1: New hash we've never seen
     const isNewHash = !this.tracker.isKnownHash(currentHash);
@@ -425,6 +428,11 @@ constructor(context: ExtensionContext) {
   // ... rest of constructor
 }
 
+/**
+ * Called by Copilot to get token counts for budget enforcement.
+ * Returns RAW calibrated estimate - Copilot applies its own margins.
+ * We apply margins only for our internal validation (pre-flight checks).
+ */
 provideTokenCount(
   model: LanguageModelChatInformation,
   text: string | LanguageModelChatMessage,
@@ -432,20 +440,49 @@ provideTokenCount(
 ): Promise<number> {
   const estimate = this.estimator.estimate(text, model);
   
-  // Apply the recommended margin
-  const withMargin = Math.ceil(estimate.tokens * (1 + estimate.margin));
-  
+  // Return raw calibrated estimate - let Copilot apply its own margins
+  // Inflating here would cause premature summarization
   logger.trace(
     `Token estimate: ${estimate.tokens} (${estimate.source}, ` +
-    `${estimate.confidence} confidence, +${(estimate.margin * 100).toFixed(0)}% margin)`
+    `${estimate.confidence} confidence)`
   );
   
-  return Promise.resolve(withMargin);
+  return Promise.resolve(estimate.tokens);
 }
 
-// In provideLanguageModelChatResponse, after successful response:
-if (result.usage?.prompt_tokens) {
-  this.estimator.calibrate(model, result.usage.prompt_tokens);
+/**
+ * For our internal pre-flight validation, we DO apply margins.
+ */
+private async validateBeforeRequest(
+  model: LanguageModelChatInformation,
+  messages: readonly LanguageModelChatMessage[],
+): Promise<{ safe: boolean; estimatedTokens: number }> {
+  let total = 0;
+  let worstMargin = 0;
+  
+  for (const msg of messages) {
+    const estimate = this.estimator.estimate(msg, model);
+    total += estimate.tokens;
+    worstMargin = Math.max(worstMargin, estimate.margin);
+  }
+  
+  const withMargin = Math.ceil(total * (1 + worstMargin));
+  const effectiveLimit = this.estimator.getEffectiveLimit(model);
+  
+  return {
+    safe: withMargin <= effectiveLimit.limit,
+    estimatedTokens: withMargin,
+  };
+}
+
+// Calibration: extract usage from OpenResponses stream events
+// The usage comes from the response.completed event in stream-adapter.ts:
+//   case "response.completed":
+//     const usage = response.usage; // { input_tokens, output_tokens, total_tokens }
+//
+// In openresponses-chat.ts, after stream completes:
+if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
+  this.estimator.calibrate(model, adaptedEvent.usage.input_tokens);
 }
 ```
 
@@ -463,9 +500,11 @@ if (result.usage?.prompt_tokens) {
 - [ ] Logging for debugging
 
 ### Phase 3: Calibration Integration (P1)
-- [ ] Extract `usage.prompt_tokens` from API responses
+- [ ] Extract `usage.input_tokens` from `response.completed` event in stream-adapter
+- [ ] Pass usage to `openresponses-chat.ts` completion handler
 - [ ] Call `calibrate()` after successful requests
 - [ ] Status bar display of calibration state
+- [ ] Integration test verifying calibration is called with correct values
 
 ### Phase 4: Testing & Tuning (P1)
 - [ ] Unit tests for each component
@@ -485,14 +524,25 @@ if (result.usage?.prompt_tokens) {
 - **Transparent confidence** - users/developers can see estimate quality
 - **Persistent learning** - calibration survives extension restarts
 
+## Scope
+
+This RFC covers **message token estimation** only. Tool schema tokens are handled separately:
+- Tool schemas are passed to `sendRequest`, not through `provideTokenCount`
+- Tool schemas are relatively static per-session
+- The existing GCMP formula (16 + 8/tool + content × 1.1) works well
+- Future work could add `estimateTools()` method if needed
+
 ## Risks & Mitigations
 
 | Risk | Mitigation |
 |------|------------|
-| Sequence gap threshold too short/long | Make configurable, tune empirically |
-| Compaction false positives | Require multiple heuristics to agree |
+| Sequence gap threshold too short/long | Start at 500ms, make configurable, tune empirically |
+| Compaction false positives | Require previous sequence ≥3 calls, multiple heuristics must agree |
+| New conversation mistaken for compaction | Guard: `previous.calls.length < 3` returns false |
+| Margin double-applied (us + Copilot) | Return raw estimate from `provideTokenCount`, apply margin only for internal validation |
 | Calibration drift over time | Track drift metric, alert if too high |
-| Memory usage from hash tracking | LRU cache with bounded size |
+| Memory usage from hash tracking | LRU cache with bounded size (10k entries) |
+| Hash collision (64-bit truncation) | ~0.003% collision chance with 10k entries; acceptable |
 
 ## Alternatives Considered
 
