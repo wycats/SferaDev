@@ -22,11 +22,7 @@ pre_push = "gate"
 label = "Dev (uncommitted)"
 description = "Run the same checks as pre-commit, but against uncommitted changes."
 scope = { op = "base", base = "uncommitted" }
-checks = [
-  "typecheck",
-  "lint",
-  "test",
-]
+checks = ["typecheck", "lint", "test"]
 
 [lane.coherence]
 label = "pre-commit (staged)"

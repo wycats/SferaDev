@@ -48,11 +48,11 @@ The `LanguageModelResponsePart` union includes:
 type LanguageModelResponsePart =
   | LanguageModelTextPart
   | LanguageModelToolCallPart
-  | LanguageModelToolResultPart // Note: Only valid in messages, not provider responses
+  | LanguageModelToolResultPart
   | LanguageModelDataPart;
 ```
 
-**Important:** `LanguageModelToolResultPart` is listed in the union but MUST NOT be emitted by providers. It is only valid in message content (representing a tool result from a previous turn).
+**Note:** `LanguageModelToolResultPart` is typically used in message content (representing a tool result from a previous turn) rather than in provider response streams, but the type union does not prohibit its not prohibit it.
 
 ---
 
@@ -210,6 +210,70 @@ VS Code's chat UI interprets `LanguageModelTextPart.value` as **GitHub Flavored 
 - Sanitization: [markdownRenderer.ts](https://github.com/microsoft/vscode/blob/main/src/vs/base/browser/markdownRenderer.ts)
 - Code blocks: [codeBlockPart.ts](https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/chat/browser/widget/chatContentParts/codeBlockPart.ts)
 
+### 2.7 Annotations and Citations (OpenResponses)
+
+OpenResponses emits `response.output_text.annotation.added` events for URL citations. Since VS Code has no native citation part type, these are rendered as inline markdown links:
+
+```typescript
+// OpenResponses annotation event
+{ type: "response.output_text.annotation.added", annotation: { url: "https://...", title: "Source" } }
+
+// Rendered as TextPart
+new LanguageModelTextPart(" [Source](https://...)")
+```
+
+**Placement:** Annotations are emitted inline as they arrive, which may interrupt text flow. This is a tradeoff - buffering would lose the association with the surrounding text.
+
+**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleAnnotationAdded()`
+
+### 2.8 Refusals (OpenResponses)
+
+When a model declines to provide content, OpenResponses emits `response.refusal.delta` and `response.refusal.done` events. These are rendered as italicized text to visually distinguish them from normal output:
+
+```typescript
+// OpenResponses refusal event
+{ type: "response.refusal.delta", delta: "I cannot help with that request." }
+
+// Rendered as TextPart with italic formatting
+new LanguageModelTextPart("*I cannot help with that request.*")
+```
+
+**Rationale:** Italics provide visual distinction without requiring a custom part type. Users can immediately recognize that the model declined rather than responded.
+
+**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleRefusalDelta()`
+
+### 2.7 Annotations and Citations (OpenResponses)
+
+OpenResponses emits `response.output_text.annotation.added` events for URL citations. Since VS Code has no native citation part type, these are rendered as inline markdown links:
+
+```typescript
+// OpenResponses annotation event
+{ type: "response.output_text.annotation.added", annotation: { url: "https://...", title: "Source" } }
+
+// Rendered as TextPart
+new LanguageModelTextPart(" [Source](https://...)")
+```
+
+**Placement:** Annotations are emitted inline as they arrive, which may interrupt text flow. This is a tradeoff - buffering would lose the association with the surrounding text.
+
+**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleAnnotationAdded()`
+
+### 2.8 Refusals (OpenResponses)
+
+When a model declines to provide content, OpenResponses emits `response.refusal.delta` and `response.refusal.done` events. These are rendered as italicized text to visually distinguish them from normal output:
+
+```typescript
+// OpenResponses refusal event
+{ type: "response.refusal.delta", delta: "I cannot help with that request." }
+
+// Rendered as TextPart with italic formatting
+new LanguageModelTextPart("*I cannot help with that request.*")
+```
+
+**Rationale:** Italics provide visual distinction without requiring a custom part type. Users can immediately recognize that the model declined rather than responded.
+
+**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleRefusalDelta()`
+
 ---
 
 ## Part III: Tool Call Parts
@@ -267,7 +331,30 @@ Provider emits:  TextPart       → ToolCallPart → TextPart
 
 **Not allowed:** Emitting a ToolCallPart before the arguments are complete.
 
-### 3.5 Parallel Tool Calls
+### 3.5 Tool Call ID Mapping (OpenResponses)
+
+When translating OpenResponses `function_call` items to VS Code `LanguageModelToolCallPart`, providers must carefully select which field to use as the `callId`:
+
+| OpenResponses Field | VS Code Field | Usage                                         |
+| ------------------- | ------------- | --------------------------------------------- |
+| `id`                | `callId`      | **Use this** - guaranteed unique per item     |
+| `call_id`           | (not used)    | Correlation ID only; can be reused by gateway |
+| `name`              | `name`        | Function name                                 |
+| `arguments`         | `input`       | Parsed from JSON string                       |
+
+**Critical:** Do NOT use `call_id` as the VS Code `callId`. The Vercel AI Gateway can reuse `call_id` values across multiple function calls within a session. Use the item's `id` field instead, which is guaranteed unique per output item.
+
+**Deduplication:** Tool calls may be reported from multiple streaming events:
+
+- `response.output_item.done` - When an output item completes
+- `response.function_call_arguments.done` - When function call arguments are complete
+- `response.completed` - In the final response payload
+
+Implementations MUST deduplicate by `id` to avoid reporting the same tool call multiple times to VS Code.
+
+**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - see `emittedToolCalls` Set and comments explaining the rationale.
+
+### 3.6 Parallel Tool Calls
 
 When a model requests multiple tools in parallel:
 
@@ -569,14 +656,23 @@ For providers translating OpenResponses streaming to VS Code:
 | OpenResponses Event                     | VS Code Part      | Notes                                      |
 | --------------------------------------- | ----------------- | ------------------------------------------ |
 | `response.output_text.delta`            | TextPart          | Concatenate deltas                         |
+| `response.output_text.annotation.added` | TextPart          | Emit as markdown link: ` [title](url)`     |
 | `response.function_call_arguments.done` | ToolCallPart      | Emit atomically                            |
+| `response.refusal.delta`                | TextPart          | Emit with italic formatting: `*content*`   |
+| `response.refusal.done`                 | (none)            | Cleanup only; content already streamed     |
 | `response.reasoning.delta`              | TextPart\*        | \*ThinkingPart when proposed API available |
 | `response.reasoning.done`               | TextPart\*        | \*ThinkingPart when proposed API available |
 | `response.reasoning_summary.delta`      | TextPart\*        | \*ThinkingPart when proposed API available |
 | `response.reasoning_summary.done`       | TextPart\*        | \*ThinkingPart when proposed API available |
+| `response.completed` done`              | TextPart\*        | \*ThinkingPart when proposed API available |
+| `response.reasoning_summary.delta`      | TextPart\*        | \*ThinkingPart when proposed API available |
+| `response.reasoning_summary.done`       | TextPart\*        | \*ThinkingPart when proposed API available |
 | `response.completed`                    | (resolve promise) | End of stream                              |
 
-**Event naming note:** The OpenResponses API uses underscore-separated event names (e.g., `reasoning_summary`) rather than dot-separated (e.g., `reasoning.summary`). The implementation follows the OpenAPI schema's enum values.
+OpenResponses uses dot-separated event names with underscores inside segments (e.g., `response.reasoning_summary.delta`, not `response.reasoning.summary.delta`). The underscore is part of the event type name, not a separator
+**Tool Call ID Note:** When emitting `ToolCallPart`, use the function call's `id` field (not `call_id`) as the VS Code `callId`. See Section 3.5 for details.
+
+**Event naming note:** OpenResponses uses dot-separated event names with underscores inside segments (e.g., `response.reasoning_summary.delta`, not `response.reasoning.summary.delta`). The underscore is part of the event type name, not a separator.
 
 **Note on `response.file`:** This event type is mentioned in some documentation but does not currently exist in the OpenResponses OpenAPI schema. When/if it becomes available, map to `LanguageModelDataPart`.
 
