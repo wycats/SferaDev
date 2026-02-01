@@ -1,5 +1,224 @@
 # RFC 009: Token Counting and Context Management
 
+**Status:** ✅ Core Implemented | 🔮 Future Work Planned  
+**Priority:** Critical  
+**Author:** Copilot  
+**Created:** 2026-01-27  
+**Updated:** 2026-01-31
+
+**Depends On:** 003 (Streaming Adapter), 006 (Token Estimation), 008 (High-Fidelity Model Mapping)
+
+## Summary
+
+Accurate token counting is **critical for Copilot's conversation summarization** to trigger correctly. This RFC covers both the implemented token counting infrastructure and future work on smart context compaction.
+
+## Implementation Status
+
+### Core Token Counting (✅ Implemented)
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| `TokenCounter` class | ✅ | tokens/counter.ts |
+| `TokenCache` (message digest) | ✅ | tokens/cache.ts |
+| `LRUCache` for text (5000 entries) | ✅ | tokens/lru-cache.ts |
+| Tool schema counting (GCMP formula) | ✅ | counter.ts |
+| System prompt overhead (+28 tokens) | ✅ | counter.ts |
+| js-tiktoken integration | ✅ | Uses `o200k_base` and `cl100k_base` encodings |
+| Reactive error learning | ✅ | provider/error-extraction.ts |
+| API actuals caching | ✅ | Caches ground truth from API responses |
+| Correction factor | ✅ | Rolling average improves estimates over time |
+
+### Smart Context Compaction (🔮 Future Work)
+
+See "Future Work" section below.
+
+## Background
+
+### How Copilot Summarization Works
+
+1. **Copilot participant** (not the language model provider) handles all summarization
+2. Copilot reads `maxInputTokens` from model metadata to know the context limit
+3. Copilot uses `provideTokenCount` to estimate message sizes
+4. When approaching the limit, Copilot's `SummarizedConversationHistory` triggers summarization
+
+**Key insight:** Language model providers don't implement summarization—they just need to provide accurate metadata and token counts.
+
+## Detailed Design
+
+### Token Count Sources (Priority Order)
+
+| Source | When Used | Accuracy | Safety Margin |
+|--------|-----------|----------|---------------|
+| **Cached API actuals** | Already-sent messages | Ground truth | 2% |
+| **Tiktoken estimation** | Unsent messages only | Very accurate | 5% |
+| **Character fallback** | Unknown encodings (rare) | Rough | 10% |
+
+### Tool Schema Token Counting (Critical)
+
+Tool schemas can be 50k+ tokens. The GCMP formula:
+
+```typescript
+countToolsTokens(tools): number {
+  let numTokens = 16;  // Base overhead for tools array
+  for (const tool of tools) {
+    numTokens += 8;    // Per-tool structural overhead
+    numTokens += this.countText(tool.name);
+    numTokens += this.countText(tool.description ?? "");
+    numTokens += this.countText(JSON.stringify(tool.inputSchema ?? {}));
+  }
+  return Math.ceil(numTokens * 1.1);  // 1.1x safety factor
+}
+```
+
+### System Prompt Overhead
+
+System prompts have 28 tokens of structural overhead for Anthropic SDK wrapping.
+
+### Message Digest Caching
+
+Messages are cached by content digest (SHA-256), not position. This means:
+- Edited messages lose their cache entry until next API response
+- Identical messages share cached counts
+- Cache survives message reordering
+
+### Encoding Selection
+
+| Model Family | Encoding |
+|--------------|----------|
+| GPT-4o, o1 | `o200k_base` |
+| GPT-4, GPT-3.5, Claude | `cl100k_base` |
+| Gemini, Unknown | `cl100k_base` (best approximation) |
+
+## Future Work: Smart Context Compaction
+
+> *Folded from RFC 010: Smart Context Compaction*
+
+### Problem
+
+VS Code's built-in summarization treats all messages equally, losing important context:
+- Code snippets get summarized into prose descriptions
+- Error messages and stack traces lose detail
+- The user's original intent gets buried
+- Tool call/result pairs get separated or mangled
+
+With accurate token counting, we now know exactly how much context we have. We should use it more intelligently.
+
+### Research Questions
+
+1. **Interception point**: Can we intercept and transform messages before VS Code sends them? Or do we need to maintain our own shadow history?
+2. **LLM summarization**: Do we call an LLM for summaries, or can we do effective compaction heuristically?
+3. **User control**: Should users be able to configure compaction aggressiveness?
+4. **Multi-turn coherence**: How do we ensure the model understands that some context is summarized vs. verbatim?
+
+### Potential Strategies
+
+#### Strategy A: Sliding Window + Anchors
+
+```
+[System Prompt]
+[Original User Request]        ← Always preserved
+[Structured Summary]           ← Middle messages compacted
+[Recent N messages]            ← Fresh context
+```
+
+#### Strategy B: Semantic Chunking
+
+Group messages by semantic purpose:
+- **Intent chunks**: User requests and clarifications → preserve verbatim
+- **Work chunks**: Tool calls, code generation → extract "what changed"
+- **Result chunks**: Outputs, errors → keep errors verbatim, summarize success
+
+#### Strategy C: Fact Extraction
+
+Extract structured facts instead of summarizing prose:
+
+```typescript
+interface ExtractedContext {
+  files: Map<string, FileState>;
+  decisions: Decision[];
+  errors: ErrorContext[];
+  currentTask: string;
+}
+```
+
+#### Strategy D: Hybrid Compression
+
+Different compression ratios for different content:
+- **Code blocks**: Keep verbatim or not at all (can re-read file)
+- **Error messages**: Keep verbatim (critical for debugging)
+- **Explanations**: Aggressive summarization OK
+- **Tool results**: Extract key facts, discard formatting
+
+### Token Budget Model
+
+```
+Total Context = System + History + Current Turn + Response Reserve
+
+History Budget = Total - System - CurrentTurn - Reserve
+               = contextWindow - ~2000 - currentTokens - maxOutputTokens
+
+Compaction triggers when: actualHistory > historyBudget * 0.8
+Target after compaction: actualHistory ≈ historyBudget * 0.5
+```
+
+### Implementation Sketch
+
+```typescript
+interface CompactionStrategy {
+  shouldCompact(history: Message[], budget: number): boolean;
+  compact(history: Message[], budget: number): Promise<Message[]>;
+}
+
+class SmartCompactor implements CompactionStrategy {
+  constructor(
+    private tokenCounter: TokenCounter,
+    private llm?: LanguageModel  // optional, for summarization
+  ) {}
+
+  shouldCompact(history, budget) {
+    const used = this.tokenCounter.countMessages(history);
+    return used > budget * 0.8;
+  }
+
+  async compact(history, budget) {
+    const anchors = this.identifyAnchors(history);
+    const middle = this.getMiddleSection(history, anchors);
+    
+    if (this.llm) {
+      const summary = await this.summarize(middle);
+      return [anchors.first, summary, ...anchors.recent];
+    } else {
+      return this.heuristicCompact(history, budget);
+    }
+  }
+}
+```
+
+### Next Steps for Compaction
+
+1. Research VS Code's summarization internals
+2. Prototype heuristic compaction (no LLM)
+3. Measure baseline conversation length limits
+4. Test with real coding sessions
+
+## Success Criteria
+
+### Primary (Non-Negotiable)
+
+**NEVER hit an unrecoverable token limit** — Copilot MUST always have the opportunity to summarize before we exceed the context window.
+
+### Secondary
+
+- No regressions: Dynamic discovery, hybrid estimation, correction factor all preserved
+- Performance: Token counting adds <10ms per message
+- Bundle size: Total increase <500KB
+
+## References
+
+- [VicBilibily/GCMP](https://github.com/VicBilibily/GCMP) — Reference implementation
+- [microsoft/vscode-copilot-chat](https://github.com/microsoft/vscode-copilot-chat) — Copilot Chat extension source
+- [js-tiktoken](https://github.com/openai/tiktoken/tree/main/js) — JavaScript tokenizer library# RFC 009: Token Counting and Context Management
+
 **Status:** Draft  
 **Priority:** Critical  
 **Author:** Copilot  

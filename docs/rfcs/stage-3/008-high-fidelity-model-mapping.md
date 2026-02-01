@@ -3,6 +3,148 @@
 **Status:** ✅ Implemented  
 **Author:** Vercel AI Team  
 **Created:** 2026-01-27  
+**Updated:** 2026-01-31
+
+## Summary
+
+Improve the fidelity of model metadata fetching from Vercel AI Gateway and mapping to VS Code's LanguageModel API, ensuring accurate representation of model capabilities, context windows, and identity.
+
+## Implementation Status
+
+All phases are complete and deployed:
+
+| Phase | Feature | Status | Location |
+|-------|---------|--------|----------|
+| 1 | Model Identity Parsing | ✅ | models/identity.ts |
+| 2 | Accurate Token Limits | ✅ | models.ts |
+| 3 | Model Type Filtering | ✅ | models.ts |
+| 4 | Enhanced Capability Detection | ✅ | models.ts |
+| 5 | Per-Model Enrichment | ✅ | models/enrichment.ts |
+
+## Detailed Design
+
+### Phase 1: Model Identity Parsing
+
+Parse `family` and `version` from the model ID string:
+
+```typescript
+interface ParsedModelIdentity {
+  provider: string;   // "openai"
+  family: string;     // "gpt-4o"
+  version: string;    // "2024-11-20"
+  fullId: string;     // "openai:gpt-4o-2024-11-20"
+}
+```
+
+**Examples:**
+
+| Model ID | Provider | Family | Version |
+|----------|----------|--------|---------|
+| `openai:gpt-4o-2024-11-20` | openai | gpt-4o | 2024-11-20 |
+| `anthropic:claude-3.5-sonnet-20241022` | anthropic | claude-3.5-sonnet | 20241022 |
+| `google:gemini-2.0-flash` | google | gemini-2.0-flash | latest |
+
+### Phase 2: Accurate Token Limits
+
+Uses the true `context_window` value for `maxInputTokens`:
+
+```typescript
+maxInputTokens: model.context_window,
+maxOutputTokens: model.max_tokens,
+```
+
+Preflight validation warns when approaching limits (90% threshold).
+
+### Phase 3: Model Type Filtering
+
+Models are filtered by `type` field to only include language models:
+
+```typescript
+return models.filter(model => 
+  model.type === "language" || model.type === "chat" || !model.type
+);
+```
+
+### Phase 4: Enhanced Capability Detection
+
+Capability detection includes all supported tags:
+
+```typescript
+interface ModelCapabilities {
+  supportsVision: boolean;      // "vision" tag
+  supportsToolUse: boolean;     // "tool-use" tag
+  supportsReasoning: boolean;   // "reasoning" tag
+  supportsWebSearch: boolean;   // "web-search" tag
+  supportsStreaming: boolean;   // Always true for language models
+}
+```
+
+### Phase 5: Per-Model Enrichment
+
+The `ModelEnricher` class fetches additional metadata from the enrichment endpoint:
+
+```typescript
+interface EnrichedModelData {
+  context_length: number | null;
+  max_completion_tokens: number | null;
+  supported_parameters: string[];
+  supports_implicit_caching: boolean;
+  input_modalities: string[];  // e.g., ["text", "image"]
+}
+```
+
+**Key Features:**
+- **Lazy enrichment**: Models are enriched on first use, not at startup
+- **Persistent caching**: Cache survives extension restarts via `globalState`
+- **Event-based refresh**: `onDidEnrichModel` fires after enrichment
+- **Graceful fallback**: Enrichment failures don't block chat functionality
+
+**Capability Refinement:**
+- `input_modalities` containing "image" → `supportsVision = true`
+- `max_completion_tokens` overrides base `maxOutputTokens` (capped at conservative limit)
+
+**Configuration:**
+```json
+{
+  "vercelAiGateway.models.enrichmentEnabled": {
+    "type": "boolean",
+    "default": true,
+    "description": "Fetch per-model metadata to refine capabilities and token limits"
+  }
+}
+```
+
+## Future Work
+
+> *Folded from RFC 014: Enrichment Capability Refinement*
+
+### Batch Enrichment
+If the enrichment endpoint supports batch requests, we could reduce API calls when the model picker opens with many models.
+
+### Configurable TTL
+The current 5-minute TTL is hardcoded. A user setting could allow tuning freshness vs API load.
+
+### Extended Capability Exposure
+Additional enrichment fields could be surfaced:
+- `supports_implicit_caching` → inform users of prompt caching availability
+- `supported_parameters` → enable/disable UI for unsupported parameters
+
+### Multi-Provider Aggregation
+Currently uses the first endpoint from the enrichment response. Could aggregate across providers (azure, openai, etc.) for better availability.
+
+## Drawbacks
+
+1. **Breaking change for selectors** - Users who rely on current `vendor` values (org names) will need to update their selectors
+2. **Additional API calls** - Per-model enrichment adds latency and potential rate limit concerns
+
+## References
+
+- [VS Code Language Model API](https://code.visualstudio.com/api/references/vscode-api#LanguageModelChatInformation)
+- [Vercel AI Gateway Models Endpoint](https://vercel.ai-gateway.com/docs/endpoints/models)# RFC 008: High-Fidelity Model Mapping
+
+**Status:** ✅ Implemented  
+**Author:** Vercel AI Team  
+**Created:** 2026-01-27  
 **Updated:** 2026-01-28
 
 ## Summary
