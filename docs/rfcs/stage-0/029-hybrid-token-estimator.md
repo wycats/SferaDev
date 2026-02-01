@@ -106,6 +106,7 @@ interface CalibrationState {
 
 interface CallSequence {
   startTime: number;
+  lastCallTime: number;
   calls: Array<{
     estimatedTokens: number;
     source: TokenEstimate["source"];
@@ -129,16 +130,19 @@ class CallSequenceTracker {
   onCall(estimate: TokenEstimate): void {
     const now = Date.now();
     
-    // New sequence if gap > threshold
+    // New sequence if gap since LAST CALL > threshold
+    // (not since start, otherwise long renders would split incorrectly)
     if (!this.currentSequence || 
-        now - this.currentSequence.startTime > this.SEQUENCE_GAP) {
+        now - this.currentSequence.lastCallTime > this.SEQUENCE_GAP) {
       this.currentSequence = {
         startTime: now,
+        lastCallTime: now,
         calls: [],
         totalEstimate: 0,
       };
     }
     
+    this.currentSequence.lastCallTime = now;
     this.currentSequence.calls.push({
       estimatedTokens: estimate.tokens,
       source: estimate.source,
