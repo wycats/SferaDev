@@ -12,6 +12,23 @@
 
 Replace the current reactive token counting approach with a proactive `HybridTokenEstimator` that provides accurate, confidence-aware token estimates through per-model calibration and call sequence tracking.
 
+## Design Changes
+
+This RFC was simplified from an earlier draft based on review feedback:
+
+**Removed:**
+- `CompactionDetector` class and all compaction detection heuristics
+- Cache clearing on compaction detection
+- Hash tracking for compaction detection purposes
+
+**Rationale:** Compaction detection is unnecessary because:
+1. After compaction, Copilot calls `provideTokenCount` with the *new* messages
+2. Each turn is a new sequence (500ms gap separates render passes)
+3. We calibrate against whatever sequence we just estimated
+4. The error detection backup (P2) catches any tracking failures
+
+The simplified design is more robust and easier to maintain.
+
 ## Motivation
 
 ### Current Problems
@@ -21,17 +38,12 @@ Replace the current reactive token counting approach with a proactive `HybridTok
    - The `learnedTokenTotal` hack inflates counts by 1.5x to trigger summarization
    - This is imprecise and causes unnecessary summarization
 
-2. **Cache Staleness After Compaction**
-   - When VS Code compacts/summarizes messages, cached token counts become invalid
-   - Compacted messages are "new" with no cache, falling back to tiktoken estimation
-   - No way to detect that compaction happened
-
-3. **No Per-Model Calibration**
+2. **No Per-Model Calibration**
    - Different models (Claude, GPT-4, Gemini) have different tokenization
    - We use `cl100k_base` as fallback for unknown models
    - Single global `correctionFactor` doesn't account for model differences
 
-4. **Fixed Safety Margins**
+3. **Fixed Safety Margins**
    - We apply fixed margins (2%, 5%, 10%) regardless of estimate confidence
    - No feedback loop to adjust margins based on calibration quality
 
@@ -48,8 +60,8 @@ async tokenLength(e, n) {
 
 This means:
 - We're called **many times per request** (once per message/chunk)
-- We can track the **sequence of calls** to detect patterns
-- We can detect compaction by noticing **message content changes** without needing a VS Code API
+- We can track the **sequence of calls** to know total estimated tokens
+- Each turn starts a new sequence (500ms gap between render passes)
 
 ## Detailed Design
 
@@ -59,18 +71,18 @@ This means:
 ┌─────────────────────────────────────────────────────────────────┐
 │                     HybridTokenEstimator                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │ CallSequence    │  │ Calibration     │  │ Compaction      │ │
-│  │ Tracker         │  │ Manager         │  │ Detector        │ │
-│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘ │
-│           │                    │                    │          │
-│           └────────────────────┼────────────────────┘          │
-│                                │                               │
-│                    ┌───────────▼───────────┐                   │
-│                    │   TokenEstimate       │                   │
-│                    │   { tokens, confidence,│                   │
-│                    │     source, margin }  │                   │
-│                    └───────────────────────┘                   │
+│  ┌─────────────────┐  ┌─────────────────┐                      │
+│  │ CallSequence    │  │ Calibration     │                      │
+│  │ Tracker         │  │ Manager         │                      │
+│  └────────┬────────┘  └────────┬────────┘                      │
+│           │                    │                               │
+│           └────────────────────┘                               │
+│                    │                                           │
+│        ┌───────────▼───────────┐                               │
+│        │   TokenEstimate       │                               │
+│        │   { tokens, confidence,│                               │
+│        │     source, margin }  │                               │
+│        └───────────────────────┘                               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -95,7 +107,6 @@ interface CalibrationState {
 interface CallSequence {
   startTime: number;
   calls: Array<{
-    hash: string;
     estimatedTokens: number;
     source: TokenEstimate["source"];
   }>;
@@ -103,27 +114,24 @@ interface CallSequence {
 }
 ```
 
-### Call Sequence Tracking
+### Call Sequence Tracker
 
-Track `provideTokenCount` calls to detect patterns:
+Track `provideTokenCount` calls to accumulate per-turn totals:
 
 ```typescript
 class CallSequenceTracker {
   private currentSequence: CallSequence | null = null;
-  private previousSequence: CallSequence | null = null;
-  private knownHashes = new LRUCache<string, number>(10000);
   
   // Gap threshold to detect new sequence (ms)
   // 500ms is forgiving for slow renders with large tool schemas
   private readonly SEQUENCE_GAP = 500;
 
-  onCall(hash: string, estimate: TokenEstimate): void {
+  onCall(estimate: TokenEstimate): void {
     const now = Date.now();
     
     // New sequence if gap > threshold
     if (!this.currentSequence || 
         now - this.currentSequence.startTime > this.SEQUENCE_GAP) {
-      this.previousSequence = this.currentSequence;
       this.currentSequence = {
         startTime: now,
         calls: [],
@@ -132,61 +140,14 @@ class CallSequenceTracker {
     }
     
     this.currentSequence.calls.push({
-      hash,
       estimatedTokens: estimate.tokens,
       source: estimate.source,
     });
     this.currentSequence.totalEstimate += estimate.tokens;
-    this.knownHashes.put(hash, estimate.tokens);
   }
 
   getCurrentSequence(): CallSequence | null {
     return this.currentSequence;
-  }
-
-  getPreviousSequence(): CallSequence | null {
-    return this.previousSequence;
-  }
-
-  isKnownHash(hash: string): boolean {
-    return this.knownHashes.get(hash) !== undefined;
-  }
-}
-```
-
-### Compaction Detection
-
-Detect when VS Code has compacted/summarized the conversation:
-
-```typescript
-class CompactionDetector {
-  constructor(private tracker: CallSequenceTracker) {}
-
-  detectCompaction(currentHash: string): boolean {
-    const current = this.tracker.getCurrentSequence();
-    const previous = this.tracker.getPreviousSequence();
-    
-    // Need both sequences with meaningful data to detect compaction
-    // This prevents false positives on new conversations or first messages
-    if (!current || !previous || previous.calls.length < 3) return false;
-    
-    // Heuristic 1: New hash we've never seen
-    const isNewHash = !this.tracker.isKnownHash(currentHash);
-    
-    // Heuristic 2: Sequence is significantly shorter than previous
-    const isShorter = current.calls.length < previous.calls.length * 0.8;
-    
-    // Heuristic 3: Total tokens decreased significantly
-    const tokensDecreased = current.totalEstimate < previous.totalEstimate * 0.7;
-    
-    // Compaction likely if: new content AND (shorter OR fewer tokens)
-    return isNewHash && (isShorter || tokensDecreased);
-  }
-
-  onCompactionDetected(): void {
-    // Clear stale cached actuals - they're for pre-compaction messages
-    // The calibration state (correction factors) remains valid
-    logger.info("Compaction detected - clearing message-level caches");
   }
 }
 ```
@@ -284,14 +245,12 @@ class CalibrationManager {
 ```typescript
 export class HybridTokenEstimator {
   private sequenceTracker: CallSequenceTracker;
-  private compactionDetector: CompactionDetector;
   private calibrationManager: CalibrationManager;
   private tokenCounter: TokenCounter;
   private tokenCache: TokenCache;
 
   constructor(context: ExtensionContext) {
     this.sequenceTracker = new CallSequenceTracker();
-    this.compactionDetector = new CompactionDetector(this.sequenceTracker);
     this.calibrationManager = new CalibrationManager(context);
     this.tokenCounter = new TokenCounter();
     this.tokenCache = new TokenCache();
@@ -305,14 +264,6 @@ export class HybridTokenEstimator {
     content: string | LanguageModelChatMessage,
     model: LanguageModelChatInformation,
   ): TokenEstimate {
-    const hash = this.hashContent(content);
-    
-    // Check for compaction
-    if (this.compactionDetector.detectCompaction(hash)) {
-      this.compactionDetector.onCompactionDetected();
-      this.tokenCache.clear(); // Invalidate stale caches
-    }
-    
     // Try cached API actual first (ground truth)
     if (typeof content !== "string") {
       const cached = this.tokenCache.getCached(content, model.family);
@@ -323,7 +274,7 @@ export class HybridTokenEstimator {
           source: "api-actual",
           margin: 0.02,
         };
-        this.sequenceTracker.onCall(hash, estimate);
+        this.sequenceTracker.onCall(estimate);
         return estimate;
       }
     }
@@ -348,7 +299,7 @@ export class HybridTokenEstimator {
       margin,
     };
     
-    this.sequenceTracker.onCall(hash, estimate);
+    this.sequenceTracker.onCall(estimate);
     return estimate;
   }
 
@@ -399,19 +350,19 @@ export class HybridTokenEstimator {
     return this.calibrationManager.getCalibration(modelFamily);
   }
 
+  /**
+   * Get current sequence for error detection.
+   */
+  getCurrentSequence(): CallSequence | null {
+    return this.sequenceTracker.getCurrentSequence();
+  }
+
   private getMarginForConfidence(confidence: "high" | "medium" | "low"): number {
     switch (confidence) {
       case "high": return 0.05;   // 5% margin
       case "medium": return 0.10; // 10% margin
       case "low": return 0.15;    // 15% margin
     }
-  }
-
-  private hashContent(content: string | LanguageModelChatMessage): string {
-    if (typeof content === "string") {
-      return crypto.createHash("sha256").update(content).digest("hex").slice(0, 16);
-    }
-    return this.tokenCache.digestMessage(content).slice(0, 16);
   }
 }
 ```
@@ -486,9 +437,9 @@ if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
 }
 ```
 
-### Optional: Estimate Error Detection (P2)
+### Error Detection Backup (P2)
 
-If we find that sequence-based compaction detection misses cases, we can add a backup mechanism that detects when our estimates diverge significantly from API actuals:
+If estimates diverge significantly from API actuals, we detect and warn:
 
 ```typescript
 // In HybridTokenEstimator, after calibration:
@@ -499,18 +450,14 @@ detectEstimateError(
   const error = Math.abs(estimatedTotal - actualTotal) / actualTotal;
   
   if (error > 0.2) {
-    // We were >20% off - something changed that we didn't detect
-    // Possibly compaction happened between provideTokenCount calls and request
+    // We were >20% off - something unexpected happened
     logger.warn(
       `Token estimate error: ${(error * 100).toFixed(1)}% ` +
       `(estimated ${estimatedTotal}, actual ${actualTotal})`
     );
     
-    // Defensive cache clear - our cached values may be stale
-    this.tokenCache.clear();
-    
-    // Don't adjust calibration aggressively on outliers
-    // The regular calibration EMA will smooth this out
+    // The regular calibration EMA will correct for this over time
+    // If drift persists across multiple requests, consider resetting calibration
   }
 }
 
@@ -527,32 +474,32 @@ if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
 }
 ```
 
-**When to implement**: If testing reveals that sequence-based compaction detection has significant false negatives, or if we have bandwidth after core implementation.
+**When to implement**: After core implementation, if testing reveals estimation issues that need debugging visibility.
 
 ## Implementation Plan
 
 ### Phase 1: Core Infrastructure (P0)
-- [ ] `CallSequenceTracker` class
+- [ ] `CallSequenceTracker` class (gap-based sequence detection)
 - [ ] `CalibrationManager` class with persistence
 - [ ] `HybridTokenEstimator` main class
 - [ ] Integration with `provideTokenCount`
 
-### Phase 2: Compaction Detection (P0)
-- [ ] `CompactionDetector` class
-- [ ] Cache invalidation on compaction
-- [ ] Logging for debugging
-
-### Phase 3: Calibration Integration (P1)
+### Phase 2: Calibration Loop (P1)
 - [ ] Extract `usage.input_tokens` from `response.completed` event in stream-adapter
 - [ ] Pass usage to `openresponses-chat.ts` completion handler
 - [ ] Call `calibrate()` after successful requests
 - [ ] Status bar display of calibration state
 - [ ] Integration test verifying calibration is called with correct values
 
+### Phase 3: Safety Net (P2)
+- [ ] Error detection: warn if estimate diverges >20% from actual
+- [ ] Consider resetting calibration if drift persists across multiple requests
+- [ ] Logging for debugging estimation issues
+
 ### Phase 4: Testing & Tuning (P1)
 - [ ] Unit tests for each component
 - [ ] Integration tests with mock sequences
-- [ ] Tune thresholds (sequence gap, compaction detection)
+- [ ] Tune sequence gap threshold if needed
 - [ ] Real-world testing with long conversations
 
 ## Success Criteria
@@ -560,7 +507,7 @@ if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
 ### Primary
 - **No "input too long" errors** that could have been prevented by accurate estimation
 - **Calibration converges** within 5-10 requests per model family
-- **Compaction detected** reliably (>90% of actual compaction events)
+- **Accurate sequence totals** - tracked estimates match what we calibrate against
 
 ### Secondary
 - **Reduced unnecessary summarization** - accurate counts mean VS Code only summarizes when truly needed
@@ -580,19 +527,16 @@ This RFC covers **message token estimation** only. Tool schema tokens are handle
 | Risk | Mitigation |
 |------|------------|
 | Sequence gap threshold too short/long | Start at 500ms, make configurable, tune empirically |
-| Compaction false positives | Require previous sequence ≥3 calls, multiple heuristics must agree |
-| New conversation mistaken for compaction | Guard: `previous.calls.length < 3` returns false |
 | Margin double-applied (us + Copilot) | Return raw estimate from `provideTokenCount`, apply margin only for internal validation |
-| Calibration drift over time | Track drift metric, alert if too high |
-| Memory usage from hash tracking | LRU cache with bounded size (10k entries) |
-| Hash collision (64-bit truncation) | ~0.003% collision chance with 10k entries; acceptable |
+| Calibration drift over time | Track drift metric, error detection warns if >20% off |
+| Memory usage from sequence tracking | Sequences are short-lived, only current sequence retained |
 
 ## Alternatives Considered
 
 ### 1. Wait for VS Code API
-VS Code could expose a compaction event or provide ground-truth token counts. However:
+VS Code could expose ground-truth token counts. However:
 - No indication this is planned
-- We can solve it ourselves with call tracking
+- We can solve it ourselves with calibration
 
 ### 2. Always use conservative estimates
 Just use large safety margins everywhere. However:
@@ -602,7 +546,7 @@ Just use large safety margins everywhere. However:
 
 ### 3. Request-level calibration only
 Only calibrate when we have API actuals, don't track sequences. However:
-- Can't detect compaction
+- Can't know total estimated tokens for calibration
 - Slower convergence
 - No confidence tracking
 
