@@ -35,6 +35,35 @@ import { logger } from "../logger.js";
 import { detectImageMimeType } from "./image-utils.js";
 
 /**
+ * Special tokens used by various language models that must be stripped from input.
+ * These tokens cause API errors like "The text contains a special token that is not allowed".
+ *
+ * Common special tokens:
+ * - <|endoftext|> - GPT models end-of-sequence
+ * - <|im_start|>, <|im_end|> - ChatML format markers
+ * - <|fim_prefix|>, <|fim_middle|>, <|fim_suffix|> - Fill-in-the-middle tokens
+ * - <|pad|> - Padding token
+ * - <|sep|> - Separator token
+ * - <|startoftext|> - Start of text marker
+ */
+const SPECIAL_TOKEN_PATTERN =
+  /<\|(endoftext|im_start|im_end|fim_prefix|fim_middle|fim_suffix|pad|sep|startoftext|eot_id|start_header_id|end_header_id|python_tag|eom_id|finetune_right_pad_id)\|>/gi;
+
+/**
+ * Sanitize text content by removing special model tokens.
+ * These tokens can appear in tool outputs or other content that includes raw model output.
+ */
+export function sanitizeSpecialTokens(text: string): string {
+  const sanitized = text.replace(SPECIAL_TOKEN_PATTERN, "");
+  if (sanitized !== text) {
+    logger.debug(
+      `[OpenResponses] Stripped special tokens from text (${text.length} → ${sanitized.length} chars)`,
+    );
+  }
+  return sanitized;
+}
+
+/**
  * Resolve a VS Code chat message role to an OpenResponses role.
  *
  * VS Code currently exposes only User/Assistant roles. System/developer prompts
@@ -73,16 +102,18 @@ export function translateMessage(
 
   for (const part of message.content) {
     if (part instanceof LanguageModelTextPart) {
+      // Sanitize special tokens that may appear in tool outputs
+      const sanitizedText = sanitizeSpecialTokens(part.value);
       // Use input_text for User role, output_text for Assistant
       if (openResponsesRole === "assistant") {
         contentParts.push({
           type: "output_text",
-          text: part.value,
+          text: sanitizedText,
         });
       } else {
         contentParts.push({
           type: "input_text",
-          text: part.value,
+          text: sanitizedText,
         });
       }
     } else if (part instanceof LanguageModelDataPart) {

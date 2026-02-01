@@ -168,8 +168,15 @@ export class StreamAdapter {
   /** Function calls being assembled from streaming deltas */
   private functionCalls = new Map<string, FunctionCallState>();
 
-  /** Tool calls already emitted to VS Code */
+  /** Tool calls already emitted to VS Code (tracked by itemId) */
   private emittedToolCalls = new Set<string>();
+
+  /**
+   * Tool calls already emitted, tracked by call_id (gateway's identifier).
+   * The gateway can emit duplicate output_item.added events with different itemIds
+   * but the same call_id. We must dedupe by call_id to prevent duplicate execution.
+   */
+  private emittedCallIds = new Set<string>();
 
   /** Text content being assembled (for reference, not needed for delta streaming) */
   private textContent = new Map<string, TextContentState>();
@@ -387,8 +394,14 @@ export class StreamAdapter {
         );
 
         // Only emit if this tool call wasn't already emitted via streaming events
-        // Use itemId for deduplication since call_id can be reused by the gateway!
-        if (itemId && name && !this.emittedToolCalls.has(itemId)) {
+        // Check BOTH itemId AND callId - the gateway can emit duplicate output items
+        // with different itemIds but the same callId (same logical tool call)
+        if (
+          itemId &&
+          name &&
+          !this.emittedToolCalls.has(itemId) &&
+          !this.emittedCallIds.has(callId)
+        ) {
           let parsedArgs: ToolCallArguments = {};
           try {
             parsedArgs = JSON.parse(argsStr) as ToolCallArguments;
@@ -405,11 +418,15 @@ export class StreamAdapter {
           // The gateway can reuse call_id for multiple function calls, but VS Code needs unique IDs.
           parts.push(new LanguageModelToolCallPart(itemId, name, parsedArgs));
           this.emittedToolCalls.add(itemId);
+          this.emittedCallIds.add(callId);
           functionCallsEmitted++;
-        } else if (this.emittedToolCalls.has(itemId)) {
+        } else if (
+          this.emittedToolCalls.has(itemId) ||
+          this.emittedCallIds.has(callId)
+        ) {
           functionCallsSkippedDuplicate++;
           logger.debug(
-            `[OpenResponses] Skipping duplicate tool call: ${name} (itemId: ${itemId})`,
+            `[OpenResponses] Skipping duplicate tool call: ${name} (itemId: ${itemId}, callId: ${callId})`,
           );
         } else {
           logger.warn(
@@ -600,10 +617,14 @@ export class StreamAdapter {
       const name = functionCall.name;
 
       // Skip if already emitted via function_call_arguments.done
-      // Use itemId for deduplication since call_id can be reused!
-      if (this.emittedToolCalls.has(itemId)) {
+      // Check BOTH itemId AND callId - the gateway can emit duplicate output items
+      // with different itemIds but the same callId (same logical tool call)
+      if (
+        this.emittedToolCalls.has(itemId) ||
+        this.emittedCallIds.has(callId)
+      ) {
         logger.debug(
-          `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (itemId: ${itemId})`,
+          `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (itemId: ${itemId}, callId: ${callId})`,
         );
         return { parts: [], done: false };
       }
@@ -632,6 +653,7 @@ export class StreamAdapter {
       }
 
       this.emittedToolCalls.add(itemId);
+      this.emittedCallIds.add(callId);
 
       // CRITICAL: Use itemId as the callId sent to VS Code!
       return {
@@ -955,6 +977,20 @@ export class StreamAdapter {
     }
 
     if (foundCallId && foundState) {
+      // Check if already emitted via output_item.done or a previous function_call_arguments.done
+      // Check BOTH itemId AND callId - the gateway can emit duplicate output items
+      // with different itemIds but the same callId (same logical tool call)
+      if (
+        this.emittedToolCalls.has(foundState.itemId) ||
+        this.emittedCallIds.has(foundState.callId)
+      ) {
+        logger.debug(
+          `[OpenResponses] Skipping duplicate function_call_arguments.done: ${foundState.name} (itemId: ${foundState.itemId}, callId: ${foundState.callId})`,
+        );
+        this.functionCalls.delete(foundCallId); // Still clean up
+        return { parts: [], done: false };
+      }
+
       // Use final arguments from done event
       const argsString = finalArguments;
 
@@ -969,8 +1005,9 @@ export class StreamAdapter {
 
       // Clean up state
       this.functionCalls.delete(foundCallId);
-      // Track by itemId since call_id can be reused!
+      // Track by BOTH itemId and callId to catch all duplicate patterns
       this.emittedToolCalls.add(foundState.itemId);
+      this.emittedCallIds.add(foundState.callId);
 
       logger.info(
         `[OpenResponses] Emitting tool call via function_call_arguments.done: ${foundState.name} (itemId: ${foundState.itemId})`,
@@ -1030,6 +1067,7 @@ export class StreamAdapter {
   reset(): void {
     this.functionCalls.clear();
     this.emittedToolCalls.clear();
+    this.emittedCallIds.clear();
     this.textContent.clear();
     this.refusalContent.clear();
     this.reasoningContent.clear();

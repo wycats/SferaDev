@@ -352,6 +352,17 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
           model.id,
         );
         logger.info(`[OpenResponses] Chat request completed for ${model.id}`);
+
+        // Clear learned token total on success - summarization worked, we're back to normal
+        // This prevents infinite summarization loops where inflated counts keep triggering
+        // more summarization even after the context has been reduced.
+        if (this.learnedTokenTotal) {
+          logger.debug(
+            `Clearing learned token total after successful request ` +
+              `(was: ${this.learnedTokenTotal.actualTokens.toString()} tokens)`,
+          );
+          this.learnedTokenTotal = null;
+        }
       }
     } catch (error) {
       // Don't report abort/cancellation as an error - it's expected behavior
@@ -493,15 +504,26 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
     // If we learned from a "too long" error, apply a correction multiplier
     // This ensures VS Code sees token counts that will trigger summarization
-    if (this.learnedTokenTotal) {
-      // Apply a 1.5x multiplier to compensate for the underestimate
-      // The goal is to make the sum exceed maxInputTokens so VS Code summarizes
-      const inflated = baseEstimate * 1.5;
-      logger.trace(
-        `Applying learned token correction: ${baseEstimate.toString()} -> ${Math.ceil(inflated).toString()} ` +
-          `(learned actual total: ${this.learnedTokenTotal.actualTokens.toString()})`,
-      );
-      return Promise.resolve(Math.ceil(inflated));
+    // Only apply if we're still in the same conversation (check hash to avoid cross-pollution)
+    if (this.learnedTokenTotal && this.currentRequestMessages) {
+      const currentHash = this.hashConversation(this.currentRequestMessages);
+      if (currentHash === this.learnedTokenTotal.conversationHash) {
+        // Apply a 1.5x multiplier to compensate for the underestimate
+        // The goal is to make the sum exceed maxInputTokens so VS Code summarizes
+        const inflated = baseEstimate * 1.5;
+        logger.trace(
+          `Applying learned token correction: ${baseEstimate.toString()} -> ${Math.ceil(inflated).toString()} ` +
+            `(learned actual total: ${this.learnedTokenTotal.actualTokens.toString()})`,
+        );
+        return Promise.resolve(Math.ceil(inflated));
+      } else {
+        // Different conversation - clear the stale learned total
+        logger.debug(
+          `Clearing stale learned token total (conversation hash mismatch: ` +
+            `${currentHash} !== ${this.learnedTokenTotal.conversationHash})`,
+        );
+        this.learnedTokenTotal = null;
+      }
     }
 
     // Apply standard safety margins
