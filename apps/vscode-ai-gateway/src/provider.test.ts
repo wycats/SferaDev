@@ -141,6 +141,10 @@ function createProvider() {
       get: vi.fn(),
       update: vi.fn(),
     },
+    globalState: {
+      get: vi.fn(),
+      update: vi.fn().mockResolvedValue(undefined),
+    },
   } as unknown as ExtensionContext;
 
   return new VercelAIChatModelProvider(context);
@@ -180,6 +184,10 @@ describe("Model selection memory", () => {
         get: getMock,
         update: vi.fn(),
       },
+      globalState: {
+        get: vi.fn(),
+        update: vi.fn().mockResolvedValue(undefined),
+      },
     } as unknown as ExtensionContext;
 
     const provider = new VercelAIChatModelProvider(context);
@@ -195,6 +203,10 @@ describe("Model selection memory", () => {
       workspaceState: {
         get: vi.fn().mockReturnValue(undefined),
         update: vi.fn(),
+      },
+      globalState: {
+        get: vi.fn(),
+        update: vi.fn().mockResolvedValue(undefined),
       },
     } as unknown as ExtensionContext;
 

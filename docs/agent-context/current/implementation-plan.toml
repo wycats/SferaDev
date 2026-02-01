@@ -2,8 +2,8 @@
 # Implementation Plan
 
 [phase]
-id = "01kgbg5xerpb8p6k43j691t63k"
-title = "Phase 1: Core Infrastructure"
+id = "01kgbg61xj3mgs7fjfj674t4cp"
+title = "Phase 2: Provider Integration"
 rfcs = ["029"]
 
 [plan]
@@ -14,38 +14,27 @@ title = "Phase Tasks"
 status = "in-progress"
 
 [[plan.goals.tasks]]
-id = "sequence-tracker"
-title = "Create tokens/sequence-tracker.ts with CallSequenceTracker class"
+id = "integrate-estimator"
+title = "Replace TokenCache/TokenCounter/correctionFactor with HybridTokenEstimator in provider.ts"
 status = "completed"
-completed_at = "2026-02-01T02:37:37.363992649+00:00"
-completion_log = "Created tokens/sequence-tracker.ts with CallSequenceTracker class implementing 500ms gap detection using lastCallTime"
+completed_at = "2026-02-01T02:46:20.320862895+00:00"
+completion_log = "Replaced TokenCache/TokenCounter/correctionFactor with HybridTokenEstimator in provider.ts"
 
 [[plan.goals.tasks]]
-id = "calibration-mgr"
-title = "Create tokens/calibration-manager.ts with CalibrationManager class"
+id = "calibration-callback"
+title = "Add calibration callback from openresponses-chat.ts to provider after successful responses"
 status = "completed"
-completed_at = "2026-02-01T02:37:42.969733096+00:00"
-completion_log = "Created tokens/calibration-manager.ts with CalibrationManager class using EMA (0.2 learning rate) and globalState persistence"
+completed_at = "2026-02-01T02:46:29.471812234+00:00"
+completion_log = "Added onUsage callback from openresponses-chat.ts to provider.calibrateFromUsage()"
 
 [[plan.goals.tasks]]
-id = "hybrid-est"
-title = "Create tokens/hybrid-estimator.ts with HybridTokenEstimator facade"
+id = "validation-logging"
+title = "Add structured logging for validation (estimated vs actual)"
 status = "completed"
-completed_at = "2026-02-01T02:37:48.428616337+00:00"
-completion_log = "Created tokens/hybrid-estimator.ts with HybridTokenEstimator facade integrating CallSequenceTracker, CalibrationManager, TokenCounter, and TokenCache"
-
-[[plan.goals.tasks]]
-id = "tests"
-title = "Write unit tests for all three components"
-status = "completed"
-completed_at = "2026-02-01T02:37:54.026512572+00:00"
-completion_log = "Created unit tests for all three components: sequence-tracker.test.ts (9 tests), calibration-manager.test.ts (14 tests), hybrid-estimator.test.ts (13 tests) - all 323 tests pass"
+completed_at = "2026-02-01T02:46:37.141792091+00:00"
+completion_log = "Added structured calibration logging in calibrateFromUsage() with factor, samples, drift"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 [verification]
 automated = ["Run scripts/verify-phase.sh"]
 manual = []
-
-[meta]
-schema_version = "1.0.0"
-exo_version = "0.1.0"

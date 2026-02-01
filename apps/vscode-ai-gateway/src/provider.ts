@@ -33,8 +33,7 @@ import { ModelsClient } from "./models";
 import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
 import { executeOpenResponsesChat } from "./provider/openresponses-chat.js";
 import type { TokenStatusBar } from "./status-bar";
-import { TokenCache } from "./tokens/cache";
-import { TokenCounter } from "./tokens/counter";
+import { HybridTokenEstimator } from "./tokens/hybrid-estimator";
 
 function hashMessage(msg: LanguageModelChatRequestMessage): string {
   const payload = {
@@ -66,9 +65,7 @@ function hashMessage(msg: LanguageModelChatRequestMessage): string {
 export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   private context: ExtensionContext;
   private modelsClient: ModelsClient;
-  private tokenCache: TokenCache;
-  private tokenCounter: TokenCounter;
-  private correctionFactor = 1.0;
+  private tokenEstimator: HybridTokenEstimator;
   private configService: ConfigService;
   private enricher: ModelEnricher;
   // Track current request for caching API actuals and status bar
@@ -99,8 +96,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     this.context = context;
     this.configService = configService;
     this.modelsClient = new ModelsClient(configService);
-    this.tokenCache = new TokenCache();
-    this.tokenCounter = new TokenCounter();
+    this.tokenEstimator = new HybridTokenEstimator(context);
     this.enricher = new ModelEnricher(configService);
     // Initialize enricher persistence for faster startup
     this.enricher.initializePersistence(context.globalState);
@@ -117,6 +113,29 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
    */
   setStatusBar(statusBar: TokenStatusBar): void {
     this.statusBar = statusBar;
+  }
+
+  /**
+   * Calibrate token estimation from API response.
+   * Called after successful chat responses with actual usage data.
+   *
+   * This enables the HybridTokenEstimator to learn per-model correction factors
+   * that improve future estimates.
+   */
+  calibrateFromUsage(
+    model: LanguageModelChatInformation,
+    actualInputTokens: number,
+  ): void {
+    this.tokenEstimator.calibrate(model, actualInputTokens);
+
+    // Log calibration for validation
+    const state = this.tokenEstimator.getCalibrationState(model.family);
+    if (state) {
+      logger.info(
+        `[Calibration] ${model.family}: factor=${state.correctionFactor.toFixed(3)}, ` +
+          `samples=${state.sampleCount.toString()}, drift=${(state.drift * 100).toFixed(1)}%`,
+      );
+    }
   }
 
   dispose(): void {
@@ -339,6 +358,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
           apiKey,
           estimatedInputTokens: estimatedTokens,
           chatId,
+          onUsage: (actualInputTokens) => {
+            this.calibrateFromUsage(model, actualInputTokens);
+          },
         },
       );
 
@@ -464,11 +486,13 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
    * to compact/truncate. Accurate estimates are critical for avoiding
    * "input too long" errors.
    *
-   * Token counting strategy:
+   * Token counting strategy (RFC 029 Hybrid Token Estimator):
    * 1. Check if we learned actual counts from a previous "too long" error
-   * 2. Check cache for API actuals (ground truth from previous requests)
-   * 3. Use tiktoken for precise estimation (unsent messages)
-   * 4. Apply safety margins (2% on actuals, 5% on estimates)
+   * 2. Use HybridTokenEstimator which:
+   *    - Checks cache for API actuals (ground truth)
+   *    - Applies per-model calibration factors (learned from API responses)
+   *    - Tracks call sequences for calibration
+   * 3. Return RAW calibrated estimate - Copilot applies its own margins
    */
   provideTokenCount(
     model: LanguageModelChatInformation,
@@ -476,31 +500,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     _token: CancellationToken,
   ): Promise<number> {
     void _token;
-    // Calculate base estimate first
-    let baseEstimate: number;
 
-    if (typeof text === "string") {
-      // Use tiktoken for text strings
-      const estimated = this.tokenCounter.estimateTextTokens(
-        text,
-        model.family,
-      );
-      baseEstimate = estimated * this.correctionFactor;
-    } else {
-      // Check cache for API actuals first (ground truth)
-      const cached = this.tokenCache.getCached(text, model.family);
-      if (cached !== undefined) {
-        // We have ground truth from a previous API response - use with minimal margin
-        baseEstimate = cached;
-      } else {
-        // Use tiktoken-based estimation for unsent messages
-        const estimated = this.tokenCounter.estimateMessageTokens(
-          text,
-          model.family,
-        );
-        baseEstimate = estimated * this.correctionFactor;
-      }
-    }
+    // Use HybridTokenEstimator for calibrated estimates
+    const estimate = this.tokenEstimator.estimate(text, model);
 
     // If we learned from a "too long" error, apply a correction multiplier
     // This ensures VS Code sees token counts that will trigger summarization
@@ -510,9 +512,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       if (currentHash === this.learnedTokenTotal.conversationHash) {
         // Apply a 1.5x multiplier to compensate for the underestimate
         // The goal is to make the sum exceed maxInputTokens so VS Code summarizes
-        const inflated = baseEstimate * 1.5;
+        const inflated = estimate.tokens * 1.5;
         logger.trace(
-          `Applying learned token correction: ${baseEstimate.toString()} -> ${Math.ceil(inflated).toString()} ` +
+          `Applying learned token correction: ${estimate.tokens.toString()} -> ${Math.ceil(inflated).toString()} ` +
             `(learned actual total: ${this.learnedTokenTotal.actualTokens.toString()})`,
         );
         return Promise.resolve(Math.ceil(inflated));
@@ -526,16 +528,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       }
     }
 
-    // Apply standard safety margins
-    const margin =
-      typeof text === "string" || !this.tokenCache.getCached(text, model.family)
-        ? this.tokenCounter.usesCharacterFallback(model.family)
-          ? 0.1
-          : 0.05
-        : 0.02;
-    return Promise.resolve(
-      this.tokenCounter.applySafetyMargin(baseEstimate, margin),
-    );
+    // Return raw calibrated estimate - Copilot applies its own margins
+    // We only apply margins for internal validation (pre-flight checks)
+    return Promise.resolve(estimate.tokens);
   }
 
   /**
@@ -570,8 +565,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     total += messages.length * 4;
 
     // Add tool schema tokens (critical - can be 50k+ tokens)
+    const tokenCounter = this.tokenEstimator.getTokenCounter();
     if (options?.tools && options.tools.length > 0) {
-      const toolTokens = this.tokenCounter.countToolsTokens(
+      const toolTokens = tokenCounter.countToolsTokens(
         options.tools,
         model.family,
       );
@@ -583,7 +579,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
     // Add system prompt tokens (including 28-token structural overhead)
     if (options?.systemPrompt) {
-      const systemTokens = this.tokenCounter.countSystemPromptTokens(
+      const systemTokens = tokenCounter.countSystemPromptTokens(
         options.systemPrompt,
         model.family,
       );

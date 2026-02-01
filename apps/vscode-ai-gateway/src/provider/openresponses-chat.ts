@@ -54,6 +54,8 @@ export interface OpenResponsesChatOptions {
   estimatedInputTokens: number;
   /** Chat ID for logging/tracking */
   chatId: string;
+  /** Callback to calibrate token estimation from actual usage */
+  onUsage?: (actualInputTokens: number) => void;
 }
 
 /**
@@ -91,8 +93,14 @@ export async function executeOpenResponsesChat(
   token: CancellationToken,
   chatOptions: OpenResponsesChatOptions,
 ): Promise<OpenResponsesChatResult> {
-  const { configService, statusBar, apiKey, estimatedInputTokens, chatId } =
-    chatOptions;
+  const {
+    configService,
+    statusBar,
+    apiKey,
+    estimatedInputTokens,
+    chatId,
+    onUsage,
+  } = chatOptions;
 
   // TRACE: Log raw VS Code messages with actual role values
   const roleNames: Record<number, string> = {
@@ -315,7 +323,7 @@ export async function executeOpenResponsesChat(
           }),
         };
 
-        // Track usage
+        // Track usage and calibrate token estimation
         if (adapted.usage) {
           usageTracker.record(chatId, adapted.usage);
           logger.info(
@@ -327,6 +335,11 @@ export async function executeOpenResponsesChat(
             maxInputTokens: model.maxInputTokens,
             modelId: model.id,
           });
+
+          // Calibrate token estimation from actual usage (RFC 029)
+          if (onUsage) {
+            onUsage(adapted.usage.input_tokens);
+          }
         }
         break;
       }
