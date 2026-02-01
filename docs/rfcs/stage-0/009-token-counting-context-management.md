@@ -6,27 +6,36 @@
 **Created:** 2026-01-27  
 **Updated:** 2026-01-31
 
-**Depends On:** 003 (Streaming Adapter), 006 (Token Estimation), 008 (High-Fidelity Model Mapping)
+**Depends On:** 003 (Streaming Adapter), 006 (Token Estimation), 008 (High-Fidelity Model Mapping)  
+**Extended By:** [029 (Hybrid Token Estimator)](./029-hybrid-token-estimator.md) - Proactive calibration & compaction detection
 
 ## Summary
 
-Accurate token counting is **critical for Copilot's conversation summarization** to trigger correctly. This RFC covers both the implemented token counting infrastructure and future work on smart context compaction.
+Accurate token counting is **critical for Copilot's conversation summarization** to trigger correctly. This RFC covers the implemented token counting infrastructure. 
+
+**Related but distinct concerns:**
+- **RFC 029 (Hybrid Token Estimator)** - *Accurate measurement*: How to get reliable token counts, especially around compaction events
+- **Smart Context Compaction** (future work below) - *Intelligent reduction*: How to reduce context when needed
 
 ## Implementation Status
 
 ### Core Token Counting (✅ Implemented)
 
-| Feature | Status | Location |
-|---------|--------|----------|
-| `TokenCounter` class | ✅ | tokens/counter.ts |
-| `TokenCache` (message digest) | ✅ | tokens/cache.ts |
-| `LRUCache` for text (5000 entries) | ✅ | tokens/lru-cache.ts |
-| Tool schema counting (GCMP formula) | ✅ | counter.ts |
-| System prompt overhead (+28 tokens) | ✅ | counter.ts |
-| js-tiktoken integration | ✅ | Uses `o200k_base` and `cl100k_base` encodings |
-| Reactive error learning | ✅ | provider/error-extraction.ts |
-| API actuals caching | ✅ | Caches ground truth from API responses |
-| Correction factor | ✅ | Rolling average improves estimates over time |
+| Feature                             | Status | Location                                      |
+| ----------------------------------- | ------ | --------------------------------------------- |
+| `TokenCounter` class                | ✅     | tokens/counter.ts                             |
+| `TokenCache` (message digest)       | ✅     | tokens/cache.ts                               |
+| `LRUCache` for text (5000 entries)  | ✅     | tokens/lru-cache.ts                           |
+| Tool schema counting (GCMP formula) | ✅     | counter.ts                                    |
+| System prompt overhead (+28 tokens) | ✅     | counter.ts                                    |
+| js-tiktoken integration             | ✅     | Uses `o200k_base` and `cl100k_base` encodings |
+| Reactive error learning             | ✅     | provider/error-extraction.ts                  |
+| API actuals caching                 | ✅     | Caches ground truth from API responses        |
+| Correction factor                   | ✅     | Rolling average improves estimates over time  |
+
+### Hybrid Token Estimator (📋 RFC 029)
+
+See [RFC 029](./029-hybrid-token-estimator.md) for proactive calibration and compaction detection.
 
 ### Smart Context Compaction (🔮 Future Work)
 
@@ -47,11 +56,11 @@ See "Future Work" section below.
 
 ### Token Count Sources (Priority Order)
 
-| Source | When Used | Accuracy | Safety Margin |
-|--------|-----------|----------|---------------|
-| **Cached API actuals** | Already-sent messages | Ground truth | 2% |
-| **Tiktoken estimation** | Unsent messages only | Very accurate | 5% |
-| **Character fallback** | Unknown encodings (rare) | Rough | 10% |
+| Source                  | When Used                | Accuracy      | Safety Margin |
+| ----------------------- | ------------------------ | ------------- | ------------- |
+| **Cached API actuals**  | Already-sent messages    | Ground truth  | 2%            |
+| **Tiktoken estimation** | Unsent messages only     | Very accurate | 5%            |
+| **Character fallback**  | Unknown encodings (rare) | Rough         | 10%           |
 
 ### Tool Schema Token Counting (Critical)
 
@@ -77,25 +86,27 @@ System prompts have 28 tokens of structural overhead for Anthropic SDK wrapping.
 ### Message Digest Caching
 
 Messages are cached by content digest (SHA-256), not position. This means:
+
 - Edited messages lose their cache entry until next API response
 - Identical messages share cached counts
 - Cache survives message reordering
 
 ### Encoding Selection
 
-| Model Family | Encoding |
-|--------------|----------|
-| GPT-4o, o1 | `o200k_base` |
-| GPT-4, GPT-3.5, Claude | `cl100k_base` |
-| Gemini, Unknown | `cl100k_base` (best approximation) |
+| Model Family           | Encoding                           |
+| ---------------------- | ---------------------------------- |
+| GPT-4o, o1             | `o200k_base`                       |
+| GPT-4, GPT-3.5, Claude | `cl100k_base`                      |
+| Gemini, Unknown        | `cl100k_base` (best approximation) |
 
 ## Future Work: Smart Context Compaction
 
-> *Folded from RFC 010: Smart Context Compaction*
+> _Folded from RFC 010: Smart Context Compaction_
 
 ### Problem
 
 VS Code's built-in summarization treats all messages equally, losing important context:
+
 - Code snippets get summarized into prose descriptions
 - Error messages and stack traces lose detail
 - The user's original intent gets buried
@@ -124,6 +135,7 @@ With accurate token counting, we now know exactly how much context we have. We s
 #### Strategy B: Semantic Chunking
 
 Group messages by semantic purpose:
+
 - **Intent chunks**: User requests and clarifications → preserve verbatim
 - **Work chunks**: Tool calls, code generation → extract "what changed"
 - **Result chunks**: Outputs, errors → keep errors verbatim, summarize success
@@ -144,6 +156,7 @@ interface ExtractedContext {
 #### Strategy D: Hybrid Compression
 
 Different compression ratios for different content:
+
 - **Code blocks**: Keep verbatim or not at all (can re-read file)
 - **Error messages**: Keep verbatim (critical for debugging)
 - **Explanations**: Aggressive summarization OK
@@ -172,7 +185,7 @@ interface CompactionStrategy {
 class SmartCompactor implements CompactionStrategy {
   constructor(
     private tokenCounter: TokenCounter,
-    private llm?: LanguageModel  // optional, for summarization
+    private llm?: LanguageModel, // optional, for summarization
   ) {}
 
   shouldCompact(history, budget) {
@@ -183,7 +196,7 @@ class SmartCompactor implements CompactionStrategy {
   async compact(history, budget) {
     const anchors = this.identifyAnchors(history);
     const middle = this.getMiddleSection(history, anchors);
-    
+
     if (this.llm) {
       const summary = await this.summarize(middle);
       return [anchors.first, summary, ...anchors.recent];
