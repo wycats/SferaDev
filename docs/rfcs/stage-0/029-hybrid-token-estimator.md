@@ -486,6 +486,49 @@ if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
 }
 ```
 
+### Optional: Estimate Error Detection (P2)
+
+If we find that sequence-based compaction detection misses cases, we can add a backup mechanism that detects when our estimates diverge significantly from API actuals:
+
+```typescript
+// In HybridTokenEstimator, after calibration:
+detectEstimateError(
+  estimatedTotal: number,
+  actualTotal: number,
+): void {
+  const error = Math.abs(estimatedTotal - actualTotal) / actualTotal;
+  
+  if (error > 0.2) {
+    // We were >20% off - something changed that we didn't detect
+    // Possibly compaction happened between provideTokenCount calls and request
+    logger.warn(
+      `Token estimate error: ${(error * 100).toFixed(1)}% ` +
+      `(estimated ${estimatedTotal}, actual ${actualTotal})`
+    );
+    
+    // Defensive cache clear - our cached values may be stale
+    this.tokenCache.clear();
+    
+    // Don't adjust calibration aggressively on outliers
+    // The regular calibration EMA will smooth this out
+  }
+}
+
+// Called after each successful request:
+if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
+  const sequence = this.estimator.getCurrentSequence();
+  if (sequence) {
+    this.estimator.detectEstimateError(
+      sequence.totalEstimate,
+      adaptedEvent.usage.input_tokens
+    );
+  }
+  this.estimator.calibrate(model, adaptedEvent.usage.input_tokens);
+}
+```
+
+**When to implement**: If testing reveals that sequence-based compaction detection has significant false negatives, or if we have bandwidth after core implementation.
+
 ## Implementation Plan
 
 ### Phase 1: Core Infrastructure (P0)
