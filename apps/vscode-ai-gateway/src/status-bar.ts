@@ -48,6 +48,8 @@ export interface AgentEntry {
   isMain: boolean;
   /** Order in which this agent completed (for aging) */
   completionOrder?: number | undefined;
+  /** Hash of system prompt - used to detect main vs subagent */
+  systemPromptHash?: string | undefined;
 }
 
 /** Agent aging configuration */
@@ -60,6 +62,21 @@ const AGENT_CLEANUP_INTERVAL_MS = 2_000; // Check for stale agents every 2 secon
  */
 export interface StatusBarConfig {
   showOutputTokens: boolean;
+}
+
+/**
+ * Token estimation state for status bar display.
+ * Shows whether we have known actual token counts or are estimating.
+ */
+export interface EstimationState {
+  /** Model family identifier */
+  modelFamily: string;
+  /** Known actual tokens from last API response */
+  knownTokens: number;
+  /** Number of messages with known token counts */
+  knownMessageCount: number;
+  /** Whether this is the most recent conversation state */
+  isCurrent: boolean;
 }
 
 /**
@@ -84,11 +101,16 @@ export class TokenStatusBar implements vscode.Disposable {
   private agents = new Map<string, AgentEntry>();
   private mainAgentId: string | null = null;
   private activeAgentId: string | null = null;
+  /** System prompt hash of the main agent - used to detect subagents */
+  private mainSystemPromptHash: string | null = null;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private completedAgentCount = 0;
 
   // Configuration
   private config: StatusBarConfig = { showOutputTokens: false };
+
+  // Estimation state tracking
+  private estimationStates = new Map<string, EstimationState>();
 
   constructor() {
     this.statusBarItem = vscode.window.createStatusBarItem(
@@ -112,10 +134,53 @@ export class TokenStatusBar implements vscode.Disposable {
   }
 
   /**
+   * Update estimation state for a model.
+   * Called after each API response to track known token state.
+   */
+  setEstimationState(state: EstimationState): void {
+    this.estimationStates.set(state.modelFamily, state);
+    logger.debug(
+      `[StatusBar] Estimation state updated for ${state.modelFamily}`,
+      JSON.stringify({
+        knownTokens: state.knownTokens,
+        knownMessageCount: state.knownMessageCount,
+        isCurrent: state.isCurrent,
+      }),
+    );
+    // Trigger display update to refresh tooltip
+    this.updateDisplay();
+  }
+
+  /**
+   * Get estimation state for a model.
+   */
+  getEstimationState(modelFamily: string): EstimationState | undefined {
+    return this.estimationStates.get(modelFamily);
+  }
+
+  /**
+   * Get all estimation states.
+   */
+  getAllEstimationStates(): EstimationState[] {
+    return Array.from(this.estimationStates.values());
+  }
+
+  /**
    * Extract a short name from agent context
    */
-  private extractAgentName(agentId: string, modelId?: string): string {
-    // Try to extract from model ID (e.g., "anthropic:claude-sonnet-4" -> "claude-sonnet-4")
+  private extractAgentName(
+    agentId: string,
+    modelId?: string,
+    isMain?: boolean,
+  ): string {
+    // For subagents, use a generic "sub" name
+    // (In Phase 3, we'll extract from system prompt)
+    if (isMain === false) {
+      return "sub";
+    }
+
+    // For main agent, try to extract from model ID
+    // (e.g., "anthropic:claude-sonnet-4" -> "claude-sonnet-4")
     if (modelId) {
       // If it contains a colon, extract after it
       const colonIdx = modelId.indexOf(":");
@@ -131,23 +196,52 @@ export class TokenStatusBar implements vscode.Disposable {
 
   /**
    * Start tracking a new agent (LM call)
+   * @param agentId Unique identifier for this agent
+   * @param estimatedTokens Estimated input tokens
+   * @param maxTokens Maximum input tokens for the model
+   * @param modelId Model identifier
+   * @param systemPromptHash Hash of the system prompt - used to detect subagents
    */
   startAgent(
     agentId: string,
     estimatedTokens?: number,
     maxTokens?: number,
     modelId?: string,
+    systemPromptHash?: string,
   ): string {
     const now = Date.now();
-    const isMain = this.mainAgentId === null;
 
-    if (isMain) {
+    // Determine if this is the main agent or a subagent
+    // Main agent: first agent OR same system prompt hash as main
+    // Subagent: different system prompt hash than main
+    let isMain: boolean;
+    if (this.mainAgentId === null) {
+      // First agent is always main
+      isMain = true;
       this.mainAgentId = agentId;
+      if (systemPromptHash) {
+        this.mainSystemPromptHash = systemPromptHash;
+      }
+    } else if (systemPromptHash && this.mainSystemPromptHash) {
+      // If we have hashes, use them to determine main vs subagent
+      isMain = systemPromptHash === this.mainSystemPromptHash;
+      // Update mainAgentId if this is a new main agent request
+      if (isMain) {
+        this.mainAgentId = agentId;
+      }
+    } else if (systemPromptHash && !this.mainSystemPromptHash) {
+      // First request had no hash, but this one does - treat as new main
+      isMain = true;
+      this.mainAgentId = agentId;
+      this.mainSystemPromptHash = systemPromptHash;
+    } else {
+      // No hash info - fall back to first-agent-is-main behavior
+      isMain = false;
     }
 
     const agent: AgentEntry = {
       id: agentId,
-      name: this.extractAgentName(agentId, modelId),
+      name: this.extractAgentName(agentId, modelId, isMain),
       startTime: now,
       lastUpdateTime: now,
       inputTokens: 0,
@@ -158,6 +252,7 @@ export class TokenStatusBar implements vscode.Disposable {
       status: "streaming",
       dimmed: false,
       isMain,
+      systemPromptHash,
     };
 
     this.agents.set(agentId, agent);
@@ -169,10 +264,13 @@ export class TokenStatusBar implements vscode.Disposable {
         timestamp: now,
         agentId,
         isMain,
+        isSubagent: !isMain && this.mainAgentId !== null,
         modelId,
         estimatedTokens,
         maxTokens,
         name: agent.name,
+        systemPromptHash: systemPromptHash?.slice(0, 8),
+        mainSystemPromptHash: this.mainSystemPromptHash?.slice(0, 8),
         totalAgents: this.agents.size,
         mainAgentId: this.mainAgentId,
         activeAgentId: this.activeAgentId,
@@ -181,6 +279,19 @@ export class TokenStatusBar implements vscode.Disposable {
 
     this.updateDisplay();
     return agentId;
+  }
+
+  /**
+   * Update agent activity timestamp during streaming.
+   * Call this when receiving streaming data to keep lastUpdateTime fresh.
+   */
+  updateAgentActivity(agentId: string): void {
+    const agent = this.agents.get(agentId);
+    if (agent && agent.status === "streaming") {
+      agent.lastUpdateTime = Date.now();
+      // Don't call updateDisplay here to avoid excessive updates
+      // The display will refresh on the next scheduled update
+    }
   }
 
   /**
@@ -297,9 +408,7 @@ export class TokenStatusBar implements vscode.Disposable {
       "statusBarItem.errorBackground",
     );
     this.statusBarItem.show();
-    this.hideTimeout = setTimeout(() => {
-      this.hide();
-    }, 60000);
+    // Don't auto-hide errors - keep visible like other states
   }
 
   /**
@@ -307,9 +416,10 @@ export class TokenStatusBar implements vscode.Disposable {
    */
   private updateDisplay(): void {
     this.clearHideTimeout();
+    const agentsArray = Array.from(this.agents.values());
 
     // Debug: Log all agents state
-    const agentsSummary = Array.from(this.agents.values()).map((a) => ({
+    const agentsSummary = agentsArray.map((a) => ({
       id: a.id.slice(-8),
       name: a.name,
       status: a.status,
@@ -331,12 +441,19 @@ export class TokenStatusBar implements vscode.Disposable {
       }),
     );
 
-    const mainAgent = this.mainAgentId
-      ? this.agents.get(this.mainAgentId)
-      : null;
-    const activeAgent = this.activeAgentId
-      ? this.agents.get(this.activeAgentId)
-      : null;
+    let mainAgent = this.mainAgentId ? this.agents.get(this.mainAgentId) : null;
+
+    // If mainAgentId is stale (agent was removed), find the most recent main agent
+    if (!mainAgent && this.agents.size > 0) {
+      const mainAgents = agentsArray.filter((a) => a.isMain);
+      if (mainAgents.length > 0) {
+        // Use the most recently updated main agent
+        mainAgent = mainAgents.reduce((latest, a) =>
+          a.lastUpdateTime > latest.lastUpdateTime ? a : latest,
+        );
+        this.mainAgentId = mainAgent.id;
+      }
+    }
 
     // Build main part of display
     let mainText = "";
@@ -376,29 +493,95 @@ export class TokenStatusBar implements vscode.Disposable {
       }
     }
 
-    // Build subagent part (if active and not main)
+    // Build subagent part - find the most relevant subagent to display
+    // Priority: most recently active streaming subagent > most recently completed subagent
     let subagentText = "";
-    if (activeAgent && activeAgent.id !== this.mainAgentId) {
-      if (activeAgent.status === "streaming") {
-        if (activeAgent.estimatedInputTokens && activeAgent.maxInputTokens) {
+    const subagents = agentsArray.filter((a) => !a.isMain);
+
+    // Find streaming subagents and pick the one with most recent activity (lastUpdateTime)
+    const streamingSubagents = subagents.filter(
+      (a) => a.status === "streaming",
+    );
+    const streamingSubagent =
+      streamingSubagents.length > 0
+        ? streamingSubagents.reduce((latest, a) =>
+            a.lastUpdateTime > latest.lastUpdateTime ? a : latest,
+          )
+        : null;
+
+    // Fall back to most recently completed subagent
+    const completedSubagents = subagents.filter((a) => a.status === "complete");
+    const mostRecentCompletedSubagent =
+      completedSubagents.length > 0
+        ? completedSubagents.reduce((latest, a) =>
+            a.lastUpdateTime > latest.lastUpdateTime ? a : latest,
+          )
+        : null;
+
+    const subagentToShow = streamingSubagent || mostRecentCompletedSubagent;
+
+    // Debug logging for subagent selection
+    if (subagents.length > 0) {
+      logger.debug(
+        `[StatusBar] Subagent selection`,
+        JSON.stringify({
+          subagentCount: subagents.length,
+          streamingCount: streamingSubagents.length,
+          completedCount: completedSubagents.length,
+          subagents: subagents.map((s) => ({
+            id: s.id.slice(-12),
+            status: s.status,
+            isMain: s.isMain,
+            estimatedInputTokens: s.estimatedInputTokens,
+            inputTokens: s.inputTokens,
+            startTime: s.startTime,
+            lastUpdateTime: s.lastUpdateTime,
+          })),
+          selectedSubagentId: subagentToShow?.id.slice(-12),
+          selectedStatus: subagentToShow?.status,
+        }),
+      );
+    }
+
+    if (subagentToShow) {
+      if (subagentToShow.status === "streaming") {
+        // Streaming: show estimate with ~ prefix
+        if (
+          subagentToShow.estimatedInputTokens &&
+          subagentToShow.maxInputTokens
+        ) {
           const pct = this.formatPercentage(
-            activeAgent.estimatedInputTokens,
-            activeAgent.maxInputTokens,
+            subagentToShow.estimatedInputTokens,
+            subagentToShow.maxInputTokens,
           );
-          subagentText = ` | ▸ ${activeAgent.name} ~${this.formatTokenCount(activeAgent.estimatedInputTokens)}/${this.formatTokenCount(activeAgent.maxInputTokens)} (${pct})`;
+          subagentText = `▸ ${subagentToShow.name} ~${this.formatTokenCount(subagentToShow.estimatedInputTokens)}/${this.formatTokenCount(subagentToShow.maxInputTokens)} (${pct})`;
         } else {
-          subagentText = ` | ▸ ${activeAgent.name}...`;
+          subagentText = `▸ ${subagentToShow.name}...`;
         }
       } else {
-        subagentText = ` | ${activeAgent.name}: ${this.formatAgentUsage(activeAgent)}`;
+        // Completed: show actual usage
+        subagentText = `${subagentToShow.name}: ${this.formatAgentUsage(subagentToShow)}`;
       }
     }
 
-    // Combine
-    if (mainText || subagentText) {
-      this.statusBarItem.text = `${icon} ${mainText}${subagentText}`.trim();
+    // Combine main and subagent text with separator only if both exist
+    // Check if any agents are still streaming - don't hide if so
+    const hasStreamingAgents = agentsArray.some(
+      (a) => a.status === "streaming",
+    );
+    const separator = mainText && subagentText ? " | " : "";
+    const combinedText = `${mainText}${separator}${subagentText}`;
+
+    if (combinedText) {
+      this.statusBarItem.text = `${icon} ${combinedText}`.trim();
       this.statusBarItem.tooltip = this.buildTooltip();
       this.setBackgroundColor(mainAgent);
+      this.statusBarItem.show();
+    } else if (hasStreamingAgents) {
+      // Agents are streaming but we couldn't build display text
+      // Show a generic streaming indicator to avoid flickering
+      this.statusBarItem.text = "$(loading~spin) streaming...";
+      this.statusBarItem.tooltip = this.buildTooltip();
       this.statusBarItem.show();
     } else {
       this.hide();
@@ -529,6 +712,23 @@ export class TokenStatusBar implements vscode.Disposable {
 
     if (lines.length > 0) {
       lines.pop(); // Remove trailing empty line
+    }
+
+    // Add estimation state section
+    const states = Array.from(this.estimationStates.values());
+    if (states.length > 0) {
+      lines.push("");
+      lines.push("📊 Token Estimation:");
+      for (const state of states) {
+        const statusIcon = state.isCurrent ? "🟢" : "🟡";
+        const knownStr = state.knownTokens.toLocaleString();
+        lines.push(
+          `   ${statusIcon} ${state.modelFamily}: ${knownStr} tokens known`,
+        );
+        lines.push(
+          `      (${state.knownMessageCount.toString()} messages cached)`,
+        );
+      }
     }
 
     lines.push("");
@@ -662,13 +862,13 @@ export class TokenStatusBar implements vscode.Disposable {
   }
 
   /**
-   * Schedule auto-hide
+   * Schedule auto-hide - currently disabled to keep status bar always visible
+   * The status bar provides valuable context about token usage throughout the session
    */
   private scheduleHide(): void {
+    // Don't auto-hide - keep status bar visible as long as there's data to show
+    // Users can see token usage history in the tooltip
     this.clearHideTimeout();
-    this.hideTimeout = setTimeout(() => {
-      this.hide();
-    }, 30000);
   }
 
   private clearHideTimeout(): void {
@@ -697,6 +897,7 @@ export class TokenStatusBar implements vscode.Disposable {
     this.agents.clear();
     this.mainAgentId = null;
     this.activeAgentId = null;
+    this.mainSystemPromptHash = null;
     this.completedAgentCount = 0;
     logger.debug(
       `[StatusBar] All agents CLEARED`,

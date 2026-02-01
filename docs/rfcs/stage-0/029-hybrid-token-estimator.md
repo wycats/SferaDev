@@ -1,33 +1,49 @@
-# RFC 029: Hybrid Token Estimator
+# RFC 029: Delta-Based Token Estimation
 
-**Status:** Draft  
+**Status:** Implemented  
 **Priority:** High  
 **Author:** Copilot  
-**Created:** 2026-01-31
+**Created:** 2026-01-31  
+**Updated:** 2026-02-01
 
 **Depends On:** 009 (Token Counting - provides foundation)  
 **Enables:** 009's Future Work (Smart Context Compaction - needs accurate counts)
 
 ## Summary
 
-Replace the current reactive token counting approach with a proactive `HybridTokenEstimator` that provides accurate, confidence-aware token estimates through per-model calibration and call sequence tracking.
+Replace the current reactive token counting approach with a delta-based `HybridTokenEstimator` that provides accurate token estimates by tracking known conversation states from API responses.
+
+## Key Insight
+
+After each API response, we receive the **exact total input tokens** for that request. For subsequent requests that extend the same conversation, we only need to estimate the **new messages** - the error is bounded to a single message rather than the entire context.
+
+```
+Turn 1: Full tiktoken estimate (no known state)
+        → API returns: 50,000 actual tokens
+        → Store: {messages: [...], actualTokens: 50000}
+
+Turn 2: Known prefix (50,000) + tiktoken(new message ~500)
+        → Estimate: 50,500 tokens (error bounded to ~500 tokens)
+        → API returns: 50,800 actual tokens
+        → Update stored state
+```
 
 ## Design Changes
 
-This RFC was simplified from an earlier draft based on review feedback:
+This RFC was significantly simplified from an earlier draft:
 
 **Removed:**
-- `CompactionDetector` class and all compaction detection heuristics
-- Cache clearing on compaction detection
-- Hash tracking for compaction detection purposes
 
-**Rationale:** Compaction detection is unnecessary because:
-1. After compaction, Copilot calls `provideTokenCount` with the *new* messages
-2. Each turn is a new sequence (500ms gap separates render passes)
-3. We calibrate against whatever sequence we just estimated
-4. The error detection backup (P2) catches any tracking failures
+- `CalibrationManager` and EMA-based correction factors
+- Per-model calibration persistence
+- Confidence levels and effective limit multipliers
+- Complex margin calculations
 
-The simplified design is more robust and easier to maintain.
+**Rationale:** Calibration is unnecessary because:
+
+1. We have ground truth from API responses
+2. Delta estimation bounds error to new messages only
+3. Simpler code is easier to maintain and debug
 
 ## Motivation
 
@@ -38,30 +54,20 @@ The simplified design is more robust and easier to maintain.
    - The `learnedTokenTotal` hack inflates counts by 1.5x to trigger summarization
    - This is imprecise and causes unnecessary summarization
 
-2. **No Per-Model Calibration**
-   - Different models (Claude, GPT-4, Gemini) have different tokenization
-   - We use `cl100k_base` as fallback for unknown models
-   - Single global `correctionFactor` doesn't account for model differences
+2. **Full Context Estimation**
+   - Every turn re-estimates the entire conversation with tiktoken
+   - Estimation error compounds across all messages
+   - 100k+ token conversations have significant cumulative error
 
-3. **Fixed Safety Margins**
-   - We apply fixed margins (2%, 5%, 10%) regardless of estimate confidence
-   - No feedback loop to adjust margins based on calibration quality
+### Solution: Delta Estimation
 
-### Key Insight: Call Pattern Tracking
+Instead of re-estimating everything, we:
 
-Copilot calls `provideTokenCount` for **every chunk** during prompt rendering:
+1. Store the known actual token count after each API response
+2. On the next turn, check if the conversation extends the known state
+3. Return `knownTotal + tiktoken(new messages only)`
 
-```javascript
-// From Copilot's VSCodeTokenizer
-async tokenLength(e, n) {
-  return e.type === Text ? this.countTokens(e.text, n) : 0
-}
-```
-
-This means:
-- We're called **many times per request** (once per message/chunk)
-- We can track the **sequence of calls** to know total estimated tokens
-- Each turn starts a new sequence (500ms gap between render passes)
+This bounds estimation error to just the new content.
 
 ## Detailed Design
 
@@ -71,302 +77,192 @@ This means:
 ┌─────────────────────────────────────────────────────────────────┐
 │                     HybridTokenEstimator                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐                      │
-│  │ CallSequence    │  │ Calibration     │                      │
-│  │ Tracker         │  │ Manager         │                      │
-│  └────────┬────────┘  └────────┬────────┘                      │
-│           │                    │                               │
-│           └────────────────────┘                               │
-│                    │                                           │
-│        ┌───────────▼───────────┐                               │
-│        │   TokenEstimate       │                               │
-│        │   { tokens, confidence,│                               │
-│        │     source, margin }  │                               │
-│        └───────────────────────┘                               │
+│  ┌─────────────────────┐  ┌─────────────────┐                  │
+│  │ ConversationState   │  │ TokenCounter    │                  │
+│  │ Tracker             │  │ (tiktoken)      │                  │
+│  └──────────┬──────────┘  └────────┬────────┘                  │
+│             │                      │                           │
+│             └──────────────────────┘                           │
+│                        │                                       │
+│          ┌─────────────▼─────────────┐                         │
+│          │   ConversationEstimate    │                         │
+│          │   { tokens, knownTokens,  │                         │
+│          │     estimatedTokens,      │                         │
+│          │     source }              │                         │
+│          └───────────────────────────┘                         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Core Interfaces
 
 ```typescript
-interface TokenEstimate {
-  tokens: number;
-  confidence: "high" | "medium" | "low";
-  source: "api-actual" | "calibrated" | "tiktoken" | "fallback";
-  margin: number; // Recommended safety margin based on confidence
-}
-
-interface CalibrationState {
+interface KnownConversationState {
+  /** Ordered hashes of messages in this conversation */
+  messageHashes: string[];
+  /** Actual total input tokens from API */
+  actualTokens: number;
+  /** Model family this was measured for */
   modelFamily: string;
-  correctionFactor: number;  // EMA of actual/estimated ratios
-  sampleCount: number;
-  lastCalibrated: number;
-  drift: number;             // Recent deviation from predictions
+  /** When this was recorded */
+  timestamp: number;
 }
 
-interface CallSequence {
-  startTime: number;
-  lastCallTime: number;
-  calls: Array<{
-    estimatedTokens: number;
-    source: TokenEstimate["source"];
-  }>;
-  totalEstimate: number;
+interface ConversationLookupResult {
+  /** Whether we found an exact or prefix match */
+  type: "exact" | "prefix" | "none";
+  /** Known token count (for exact/prefix match) */
+  knownTokens?: number;
+  /** Number of new messages beyond the known prefix */
+  newMessageCount?: number;
+  /** Indices of new messages (for prefix match) */
+  newMessageIndices?: number[];
 }
-```
 
-### Call Sequence Tracker
-
-Track `provideTokenCount` calls to accumulate per-turn totals:
-
-```typescript
-class CallSequenceTracker {
-  private currentSequence: CallSequence | null = null;
-  
-  // Gap threshold to detect new sequence (ms)
-  // 500ms is forgiving for slow renders with large tool schemas
-  private readonly SEQUENCE_GAP = 500;
-
-  onCall(estimate: TokenEstimate): void {
-    const now = Date.now();
-    
-    // New sequence if gap since LAST CALL > threshold
-    // (not since start, otherwise long renders would split incorrectly)
-    if (!this.currentSequence || 
-        now - this.currentSequence.lastCallTime > this.SEQUENCE_GAP) {
-      this.currentSequence = {
-        startTime: now,
-        lastCallTime: now,
-        calls: [],
-        totalEstimate: 0,
-      };
-    }
-    
-    this.currentSequence.lastCallTime = now;
-    this.currentSequence.calls.push({
-      estimatedTokens: estimate.tokens,
-      source: estimate.source,
-    });
-    this.currentSequence.totalEstimate += estimate.tokens;
-  }
-
-  getCurrentSequence(): CallSequence | null {
-    return this.currentSequence;
-  }
+interface ConversationEstimate {
+  /** Total estimated tokens */
+  tokens: number;
+  /** How much is from known actual values */
+  knownTokens: number;
+  /** How much is from tiktoken estimation */
+  estimatedTokens: number;
+  /** Number of new messages being estimated */
+  newMessageCount: number;
+  /** Source of the estimate */
+  source: "exact" | "delta" | "estimated";
 }
 ```
 
-### Calibration Manager
+### ConversationStateTracker
 
-Maintain per-model calibration from API actuals:
+Tracks known conversation states from API responses:
 
 ```typescript
-class CalibrationManager {
-  private calibrations = new Map<string, CalibrationState>();
-  private readonly LEARNING_RATE = 0.2; // EMA alpha
-  
-  constructor(private context: ExtensionContext) {
-    this.loadPersistedState();
-  }
+class ConversationStateTracker {
+  /** Most recent known state per model family */
+  private knownStates = new Map<string, KnownConversationState>();
 
-  calibrate(
+  /**
+   * Record actual token count from an API response.
+   */
+  recordActual(
+    messages: readonly LanguageModelChatMessage[],
     modelFamily: string,
-    estimatedTokens: number,
     actualTokens: number,
   ): void {
-    const state = this.calibrations.get(modelFamily) ?? this.defaultState(modelFamily);
-    
-    // Calculate observed ratio
-    const observedRatio = actualTokens / estimatedTokens;
-    
-    // Update correction factor using exponential moving average
-    state.correctionFactor = 
-      this.LEARNING_RATE * observedRatio + 
-      (1 - this.LEARNING_RATE) * state.correctionFactor;
-    
-    // Track drift (how far off we were)
-    state.drift = Math.abs(1 - observedRatio);
-    state.sampleCount++;
-    state.lastCalibrated = Date.now();
-    
-    this.calibrations.set(modelFamily, state);
-    this.persistState();
-    
-    logger.debug(
-      `Calibrated ${modelFamily}: factor=${state.correctionFactor.toFixed(3)}, ` +
-      `drift=${(state.drift * 100).toFixed(1)}%, samples=${state.sampleCount}`
-    );
-  }
-
-  getCalibration(modelFamily: string): CalibrationState | undefined {
-    return this.calibrations.get(modelFamily);
-  }
-
-  getConfidence(modelFamily: string): "high" | "medium" | "low" {
-    const state = this.calibrations.get(modelFamily);
-    if (!state) return "low";
-    
-    // High confidence: many samples, low drift
-    if (state.sampleCount > 10 && state.drift < 0.1) return "high";
-    
-    // Medium confidence: some samples
-    if (state.sampleCount > 3) return "medium";
-    
-    return "low";
-  }
-
-  private defaultState(modelFamily: string): CalibrationState {
-    return {
+    const messageHashes = messages.map((m) => this.hashMessage(m));
+    this.knownStates.set(modelFamily, {
+      messageHashes,
+      actualTokens,
       modelFamily,
-      correctionFactor: 1.0,
-      sampleCount: 0,
-      lastCalibrated: 0,
-      drift: 0,
-    };
+      timestamp: Date.now(),
+    });
   }
 
-  private loadPersistedState(): void {
-    const persisted = this.context.globalState.get<CalibrationState[]>(
-      "tokenEstimator.calibrations"
-    );
-    if (persisted) {
-      for (const state of persisted) {
-        this.calibrations.set(state.modelFamily, state);
-      }
-      logger.debug(`Loaded ${persisted.length} calibration states`);
+  /**
+   * Look up whether we have knowledge about this conversation.
+   *
+   * Returns:
+   * - "exact": Messages exactly match a known state
+   * - "prefix": Known state is a prefix of current messages
+   * - "none": No matching state found
+   */
+  lookup(
+    messages: readonly LanguageModelChatMessage[],
+    modelFamily: string,
+  ): ConversationLookupResult {
+    const state = this.knownStates.get(modelFamily);
+    if (!state) return { type: "none" };
+
+    const currentHashes = messages.map((m) => this.hashMessage(m));
+
+    // Check for exact match
+    if (this.arraysEqual(currentHashes, state.messageHashes)) {
+      return { type: "exact", knownTokens: state.actualTokens };
     }
-  }
 
-  private persistState(): void {
-    const states = Array.from(this.calibrations.values());
-    void this.context.globalState.update("tokenEstimator.calibrations", states);
+    // Check for prefix match
+    if (this.isPrefix(state.messageHashes, currentHashes)) {
+      const newCount = currentHashes.length - state.messageHashes.length;
+      return {
+        type: "prefix",
+        knownTokens: state.actualTokens,
+        newMessageCount: newCount,
+        newMessageIndices: Array.from(
+          { length: newCount },
+          (_, i) => state.messageHashes.length + i,
+        ),
+      };
+    }
+
+    return { type: "none" };
   }
 }
 ```
 
-### HybridTokenEstimator (Main Class)
+### HybridTokenEstimator
+
+Main entry point for token estimation:
 
 ```typescript
-export class HybridTokenEstimator {
-  private sequenceTracker: CallSequenceTracker;
-  private calibrationManager: CalibrationManager;
+class HybridTokenEstimator {
+  private conversationTracker: ConversationStateTracker;
   private tokenCounter: TokenCounter;
-  private tokenCache: TokenCache;
-
-  constructor(context: ExtensionContext) {
-    this.sequenceTracker = new CallSequenceTracker();
-    this.calibrationManager = new CalibrationManager(context);
-    this.tokenCounter = new TokenCounter();
-    this.tokenCache = new TokenCache();
-  }
 
   /**
-   * Estimate tokens for content with confidence.
-   * Called by provideTokenCount.
+   * Estimate total tokens for a conversation.
+   * Uses delta approach: knownTotal + tiktoken(new messages only)
    */
-  estimate(
-    content: string | LanguageModelChatMessage,
-    model: LanguageModelChatInformation,
-  ): TokenEstimate {
-    // Try cached API actual first (ground truth)
-    if (typeof content !== "string") {
-      const cached = this.tokenCache.getCached(content, model.family);
-      if (cached !== undefined) {
-        const estimate: TokenEstimate = {
-          tokens: cached,
-          confidence: "high",
-          source: "api-actual",
-          margin: 0.02,
-        };
-        this.sequenceTracker.onCall(estimate);
-        return estimate;
-      }
+  estimateConversation(
+    messages: readonly LanguageModelChatMessage[],
+    model: ModelInfo,
+  ): ConversationEstimate {
+    const lookup = this.conversationTracker.lookup(messages, model.family);
+
+    if (lookup.type === "exact") {
+      // Perfect match - return ground truth
+      return {
+        tokens: lookup.knownTokens,
+        knownTokens: lookup.knownTokens,
+        estimatedTokens: 0,
+        newMessageCount: 0,
+        source: "exact",
+      };
     }
-    
-    // Use tiktoken with calibration
-    const rawEstimate = typeof content === "string"
-      ? this.tokenCounter.estimateTextTokens(content, model.family)
-      : this.tokenCounter.estimateMessageTokens(content, model.family);
-    
-    const calibration = this.calibrationManager.getCalibration(model.family);
-    const calibratedTokens = Math.ceil(
-      rawEstimate * (calibration?.correctionFactor ?? 1.0)
-    );
-    
-    const confidence = this.calibrationManager.getConfidence(model.family);
-    const margin = this.getMarginForConfidence(confidence);
-    
-    const estimate: TokenEstimate = {
-      tokens: calibratedTokens,
-      confidence,
-      source: calibration ? "calibrated" : "tiktoken",
-      margin,
-    };
-    
-    this.sequenceTracker.onCall(estimate);
-    return estimate;
-  }
 
-  /**
-   * Calibrate from API response.
-   * Called after successful chat response with usage data.
-   */
-  calibrate(
-    model: LanguageModelChatInformation,
-    actualInputTokens: number,
-  ): void {
-    const sequence = this.sequenceTracker.getCurrentSequence();
-    if (!sequence || sequence.totalEstimate === 0) {
-      logger.warn("Cannot calibrate: no current sequence");
-      return;
+    if (lookup.type === "prefix") {
+      // Delta estimation - known prefix + estimate new messages
+      const newMessages = lookup.newMessageIndices.map((i) => messages[i]);
+      const estimatedTokens = this.estimateMessagesTokens(newMessages, model);
+
+      return {
+        tokens: lookup.knownTokens + estimatedTokens,
+        knownTokens: lookup.knownTokens,
+        estimatedTokens,
+        newMessageCount: newMessages.length,
+        source: "delta",
+      };
     }
-    
-    this.calibrationManager.calibrate(
-      model.family,
-      sequence.totalEstimate,
-      actualInputTokens,
-    );
-  }
 
-  /**
-   * Get effective token limit based on confidence.
-   */
-  getEffectiveLimit(
-    model: LanguageModelChatInformation,
-  ): { limit: number; confidence: "high" | "medium" | "low" } {
-    const confidence = this.calibrationManager.getConfidence(model.family);
-    const multipliers = {
-      high: 0.95,   // Use 95% of limit
-      medium: 0.85, // Use 85% of limit
-      low: 0.75,    // Use 75% of limit (conservative)
-    };
-    
+    // No match - estimate everything
+    const estimatedTokens = this.estimateMessagesTokens(messages, model);
     return {
-      limit: Math.floor(model.maxInputTokens * multipliers[confidence]),
-      confidence,
+      tokens: estimatedTokens,
+      knownTokens: 0,
+      estimatedTokens,
+      newMessageCount: messages.length,
+      source: "estimated",
     };
   }
 
   /**
-   * Get calibration state for debugging/status bar.
+   * Record actual token count from API response.
    */
-  getCalibrationState(modelFamily: string): CalibrationState | undefined {
-    return this.calibrationManager.getCalibration(modelFamily);
-  }
-
-  /**
-   * Get current sequence for error detection.
-   */
-  getCurrentSequence(): CallSequence | null {
-    return this.sequenceTracker.getCurrentSequence();
-  }
-
-  private getMarginForConfidence(confidence: "high" | "medium" | "low"): number {
-    switch (confidence) {
-      case "high": return 0.05;   // 5% margin
-      case "medium": return 0.10; // 10% margin
-      case "low": return 0.15;    // 15% margin
-    }
+  recordActual(
+    messages: readonly LanguageModelChatMessage[],
+    model: ModelInfo,
+    actualTokens: number,
+  ): void {
+    this.conversationTracker.recordActual(messages, model.family, actualTokens);
   }
 }
 ```
@@ -376,186 +272,123 @@ export class HybridTokenEstimator {
 ```typescript
 // In VercelAIChatModelProvider
 
-private estimator: HybridTokenEstimator;
-
-constructor(context: ExtensionContext) {
-  this.estimator = new HybridTokenEstimator(context);
-  // ... rest of constructor
-}
+private tokenEstimator: HybridTokenEstimator;
 
 /**
- * Called by Copilot to get token counts for budget enforcement.
- * Returns RAW calibrated estimate - Copilot applies its own margins.
- * We apply margins only for our internal validation (pre-flight checks).
+ * Record actual token count from API response.
+ * Called after successful chat responses.
  */
-provideTokenCount(
-  model: LanguageModelChatInformation,
-  text: string | LanguageModelChatMessage,
-  _token: CancellationToken,
-): Promise<number> {
-  const estimate = this.estimator.estimate(text, model);
-  
-  // Return raw calibrated estimate - let Copilot apply its own margins
-  // Inflating here would cause premature summarization
-  logger.trace(
-    `Token estimate: ${estimate.tokens} (${estimate.source}, ` +
-    `${estimate.confidence} confidence)`
-  );
-  
-  return Promise.resolve(estimate.tokens);
-}
-
-/**
- * For our internal pre-flight validation, we DO apply margins.
- */
-private async validateBeforeRequest(
+recordUsage(
   model: LanguageModelChatInformation,
   messages: readonly LanguageModelChatMessage[],
-): Promise<{ safe: boolean; estimatedTokens: number }> {
-  let total = 0;
-  let worstMargin = 0;
-  
-  for (const msg of messages) {
-    const estimate = this.estimator.estimate(msg, model);
-    total += estimate.tokens;
-    worstMargin = Math.max(worstMargin, estimate.margin);
-  }
-  
-  const withMargin = Math.ceil(total * (1 + worstMargin));
-  const effectiveLimit = this.estimator.getEffectiveLimit(model);
-  
-  return {
-    safe: withMargin <= effectiveLimit.limit,
-    estimatedTokens: withMargin,
-  };
-}
-
-// Calibration: extract usage from OpenResponses stream events
-// The usage comes from the response.completed event in stream-adapter.ts:
-//   case "response.completed":
-//     const usage = response.usage; // { input_tokens, output_tokens, total_tokens }
-//
-// In openresponses-chat.ts, after stream completes:
-if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
-  this.estimator.calibrate(model, adaptedEvent.usage.input_tokens);
-}
-```
-
-### Error Detection Backup (P2)
-
-If estimates diverge significantly from API actuals, we detect and warn:
-
-```typescript
-// In HybridTokenEstimator, after calibration:
-detectEstimateError(
-  estimatedTotal: number,
-  actualTotal: number,
+  actualInputTokens: number,
 ): void {
-  const error = Math.abs(estimatedTotal - actualTotal) / actualTotal;
-  
-  if (error > 0.2) {
-    // We were >20% off - something unexpected happened
-    logger.warn(
-      `Token estimate error: ${(error * 100).toFixed(1)}% ` +
-      `(estimated ${estimatedTotal}, actual ${actualTotal})`
-    );
-    
-    // The regular calibration EMA will correct for this over time
-    // If drift persists across multiple requests, consider resetting calibration
-  }
+  this.tokenEstimator.recordActual(messages, model, actualInputTokens);
 }
 
-// Called after each successful request:
-if (adaptedEvent.done && adaptedEvent.usage?.input_tokens) {
-  const sequence = this.estimator.getCurrentSequence();
-  if (sequence) {
-    this.estimator.detectEstimateError(
-      sequence.totalEstimate,
-      adaptedEvent.usage.input_tokens
-    );
-  }
-  this.estimator.calibrate(model, adaptedEvent.usage.input_tokens);
+/**
+ * Estimate total input tokens using delta approach.
+ */
+private async estimateTotalInputTokens(
+  model: LanguageModelChatInformation,
+  messages: readonly LanguageModelChatMessage[],
+): Promise<number> {
+  const estimate = this.tokenEstimator.estimateConversation(messages, model);
+
+  logger.debug(
+    `Message tokens: ${estimate.tokens} (${estimate.source}, ` +
+    `${estimate.knownTokens} known + ${estimate.estimatedTokens} est)`
+  );
+
+  return estimate.tokens;
+}
+
+// In openresponses-chat.ts, after stream completes:
+onUsage: (actualInputTokens) => {
+  this.recordUsage(model, chatMessages, actualInputTokens);
 }
 ```
 
-**When to implement**: After core implementation, if testing reveals estimation issues that need debugging visibility.
+## Implementation
 
-## Implementation Plan
+### Files Created
 
-### Phase 1: Core Infrastructure (P0)
-- [ ] `CallSequenceTracker` class (gap-based sequence detection)
-- [ ] `CalibrationManager` class with persistence
-- [ ] `HybridTokenEstimator` main class
-- [ ] Integration with `provideTokenCount`
+- `src/tokens/conversation-state.ts` - ConversationStateTracker
+- `src/tokens/conversation-state.test.ts` - Unit tests
 
-### Phase 2: Calibration Loop (P1)
-- [ ] Extract `usage.input_tokens` from `response.completed` event in stream-adapter
-- [ ] Pass usage to `openresponses-chat.ts` completion handler
-- [ ] Call `calibrate()` after successful requests
-- [ ] Status bar display of calibration state
-- [ ] Integration test verifying calibration is called with correct values
+### Files Modified
 
-### Phase 3: Safety Net (P2)
-- [ ] Error detection: warn if estimate diverges >20% from actual
-- [ ] Consider resetting calibration if drift persists across multiple requests
-- [ ] Logging for debugging estimation issues
+- `src/tokens/hybrid-estimator.ts` - Refactored to use delta approach
+- `src/tokens/hybrid-estimator.test.ts` - Updated tests
+- `src/provider.ts` - Updated to use new API
+- `src/status-bar.ts` - Simplified estimation state display
 
-### Phase 4: Testing & Tuning (P1)
-- [ ] Unit tests for each component
-- [ ] Integration tests with mock sequences
-- [ ] Tune sequence gap threshold if needed
-- [ ] Real-world testing with long conversations
+### Removed
+
+- CalibrationManager and related calibration logic (still exists but unused)
+- Confidence levels and effective limit calculations
+- Complex margin calculations
 
 ## Success Criteria
 
 ### Primary
-- **No "input too long" errors** that could have been prevented by accurate estimation
-- **Calibration converges** within 5-10 requests per model family
-- **Accurate sequence totals** - tracked estimates match what we calibrate against
+
+- ✅ **Delta estimation works** - Logs show "delta (X known + Y est)" after first turn
+- ✅ **Accurate tracking** - Message counts increase by 2 per turn (user + assistant)
+- ✅ **Error bounded** - Estimation error limited to new messages only
 
 ### Secondary
-- **Reduced unnecessary summarization** - accurate counts mean VS Code only summarizes when truly needed
-- **Transparent confidence** - users/developers can see estimate quality
-- **Persistent learning** - calibration survives extension restarts
+
+- ✅ **Simple implementation** - ~200 lines of new code
+- ✅ **No persistence needed** - State is per-session, resets on reload
+- ✅ **Easy to debug** - Clear logging shows estimation source
+
+## Example Log Output
+
+```
+[2026-02-01T03:22:58.292Z] [INFO] [Estimator] Recorded actual: 102243 tokens for 142 messages (claude-opus)
+[2026-02-01T03:23:28.227Z] [INFO] [Estimator] Recorded actual: 102633 tokens for 144 messages (claude-opus)
+[2026-02-01T03:24:41.919Z] [INFO] [Estimator] Recorded actual: 103128 tokens for 146 messages (claude-opus)
+```
+
+Each turn adds ~2 messages and ~400-500 tokens.
 
 ## Scope
 
 This RFC covers **message token estimation** only. Tool schema tokens are handled separately:
+
 - Tool schemas are passed to `sendRequest`, not through `provideTokenCount`
 - Tool schemas are relatively static per-session
-- The existing GCMP formula (16 + 8/tool + content × 1.1) works well
-- Future work could add `estimateTools()` method if needed
+- The existing formula (16 + 8/tool + content × 1.1) works well
 
 ## Risks & Mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| Sequence gap threshold too short/long | Start at 500ms, make configurable, tune empirically |
-| Margin double-applied (us + Copilot) | Return raw estimate from `provideTokenCount`, apply margin only for internal validation |
-| Calibration drift over time | Track drift metric, error detection warns if >20% off |
-| Memory usage from sequence tracking | Sequences are short-lived, only current sequence retained |
+| Risk                                         | Mitigation                                                        |
+| -------------------------------------------- | ----------------------------------------------------------------- |
+| Conversation diverges (regeneration, branch) | Falls back to full tiktoken estimate                              |
+| State lost on reload                         | Acceptable - first turn uses tiktoken, subsequent turns use delta |
+| Different model families                     | State tracked per model family                                    |
 
 ## Alternatives Considered
 
-### 1. Wait for VS Code API
-VS Code could expose ground-truth token counts. However:
-- No indication this is planned
-- We can solve it ourselves with calibration
+### 1. Calibration-based approach (original RFC)
 
-### 2. Always use conservative estimates
-Just use large safety margins everywhere. However:
-- Causes unnecessary summarization
-- Wastes context window capacity
-- Poor user experience
+Learn correction factors from API responses using EMA. However:
 
-### 3. Request-level calibration only
-Only calibrate when we have API actuals, don't track sequences. However:
-- Can't know total estimated tokens for calibration
-- Slower convergence
-- No confidence tracking
+- More complex implementation
+- Requires persistence
+- Still estimates entire context each turn
+- Delta approach is simpler and more accurate
+
+### 2. Per-message caching
+
+Cache actual token counts per message. However:
+
+- API only returns total, not per-message breakdown
+- Would need to distribute total proportionally (imprecise)
+- Delta approach is simpler
 
 ## References
 
 - [RFC 009: Token Counting and Context Management](./009-token-counting-context-management.md) - Foundation
 - [js-tiktoken](https://github.com/openai/tiktoken/tree/main/js) - Tokenizer library
-- [VicBilibily/GCMP](https://github.com/VicBilibily/GCMP) - Token counting research

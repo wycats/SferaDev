@@ -70,6 +70,11 @@ export class ConfigService implements vscode.Disposable {
     return this.config.get("logging.level", "warn");
   }
 
+  /** Enable forensic capture mode */
+  get forensicCaptureEnabled(): boolean {
+    return this.config.get("debug.forensicCapture", false);
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Hardcoded defaults (not user-configurable)
   // Match Copilot's agent mode for reliable tool calling

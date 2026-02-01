@@ -318,11 +318,16 @@ describe("TokenStatusBar", () => {
   describe("multi-agent display", () => {
     it("shows subagent alongside main agent when active", () => {
       // Main agent starts and completes (with maxInputTokens for consistent format)
+      // Use a system prompt hash to enable subagent detection
+      const mainHash = "main-system-prompt-hash-abc123";
+      const subagentHash = "subagent-system-prompt-hash-xyz789";
+
       statusBar.startAgent(
         "main-agent",
         50000,
         128000,
         "anthropic:claude-sonnet-4",
+        mainHash,
       );
       statusBar.completeAgent("main-agent", {
         inputTokens: 52000,
@@ -330,12 +335,13 @@ describe("TokenStatusBar", () => {
         maxInputTokens: 128000,
       });
 
-      // Subagent starts
-      statusBar.startAgent("recon-agent", 8000, 128000, "recon");
+      // Subagent starts with different system prompt hash
+      statusBar.startAgent("recon-agent", 8000, 128000, "recon", subagentHash);
 
-      // Should show both agents - main uses x/max format, subagent shows name
+      // Should show both agents - main uses x/max format, subagent shows "sub"
+      // (subagent detection works via different system prompt hash)
       expect(mockStatusBarItem.text).toContain("52.0k/128.0k");
-      expect(mockStatusBarItem.text).toContain("▸ recon");
+      expect(mockStatusBarItem.text).toContain("▸ sub");
     });
 
     it("shows tooltip with all agent details", () => {

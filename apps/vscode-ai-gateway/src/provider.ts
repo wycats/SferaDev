@@ -31,7 +31,9 @@ import {
 } from "./logger";
 import { ModelsClient } from "./models";
 import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
+import { captureForensicData } from "./provider/forensic-capture.js";
 import { executeOpenResponsesChat } from "./provider/openresponses-chat.js";
+import { extractSystemPrompt } from "./provider/system-prompt.js";
 import type { TokenStatusBar } from "./status-bar";
 import { HybridTokenEstimator } from "./tokens/hybrid-estimator";
 
@@ -116,24 +118,34 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   }
 
   /**
-   * Calibrate token estimation from API response.
+   * Record actual token count from API response.
    * Called after successful chat responses with actual usage data.
    *
-   * This enables the HybridTokenEstimator to learn per-model correction factors
-   * that improve future estimates.
+   * This enables delta-based estimation: for subsequent requests that extend
+   * this conversation, we use knownTotal + tiktoken(new messages only).
    */
-  calibrateFromUsage(
+  recordUsage(
     model: LanguageModelChatInformation,
+    messages: readonly LanguageModelChatMessage[],
     actualInputTokens: number,
+    conversationId?: string,
   ): void {
-    this.tokenEstimator.calibrate(model, actualInputTokens);
+    this.tokenEstimator.recordActual(
+      messages,
+      model,
+      actualInputTokens,
+      conversationId,
+    );
 
-    // Log calibration for validation
-    const state = this.tokenEstimator.getCalibrationState(model.family);
-    if (state) {
+    // Update status bar with estimation state
+    const state = this.tokenEstimator.getConversationState(
+      model.family,
+      conversationId,
+    );
+    if (state && this.statusBar) {
       logger.info(
-        `[Calibration] ${model.family}: factor=${state.correctionFactor.toFixed(3)}, ` +
-          `samples=${state.sampleCount.toString()}, drift=${(state.drift * 100).toFixed(1)}%`,
+        `[TokenState] ${model.family}: ${state.actualTokens.toString()} tokens ` +
+          `for ${state.messageHashes.length.toString()} messages`,
       );
     }
   }
@@ -278,10 +290,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       .substring(0, 8);
     const chatId = `chat-${chatHash}-${Date.now().toString()}`;
 
+    // Log session ID at entry point to identify which window handles each request
+    const sessionId = vscode.env.sessionId.substring(0, 8);
     logger.info(
-      `Chat request to ${model.id} with ${chatMessages.length.toString()} messages`,
+      `[${sessionId}] Chat request to ${model.id} with ${chatMessages.length.toString()} messages`,
     );
-    logger.debug(`Chat ID: ${chatId}`);
+    logger.debug(`[${sessionId}] Chat ID: ${chatId}`);
 
     const abortController = new AbortController();
     const abortSubscription = token.onCancellationRequested(() => {
@@ -294,18 +308,42 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // Track current request for caching API actuals after response
       this.currentRequestMessages = chatMessages;
 
+      // Extract system prompt for subagent detection
+      const systemPrompt = extractSystemPrompt(chatMessages);
+      const systemPromptHash = systemPrompt
+        ? createHash("sha256")
+            .update(systemPrompt)
+            .digest("hex")
+            .substring(0, 16)
+        : undefined;
+
       // Pre-flight check: estimate total tokens and validate against model limit
       // Now includes tool schemas (can be 50k+ tokens)
       const estimatedTokens = await this.estimateTotalInputTokens(
         model,
         chatMessages,
         token,
+        systemPromptHash,
         options.tools ? { tools: options.tools } : {},
       );
       const maxInputTokens = model.maxInputTokens;
       logger.debug(
         `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%)`,
       );
+
+      // Forensic capture for debugging conversation identifiers
+      if (this.configService.forensicCaptureEnabled) {
+        await captureForensicData({
+          model,
+          chatMessages,
+          options,
+          systemPrompt,
+          systemPromptHash,
+          estimatedTokens,
+          chatId,
+          currentAgentId: this.currentAgentId,
+        });
+      }
 
       // Pre-flight check: warn if estimated tokens exceed model limit
       // Let the API handle the actual error - estimation may be imprecise
@@ -325,6 +363,37 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         );
       }
 
+      // Gather empirical data for subagent detection
+      const messageRoles = chatMessages.map((m) => m.role).join(",");
+      const toolNames = options.tools?.map((t) => t.name).slice(0, 10) ?? [];
+      const hasActiveStreaming = this.currentAgentId !== null;
+
+      // Get VS Code's session ID to identify which window this request is from
+      const vscodeSessionId = vscode.env.sessionId;
+      const shortSessionId = vscodeSessionId.substring(0, 8);
+
+      // Safe preview extraction - avoid calling .replace() on undefined
+      const systemPromptPreview = systemPrompt
+        ? systemPrompt.substring(0, 300).replace(/\n/g, "\\n")
+        : undefined;
+
+      logger.info(
+        `[Subagent Detection] Request analysis`,
+        JSON.stringify({
+          chatId,
+          vscodeSessionId: shortSessionId,
+          messageCount: chatMessages.length,
+          messageRoles: messageRoles.substring(0, 100),
+          systemPromptHash,
+          systemPromptLen: systemPrompt?.length ?? 0,
+          systemPromptPreview,
+          toolCount: options.tools?.length ?? 0,
+          toolNames,
+          hasActiveStreaming,
+          currentAgentId: this.currentAgentId?.slice(-12),
+        }),
+      );
+
       // Start tracking this agent in the status bar
       this.currentAgentId = chatId;
       this.statusBar?.startAgent(
@@ -332,6 +401,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         estimatedTokens,
         maxInputTokens,
         model.id,
+        systemPromptHash,
       );
 
       const apiKey = await this.getApiKey(false);
@@ -359,7 +429,13 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
           estimatedInputTokens: estimatedTokens,
           chatId,
           onUsage: (actualInputTokens) => {
-            this.calibrateFromUsage(model, actualInputTokens);
+            // Record actual tokens for delta estimation
+            this.recordUsage(
+              model,
+              chatMessages,
+              actualInputTokens,
+              systemPromptHash,
+            );
           },
         },
       );
@@ -425,6 +501,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         }
       }
 
+      // Mark agent as errored in status bar (even if we didn't extract token info)
+      // This ensures agents don't get stuck in 'streaming' state on any error
+      if (this.currentAgentId && !tokenInfo) {
+        this.statusBar?.errorAgent(this.currentAgentId);
+      }
+
       // CRITICAL: Always emit an error response to prevent "no response returned" error.
       // If nothing has been sent yet, this is the only response VS Code will see.
       if (!responseSent) {
@@ -480,19 +562,14 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   }
 
   /**
-   * Estimate token count for a message.
+   * Estimate token count for a single message.
    *
    * This is called by VS Code BEFORE sending messages to decide whether
-   * to compact/truncate. Accurate estimates are critical for avoiding
-   * "input too long" errors.
+   * to compact/truncate. For per-message estimation, we use tiktoken.
    *
-   * Token counting strategy (RFC 029 Hybrid Token Estimator):
-   * 1. Check if we learned actual counts from a previous "too long" error
-   * 2. Use HybridTokenEstimator which:
-   *    - Checks cache for API actuals (ground truth)
-   *    - Applies per-model calibration factors (learned from API responses)
-   *    - Tracks call sequences for calibration
-   * 3. Return RAW calibrated estimate - Copilot applies its own margins
+   * Note: The more accurate conversation-level delta estimation is used
+   * in estimateTotalInputTokens() for our internal pre-flight checks.
+   * VS Code's per-message calls don't have conversation context.
    */
   provideTokenCount(
     model: LanguageModelChatInformation,
@@ -501,8 +578,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   ): Promise<number> {
     void _token;
 
-    // Use HybridTokenEstimator for calibrated estimates
-    const estimate = this.tokenEstimator.estimate(text, model);
+    // Use tiktoken for per-message estimation
+    const estimate = this.tokenEstimator.estimateMessage(text, model);
 
     // If we learned from a "too long" error, apply a correction multiplier
     // This ensures VS Code sees token counts that will trigger summarization
@@ -512,9 +589,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       if (currentHash === this.learnedTokenTotal.conversationHash) {
         // Apply a 1.5x multiplier to compensate for the underestimate
         // The goal is to make the sum exceed maxInputTokens so VS Code summarizes
-        const inflated = estimate.tokens * 1.5;
+        const inflated = estimate * 1.5;
         logger.trace(
-          `Applying learned token correction: ${estimate.tokens.toString()} -> ${Math.ceil(inflated).toString()} ` +
+          `Applying learned token correction: ${estimate.toString()} -> ${Math.ceil(inflated).toString()} ` +
             `(learned actual total: ${this.learnedTokenTotal.actualTokens.toString()})`,
         );
         return Promise.resolve(Math.ceil(inflated));
@@ -528,9 +605,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       }
     }
 
-    // Return raw calibrated estimate - Copilot applies its own margins
-    // We only apply margins for internal validation (pre-flight checks)
-    return Promise.resolve(estimate.tokens);
+    return Promise.resolve(estimate);
   }
 
   /**
@@ -538,15 +613,21 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
    * Used for pre-flight validation before sending to the API.
    *
    * Includes:
-   * - Message content tokens (from cache or estimation)
-   * - Message structure overhead (4 tokens/message)
+   * - Message content tokens (from delta estimation or tiktoken)
+   * - Message structure overhead (included in delta estimation)
    * - Tool schema tokens (16 + 8/tool + content × 1.1)
    * - System prompt tokens (content + 28 overhead)
+   *
+   * Uses delta-based estimation when we have a known conversation state:
+   * - If messages exactly match known state → return actual (ground truth)
+   * - If messages extend known state → knownTotal + tiktoken(new messages)
+   * - Otherwise → tiktoken for all messages
    */
   private async estimateTotalInputTokens(
     model: LanguageModelChatInformation,
     messages: readonly LanguageModelChatMessage[],
-    token: CancellationToken,
+    _token: CancellationToken,
+    conversationId?: string,
     options?: {
       tools?: readonly {
         name: string;
@@ -556,13 +637,27 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       systemPrompt?: string;
     },
   ): Promise<number> {
-    // Estimate based on cached actuals and tiktoken/character fallback
-    let total = 0;
-    for (const message of messages) {
-      total += await this.provideTokenCount(model, message, token);
-    }
-    // Add overhead for message structure (~4 tokens per message)
-    total += messages.length * 4;
+    void _token;
+
+    // Use conversation-level delta estimation
+    const estimate = this.tokenEstimator.estimateConversation(
+      messages,
+      model,
+      conversationId,
+    );
+
+    let total = estimate.tokens;
+    const sourceLabel =
+      estimate.source === "exact"
+        ? "ground truth"
+        : estimate.source === "delta"
+          ? `delta (${estimate.knownTokens.toString()} known + ${estimate.estimatedTokens.toString()} est)`
+          : "full estimate";
+
+    logger.debug(
+      `Message tokens: ${total.toString()} (${sourceLabel}, ` +
+        `${messages.length.toString()} messages, ${estimate.newMessageCount.toString()} new)`,
+    );
 
     // Add tool schema tokens (critical - can be 50k+ tokens)
     const tokenCounter = this.tokenEstimator.getTokenCounter();

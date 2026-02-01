@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ExtensionContext } from "vscode";
+import type { ExtensionContext, LanguageModelChatMessage } from "vscode";
 import { HybridTokenEstimator, type ModelInfo } from "./hybrid-estimator";
 
 // Mock vscode module
@@ -44,10 +44,20 @@ vi.mock("js-tiktoken", () => ({
   getEncoding: tiktokenHoisted.mockGetEncoding,
 }));
 
+// Helper to create mock messages
+function createMessage(
+  role: number,
+  content: string,
+): LanguageModelChatMessage {
+  return {
+    role,
+    content: [new vscodeHoisted.LanguageModelTextPart(content)],
+  } as unknown as LanguageModelChatMessage;
+}
+
 describe("HybridTokenEstimator", () => {
   let estimator: HybridTokenEstimator;
   let mockContext: ExtensionContext;
-  let mockGlobalState: Map<string, unknown>;
 
   const testModel: ModelInfo = {
     family: "claude",
@@ -55,175 +65,179 @@ describe("HybridTokenEstimator", () => {
   };
 
   beforeEach(() => {
-    mockGlobalState = new Map();
     mockContext = {
       globalState: {
-        get: vi.fn((key: string) => mockGlobalState.get(key)),
-        update: vi.fn((key: string, value: unknown) => {
-          mockGlobalState.set(key, value);
-          return Promise.resolve();
-        }),
+        get: vi.fn(),
+        update: vi.fn(() => Promise.resolve()),
       },
     } as unknown as ExtensionContext;
 
     estimator = new HybridTokenEstimator(mockContext);
   });
 
-  describe("estimate", () => {
-    it("returns tiktoken estimate for uncalibrated model", () => {
-      const result = estimator.estimate("hello world", testModel);
+  describe("estimateMessage", () => {
+    it("returns tiktoken estimate for a string", () => {
+      const result = estimator.estimateMessage("hello world", testModel);
 
-      expect(result.source).toBe("tiktoken");
-      expect(result.confidence).toBe("low");
-      expect(result.tokens).toBeGreaterThan(0);
+      // "hello world" = 11 chars = 11 tokens (mock)
+      expect(result).toBe(11);
     });
 
-    it("returns calibrated estimate after calibration", () => {
-      // First estimate to create sequence
-      estimator.estimate("hello world", testModel);
+    it("returns tiktoken estimate for a message", () => {
+      const message = createMessage(1, "hello world");
+      const result = estimator.estimateMessage(message, testModel);
 
-      // Calibrate with actual tokens
-      estimator.calibrate(testModel, 15);
-
-      // Next estimate should be calibrated
-      const result = estimator.estimate("hello world", testModel);
-
-      expect(result.source).toBe("calibrated");
+      // "hello world" = 11 chars = 11 tokens (mock)
+      expect(result).toBe(11);
     });
 
     it("tracks calls in sequence", () => {
-      estimator.estimate("hello", testModel);
-      estimator.estimate("world", testModel);
+      estimator.estimateMessage("hello", testModel);
+      estimator.estimateMessage("world", testModel);
 
       const sequence = estimator.getCurrentSequence();
       expect(sequence?.calls).toHaveLength(2);
     });
+  });
 
-    it("applies correction factor to estimate", () => {
-      // Pre-seed calibration with correction factor
-      const persistedState = [
-        {
-          modelFamily: "claude",
-          correctionFactor: 1.5,
-          sampleCount: 5,
-          lastCalibrated: Date.now(),
-          drift: 0.05,
-        },
+  describe("estimateConversation", () => {
+    it("returns full estimate when no known state", () => {
+      const messages = [createMessage(1, "hello"), createMessage(2, "world")];
+
+      const result = estimator.estimateConversation(messages, testModel);
+
+      expect(result.source).toBe("estimated");
+      expect(result.knownTokens).toBe(0);
+      expect(result.newMessageCount).toBe(2);
+      // 5 + 5 = 10 char tokens + 2*4 = 8 message overhead = 18
+      expect(result.tokens).toBe(18);
+    });
+
+    it("returns exact match after recording actual", () => {
+      const messages = [createMessage(1, "hello"), createMessage(2, "world")];
+
+      // Record actual from API
+      estimator.recordActual(messages, testModel, 500);
+
+      // Same messages should return exact match
+      const result = estimator.estimateConversation(messages, testModel);
+
+      expect(result.source).toBe("exact");
+      expect(result.tokens).toBe(500);
+      expect(result.knownTokens).toBe(500);
+      expect(result.estimatedTokens).toBe(0);
+      expect(result.newMessageCount).toBe(0);
+    });
+
+    it("returns delta estimate when conversation extends known state", () => {
+      const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
+
+      // Record actual from API
+      estimator.recordActual(messages1, testModel, 500);
+
+      // Add a new message
+      const messages2 = [...messages1, createMessage(1, "new message")];
+
+      const result = estimator.estimateConversation(messages2, testModel);
+
+      expect(result.source).toBe("delta");
+      expect(result.knownTokens).toBe(500);
+      // "new message" = 11 chars + 4 overhead = 15
+      expect(result.estimatedTokens).toBe(15);
+      expect(result.tokens).toBe(515);
+      expect(result.newMessageCount).toBe(1);
+    });
+
+    it("returns full estimate when conversation diverges", () => {
+      const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
+
+      // Record actual from API
+      estimator.recordActual(messages1, testModel, 500);
+
+      // Different conversation (not a prefix)
+      const messages2 = [
+        createMessage(1, "different"),
+        createMessage(2, "conversation"),
       ];
-      mockGlobalState.set("tokenEstimator.calibrations", persistedState);
 
-      const calibratedEstimator = new HybridTokenEstimator(mockContext);
-      const result = calibratedEstimator.estimate("hello", testModel);
+      const result = estimator.estimateConversation(messages2, testModel);
 
-      // With correction factor 1.5, tokens should be multiplied
-      // "hello" = 5 chars = 5 tokens (mock), * 1.5 = 7.5 -> 8
-      expect(result.tokens).toBe(8);
+      expect(result.source).toBe("estimated");
+      expect(result.knownTokens).toBe(0);
+      expect(result.newMessageCount).toBe(2);
     });
   });
 
-  describe("calibrate", () => {
-    it("calibrates from sequence total", () => {
-      // Build up a sequence
-      estimator.estimate("hello", testModel);
-      estimator.estimate("world", testModel);
+  describe("recordActual", () => {
+    it("stores known state for model family", () => {
+      const messages = [createMessage(1, "hello"), createMessage(2, "world")];
 
-      const sequence = estimator.getCurrentSequence();
-      const estimatedTotal = sequence?.totalEstimate ?? 0;
+      estimator.recordActual(messages, testModel, 500);
 
-      // Calibrate with actual tokens
-      estimator.calibrate(testModel, estimatedTotal * 1.1);
-
-      // Check calibration was applied
-      const state = estimator.getCalibrationState("claude");
-      expect(state?.sampleCount).toBe(1);
-      expect(state?.correctionFactor).toBeGreaterThan(1);
+      const state = estimator.getConversationState("claude");
+      expect(state?.actualTokens).toBe(500);
+      expect(state?.messageHashes).toHaveLength(2);
     });
 
-    it("warns when no sequence exists", () => {
-      // No estimate calls, so no sequence
-      estimator.calibrate(testModel, 100);
+    it("overwrites previous state for same model family", () => {
+      const messages1 = [createMessage(1, "first")];
+      const messages2 = [createMessage(1, "second")];
 
-      // Should not create calibration
-      expect(estimator.getCalibrationState("claude")).toBeUndefined();
+      estimator.recordActual(messages1, testModel, 100);
+      estimator.recordActual(messages2, testModel, 200);
+
+      const state = estimator.getConversationState("claude");
+      expect(state?.actualTokens).toBe(200);
     });
   });
 
-  describe("getEffectiveLimit", () => {
-    it("returns 75% for low confidence", () => {
-      const result = estimator.getEffectiveLimit(testModel);
+  describe("lookupConversation", () => {
+    it("returns none when no state exists", () => {
+      const messages = [createMessage(1, "hello")];
 
-      expect(result.confidence).toBe("low");
-      expect(result.limit).toBe(75000); // 75% of 100000
+      const result = estimator.lookupConversation(messages, "claude");
+
+      expect(result.type).toBe("none");
     });
 
-    it("returns 85% for medium confidence", () => {
-      // Build up medium confidence (4+ samples)
-      for (let i = 0; i < 4; i++) {
-        estimator.estimate("test", testModel);
-        estimator.calibrate(testModel, 5);
-      }
+    it("returns exact when messages match", () => {
+      const messages = [createMessage(1, "hello")];
 
-      const result = estimator.getEffectiveLimit(testModel);
+      estimator.recordActual(messages, testModel, 100);
 
-      expect(result.confidence).toBe("medium");
-      expect(result.limit).toBe(85000); // 85% of 100000
+      const result = estimator.lookupConversation(messages, "claude");
+
+      expect(result.type).toBe("exact");
+      expect(result.knownTokens).toBe(100);
     });
 
-    it("returns 95% for high confidence", () => {
-      // Build up high confidence (11+ samples, low drift)
-      for (let i = 0; i < 11; i++) {
-        estimator.estimate("test", testModel);
-        // Calibrate with close to estimated (low drift)
-        const sequence = estimator.getCurrentSequence();
-        estimator.calibrate(testModel, sequence?.totalEstimate ?? 4);
-      }
+    it("returns prefix when conversation extends", () => {
+      const messages1 = [createMessage(1, "hello")];
 
-      const result = estimator.getEffectiveLimit(testModel);
+      estimator.recordActual(messages1, testModel, 100);
 
-      expect(result.confidence).toBe("high");
-      expect(result.limit).toBe(95000); // 95% of 100000
-    });
-  });
+      const messages2 = [...messages1, createMessage(2, "world")];
 
-  describe("margins", () => {
-    it("returns 15% margin for low confidence", () => {
-      const result = estimator.estimate("hello", testModel);
-      expect(result.margin).toBe(0.15);
-    });
+      const result = estimator.lookupConversation(messages2, "claude");
 
-    it("returns 10% margin for medium confidence", () => {
-      // Build up medium confidence
-      for (let i = 0; i < 4; i++) {
-        estimator.estimate("test", testModel);
-        estimator.calibrate(testModel, 5);
-      }
-
-      const result = estimator.estimate("hello", testModel);
-      expect(result.margin).toBe(0.1);
-    });
-
-    it("returns 5% margin for high confidence", () => {
-      // Build up high confidence
-      for (let i = 0; i < 11; i++) {
-        estimator.estimate("test", testModel);
-        const sequence = estimator.getCurrentSequence();
-        estimator.calibrate(testModel, sequence?.totalEstimate ?? 4);
-      }
-
-      const result = estimator.estimate("hello", testModel);
-      expect(result.margin).toBe(0.05);
+      expect(result.type).toBe("prefix");
+      expect(result.knownTokens).toBe(100);
+      expect(result.newMessageCount).toBe(1);
+      expect(result.newMessageIndices).toEqual([1]);
     });
   });
 
   describe("reset", () => {
-    it("clears sequence and calibrations", () => {
-      estimator.estimate("hello", testModel);
-      estimator.calibrate(testModel, 10);
+    it("clears sequence and conversation state", () => {
+      const messages = [createMessage(1, "hello")];
+
+      estimator.estimateMessage("test", testModel);
+      estimator.recordActual(messages, testModel, 100);
 
       estimator.reset();
 
       expect(estimator.getCurrentSequence()).toBeNull();
-      expect(estimator.getAllCalibrationStates()).toHaveLength(0);
+      expect(estimator.getConversationState("claude")).toBeUndefined();
     });
   });
 });

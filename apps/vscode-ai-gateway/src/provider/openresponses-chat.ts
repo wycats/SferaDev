@@ -111,6 +111,9 @@ export async function executeOpenResponsesChat(
   logger.trace(
     `[OpenResponses] Received ${chatMessages.length} messages: ${chatMessages.map((m) => roleNames[m.role as number] ?? `Unknown(${m.role})`).join(", ")}`,
   );
+  logger.debug(
+    `[OpenResponses] Estimated input tokens: ${estimatedInputTokens.toString()}`,
+  );
 
   // Create client with trace logging
   const client = createClient({
@@ -142,13 +145,8 @@ export async function executeOpenResponsesChat(
     abortController.abort();
   });
 
-  // Start tracking in status bar
-  statusBar?.startAgent(
-    chatId,
-    estimatedInputTokens,
-    model.maxInputTokens,
-    model.id,
-  );
+  // Note: startAgent is called in provider.ts with systemPromptHash for subagent detection
+  // Do not call it here to avoid overwriting the agent entry
 
   let responseSent = false;
   let result: OpenResponsesChatResult = { success: false };
@@ -218,6 +216,9 @@ export async function executeOpenResponsesChat(
       eventCount++;
       const eventType = (event as { type?: string }).type ?? "unknown";
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
+
+      // Update agent activity timestamp for subagent selection
+      statusBar?.updateAgentActivity(chatId);
 
       // Track function_call_arguments events - these indicate actual tool calls
       if (eventType.includes("function_call_arguments")) {

@@ -91,6 +91,11 @@
             "Log everything including debug messages",
             "Log everything including trace-level diagnostic messages"
           ]
+        },
+        "vercelAiGateway.debug.forensicCapture": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable forensic capture mode. Writes detailed request data to ~/.vscode-ai-gateway/forensic-captures.jsonl for debugging conversation identifiers."
         }
       }
     }

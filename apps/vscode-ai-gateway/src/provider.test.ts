@@ -165,7 +165,9 @@ describe("Provider instantiation", () => {
 
   it("disposes cleanly", () => {
     const provider = createProvider();
-    expect(() => { provider.dispose(); }).not.toThrow();
+    expect(() => {
+      provider.dispose();
+    }).not.toThrow();
   });
 });
 
@@ -193,9 +195,7 @@ describe("Model selection memory", () => {
     const provider = new VercelAIChatModelProvider(context);
 
     expect(provider.getLastSelectedModelId()).toBe("stored-model");
-    expect(getMock).toHaveBeenCalledWith(
-      LAST_SELECTED_MODEL_KEY,
-    );
+    expect(getMock).toHaveBeenCalledWith(LAST_SELECTED_MODEL_KEY);
   });
 
   it("returns undefined when no model has been selected", () => {

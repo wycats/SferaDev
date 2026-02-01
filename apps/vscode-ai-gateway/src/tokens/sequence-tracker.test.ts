@@ -16,10 +16,7 @@ vi.mock("vscode", () => ({
   },
 }));
 
-import {
-  CallSequenceTracker,
-  type TokenEstimate,
-} from "./sequence-tracker";
+import { CallSequenceTracker, type TokenEstimate } from "./sequence-tracker";
 
 describe("CallSequenceTracker", () => {
   let tracker: CallSequenceTracker;
