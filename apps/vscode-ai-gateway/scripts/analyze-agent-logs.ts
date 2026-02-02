@@ -330,7 +330,10 @@ function formatTokenAccuracy(accuracy: TokenAccuracySummary): string {
     const est = entry.estimatedTokens.toLocaleString().padStart(8);
     const act = entry.actualTokens.toLocaleString().padStart(8);
     const ratio = entry.ratio.toFixed(3).padStart(5);
-    const error = `${entry.errorPercent >= 0 ? "+" : ""}${entry.errorPercent.toFixed(1)}%`.padStart(6);
+    const error =
+      `${entry.errorPercent >= 0 ? "+" : ""}${entry.errorPercent.toFixed(1)}%`.padStart(
+        6,
+      );
     const mainTag = entry.isMain ? "*" : " ";
     lines.push(
       `  ${entry.agentId.padEnd(8)}${mainTag} | ${name} | ${est} | ${act} | ${ratio} | ${error}`,
@@ -770,9 +773,18 @@ function buildUnifiedTimeline(
 
   // Add our events
   for (const event of events) {
-    const agent = event.tree.agents.find(
-      (a) => a.id === event.tree.mainAgentId,
-    );
+    const agentId = event.data?.agentId as string | undefined;
+    const canonicalAgentId = event.data?.canonicalAgentId as
+      | string
+      | undefined;
+    const agent =
+      (agentId
+        ? event.tree.agents.find((a) => a.id === agentId)
+        : undefined) ??
+      (canonicalAgentId
+        ? event.tree.agents.find((a) => a.id === canonicalAgentId)
+        : undefined) ??
+      event.tree.agents.find((a) => a.id === event.tree.mainAgentId);
     unified.push({
       timestampMs: parseTimestampToMs(event.timestamp),
       timestamp: event.timestamp,

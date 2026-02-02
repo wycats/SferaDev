@@ -13,13 +13,13 @@ exo:
 
 The codebase has multiple ad-hoc persistence patterns:
 
-| Component          | Storage        | Key                                 | Data Shape              | Versioning             |
-| ------------------ | -------------- | ----------------------------------- | ----------------------- | ---------------------- |
-| ModelsClient       | globalState    | `vercelAiGateway.modelsCache`       | `PersistentModelsCache` | Legacy fallback only   |
-| ModelEnricher      | globalState    | `vercelAiGateway.enrichmentCache`   | `{ version, entries }`  | Internal version field |
-| ~~CalibrationManager~~ | ~~globalState~~ | ~~`tokenEstimator.calibrations`~~ | ~~`CalibrationState[]`~~ | **REMOVED** (RFC 029)  |
-| AuthProvider       | globalState    | `vercelAiGateway.activeSession`     | `string \| null`        | None                   |
-| Provider           | workspaceState | `vercelAiGateway.lastSelectedModel` | `string`                | None                   |
+| Component              | Storage         | Key                                 | Data Shape               | Versioning             |
+| ---------------------- | --------------- | ----------------------------------- | ------------------------ | ---------------------- |
+| ModelsClient           | globalState     | `vercelAiGateway.modelsCache`       | `PersistentModelsCache`  | Legacy fallback only   |
+| ModelEnricher          | globalState     | `vercelAiGateway.enrichmentCache`   | `{ version, entries }`   | Internal version field |
+| ~~CalibrationManager~~ | ~~globalState~~ | ~~`tokenEstimator.calibrations`~~   | ~~`CalibrationState[]`~~ | **REMOVED** (RFC 029)  |
+| AuthProvider           | globalState     | `vercelAiGateway.activeSession`     | `string \| null`         | None                   |
+| Provider               | workspaceState  | `vercelAiGateway.lastSelectedModel` | `string`                 | None                   |
 
 **Source locations:**
 
