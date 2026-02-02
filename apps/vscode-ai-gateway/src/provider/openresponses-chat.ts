@@ -256,6 +256,20 @@ export async function executeOpenResponsesChat(
           logger.info(
             `[OpenResponses] Emitting tool call #${toolCallCount}: ${part.name} (callId: ${part.callId})`,
           );
+          // Detect runSubagent tool calls for claim creation (RFC 00033)
+          if (part.name === "runSubagent" || part.name === "run_subagent") {
+            const args = part.input as
+              | { agentName?: string; mode?: string }
+              | undefined;
+            const expectedChildName = args?.agentName ?? args?.mode ?? "unknown";
+
+            // Create claim via status bar (which owns the ClaimRegistry)
+            statusBar?.createChildClaim(chatId, expectedChildName);
+
+            logger.info(
+              `[OpenResponses] Detected runSubagent call: "${expectedChildName}"`,
+            );
+          }
         } else if (part instanceof LanguageModelTextPart) {
           textPartCount++;
           accumulatedText += part.value;
@@ -335,7 +349,7 @@ export async function executeOpenResponsesChat(
             outputTokens: adapted.usage.output_tokens,
             maxInputTokens: model.maxInputTokens,
             modelId: model.id,
-          });
+          }, accumulatedText);
 
           // Calibrate token estimation from actual usage (RFC 029)
           if (onUsage) {

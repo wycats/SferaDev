@@ -393,7 +393,10 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
       options: {
         toolCount: input.options.tools?.length ?? 0,
         toolNames: input.options.tools?.map((t) => t.name) ?? [],
-        toolMode: typeof input.options.toolMode === "string" ? input.options.toolMode : "auto",
+        toolMode:
+          typeof input.options.toolMode === "string"
+            ? input.options.toolMode
+            : "auto",
         modelOptions: input.options.modelOptions ?? {},
         toolSchemaHashes:
           input.options.tools?.map((t) => hashToolSchema(t)) ?? [],

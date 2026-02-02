@@ -37,6 +37,10 @@ export class AgentTreeItem extends vscode.TreeItem {
   private formatDescription(): string {
     const parts: string[] = [];
 
+    // Use accumulated totals for multi-turn conversations
+    const inputTokens = this.agent.turnCount > 1 ? this.agent.totalInputTokens : this.agent.inputTokens;
+    const outputTokens = this.agent.turnCount > 1 ? this.agent.totalOutputTokens : this.agent.outputTokens;
+
     if (this.agent.status === "streaming") {
       if (this.agent.estimatedInputTokens) {
         parts.push(`~${this.formatTokens(this.agent.estimatedInputTokens)}`);
@@ -44,9 +48,13 @@ export class AgentTreeItem extends vscode.TreeItem {
         parts.push("streaming...");
       }
     } else if (this.agent.status === "complete") {
-      parts.push(this.formatTokens(this.agent.inputTokens));
-      if (this.agent.outputTokens > 0) {
-        parts.push(`→${this.formatTokens(this.agent.outputTokens)}`);
+      // Show turn count for multi-turn conversations
+      if (this.agent.turnCount > 1) {
+        parts.push(`[${this.agent.turnCount}]`);
+      }
+      parts.push(this.formatTokens(inputTokens));
+      if (outputTokens > 0) {
+        parts.push(`→${this.formatTokens(outputTokens)}`);
       }
     } else {
       // status === "error"
@@ -54,10 +62,9 @@ export class AgentTreeItem extends vscode.TreeItem {
     }
 
     if (this.agent.maxInputTokens) {
+      const tokensForPct = inputTokens || (this.agent.estimatedInputTokens ?? 0);
       const pct = Math.round(
-        ((this.agent.inputTokens || (this.agent.estimatedInputTokens ?? 0)) /
-          this.agent.maxInputTokens) *
-          100,
+        (tokensForPct / this.agent.maxInputTokens) * 100,
       );
       parts.push(`(${pct}%)`);
     }
@@ -86,12 +93,26 @@ export class AgentTreeItem extends vscode.TreeItem {
         );
       }
     } else {
-      md.appendMarkdown(
-        `**Input Tokens:** ${this.agent.inputTokens.toLocaleString()}\n\n`,
-      );
-      md.appendMarkdown(
-        `**Output Tokens:** ${this.agent.outputTokens.toLocaleString()}\n\n`,
-      );
+      // Show accumulated totals for multi-turn conversations
+      if (this.agent.turnCount > 1) {
+        md.appendMarkdown(`**Turns:** ${this.agent.turnCount}\n\n`);
+        md.appendMarkdown(
+          `**Total Input:** ${this.agent.totalInputTokens.toLocaleString()}\n\n`,
+        );
+        md.appendMarkdown(
+          `**Total Output:** ${this.agent.totalOutputTokens.toLocaleString()}\n\n`,
+        );
+        md.appendMarkdown(
+          `**Last Turn:** ${this.agent.inputTokens.toLocaleString()} in, ${this.agent.outputTokens.toLocaleString()} out\n\n`,
+        );
+      } else {
+        md.appendMarkdown(
+          `**Input Tokens:** ${this.agent.inputTokens.toLocaleString()}\n\n`,
+        );
+        md.appendMarkdown(
+          `**Output Tokens:** ${this.agent.outputTokens.toLocaleString()}\n\n`,
+        );
+      }
     }
 
     if (this.agent.maxInputTokens) {
@@ -230,41 +251,44 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<AgentTreeI
     const agents = this.statusBar.getAgents();
 
     if (!element) {
-      // Root level: show main agents first, then subagents
-      const mainAgents = agents.filter((a) => a.isMain);
-      const subAgents = agents.filter((a) => !a.isMain);
+      // Root level: agents with no parent conversation
+      const rootAgents = agents.filter((a) => !a.parentConversationHash);
 
       // Sort by start time (most recent first)
       const sortByTime = (a: AgentEntry, b: AgentEntry) =>
         b.startTime - a.startTime;
 
-      const items: AgentTreeItem[] = [];
-
-      // Add main agents (usually just one, but could be multiple in edge cases)
-      for (const agent of mainAgents.sort(sortByTime)) {
-        items.push(
-          new AgentTreeItem(
-            agent,
-            subAgents.length > 0
-              ? vscode.TreeItemCollapsibleState.Expanded
-              : vscode.TreeItemCollapsibleState.None,
-          ),
+      return rootAgents
+        .sort(sortByTime)
+        .map(
+          (agent) =>
+            new AgentTreeItem(
+              agent,
+              agents.some(
+                (a) => a.parentConversationHash === agent.conversationHash,
+              )
+                ? vscode.TreeItemCollapsibleState.Expanded
+                : vscode.TreeItemCollapsibleState.None,
+            ),
         );
-      }
-
-      // Add subagents as children of the most recent main agent
-      // For now, show them at root level with indentation via tree structure
-      for (const agent of subAgents.sort(sortByTime)) {
-        items.push(
-          new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None),
-        );
-      }
-
-      return items;
     }
 
-    // No nested children for now
-    return [];
+    const parentConversationHash = element.agent.conversationHash;
+    if (!parentConversationHash) {
+      return [];
+    }
+
+    // Children of this element
+    const childAgents = agents.filter(
+      (a) => a.parentConversationHash === parentConversationHash,
+    );
+
+    // Sort by start time (most recent first)
+    childAgents.sort((a, b) => b.startTime - a.startTime);
+
+    return childAgents.map(
+      (agent) => new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None),
+    );
   }
 
   /**

@@ -79,7 +79,9 @@ describe("ModelFilter", () => {
     });
 
     it("should match wildcard in middle", () => {
-      expect(matchesPattern("openai/gpt-4-turbo", "openai/gpt-*-turbo")).toBe(true);
+      expect(matchesPattern("openai/gpt-4-turbo", "openai/gpt-*-turbo")).toBe(
+        true,
+      );
       expect(matchesPattern("openai/gpt-4", "openai/gpt-*-turbo")).toBe(false);
     });
 
@@ -101,7 +103,9 @@ describe("ModelFilter", () => {
   describe("filterModels", () => {
     it("should load configuration on creation", () => {
       new ModelFilter();
-      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercelAiGateway");
+      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith(
+        "vercelAiGateway",
+      );
     });
 
     it("should register configuration change listener", () => {

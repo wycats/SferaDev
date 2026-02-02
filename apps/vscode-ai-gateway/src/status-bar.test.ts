@@ -23,6 +23,17 @@ vi.mock("vscode", () => ({
   ThemeColor: class ThemeColor {
     constructor(public id: string) {}
   },
+  EventEmitter: class EventEmitter<T> {
+    private listeners: ((e: T) => void)[] = [];
+    event = (listener: (e: T) => void) => {
+      this.listeners.push(listener);
+      return { dispose: () => {} };
+    };
+    fire(data: T) {
+      this.listeners.forEach((l) => l(data));
+    }
+    dispose() {}
+  },
 }));
 
 // Import after mocking

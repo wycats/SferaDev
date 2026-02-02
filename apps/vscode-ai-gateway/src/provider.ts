@@ -6,6 +6,7 @@ import {
   type ExtensionContext,
   type LanguageModelChatInformation,
   type LanguageModelChatMessage,
+  LanguageModelChatMessageRole,
   type LanguageModelChatProvider,
   type LanguageModelChatRequestMessage,
   LanguageModelDataPart,
@@ -34,6 +35,11 @@ import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
 import { captureForensicData } from "./provider/forensic-capture.js";
 import { executeOpenResponsesChat } from "./provider/openresponses-chat.js";
 import { extractSystemPrompt } from "./provider/system-prompt.js";
+import {
+  computeAgentTypeHash,
+  computeToolSetHash,
+  hashUserMessage,
+} from "./identity";
 import type { TokenStatusBar } from "./status-bar";
 import { HybridTokenEstimator } from "./tokens/hybrid-estimator";
 
@@ -395,6 +401,20 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       );
 
       // Start tracking this agent in the status bar
+      const toolSetHash = computeToolSetHash(options.tools ?? []);
+      const agentTypeHash = systemPromptHash
+        ? computeAgentTypeHash(systemPromptHash, toolSetHash)
+        : undefined;
+      const firstUserMessage = chatMessages.find((m) => m.role === LanguageModelChatMessageRole.User);
+      const firstUserMessageText = firstUserMessage
+        ? Array.from(firstUserMessage.content)
+            .filter((part) => part instanceof LanguageModelTextPart)
+            .map((part) => part.value)
+            .join("")
+        : undefined;
+      const firstUserMessageHash = firstUserMessageText
+        ? hashUserMessage(firstUserMessageText)
+        : undefined;
       this.currentAgentId = chatId;
       this.statusBar?.startAgent(
         chatId,
@@ -402,6 +422,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         maxInputTokens,
         model.id,
         systemPromptHash,
+        agentTypeHash,
+        firstUserMessageHash,
       );
 
       const apiKey = await this.getApiKey(false);
