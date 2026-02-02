@@ -480,12 +480,18 @@ export class TokenStatusBar implements vscode.Disposable {
         firstAssistantResponseText,
       );
       agent.firstAssistantResponseHash = firstAssistantResponseHash;
-      agent.conversationHash = computeConversationHash(
+      const newConversationHash = computeConversationHash(
         agent.agentTypeHash,
         agent.firstUserMessageHash,
         firstAssistantResponseHash,
       );
-      this.agentsByConversationHash.set(agent.conversationHash, agent);
+      agent.conversationHash = newConversationHash;
+      this.agentsByConversationHash.set(newConversationHash, agent);
+
+      // Update any children that were linked via provisional agentTypeHash
+      // This handles first-turn subagent calls where the parent didn't have
+      // a conversationHash yet when the claim was created
+      this.reconcileProvisionalChildren(agent.agentTypeHash, newConversationHash);
     }
 
     this.completedAgentCount++;
@@ -1173,6 +1179,34 @@ export class TokenStatusBar implements vscode.Disposable {
    */
   matchChildClaim(agentName: string, agentTypeHash: string): string | null {
     return this.claimRegistry.matchClaim(agentName, agentTypeHash);
+  }
+
+  /**
+   * Reconcile children that were linked via provisional agentTypeHash.
+   * Called when a parent computes its real conversationHash.
+   * Updates children's parentConversationHash from the provisional ID to the real one.
+   */
+  private reconcileProvisionalChildren(
+    provisionalId: string,
+    realConversationHash: string,
+  ): void {
+    let reconciledCount = 0;
+    for (const agent of this.agents.values()) {
+      if (agent.parentConversationHash === provisionalId) {
+        agent.parentConversationHash = realConversationHash;
+        reconciledCount++;
+      }
+    }
+    if (reconciledCount > 0) {
+      logger.info(
+        `[StatusBar] Reconciled ${reconciledCount} children from provisional ID`,
+        JSON.stringify({
+          provisionalId: provisionalId.slice(0, 8),
+          realConversationHash: realConversationHash.slice(0, 8),
+        }),
+      );
+      this._onDidChangeAgents.fire();
+    }
   }
 
   dispose(): void {
