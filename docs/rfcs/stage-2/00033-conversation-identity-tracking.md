@@ -37,24 +37,37 @@ Result: Cannot correlate multiple requests within same conversation, cannot link
 
 ## Proposed Solution
 
+### Layer 0: Conversation Resume Key (partialKey)
+
+```
+partialKey = systemPromptHash + ":" + firstUserMessageHash
+```
+
+- Used to resume an existing agent across multiple turns
+- **Does NOT include `agentTypeHash`** — tools may change mid-conversation
+- Distinguishes multiple chats in the same window (different first messages)
+- Computed immediately on first request (no waiting for response)
+
 ### Layer 1: Agent Type Hash
 
 ```
 agentTypeHash = SHA-256(systemPromptHash + toolSetHash)[0:16]
 ```
 
-- Stable for all requests of same agent type
-- Different between main agent and each subagent type
+- Used for **subagent detection**, not conversation identity
+- Different tools = might be a subagent (triggers claim matching)
+- **NOT used in partialKey** — tools change mid-conversation as VS Code adds/removes them
 
 ### Layer 2: Conversation Instance Hash
 
 ```
-conversationHash = SHA-256(agentTypeHash + firstUserMessageHash + firstAssistantResponseHash)[0:16]
+conversationHash = SHA-256(systemPromptHash + firstUserMessageHash + firstAssistantResponseHash)[0:16]
 ```
 
 - Stable within one conversation (first user message and response don't change)
 - Different for each new conversation (user message provides uniqueness even if assistant response is generic)
 - Computed AFTER first assistant response received
+- **Uses `systemPromptHash` instead of `agentTypeHash`** for stability
 
 **Canonicalization Rules for `firstAssistantResponseHash`:**
 
@@ -119,13 +132,21 @@ interface PendingChildClaim {
 
 ## Hash Computation Lifecycle
 
-### agentTypeHash Stability
+### partialKey (Conversation Resume)
 
-The `agentTypeHash` is computed **once** at conversation start and cached for the lifetime of the `AgentEntry`. This addresses tool set instability:
+The `partialKey` is computed on every request from `systemPromptHash:firstUserMessageHash`:
 
-- Tools may be dynamically filtered per-request
-- Computing hash only at start ensures stability
-- If tool set changes mid-conversation, the hash remains unchanged
+- **Does NOT include tools** — VS Code dynamically adds/removes tools mid-conversation
+- Enables resuming the same agent across multiple turns
+- Different chats in the same window have different first messages → different keys
+
+### agentTypeHash (Subagent Detection)
+
+The `agentTypeHash` is used to **detect potential subagents**, not for conversation identity:
+
+- Different `agentTypeHash` from main agent + pending claim → likely a subagent
+- Computed per-request (tools may change)
+- **NOT used in `partialKey`** — tool changes should not create new agents
 
 ### conversationHash Backfill
 
@@ -144,16 +165,17 @@ The `conversationHash` follows a two-phase lifecycle:
 
 ## Edge Cases
 
-| Case                                     | Handling                                               |
-| ---------------------------------------- | ------------------------------------------------------ |
-| First response is empty                  | Use empty string hash for `firstAssistantResponseHash` |
-| First response is only tool calls        | Use empty string hash (no text content)                |
-| First response exceeds 500 chars         | Truncate to first 500 characters before hashing        |
-| Multiple `runSubagent` calls in parallel | Create multiple claims, FIFO matching by timestamp     |
-| Multiple subagents of same type          | Match by creation order within same type               |
-| Claim expires without match              | Log warning, child shows as orphan                     |
-| VS Code restart mid-conversation         | State lost; new conversation starts fresh              |
-| Tool set changes mid-conversation        | `agentTypeHash` unchanged (computed once at start)     |
+| Case                                     | Handling                                                                    |
+| ---------------------------------------- | --------------------------------------------------------------------------- |
+| First response is empty                  | Use empty string hash for `firstAssistantResponseHash`                      |
+| First response is only tool calls        | Use empty string hash (no text content)                                     |
+| First response exceeds 500 chars         | Truncate to first 500 characters before hashing                             |
+| Multiple `runSubagent` calls in parallel | Create multiple claims, FIFO matching by timestamp                          |
+| Multiple subagents of same type          | Match by creation order within same type                                    |
+| Claim expires without match              | Log warning, child shows as orphan                                          |
+| VS Code restart mid-conversation         | State lost; new conversation starts fresh                                   |
+| Tool set changes mid-conversation        | `partialKey` unchanged (uses `systemPromptHash`, not `agentTypeHash`)       |
+| Multiple chats in same window            | Different `firstUserMessageHash` → different `partialKey` → separate agents |
 
 ## Success Criteria
 

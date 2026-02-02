@@ -1,10 +1,13 @@
 console.log("[DIAG] extension.ts: TOP OF FILE - module loading");
 
+import * as fs from "fs";
+import * as path from "path";
 import * as vscode from "vscode";
 import { createAgentTreeView } from "./agent-tree";
 import { VercelAIAuthenticationProvider } from "./auth";
 import { ConfigService, INFERENCE_DEFAULTS } from "./config";
 import { EXTENSION_ID, VSCODE_EXTENSION_ID } from "./constants";
+import { treeDiagnostics } from "./diagnostics/tree-diagnostics";
 import { initializeOutputChannel, logger } from "./logger";
 import { VercelAIChatModelProvider } from "./provider";
 import { TokenStatusBar } from "./status-bar";
@@ -45,8 +48,18 @@ export function activate(context: vscode.ExtensionContext) {
   const configService = new ConfigService();
   context.subscriptions.push(configService);
 
+  // Initialize tree diagnostics (writes to .logs/tree-diagnostics.log)
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceRoot) {
+    treeDiagnostics.initialize(workspaceRoot);
+    logger.debug(
+      `Tree diagnostics initialized at ${workspaceRoot}/.logs/tree-diagnostics.log`,
+    );
+  }
+
   // Create the token status bar
   const statusBar = new TokenStatusBar();
+  statusBar.initializePersistence(context);
   statusBar.setConfig({
     showOutputTokens: configService.statusBarShowOutputTokens,
   });
@@ -168,6 +181,54 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
   context.subscriptions.push(tokenDetailsCommand);
+
+  // Register command to dump agent tree diagnostics
+  const dumpDiagnosticsCommand = vscode.commands.registerCommand(
+    "vercelAiGateway.dumpDiagnostics",
+    () => {
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage(
+          "No workspace folder available for diagnostic dump.",
+        );
+        return;
+      }
+
+      const dump = statusBar.createDiagnosticDump(vscode.env.sessionId);
+      const logDir = path.join(workspaceRoot, ".logs");
+      try {
+        fs.mkdirSync(logDir, { recursive: true });
+      } catch (err) {
+        logger.error(
+          `[Diagnostics] Failed to create log directory: ${String(err)}`,
+        );
+        vscode.window.showErrorMessage(
+          "Failed to create .logs directory for diagnostic dump.",
+        );
+        return;
+      }
+
+      const filePath = path.join(
+        logDir,
+        `diagnostic-dump-${dump.timestamp}.json`,
+      );
+
+      try {
+        fs.writeFileSync(filePath, JSON.stringify(dump, null, 2));
+      } catch (err) {
+        logger.error(
+          `[Diagnostics] Failed to write diagnostic dump: ${String(err)}`,
+        );
+        vscode.window.showErrorMessage("Failed to write diagnostic dump file.");
+        return;
+      }
+
+      vscode.window.showInformationMessage(
+        `Diagnostics written to ${filePath}`,
+      );
+    },
+  );
+  context.subscriptions.push(dumpDiagnosticsCommand);
 
   // Register command to manage authentication
   const commandDisposable = vscode.commands.registerCommand(

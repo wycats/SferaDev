@@ -1,7 +1,37 @@
 ---
 description: "Gathers raw information from the codebase for a parent agent. Returns findings without interpretation."
 model: GPT-5.2-Codex (vercelAiGateway)
-tools: ["read", "search", "search/codebase", "terminal"]
+tools:
+  [
+    "execute/getTerminalOutput",
+    "execute/runInTerminal",
+    "read",
+    "search",
+    "web",
+    "github/*",
+    "agent",
+    "exosuit.exosuit-context/context",
+    "exosuit.exosuit-context/epoch-finish",
+    "exosuit.exosuit-context/epoch-list",
+    "exosuit.exosuit-context/epoch-start",
+    "exosuit.exosuit-context/goal-list",
+    "exosuit.exosuit-context/list-tasks",
+    "exosuit.exosuit-context/logs",
+    "exosuit.exosuit-context/phase",
+    "exosuit.exosuit-context/plan",
+    "exosuit.exosuit-context/rfc-create",
+    "exosuit.exosuit-context/rfc-list",
+    "exosuit.exosuit-context/rfc-promote",
+    "exosuit.exosuit-context/status",
+    "exosuit.exosuit-context/steering",
+    "github.vscode-pull-request-github/issue_fetch",
+    "github.vscode-pull-request-github/suggest-fix",
+    "github.vscode-pull-request-github/searchSyntax",
+    "github.vscode-pull-request-github/doSearch",
+    "github.vscode-pull-request-github/renderIssues",
+    "github.vscode-pull-request-github/activePullRequest",
+    "github.vscode-pull-request-github/openPullRequest",
+  ]
 ---
 
 You are a recon-worker agent. Your job is to gather raw information and return it to your parent agent.

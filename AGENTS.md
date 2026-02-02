@@ -65,6 +65,55 @@ These protocols are derived from the Mental Model. Follow them to ensure consist
 
 **Rule**: Never promote Stage 0->1 or 1->2 without explicit instruction.
 
+### Protocol: Prepare → Execute → Review (PER)
+
+A three-phase micro-loop for implementing discrete units of work (features, migrations, fixes).
+
+**Keyword**: `per` — User can invoke with "do a PER cycle on X" or "prepare→execute→review for X".
+
+#### 1. Prepare (Audit)
+
+- **Agent**: `prepare` subagent (or manual audit)
+- **Input**: RFC, plan, or task description
+- **Output**: Readiness report with:
+  - ✅ Verified assumptions
+  - ⚠️ Corrections needed
+  - 🔴 Blockers (must resolve before execute)
+  - 📋 Implementation order
+- **Gate**: User approves or requests fixes
+
+#### 2. Execute (Implement)
+
+- **Agent**: `execute` subagent (strongly preferred)
+- **Input**: Approved prepare report
+- **Output**: Working code + tests
+- **Constraint**: Follow prepare report exactly; no scope creep
+- **Gate**: Code compiles, tests pass
+
+**Agent preference**: Use subagents unless the communication overhead (in tokens) clearly exceeds doing it directly. Subagents provide isolation, focus, and auditability.
+
+#### 3. Review (Verify)
+
+- **Agent**: `review` subagent (or manual review)
+- **Input**: Executed changes
+- **Output**: Review report with:
+  - ✅ Correct implementations
+  - ⚠️ Issues found
+  - 💡 Suggestions
+- **Gate**: User accepts or requests fixes
+
+**When to use PER**:
+
+- Implementing RFC phases
+- Migrating existing code to new patterns
+- Any change with moderate complexity or risk
+
+**When NOT to use PER**:
+
+- Trivial fixes (single-line changes)
+- Exploratory work (use recon instead)
+- Pure research (no code output)
+
 ### Protocol: The Context Check
 
 - **Read First**: Before answering, check `docs/agent-context/plan.toml` and `docs/agent-context/current/implementation-plan.toml`.

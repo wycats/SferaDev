@@ -16,6 +16,9 @@ vi.mock("vscode", () => ({
   window: {
     createStatusBarItem: vi.fn(() => mockStatusBarItem),
   },
+  env: {
+    sessionId: "test-session-id",
+  },
   StatusBarAlignment: {
     Left: 1,
     Right: 2,

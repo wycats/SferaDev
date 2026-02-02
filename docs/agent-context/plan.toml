@@ -305,7 +305,7 @@ aliases = ["integration-tests"]
 [[epochs]]
 id = "01kgbg5kb1b3pn7m86wem0515t"
 title = "Hybrid Token Calibration (RFC 029)"
-status = "pending"
+status = "active"
 ulid = "01KGBG8XGSGZC1MNV4QBR6XCAV"
 slug = "01kgbg5kb1b3pn7m86wem0515t"
 aliases = ["01kgbg5kb1b3pn7m86wem0515t"]
@@ -364,12 +364,36 @@ aliases = ["01kgbg61xj3mgs7fjfj674t4cp"]
 [[epochs.phases]]
 id = "01kgbg66ynthsrx3mqn2fzadxn"
 title = "Phase 3: Calibration Loop"
-status = "pending"
-goals = []
+status = "active"
 rfcs = ["029"]
 ulid = "01KGBG8XGSMGS0RRVTC7JFHNE6"
 slug = "01kgbg66ynthsrx3mqn2fzadxn"
 aliases = ["01kgbg66ynthsrx3mqn2fzadxn"]
+
+[[epochs.phases.goals]]
+id = "delete-calibration-manager"
+label = "Delete orphaned CalibrationManager code (RFC 029 removed calibration)"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "fix-underestimation"
+label = "Fix ~13% token underestimation in provideTokenCount (add per-message overhead)"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "token-diagnostics"
+label = "Add TOKEN_ESTIMATED/TOKEN_ACTUAL events to TreeDiagnostics for AI self-review"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "narrative-tokens"
+label = "Extend narrative tool with --tokens flag for estimation accuracy analysis"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "cleanup-dead-code"
+label = "Delete orphaned TokenCache.cacheActual and CallSequenceTracker unused paths"
+status = "pending"
 
 [[epochs.phases]]
 id = "01kgbg6cpxvd67bq84rbcq3zzj"

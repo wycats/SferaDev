@@ -42,9 +42,6 @@ catalogs:
     knip:
       specifier: 5.82.1
       version: 5.82.1
-    tsx:
-      specifier: 4.21.0
-      version: 4.21.0
     typescript:
       specifier: 5.9.3
       version: 5.9.3
@@ -99,9 +96,6 @@ importers:
       knip:
         specifier: 'catalog:'
         version: 5.82.1(@types/node@25.0.10)(typescript@5.9.3)
-      tsx:
-        specifier: 'catalog:'
-        version: 4.21.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -5083,6 +5077,7 @@ snapshots:
   get-tsconfig@4.13.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
+    optional: true
 
   github-from-package@0.0.0:
     optional: true
@@ -6022,7 +6017,8 @@ snapshots:
 
   resolve-from@4.0.0: {}
 
-  resolve-pkg-maps@1.0.0: {}
+  resolve-pkg-maps@1.0.0:
+    optional: true
 
   restore-cursor@5.1.0:
     dependencies:
@@ -6389,6 +6385,7 @@ snapshots:
       get-tsconfig: 4.13.0
     optionalDependencies:
       fsevents: 2.3.3
+    optional: true
 
   tunnel-agent@0.6.0:
     dependencies:

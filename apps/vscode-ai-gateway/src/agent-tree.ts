@@ -7,6 +7,12 @@
 
 import * as vscode from "vscode";
 import type { AgentEntry, TokenStatusBar } from "./status-bar.js";
+import type { SessionStats } from "./persistence/index.js";
+
+/**
+ * Union type for all tree items in the agent tree
+ */
+export type TreeItem = AgentTreeItem | LastSessionTreeItem;
 
 /**
  * Tree item representing an agent in the hierarchy
@@ -38,8 +44,14 @@ export class AgentTreeItem extends vscode.TreeItem {
     const parts: string[] = [];
 
     // Use accumulated totals for multi-turn conversations
-    const inputTokens = this.agent.turnCount > 1 ? this.agent.totalInputTokens : this.agent.inputTokens;
-    const outputTokens = this.agent.turnCount > 1 ? this.agent.totalOutputTokens : this.agent.outputTokens;
+    const inputTokens =
+      this.agent.turnCount > 1
+        ? this.agent.totalInputTokens
+        : this.agent.inputTokens;
+    const outputTokens =
+      this.agent.turnCount > 1
+        ? this.agent.totalOutputTokens
+        : this.agent.outputTokens;
 
     if (this.agent.status === "streaming") {
       if (this.agent.estimatedInputTokens) {
@@ -62,10 +74,9 @@ export class AgentTreeItem extends vscode.TreeItem {
     }
 
     if (this.agent.maxInputTokens) {
-      const tokensForPct = inputTokens || (this.agent.estimatedInputTokens ?? 0);
-      const pct = Math.round(
-        (tokensForPct / this.agent.maxInputTokens) * 100,
-      );
+      const tokensForPct =
+        inputTokens || (this.agent.estimatedInputTokens ?? 0);
+      const pct = Math.round((tokensForPct / this.agent.maxInputTokens) * 100);
       parts.push(`(${pct}%)`);
     }
 
@@ -205,11 +216,52 @@ export class AgentTreeItem extends vscode.TreeItem {
 }
 
 /**
+ * Tree item showing last session stats when no active agents
+ */
+class LastSessionTreeItem extends vscode.TreeItem {
+  constructor(stats: SessionStats) {
+    super("Last Session", vscode.TreeItemCollapsibleState.None);
+
+    const tokens =
+      stats.totalInputTokens >= 1000
+        ? `${(stats.totalInputTokens / 1000).toFixed(1)}k`
+        : stats.totalInputTokens.toString();
+
+    this.description = `${stats.agentCount} agent${stats.agentCount !== 1 ? "s" : ""}, ${tokens} context tokens`;
+    this.tooltip = this.formatTooltip(stats);
+    this.iconPath = new vscode.ThemeIcon(
+      "history",
+      new vscode.ThemeColor("descriptionForeground"),
+    );
+    this.contextValue = "lastSession";
+  }
+
+  private formatTooltip(stats: SessionStats): vscode.MarkdownString {
+    const md = new vscode.MarkdownString();
+    md.appendMarkdown(`### Last Session\n\n`);
+    md.appendMarkdown(`**Agents:** ${stats.agentCount}\n\n`);
+    md.appendMarkdown(`**Main Agent Turns:** ${stats.mainAgentTurns}\n\n`);
+    md.appendMarkdown(
+      `**Max Context:** ${stats.totalInputTokens.toLocaleString()} tokens\n\n`,
+    );
+    md.appendMarkdown(
+      `**Total Output:** ${stats.totalOutputTokens.toLocaleString()} tokens\n\n`,
+    );
+    if (stats.modelId) {
+      md.appendMarkdown(`**Model:** ${stats.modelId}\n\n`);
+    }
+    const date = new Date(stats.timestamp);
+    md.appendMarkdown(`*${date.toLocaleString()}*`);
+    return md;
+  }
+}
+
+/**
  * Tree data provider for the agent hierarchy
  */
-export class AgentTreeDataProvider implements vscode.TreeDataProvider<AgentTreeItem> {
+export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<
-    AgentTreeItem | undefined | null
+    TreeItem | undefined | null
   >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
@@ -239,11 +291,11 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<AgentTreeI
     this._onDidChangeTreeData.fire(undefined);
   }
 
-  getTreeItem(element: AgentTreeItem): vscode.TreeItem {
+  getTreeItem(element: TreeItem): vscode.TreeItem {
     return element;
   }
 
-  getChildren(element?: AgentTreeItem): AgentTreeItem[] {
+  getChildren(element?: TreeItem): TreeItem[] {
     if (!this.statusBar) {
       return [];
     }
@@ -251,6 +303,15 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<AgentTreeI
     const agents = this.statusBar.getAgents();
 
     if (!element) {
+      if (agents.length === 0) {
+        // Show last session stats if available
+        const lastSession = this.statusBar.getLastSessionStats();
+        if (lastSession) {
+          return [new LastSessionTreeItem(lastSession)];
+        }
+        return [];
+      }
+
       // Root level: agents with no parent conversation
       const rootAgents = agents.filter((a) => !a.parentConversationHash);
 
@@ -264,24 +325,21 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<AgentTreeI
           (agent) =>
             new AgentTreeItem(
               agent,
-              agents.some(
-                (a) => a.parentConversationHash === agent.conversationHash,
-              )
+              this.hasChildren(agent, agents)
                 ? vscode.TreeItemCollapsibleState.Expanded
                 : vscode.TreeItemCollapsibleState.None,
             ),
         );
     }
 
-    const parentConversationHash = element.agent.conversationHash;
-    if (!parentConversationHash) {
+    // LastSessionTreeItem has no children
+    if (!(element instanceof AgentTreeItem)) {
       return [];
     }
 
-    // Children of this element
-    const childAgents = agents.filter(
-      (a) => a.parentConversationHash === parentConversationHash,
-    );
+    // Get children of this element
+    // Check both conversationHash (final) and agentTypeHash (provisional)
+    const childAgents = this.getChildAgents(element.agent, agents);
 
     // Sort by start time (most recent first)
     childAgents.sort((a, b) => b.startTime - a.startTime);
@@ -289,6 +347,72 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<AgentTreeI
     return childAgents.map(
       (agent) => new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None),
     );
+  }
+
+  /**
+   * Check if an agent has any children (linked via conversationHash or agentTypeHash)
+   */
+  private hasChildren(agent: AgentEntry, allAgents: AgentEntry[]): boolean {
+    // Check for children linked via final conversationHash
+    if (agent.conversationHash) {
+      if (
+        allAgents.some(
+          (a) => a.parentConversationHash === agent.conversationHash,
+        )
+      ) {
+        return true;
+      }
+    }
+    // Check for children linked via provisional agentTypeHash
+    // (before parent has computed its conversationHash)
+    if (agent.agentTypeHash) {
+      if (
+        allAgents.some((a) => a.parentConversationHash === agent.agentTypeHash)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Get child agents linked to a parent (via conversationHash or agentTypeHash)
+   */
+  private getChildAgents(
+    parent: AgentEntry,
+    allAgents: AgentEntry[],
+  ): AgentEntry[] {
+    const children: AgentEntry[] = [];
+    const seenIds = new Set<string>();
+
+    // Children linked via final conversationHash
+    if (parent.conversationHash) {
+      for (const agent of allAgents) {
+        if (
+          agent.parentConversationHash === parent.conversationHash &&
+          !seenIds.has(agent.id)
+        ) {
+          children.push(agent);
+          seenIds.add(agent.id);
+        }
+      }
+    }
+
+    // Children linked via provisional agentTypeHash
+    // (before parent has computed its conversationHash)
+    if (parent.agentTypeHash) {
+      for (const agent of allAgents) {
+        if (
+          agent.parentConversationHash === parent.agentTypeHash &&
+          !seenIds.has(agent.id)
+        ) {
+          children.push(agent);
+          seenIds.add(agent.id);
+        }
+      }
+    }
+
+    return children;
   }
 
   /**
@@ -318,7 +442,7 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<AgentTreeI
  * Create and register the agent tree view
  */
 export function createAgentTreeView(statusBar: TokenStatusBar): {
-  treeView: vscode.TreeView<AgentTreeItem>;
+  treeView: vscode.TreeView<TreeItem>;
   provider: AgentTreeDataProvider;
 } {
   const provider = new AgentTreeDataProvider();

@@ -261,7 +261,8 @@ export async function executeOpenResponsesChat(
             const args = part.input as
               | { agentName?: string; mode?: string }
               | undefined;
-            const expectedChildName = args?.agentName ?? args?.mode ?? "unknown";
+            const expectedChildName =
+              args?.agentName ?? args?.mode ?? "unknown";
 
             // Create claim via status bar (which owns the ClaimRegistry)
             statusBar?.createChildClaim(chatId, expectedChildName);
@@ -344,12 +345,16 @@ export async function executeOpenResponsesChat(
           logger.info(
             `[OpenResponses] Response: ${adapted.usage.input_tokens} in, ${adapted.usage.output_tokens} out tokens`,
           );
-          statusBar?.completeAgent(chatId, {
-            inputTokens: adapted.usage.input_tokens,
-            outputTokens: adapted.usage.output_tokens,
-            maxInputTokens: model.maxInputTokens,
-            modelId: model.id,
-          }, accumulatedText);
+          statusBar?.completeAgent(
+            chatId,
+            {
+              inputTokens: adapted.usage.input_tokens,
+              outputTokens: adapted.usage.output_tokens,
+              maxInputTokens: model.maxInputTokens,
+              modelId: model.id,
+            },
+            accumulatedText,
+          );
 
           // Calibrate token estimation from actual usage (RFC 029)
           if (onUsage) {

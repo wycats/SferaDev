@@ -3,14 +3,17 @@ description: "The custom agent is used to explore the codebase"
 model: Claude Opus 4.5 (vercelAiGateway)
 tools:
   [
+    "execute/getTerminalOutput",
+    "execute/runInTerminal",
     "read",
     "search",
-    "search/codebase",
+    "web",
     "agent",
-    "exosuit.exosuit-context/status",
-    "exosuit.exosuit-context/plan",
-    "exosuit.exosuit-context/phase",
     "exosuit.exosuit-context/context",
+    "exosuit.exosuit-context/phase",
+    "exosuit.exosuit-context/plan",
+    "exosuit.exosuit-context/status",
+    "todo",
   ]
 ---
 

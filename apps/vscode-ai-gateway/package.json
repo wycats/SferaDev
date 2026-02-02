@@ -89,6 +89,11 @@
         "title": "Refresh Agent Tree",
         "category": "Vercel AI Gateway",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "vercelAiGateway.dumpDiagnostics",
+        "title": "Dump Agent Tree Diagnostics",
+        "category": "Vercel AI Gateway"
       }
     ],
     "menus": {
@@ -161,6 +166,7 @@
     "test:integration": "pnpm build && pnpm exec tsc -p tsconfig.test.json && node scripts/test-integration.js",
     "test:integration:headed": "pnpm build && pnpm exec tsc -p tsconfig.test.json && node scripts/test-integration.js --headed",
     "test:watch": "vitest",
+    "analyze:logs": "node scripts/analyze-agent-logs.ts",
     "clean": "rm -rf out",
     "prepackage": "pnpm run build",
     "package": "vsce package --no-dependencies",

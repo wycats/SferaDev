@@ -405,7 +405,9 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       const agentTypeHash = systemPromptHash
         ? computeAgentTypeHash(systemPromptHash, toolSetHash)
         : undefined;
-      const firstUserMessage = chatMessages.find((m) => m.role === LanguageModelChatMessageRole.User);
+      const firstUserMessage = chatMessages.find(
+        (m) => m.role === LanguageModelChatMessageRole.User,
+      );
       const firstUserMessageText = firstUserMessage
         ? Array.from(firstUserMessage.content)
             .filter((part) => part instanceof LanguageModelTextPart)

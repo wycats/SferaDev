@@ -18,7 +18,6 @@
     "ai": "catalog:",
     "eslint": "^9.39.2",
     "knip": "catalog:",
-    "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "^8.54.0",
     "zod": "catalog:"

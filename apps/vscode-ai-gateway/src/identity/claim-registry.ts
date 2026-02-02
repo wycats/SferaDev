@@ -1,6 +1,8 @@
 import { logger } from "../logger.js";
 
-const CLAIM_EXPIRY_MS = 30_000;
+// Subagents can take a while to start (VS Code processing, user interaction, etc.)
+// 90 seconds provides buffer for slow starts while still cleaning up stale claims
+const CLAIM_EXPIRY_MS = 90_000;
 
 export interface PendingChildClaim {
   parentConversationHash: string;
@@ -45,25 +47,25 @@ export class ClaimRegistry {
         : {}),
     };
     this.claims.push(claim);
-    logger.debug(
+    logger.info(
       `[ClaimRegistry] Created claim for child "${expectedChildAgentName}"`,
       {
         parentConversationHash: parentConversationHash.substring(0, 8),
+        parentAgentTypeHash: parentAgentTypeHash.substring(0, 8),
         expiresAt: new Date(claim.expiresAt).toISOString(),
+        totalClaims: this.claims.length,
       },
     );
   }
 
   /**
-   * Match a new conversation to a pending claim.
-   * Returns the parent's conversationHash if matched, null otherwise.
-   *
-   * Matching rules (in order):
-   * 1. Primary: expectedChildAgentName matches detected agent name
-   * 2. Secondary: expectedChildAgentTypeHash matches (if specified)
-   * 3. Claims are matched FIFO by timestamp
+   * Match result containing parent hash and expected child name.
+   * Matches by agent name first, then by type hash, then FIFO for generic "sub" agents.
    */
-  matchClaim(detectedAgentName: string, agentTypeHash: string): string | null {
+  matchClaim(
+    detectedAgentName: string,
+    agentTypeHash: string,
+  ): { parentConversationHash: string; expectedChildName: string } | null {
     const now = Date.now();
 
     // Filter to non-expired claims, sorted by timestamp (FIFO)
@@ -71,25 +73,70 @@ export class ClaimRegistry {
       .filter((c) => c.expiresAt > now)
       .sort((a, b) => a.timestamp - b.timestamp);
 
+    // First, try to match by agent name (FIFO order)
     for (const claim of validClaims) {
-      // Primary match: agent name
       if (claim.expectedChildAgentName === detectedAgentName) {
         this.removeClaim(claim);
         logger.info(
-          `[ClaimRegistry] Matched claim by name: "${detectedAgentName}"`,
+          `[ClaimRegistry] Matched claim for "${claim.expectedChildAgentName}" (by name)`,
+          {
+            agentTypeHash: agentTypeHash.substring(0, 8),
+            parentHash: claim.parentConversationHash.substring(0, 8),
+          },
         );
-        return claim.parentConversationHash;
-      }
-
-      // Secondary match: agent type hash (if specified)
-      if (claim.expectedChildAgentTypeHash === agentTypeHash) {
-        this.removeClaim(claim);
-        logger.info(
-          `[ClaimRegistry] Matched claim by type hash: ${agentTypeHash.substring(0, 8)}`,
-        );
-        return claim.parentConversationHash;
+        return {
+          parentConversationHash: claim.parentConversationHash,
+          expectedChildName: claim.expectedChildAgentName,
+        };
       }
     }
+
+    // Second, try to match by type hash if the claim has one
+    for (const claim of validClaims) {
+      if (
+        claim.expectedChildAgentTypeHash &&
+        claim.expectedChildAgentTypeHash === agentTypeHash
+      ) {
+        this.removeClaim(claim);
+        logger.info(
+          `[ClaimRegistry] Matched claim for "${claim.expectedChildAgentName}" (by type hash)`,
+          {
+            agentTypeHash: agentTypeHash.substring(0, 8),
+            parentHash: claim.parentConversationHash.substring(0, 8),
+          },
+        );
+        return {
+          parentConversationHash: claim.parentConversationHash,
+          expectedChildName: claim.expectedChildAgentName,
+        };
+      }
+    }
+
+    // Third, if the detected name is generic ("sub"), match FIFO
+    // This handles the case where extractAgentName returns "sub" for all subagents
+    // but the claim has the actual expected name from runSubagent
+    const firstClaim = validClaims[0];
+    if (detectedAgentName === "sub" && firstClaim !== undefined) {
+      this.removeClaim(firstClaim);
+      logger.info(
+        `[ClaimRegistry] Matched claim for "${firstClaim.expectedChildAgentName}" (FIFO for generic "sub")`,
+        {
+          agentTypeHash: agentTypeHash.substring(0, 8),
+          parentHash: firstClaim.parentConversationHash.substring(0, 8),
+        },
+      );
+      return {
+        parentConversationHash: firstClaim.parentConversationHash,
+        expectedChildName: firstClaim.expectedChildAgentName,
+      };
+    }
+
+    // No match found - log for debugging
+    logger.info(`[ClaimRegistry] No claim matched for "${detectedAgentName}"`, {
+      agentTypeHash: agentTypeHash.substring(0, 8),
+      validClaimsCount: validClaims.length,
+      claimNames: validClaims.map((c) => c.expectedChildAgentName),
+    });
 
     return null;
   }
@@ -116,6 +163,13 @@ export class ClaimRegistry {
    */
   getPendingClaimCount(): number {
     return this.claims.filter((c) => c.expiresAt > Date.now()).length;
+  }
+
+  /**
+   * Get all claims (for diagnostics snapshot).
+   */
+  getClaims(): PendingChildClaim[] {
+    return [...this.claims];
   }
 
   dispose(): void {

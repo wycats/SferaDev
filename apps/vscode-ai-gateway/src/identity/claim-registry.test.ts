@@ -28,13 +28,19 @@ describe("ClaimRegistry", () => {
   it("matches claim by agent name", () => {
     registry.createClaim("parent-hash", "parent-type", "recon");
     const match = registry.matchClaim("recon", "child-type");
-    expect(match).toBe("parent-hash");
+    expect(match).toEqual({
+      parentConversationHash: "parent-hash",
+      expectedChildName: "recon",
+    });
   });
 
   it("matches claim by type hash when name doesn't match", () => {
     registry.createClaim("parent-hash", "parent-type", "recon", "child-type");
     const match = registry.matchClaim("different-name", "child-type");
-    expect(match).toBe("parent-hash");
+    expect(match).toEqual({
+      parentConversationHash: "parent-hash",
+      expectedChildName: "recon",
+    });
   });
 
   it("returns null when no claim matches", () => {
@@ -43,9 +49,9 @@ describe("ClaimRegistry", () => {
     expect(match).toBeNull();
   });
 
-  it("expires claims after 30 seconds", () => {
+  it("expires claims after 90 seconds", () => {
     registry.createClaim("parent-hash", "parent-type", "recon");
-    vi.advanceTimersByTime(31_000);
+    vi.advanceTimersByTime(91_000);
     const match = registry.matchClaim("recon", "any");
     expect(match).toBeNull();
   });
@@ -56,10 +62,10 @@ describe("ClaimRegistry", () => {
     registry.createClaim("parent-2", "type", "recon");
 
     const match1 = registry.matchClaim("recon", "any");
-    expect(match1).toBe("parent-1");
+    expect(match1?.parentConversationHash).toBe("parent-1");
 
     const match2 = registry.matchClaim("recon", "any");
-    expect(match2).toBe("parent-2");
+    expect(match2?.parentConversationHash).toBe("parent-2");
   });
 
   it("removes matched claims", () => {
@@ -83,8 +89,8 @@ describe("ClaimRegistry", () => {
     registry.createClaim("parent-hash", "parent-type", "recon");
     expect(registry.getPendingClaimCount()).toBe(1);
 
-    // Advance past expiry (30s) and cleanup interval (10s)
-    vi.advanceTimersByTime(35_000);
+    // Advance past expiry (90s) and cleanup interval (10s)
+    vi.advanceTimersByTime(95_000);
 
     expect(registry.getPendingClaimCount()).toBe(0);
   });
