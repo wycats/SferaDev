@@ -112,6 +112,11 @@ export class TokenStatusBar implements vscode.Disposable {
   // Estimation state tracking
   private estimationStates = new Map<string, EstimationState>();
 
+  // Event emitter for agent tree updates
+  private readonly _onDidChangeAgents = new vscode.EventEmitter<void>();
+  /** Fired when agents are added, updated, or removed */
+  readonly onDidChangeAgents = this._onDidChangeAgents.event;
+
   constructor() {
     this.statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
@@ -264,7 +269,7 @@ export class TokenStatusBar implements vscode.Disposable {
         timestamp: now,
         agentId,
         isMain,
-        isSubagent: !isMain && this.mainAgentId !== null,
+        isSubagent: !isMain,
         modelId,
         estimatedTokens,
         maxTokens,
@@ -278,6 +283,7 @@ export class TokenStatusBar implements vscode.Disposable {
     );
 
     this.updateDisplay();
+    this._onDidChangeAgents.fire();
     return agentId;
   }
 
@@ -287,7 +293,7 @@ export class TokenStatusBar implements vscode.Disposable {
    */
   updateAgentActivity(agentId: string): void {
     const agent = this.agents.get(agentId);
-    if (agent && agent.status === "streaming") {
+    if (agent?.status === "streaming") {
       agent.lastUpdateTime = Date.now();
       // Don't call updateDisplay here to avoid excessive updates
       // The display will refresh on the next scheduled update
@@ -359,6 +365,7 @@ export class TokenStatusBar implements vscode.Disposable {
     this.ageAgents();
 
     this.updateDisplay();
+    this._onDidChangeAgents.fire();
     this.scheduleHide();
   }
 
@@ -395,6 +402,7 @@ export class TokenStatusBar implements vscode.Disposable {
       this.activeAgentId = null;
     }
     this.updateDisplay();
+    this._onDidChangeAgents.fire();
   }
 
   /**
@@ -518,7 +526,7 @@ export class TokenStatusBar implements vscode.Disposable {
           )
         : null;
 
-    const subagentToShow = streamingSubagent || mostRecentCompletedSubagent;
+    const subagentToShow = streamingSubagent ?? mostRecentCompletedSubagent;
 
     // Debug logging for subagent selection
     if (subagents.length > 0) {
@@ -810,9 +818,10 @@ export class TokenStatusBar implements vscode.Disposable {
     const countBefore = this.agents.size;
     this.ageAgents();
 
-    // If we removed agents, update display
+    // If we removed agents, update display and notify listeners
     if (this.agents.size < countBefore) {
       this.updateDisplay();
+      this._onDidChangeAgents.fire();
     }
   }
 
@@ -922,6 +931,7 @@ export class TokenStatusBar implements vscode.Disposable {
       this.cleanupInterval = null;
     }
     this.agents.clear();
+    this._onDidChangeAgents.dispose();
     this.statusBarItem.dispose();
   }
 }

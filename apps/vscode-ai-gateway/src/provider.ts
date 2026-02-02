@@ -319,7 +319,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
       // Pre-flight check: estimate total tokens and validate against model limit
       // Now includes tool schemas (can be 50k+ tokens)
-      const estimatedTokens = await this.estimateTotalInputTokens(
+      const estimatedTokens = this.estimateTotalInputTokens(
         model,
         chatMessages,
         token,
@@ -623,7 +623,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
    * - If messages extend known state → knownTotal + tiktoken(new messages)
    * - Otherwise → tiktoken for all messages
    */
-  private async estimateTotalInputTokens(
+  private estimateTotalInputTokens(
     model: LanguageModelChatInformation,
     messages: readonly LanguageModelChatMessage[],
     _token: CancellationToken,
@@ -636,7 +636,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       }[];
       systemPrompt?: string;
     },
-  ): Promise<number> {
+  ): number {
     void _token;
 
     // Use conversation-level delta estimation
@@ -700,6 +700,15 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   }
 
   private async getApiKey(silent: boolean): Promise<string | undefined> {
+    // Test mode: allow API key from environment variable
+    // Check both VERCEL_API_KEY and OPENRESPONSES_API_KEY for flexibility
+    const envApiKey =
+      process.env["VERCEL_API_KEY"] ?? process.env["OPENRESPONSES_API_KEY"];
+    if (envApiKey) {
+      logger.debug("Using API key from environment variable");
+      return envApiKey;
+    }
+
     try {
       const session = await authentication.getSession(
         VERCEL_AI_AUTH_PROVIDER_ID,

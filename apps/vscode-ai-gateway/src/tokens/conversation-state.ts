@@ -197,7 +197,7 @@ export class ConversationStateTracker {
         parts.push({ type: "text", value: part.value });
       } else if ("data" in part && "mimeType" in part) {
         // DataPart - hash the data instead of including it
-        const data = part.data as Uint8Array;
+        const data = part.data;
         const dataHash = crypto.createHash("sha256").update(data).digest("hex");
         parts.push({
           type: "data",

@@ -135,6 +135,6 @@ describe("ConfigService", () => {
     });
 
     const config = new ConfigService();
-    expect(() => config.dispose()).not.toThrow();
+    expect(() => { config.dispose(); }).not.toThrow();
   });
 });

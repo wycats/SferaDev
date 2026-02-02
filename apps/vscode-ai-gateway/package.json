@@ -46,6 +46,33 @@
         "displayName": "Vercel AI Gateway"
       }
     ],
+    "chatParticipants": [
+      {
+        "id": "vercelAiGateway.chat",
+        "name": "vercel",
+        "description": "Chat using Vercel AI Gateway models",
+        "commands": []
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vercelAiGateway",
+          "title": "AI Gateway",
+          "icon": "images/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "vercelAiGateway": [
+        {
+          "id": "vercelAiGateway.agentTree",
+          "name": "Agent Tokens",
+          "contextualTitle": "Agent Token Usage",
+          "visibility": "visible"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "vercelAiGateway.manage",
@@ -56,8 +83,23 @@
         "command": "vercelAiGateway.showTokenDetails",
         "title": "Show Token Usage Details",
         "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercelAiGateway.refreshAgentTree",
+        "title": "Refresh Agent Tree",
+        "category": "Vercel AI Gateway",
+        "icon": "$(refresh)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vercelAiGateway.refreshAgentTree",
+          "when": "view == vercelAiGateway.agentTree",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "Vercel AI Gateway",
       "properties": {
@@ -96,6 +138,16 @@
           "type": "boolean",
           "default": false,
           "description": "Enable forensic capture mode. Writes detailed request data to ~/.vscode-ai-gateway/forensic-captures.jsonl for debugging conversation identifiers."
+        },
+        "vercelAiGateway.debug.forensicCaptureFullContent": {
+          "type": "boolean",
+          "default": false,
+          "description": "⚠️ SENSITIVE: Capture FULL message content including system prompts and user messages. Only enable for debugging - captures may contain sensitive data."
+        },
+        "vercelAiGateway.models.userSelectable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Make all models user-selectable by default. Normally models are hidden until enabled via 'Manage Models'. Enable this for testing or if you want all models immediately available in the picker."
         }
       }
     }
@@ -106,6 +158,8 @@
     "compile": "tsc -p ./",
     "tsc": "tsc --noEmit",
     "test": "vitest run",
+    "test:integration": "pnpm build && pnpm exec tsc -p tsconfig.test.json && node scripts/test-integration.js",
+    "test:integration:headed": "pnpm build && pnpm exec tsc -p tsconfig.test.json && node scripts/test-integration.js --headed",
     "test:watch": "vitest",
     "clean": "rm -rf out",
     "prepackage": "pnpm run build",
@@ -115,12 +169,17 @@
   "devDependencies": {
     "@sferadev/tsconfig": "workspace:*",
     "@types/json-schema": "catalog:",
+    "@types/mocha": "^10.0.6",
     "@types/node": "catalog:",
     "@types/vscode": "^1.108.1",
+    "@vscode/test-electron": "^2.4.0",
     "@vscode/vsce": "catalog:",
+    "dotenv": "^17.2.3",
     "esbuild": "^0.24.0",
     "eslint-interactive": "^12.0.0",
     "fast-check": "catalog:",
+    "glob": "^10.4.5",
+    "mocha": "^10.8.2",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

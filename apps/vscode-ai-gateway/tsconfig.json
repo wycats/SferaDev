@@ -1,14 +1,14 @@
 {
-	"extends": "@sferadev/tsconfig/base.json",
-	"compilerOptions": {
-		"lib": ["ES2024", "DOM"],
-		"module": "ESNext",
-		"moduleResolution": "Bundler",
-		"target": "ES2024",
-		"sourceMap": true,
-		"rootDir": "src",
-		"outDir": "out"
-	},
-	"include": ["src"],
-	"exclude": ["out", "node_modules"]
+  "extends": "@sferadev/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2024",
+    "sourceMap": true,
+    "rootDir": "src",
+    "outDir": "out"
+  },
+  "include": ["src"],
+  "exclude": ["out", "node_modules"]
 }

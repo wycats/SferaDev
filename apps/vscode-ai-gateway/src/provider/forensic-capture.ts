@@ -17,11 +17,34 @@ import type {
 } from "vscode";
 import { logger } from "../logger";
 
+export interface FullContentCapture {
+  systemPrompt?: string;
+  messages: {
+    role: string;
+    name?: string;
+    content: {
+      type: "text" | "data" | "toolCall" | "toolResult" | "unknown";
+      text?: string;
+      mimeType?: string;
+      dataSize?: number;
+      toolName?: string;
+      callId?: string;
+      toolResult?: unknown;
+      input?: unknown;
+    }[];
+  }[];
+  tools?: {
+    name: string;
+    description?: string;
+    inputSchema?: unknown;
+  }[];
+}
+
 export interface ForensicCapture {
   // Metadata
   sequence: number;
   timestamp: string;
-  captureVersion: "1.0";
+  captureVersion: "1.0" | "1.1";
 
   // VS Code Environment - capture EVERYTHING available
   vscodeEnv: {
@@ -52,13 +75,13 @@ export interface ForensicCapture {
   messages: {
     count: number;
     roles: string[];
-    contentSummary: Array<{
+    contentSummary: {
       index: number;
       role: string;
       partTypes: string[];
       textLength: number;
       hash: string;
-    }>;
+    }[];
   };
 
   // System Prompt Analysis (hash only for privacy)
@@ -79,6 +102,36 @@ export interface ForensicCapture {
     toolSchemaHashes: string[];
   };
 
+  // RAW options object - dump everything VS Code passes
+  rawOptions: {
+    allKeys: string[];
+    fullDump: Record<string, unknown>;
+  };
+
+  // RAW model object - dump everything
+  rawModel: {
+    allKeys: string[];
+    fullDump: Record<string, unknown>;
+  };
+
+  // RAW first message - check for hidden properties
+  rawFirstMessage?: {
+    allKeys: string[];
+    role: unknown;
+    name: unknown;
+    content: unknown;
+  };
+
+  // RAW all messages - dump everything to find hidden identifiers
+  rawAllMessages: {
+    index: number;
+    allKeys: string[];
+    role: unknown;
+    name: unknown;
+    contentLength: number;
+    extraProps: Record<string, unknown>;
+  }[];
+
   // Token Estimation
   tokens: {
     estimated: number;
@@ -92,6 +145,9 @@ export interface ForensicCapture {
     currentAgentId: string | null;
     hasActiveStreaming: boolean;
   };
+
+  // Full Content (only when forensicCaptureFullContent is enabled)
+  fullContent?: FullContentCapture;
 }
 
 // Global sequence counter
@@ -161,14 +217,14 @@ function getMessageHash(message: LanguageModelChatMessage): string {
       parts.push(`text:${hashContent(part.value)}`);
     } else if ("data" in part && "mimeType" in part) {
       // Hash data parts by mimeType and size
-      const data = part.data as Uint8Array;
-      parts.push(`data:${String(part.mimeType)}:${data.length.toString()}`);
+      const data = part.data;
+      parts.push(`data:${part.mimeType}:${data.length.toString()}`);
     } else if ("callId" in part && "name" in part) {
       // Include tool call/result info
       const isResult = "toolResult" in part;
       const resultHash = isResult ? hashContent(JSON.stringify(part)) : "";
       parts.push(
-        `tool:${String(part.name)}:${String(part.callId)}${isResult ? `:${resultHash}` : ""}`,
+        `tool:${part.name}:${part.callId}${isResult ? `:${resultHash}` : ""}`,
       );
     }
   }
@@ -188,6 +244,92 @@ function hashToolSchema(tool: {
   return hashContent(content);
 }
 
+function extractFullContent(
+  input: CaptureInput,
+): FullContentCapture | undefined {
+  const config = vscode.workspace.getConfiguration("vercelAiGateway.debug");
+  const captureFullContent = config.get<boolean>(
+    "forensicCaptureFullContent",
+    false,
+  );
+
+  if (!captureFullContent) {
+    return undefined;
+  }
+
+  const messages: FullContentCapture["messages"] = input.chatMessages.map(
+    (msg) => {
+      const name = (msg as { name?: string }).name;
+      const content = msg.content.map((part) => {
+        if ("value" in part && typeof part.value === "string") {
+          return { type: "text" as const, text: part.value };
+        } else if ("data" in part && "mimeType" in part) {
+          const data = part.data;
+          return {
+            type: "data" as const,
+            mimeType: part.mimeType,
+            dataSize: data.length,
+          };
+        } else if ("callId" in part && "name" in part) {
+          const isResult = "toolResult" in part;
+          if (isResult) {
+            return {
+              type: "toolResult" as const,
+              toolName: part.name,
+              callId: part.callId,
+              toolResult: (part as { toolResult?: unknown }).toolResult,
+            };
+          } else {
+            return {
+              type: "toolCall" as const,
+              toolName: part.name,
+              callId: part.callId,
+              input: (part as { input?: unknown }).input,
+            };
+          }
+        } else {
+          return { type: "unknown" as const };
+        }
+      });
+
+      // Build result object, only including name if defined
+      const result: FullContentCapture["messages"][number] = {
+        role: ROLE_NAMES[msg.role as number] ?? `Unknown(${String(msg.role)})`,
+        content,
+      };
+      if (name !== undefined) {
+        result.name = name;
+      }
+      return result;
+    },
+  );
+
+  // Build tools array, only including optional properties if defined
+  const tools = input.options.tools?.map((t) => {
+    const tool: NonNullable<FullContentCapture["tools"]>[number] = {
+      name: t.name,
+    };
+    if (t.description !== undefined) {
+      tool.description = t.description;
+    }
+    if (t.inputSchema !== undefined) {
+      tool.inputSchema = t.inputSchema;
+    }
+    return tool;
+  });
+
+  const result: FullContentCapture = {
+    messages,
+  };
+  if (input.systemPrompt !== undefined) {
+    result.systemPrompt = input.systemPrompt;
+  }
+  if (tools !== undefined) {
+    result.tools = tools;
+  }
+  return result;
+}
+
 export async function captureForensicData(input: CaptureInput): Promise<void> {
   try {
     const remoteName = vscode.env.remoteName;
@@ -201,10 +343,13 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
         }
       : undefined;
 
+    // Extract full content if enabled
+    const fullContent = extractFullContent(input);
+
     const capture: ForensicCapture = {
       sequence: ++captureSequence,
       timestamp: new Date().toISOString(),
-      captureVersion: "1.0",
+      captureVersion: fullContent ? "1.1" : "1.0",
 
       vscodeEnv: {
         sessionId: vscode.env.sessionId,
@@ -248,11 +393,98 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
       options: {
         toolCount: input.options.tools?.length ?? 0,
         toolNames: input.options.tools?.map((t) => t.name) ?? [],
-        toolMode: String(input.options.toolMode ?? "auto"),
+        toolMode: typeof input.options.toolMode === "string" ? input.options.toolMode : "auto",
         modelOptions: input.options.modelOptions ?? {},
         toolSchemaHashes:
           input.options.tools?.map((t) => hashToolSchema(t)) ?? [],
       },
+
+      // RAW dump of everything in options
+      rawOptions: {
+        allKeys: Object.keys(input.options),
+        fullDump: Object.fromEntries(
+          Object.entries(input.options).map(([key, value]) => {
+            // For tools, just capture count and names (too large to dump fully)
+            if (key === "tools" && Array.isArray(value)) {
+              return [
+                key,
+                {
+                  count: value.length,
+                  names: value.map((t: { name: string }) => t.name),
+                },
+              ];
+            }
+            // For everything else, try to serialize
+            try {
+              return [key, JSON.parse(JSON.stringify(value))];
+            } catch {
+              return [key, `[unserializable: ${typeof value}]`];
+            }
+          }),
+        ),
+      },
+
+      // RAW dump of model object
+      rawModel: {
+        allKeys: Object.keys(input.model),
+        fullDump: Object.fromEntries(
+          Object.entries(input.model).map(([key, value]) => {
+            try {
+              return [key, JSON.parse(JSON.stringify(value))];
+            } catch {
+              return [key, `[unserializable: ${typeof value}]`];
+            }
+          }),
+        ),
+      },
+
+      // RAW dump of first message (if any)
+      ...(input.chatMessages.length > 0
+        ? {
+            rawFirstMessage: {
+              allKeys: Object.keys(input.chatMessages[0]!),
+              role: input.chatMessages[0]!.role,
+              // Capture the name field - this might contain participant/agent info
+              name: (input.chatMessages[0] as { name?: unknown }).name,
+              content: (() => {
+                try {
+                  // Just get structure, not full content
+                  const msg = input.chatMessages[0]!;
+                  return {
+                    length: msg.content.length,
+                    partTypes: msg.content.map((p) => {
+                      const keys = Object.keys(p);
+                      return { keys, type: typeof p };
+                    }),
+                  };
+                } catch {
+                  return "[error reading content]";
+                }
+              })(),
+            },
+          }
+        : {}),
+
+      // RAW dump of ALL messages (to find any hidden identifiers)
+      rawAllMessages: input.chatMessages.map((msg, idx) => ({
+        index: idx,
+        allKeys: Object.keys(msg),
+        role: msg.role,
+        name: (msg as { name?: unknown }).name,
+        contentLength: msg.content.length,
+        // Dump any extra properties we might have missed
+        extraProps: Object.fromEntries(
+          Object.entries(msg)
+            .filter(([k]) => !["content", "role", "c"].includes(k))
+            .map(([k, v]) => {
+              try {
+                return [k, JSON.parse(JSON.stringify(v))];
+              } catch {
+                return [k, `[unserializable: ${typeof v}]`];
+              }
+            }),
+        ),
+      })),
 
       tokens: {
         estimated: input.estimatedTokens,
@@ -270,6 +502,9 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
         currentAgentId: input.currentAgentId,
         hasActiveStreaming: input.currentAgentId !== null,
       },
+
+      // Full content (only when forensicCaptureFullContent is enabled)
+      ...(fullContent ? { fullContent } : {}),
     };
 
     // Write to JSONL file

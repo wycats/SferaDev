@@ -1,0 +1,141 @@
+/// <reference types="mocha" />
+
+import * as assert from "node:assert/strict";
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
+import * as vscode from "vscode";
+
+type ErrorWithCode = Error & { code?: string };
+
+const captureFile = path.join(
+  os.homedir(),
+  ".vscode-ai-gateway",
+  "forensic-captures.jsonl",
+);
+
+async function removeCaptureFile(): Promise<void> {
+  try {
+    await fs.unlink(captureFile);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  }
+}
+
+// Simple smoke test that doesn't require LM models
+suite("Extension smoke tests", () => {
+  test("basic test runs", function () {
+    // Simplest possible test to verify the test framework works
+    console.log("Basic test is running!");
+    assert.ok(true, "Basic test passed");
+  });
+
+  test("vscode API is available", function () {
+    console.log("Checking vscode API...");
+    assert.ok(vscode, "vscode should exist");
+    assert.ok(vscode.extensions, "vscode.extensions should exist");
+    assert.ok(vscode.lm, "vscode.lm should exist");
+    console.log("vscode API is available");
+  });
+
+  test("can list extensions", function () {
+    console.log("Listing extensions...");
+    const extensions = vscode.extensions.all;
+    console.log(`Found ${extensions.length} extensions`);
+    console.log(
+      "First 10 extension IDs:",
+      extensions.slice(0, 10).map((e) => e.id),
+    );
+    assert.ok(extensions.length >= 0, "Should be able to list extensions");
+  });
+});
+
+suite("Forensic capture integration", () => {
+  let previousForensicCapture: boolean | undefined;
+
+  suiteSetup(async function (this: Mocha.Context) {
+    this.timeout(30_000);
+    console.log("Setting up forensic capture suite...");
+
+    // Don't wait for extension activation - it may not be available in fresh profile
+    const config = vscode.workspace.getConfiguration("vercelAiGateway");
+    previousForensicCapture = config.get<boolean>("debug.forensicCapture");
+    await config.update(
+      "debug.forensicCapture",
+      true,
+      vscode.ConfigurationTarget.Global,
+    );
+    console.log("Forensic capture enabled");
+  });
+
+  suiteTeardown(async () => {
+    const config = vscode.workspace.getConfiguration("vercelAiGateway");
+    await config.update(
+      "debug.forensicCapture",
+      previousForensicCapture ?? false,
+      vscode.ConfigurationTarget.Global,
+    );
+    await removeCaptureFile();
+  });
+
+  setup(async () => {
+    await removeCaptureFile();
+  });
+
+  teardown(async () => {
+    await removeCaptureFile();
+  });
+
+  test("writes a forensic capture file after an LM request", async function (this: Mocha.Context) {
+    const models = await vscode.lm.selectChatModels({
+      vendor: "vercelAiGateway",
+    });
+    if (models.length === 0) {
+      this.skip();
+    }
+
+    const model = models[0];
+    if (!model) {
+      this.skip();
+    }
+    const cancellation = new vscode.CancellationTokenSource();
+    const timeout = setTimeout(() => {
+      cancellation.cancel();
+    }, 30_000);
+
+    try {
+      const response = await model.sendRequest(
+        [vscode.LanguageModelChatMessage.User("Hello from integration test.")],
+        { justification: "Integration test for forensic capture." },
+        cancellation.token,
+      );
+
+      for await (const _ of response.text) {
+        // Consume stream to completion.
+      }
+    } catch (error) {
+      if (cancellation.token.isCancellationRequested) {
+        this.skip();
+      }
+      const code = (error as ErrorWithCode).code;
+      if (
+        code === vscode.LanguageModelError.NoPermissions.name ||
+        code === vscode.LanguageModelError.Blocked.name
+      ) {
+        this.skip();
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+      cancellation.dispose();
+    }
+
+    const contents = await fs.readFile(captureFile, "utf-8");
+    assert.ok(
+      contents.trim().length > 0,
+      "Expected forensic capture file to contain at least one entry.",
+    );
+  });
+});

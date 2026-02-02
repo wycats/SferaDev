@@ -3,8 +3,8 @@ title: Integration Test Harness
 stage: 0
 feature: testing
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00032: Integration Test Harness
@@ -54,6 +54,7 @@ apps/vscode-ai-gateway/
 ### Test Runner (`runTest.ts`)
 
 Uses `@vscode/test-electron` to:
+
 1. Download VS Code (if needed)
 2. Install the extension under test
 3. Launch VS Code in Extension Development Host mode
@@ -61,20 +62,20 @@ Uses `@vscode/test-electron` to:
 5. Exit with test results
 
 ```typescript
-import { runTests } from '@vscode/test-electron';
-import * as path from 'path';
+import { runTests } from "@vscode/test-electron";
+import * as path from "path";
 
 async function main() {
-  const extensionDevelopmentPath = path.resolve(__dirname, '../../');
-  const extensionTestsPath = path.resolve(__dirname, './suite/index');
+  const extensionDevelopmentPath = path.resolve(__dirname, "../../");
+  const extensionTestsPath = path.resolve(__dirname, "./suite/index");
 
   await runTests({
     extensionDevelopmentPath,
     extensionTestsPath,
     launchArgs: [
-      '--disable-extensions', // Disable other extensions
-      '--skip-welcome',
-      '--skip-release-notes',
+      "--disable-extensions", // Disable other extensions
+      "--skip-welcome",
+      "--skip-release-notes",
     ],
   });
 }
@@ -87,19 +88,23 @@ main().catch(console.error);
 Uses Mocha (standard for VS Code extension tests):
 
 ```typescript
-import * as Mocha from 'mocha';
-import * as path from 'path';
-import * as glob from 'glob';
+import * as Mocha from "mocha";
+import * as path from "path";
+import * as glob from "glob";
 
 export function run(): Promise<void> {
-  const mocha = new Mocha({ ui: 'tdd', color: true, timeout: 60000 });
-  const testsRoot = path.resolve(__dirname, '.');
+  const mocha = new Mocha({ ui: "tdd", color: true, timeout: 60000 });
+  const testsRoot = path.resolve(__dirname, ".");
 
   return new Promise((resolve, reject) => {
-    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
+    glob("**/**.test.js", { cwd: testsRoot }, (err, files) => {
       if (err) return reject(err);
-      files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
-      mocha.run(failures => failures > 0 ? reject(new Error(`${failures} tests failed`)) : resolve());
+      files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
+      mocha.run((failures) =>
+        failures > 0
+          ? reject(new Error(`${failures} tests failed`))
+          : resolve(),
+      );
     });
   });
 }
@@ -108,20 +113,28 @@ export function run(): Promise<void> {
 ### Forensic Capture Test (`forensic-capture.test.ts`)
 
 ```typescript
-import * as assert from 'assert';
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as assert from "assert";
+import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
-suite('Forensic Capture Integration', () => {
-  const captureFile = path.join(os.homedir(), '.vscode-ai-gateway', 'forensic-captures.jsonl');
+suite("Forensic Capture Integration", () => {
+  const captureFile = path.join(
+    os.homedir(),
+    ".vscode-ai-gateway",
+    "forensic-captures.jsonl",
+  );
 
   setup(async () => {
     // Enable forensic capture
-    const config = vscode.workspace.getConfiguration('vercelAiGateway');
-    await config.update('debug.forensicCapture', true, vscode.ConfigurationTarget.Global);
-    
+    const config = vscode.workspace.getConfiguration("vercelAiGateway");
+    await config.update(
+      "debug.forensicCapture",
+      true,
+      vscode.ConfigurationTarget.Global,
+    );
+
     // Clear existing captures
     if (fs.existsSync(captureFile)) {
       fs.unlinkSync(captureFile);
@@ -130,107 +143,197 @@ suite('Forensic Capture Integration', () => {
 
   teardown(async () => {
     // Disable forensic capture
-    const config = vscode.workspace.getConfiguration('vercelAiGateway');
-    await config.update('debug.forensicCapture', false, vscode.ConfigurationTarget.Global);
+    const config = vscode.workspace.getConfiguration("vercelAiGateway");
+    await config.update(
+      "debug.forensicCapture",
+      false,
+      vscode.ConfigurationTarget.Global,
+    );
   });
 
-  test('captures data when LM API is called', async function() {
+  test("captures data when LM API is called", async function () {
     // Skip if no models available
-    const models = await vscode.lm.selectChatModels({ vendor: 'vercelAiGateway' });
+    const models = await vscode.lm.selectChatModels({
+      vendor: "vercelAiGateway",
+    });
     if (models.length === 0) {
       this.skip();
       return;
     }
 
     const model = models[0];
-    const messages = [vscode.LanguageModelChatMessage.User('Hello, world!')];
-    
+    const messages = [vscode.LanguageModelChatMessage.User("Hello, world!")];
+
     // Make a request
     const response = await model.sendRequest(messages, {});
-    
+
     // Consume the stream
     for await (const chunk of response.stream) {
       // Just consume
     }
 
     // Verify capture file exists and has content
-    assert.ok(fs.existsSync(captureFile), 'Capture file should exist');
-    const content = fs.readFileSync(captureFile, 'utf-8');
-    const lines = content.trim().split('\n');
-    assert.ok(lines.length >= 1, 'Should have at least one capture');
+    assert.ok(fs.existsSync(captureFile), "Capture file should exist");
+    const content = fs.readFileSync(captureFile, "utf-8");
+    const lines = content.trim().split("\n");
+    assert.ok(lines.length >= 1, "Should have at least one capture");
 
     const capture = JSON.parse(lines[0]);
-    assert.ok(capture.sequence >= 1, 'Should have sequence number');
-    assert.ok(capture.vscodeEnv.sessionId, 'Should capture sessionId');
-    assert.ok(capture.model.id, 'Should capture model id');
+    assert.ok(capture.sequence >= 1, "Should have sequence number");
+    assert.ok(capture.vscodeEnv.sessionId, "Should capture sessionId");
+    assert.ok(capture.model.id, "Should capture model id");
   });
 
-  test('parallel conversations have distinguishable captures', async function() {
-    const models = await vscode.lm.selectChatModels({ vendor: 'vercelAiGateway' });
+  test("parallel conversations have distinguishable captures", async function () {
+    const models = await vscode.lm.selectChatModels({
+      vendor: "vercelAiGateway",
+    });
     if (models.length === 0) {
       this.skip();
       return;
     }
 
     const model = models[0];
-    
+
     // Start two parallel conversations
-    const conv1 = model.sendRequest([
-      vscode.LanguageModelChatMessage.User('Conversation 1: What is 2+2?')
-    ], {});
-    
-    const conv2 = model.sendRequest([
-      vscode.LanguageModelChatMessage.User('Conversation 2: What is the capital of France?')
-    ], {});
+    const conv1 = model.sendRequest(
+      [vscode.LanguageModelChatMessage.User("Conversation 1: What is 2+2?")],
+      {},
+    );
+
+    const conv2 = model.sendRequest(
+      [
+        vscode.LanguageModelChatMessage.User(
+          "Conversation 2: What is the capital of France?",
+        ),
+      ],
+      {},
+    );
 
     // Consume both streams
     await Promise.all([
-      (async () => { for await (const _ of (await conv1).stream) {} })(),
-      (async () => { for await (const _ of (await conv2).stream) {} })(),
+      (async () => {
+        for await (const _ of (await conv1).stream) {
+        }
+      })(),
+      (async () => {
+        for await (const _ of (await conv2).stream) {
+        }
+      })(),
     ]);
 
     // Analyze captures
-    const content = fs.readFileSync(captureFile, 'utf-8');
-    const captures = content.trim().split('\n').map(l => JSON.parse(l));
-    
-    assert.strictEqual(captures.length, 2, 'Should have two captures');
-    
+    const content = fs.readFileSync(captureFile, "utf-8");
+    const captures = content
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l));
+
+    assert.strictEqual(captures.length, 2, "Should have two captures");
+
     // Check that message hashes differ
     const hash1 = captures[0].messages.contentSummary[0].hash;
     const hash2 = captures[1].messages.contentSummary[0].hash;
-    assert.notStrictEqual(hash1, hash2, 'Message hashes should differ');
+    assert.notStrictEqual(hash1, hash2, "Message hashes should differ");
   });
 });
 ```
 
 ### CI Configuration
 
-For GitHub Actions (Linux):
+For GitHub Actions (Linux), the wrapper script handles xvfb automatically:
 
 ```yaml
+- name: Install xvfb
+  run: sudo apt-get install -y xvfb
+
 - name: Run integration tests
-  run: xvfb-run -a pnpm test:integration
+  run: pnpm test:integration
   working-directory: apps/vscode-ai-gateway
 ```
 
+The wrapper script (`scripts/test-integration.js`) detects xvfb-run and uses it automatically.
+
 ## Test Scenarios
 
-| Scenario | Purpose | Expected Outcome |
-|----------|---------|------------------|
-| Single request | Verify basic capture | Capture file created with valid JSON |
-| Parallel requests | Test conversation isolation | Different message hashes captured |
-| Multi-turn conversation | Test conversation continuity | Same system prompt hash, increasing message counts |
-| No models available | Graceful degradation | Test skipped, not failed |
-| Forensic capture disabled | Verify opt-in | No capture file created |
+| Scenario                  | Purpose                      | Expected Outcome                                   |
+| ------------------------- | ---------------------------- | -------------------------------------------------- |
+| Single request            | Verify basic capture         | Capture file created with valid JSON               |
+| Parallel requests         | Test conversation isolation  | Different message hashes captured                  |
+| Multi-turn conversation   | Test conversation continuity | Same system prompt hash, increasing message counts |
+| No models available       | Graceful degradation         | Test skipped, not failed                           |
+| Forensic capture disabled | Verify opt-in                | No capture file created                            |
+
+## Running Tests
+
+### VS Code Instance Limitation
+
+**Critical**: VS Code does not support running CLI extension tests while another instance of the same VS Code version is running. This is a fundamental limitation documented in [microsoft/vscode-test#57](https://github.com/microsoft/vscode-test/issues/57).
+
+| Running  | Test Against | Works? |
+| -------- | ------------ | ------ |
+| Stable   | Stable       | ❌     |
+| Stable   | Insiders     | ✅     |
+| Insiders | Stable       | ✅     |
+| Insiders | Insiders     | ❌     |
+
+### Recommended Approach: Debug Launch Config
+
+The **recommended way** to run integration tests during development is via the VS Code debugger, which bypasses the CLI limitation:
+
+1. Open the extension folder in VS Code
+2. Press F5 and select "Extension Tests"
+3. A new Extension Development Host window opens and runs the tests
+4. Results appear in the Debug Console
+
+This is configured in `.vscode/launch.json`:
+
+```json
+{
+  "name": "Extension Tests",
+  "type": "extensionHost",
+  "request": "launch",
+  "args": [
+    "--extensionDevelopmentPath=${workspaceFolder}",
+    "--extensionTestsPath=${workspaceFolder}/out/test/suite/index.js",
+    "--disable-extensions"
+  ],
+  "outFiles": ["${workspaceFolder}/out/**/*.js"],
+  "preLaunchTask": "compile"
+}
+```
+
+### CLI Approach (CI or when VS Code is closed)
+
+When VS Code is **not running**, use the CLI:
+
+```bash
+pnpm test:integration          # Headless (uses xvfb on Linux)
+pnpm test:integration:headed   # Opens visible VS Code window
+```
+
+The wrapper script (`scripts/test-integration.js`) handles:
+
+- **xvfb-run** on Linux for headless execution
+- **Wayland isolation** (clears `WAYLAND_DISPLAY`, `XDG_SESSION_TYPE`)
+- **Safety check** to prevent direct `runTest.ts` execution
+
+`@vscode/test-electron` automatically:
+
+- Downloads VS Code if needed
+- Uses isolated `--user-data-dir` and `--extensions-dir` in `.vscode-test/`
+- Launches the Extension Development Host
+- Runs Mocha tests
 
 ## Risks & Mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| No LM models in CI | Skip tests gracefully; document manual testing |
-| Flaky due to timing | Use generous timeouts; retry logic |
-| xvfb issues on CI | Document runner requirements; test on multiple CI providers |
-| Extension activation race | Wait for extension to activate before tests |
+| Risk                      | Mitigation                                                  |
+| ------------------------- | ----------------------------------------------------------- |
+| No LM models in CI        | Skip tests gracefully; document manual testing              |
+| Flaky due to timing       | Use generous timeouts; retry logic                          |
+| xvfb issues on CI         | Document runner requirements; test on multiple CI providers |
+| Extension activation race | Wait for extension to activate before tests                 |
+| VS Code already running   | Use debug launch config; or close VS Code for CLI tests     |
 
 ## Success Criteria
 
@@ -242,6 +345,7 @@ For GitHub Actions (Linux):
 ## Implementation Phases
 
 ### Phase 1: Test Infrastructure Setup
+
 - Add `@vscode/test-electron` and `mocha` dependencies
 - Create test runner (`src/test/runTest.ts`)
 - Create test suite entry point (`src/test/suite/index.ts`)
@@ -249,12 +353,14 @@ For GitHub Actions (Linux):
 - Update tsconfig.json for test files
 
 ### Phase 2: Forensic Integration Tests
+
 - Create `src/test/suite/forensic-capture.test.ts`
 - Add parallel conversation test
 - Add graceful skip logic when no LM models available
 - Add test setup/teardown to clear forensic captures
 
 ### Phase 3: Analysis Integration
+
 - Create analysis test that runs `analyze-forensic-captures.ts` after capture tests
 - Add GitHub Actions workflow step for integration tests with xvfb
 - Add README section documenting how to run integration tests locally

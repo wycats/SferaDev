@@ -412,7 +412,8 @@ export class ModelsClient {
         // Models are hidden from picker by default - users enable specific models via
         // VS Code's "Manage Models" UI (gear icon in model picker). This prevents
         // overwhelming users with 150+ models. User preferences persist in VS Code storage.
-        isUserSelectable: false,
+        // For testing/development, set vercelAiGateway.models.userSelectable to true.
+        isUserSelectable: this.configService.modelsUserSelectable,
         // VS Code requires at least one model to have isDefault set, otherwise it falls back
         // to cached models. Me,
         // VS Code requires at least one model to have isDefault set, otherwise it falls back

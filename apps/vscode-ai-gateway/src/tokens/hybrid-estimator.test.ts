@@ -28,7 +28,11 @@ const tiktokenHoisted = vi.hoisted(() => {
       text: string,
       _allowedSpecial?: string[] | "all",
       _disallowedSpecial?: string[] | "all",
-    ) => Array.from({ length: text.length }),
+    ) => {
+      void _allowedSpecial;
+      void _disallowedSpecial;
+      return Array.from({ length: text.length });
+    },
   );
   const mockEncoding = { encode: mockEncode };
   const mockGetEncoding = vi.fn(() => mockEncoding);

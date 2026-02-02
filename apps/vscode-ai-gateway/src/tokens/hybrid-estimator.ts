@@ -64,7 +64,7 @@ export class HybridTokenEstimator {
   private tokenCounter: TokenCounter;
   private tokenCache: TokenCache;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   constructor(_context: vscode.ExtensionContext) {
     void _context;
     this.conversationTracker = new ConversationStateTracker();

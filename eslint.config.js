@@ -12,6 +12,32 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      // Allow numbers and other primitives in template literals
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        {
+          allowNumber: true,
+          allowBoolean: true,
+          allowNullish: true,
+          allowRegExp: false,
+        },
+      ],
+      // Allow non-null assertions in specific cases (VS Code APIs often require them)
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      // Deprecated APIs are intentionally used during migration
+      "@typescript-eslint/no-deprecated": "warn",
+      // Allow getters that return literals (common pattern for config defaults)
+      "@typescript-eslint/class-literal-property-style": "off",
+      // Allow unused variables/args prefixed with underscore
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
   },
   {
     // Disable type-checked rules for JavaScript files
@@ -28,6 +54,7 @@ export default tseslint.config(
       ".reference/**",
       "packages/openresponses-client/src/generated/**",
       "**/scripts/**",
+      "**/.vscode-test/**",
     ],
   },
 );

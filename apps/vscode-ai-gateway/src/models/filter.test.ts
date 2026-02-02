@@ -23,9 +23,7 @@ const hoisted = vi.hoisted(() => {
   }
 
   const mockGetConfiguration = vi.fn();
-  const mockOnDidChangeConfiguration = vi.fn(
-    (_callback?: unknown) => ({ dispose: vi.fn() }),
-  );
+  const mockOnDidChangeConfiguration = vi.fn(() => ({ dispose: vi.fn() }));
 
   return {
     mockEventEmitterFire,
