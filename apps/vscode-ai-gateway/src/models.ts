@@ -392,7 +392,15 @@ export class ModelsClient {
       const hasReasoning = tags.some((tag) => reasoningTags.has(tag));
       const hasWebSearch = tags.some((tag) => webSearchTags.has(tag));
 
-      return {
+      const maxInputTokens = Math.min(
+        model.context_window,
+        CONSERVATIVE_MAX_INPUT_TOKENS,
+      );
+      const maxOutputTokens = Math.min(
+        model.max_tokens,
+        CONSERVATIVE_MAX_OUTPUT_TOKENS,
+      );
+      const modelInfo = {
         id: model.id,
         name: model.name,
         detail: "Vercel AI Gateway",
@@ -400,14 +408,8 @@ export class ModelsClient {
         version: identity.version,
         // Apply conservative limits to prevent high-context degradation
         // See CONSERVATIVE_MAX_INPUT_TOKENS documentation for details
-        maxInputTokens: Math.min(
-          model.context_window,
-          CONSERVATIVE_MAX_INPUT_TOKENS,
-        ),
-        maxOutputTokens: Math.min(
-          model.max_tokens,
-          CONSERVATIVE_MAX_OUTPUT_TOKENS,
-        ),
+        maxInputTokens,
+        maxOutputTokens,
         tooltip: model.description || "No description available.",
         // Models are hidden from picker by default - users enable specific models via
         // VS Code's "Manage Models" UI (gear icon in model picker). This prevents
@@ -429,6 +431,15 @@ export class ModelsClient {
           webSearch: hasWebSearch || false,
         },
       };
+
+      logger.debug("[Models] Created model info", {
+        id: model.id,
+        maxInputTokens,
+        rawContextWindow: model.context_window,
+        cappedAt: CONSERVATIVE_MAX_INPUT_TOKENS,
+      });
+
+      return modelInfo;
     });
   }
 }

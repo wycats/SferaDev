@@ -5,6 +5,7 @@ import type {
   StreamingEvent,
   Usage,
 } from "openresponses-client";
+import { safeJsonStringify } from "../utils/serialize.js";
 import { IndexWriter } from "./index-writer";
 import { SessionManager } from "./session-manager";
 import type { LogEntry } from "./types";
@@ -175,7 +176,7 @@ export class RequestLogger {
       const timestamp = new Date().toISOString();
       await fs.promises.appendFile(
         this.eventsPath,
-        `${JSON.stringify({
+        `${safeJsonStringify({
           seq: this.eventSeq,
           type: event.type,
           timestamp,

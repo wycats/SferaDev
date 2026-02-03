@@ -39,12 +39,13 @@ export function createMockMemento(
       }
       return defaultValue;
     },
-    async update(key: string, value: unknown): Promise<void> {
+    update(key: string, value: unknown): Thenable<void> {
       if (value === undefined) {
         store.delete(key);
       } else {
         store.set(key, value);
       }
+      return Promise.resolve();
     },
   };
 }

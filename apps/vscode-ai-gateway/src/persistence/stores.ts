@@ -15,7 +15,7 @@ export interface SessionStats {
   /** Main agent turn count */
   mainAgentTurns: number;
   /** Max context size reached (not sum) */
-  totalInputTokens: number;
+  maxObservedInputTokens: number;
   /** Accumulated output tokens */
   totalOutputTokens: number;
   /** Primary model used */
@@ -30,7 +30,7 @@ export const SESSION_STATS_STORE: StoreConfig<SessionStats> = {
     timestamp: 0,
     agentCount: 0,
     mainAgentTurns: 0,
-    totalInputTokens: 0,
+    maxObservedInputTokens: 0,
     totalOutputTokens: 0,
     modelId: null,
   },

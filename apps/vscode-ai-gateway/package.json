@@ -191,6 +191,7 @@
   },
   "dependencies": {
     "js-tiktoken": "^1.0.15",
-    "openresponses-client": "workspace:*"
+    "openresponses-client": "workspace:*",
+    "safe-stable-stringify": "^2.5.0"
   }
 }

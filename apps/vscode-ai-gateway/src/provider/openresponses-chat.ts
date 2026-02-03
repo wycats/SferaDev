@@ -28,6 +28,7 @@ import {
   type ProvideLanguageModelChatResponseOptions,
 } from "vscode";
 import type { ConfigService } from "../config.js";
+import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
 import {
   extractTokenCountFromError,
   type ExtractedTokenInfo,
@@ -38,7 +39,6 @@ import { saveSuspiciousRequest } from "./debug-utils.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
-import { UsageTracker } from "./usage-tracker.js";
 
 /**
  * Options for the OpenResponses chat implementation
@@ -137,7 +137,6 @@ export async function executeOpenResponsesChat(
   });
 
   const adapter = new StreamAdapter();
-  const usageTracker = new UsageTracker();
 
   // Set up abort handling
   const abortController = new AbortController();
@@ -264,6 +263,25 @@ export async function executeOpenResponsesChat(
             const expectedChildName =
               args?.agentName ?? args?.mode ?? "unknown";
 
+            // Log raw tool call payload to tree diagnostics for debugging claim matching
+            treeDiagnostics.log(
+              "TOOL_CALL_DETECTED",
+              {
+                toolName: part.name,
+                callId: part.callId,
+                extractedName: expectedChildName,
+                rawArgs: part.input,
+                argKeys: args ? Object.keys(args) : [],
+              },
+              // Empty tree snapshot - we don't have access to the full tree here
+              {
+                agents: [],
+                claims: [],
+                mainAgentId: null,
+                activeAgentId: null,
+              },
+            );
+
             // Create claim via status bar (which owns the ClaimRegistry)
             statusBar?.createChildClaim(chatId, expectedChildName);
 
@@ -341,7 +359,6 @@ export async function executeOpenResponsesChat(
 
         // Track usage and calibrate token estimation
         if (adapted.usage) {
-          usageTracker.record(chatId, adapted.usage);
           logger.info(
             `[OpenResponses] Response: ${adapted.usage.input_tokens} in, ${adapted.usage.output_tokens} out tokens`,
           );

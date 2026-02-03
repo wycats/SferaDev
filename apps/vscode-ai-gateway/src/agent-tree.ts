@@ -43,40 +43,34 @@ export class AgentTreeItem extends vscode.TreeItem {
   private formatDescription(): string {
     const parts: string[] = [];
 
-    // Use accumulated totals for multi-turn conversations
-    const inputTokens =
-      this.agent.turnCount > 1
-        ? this.agent.totalInputTokens
-        : this.agent.inputTokens;
-    const outputTokens =
-      this.agent.turnCount > 1
-        ? this.agent.totalOutputTokens
-        : this.agent.outputTokens;
+    // Compute the token value we'll display AND use for percentage
+    // INVARIANT: displayedTokens is used for both display and percentage calculation
+    let displayedTokens: number | null = null;
 
     if (this.agent.status === "streaming") {
       if (this.agent.estimatedInputTokens) {
-        parts.push(`~${this.formatTokens(this.agent.estimatedInputTokens)}`);
+        displayedTokens = this.agent.estimatedInputTokens;
+        parts.push(`~${this.formatTokens(displayedTokens)}`);
       } else {
         parts.push("streaming...");
       }
     } else if (this.agent.status === "complete") {
-      // Show turn count for multi-turn conversations
-      if (this.agent.turnCount > 1) {
-        parts.push(`[${this.agent.turnCount}]`);
-      }
-      parts.push(this.formatTokens(inputTokens));
-      if (outputTokens > 0) {
-        parts.push(`→${this.formatTokens(outputTokens)}`);
-      }
+      // Use accumulated totals for multi-turn conversations
+      displayedTokens =
+        this.agent.turnCount > 1
+          ? this.agent.maxObservedInputTokens
+          : this.agent.inputTokens;
+      parts.push(this.formatTokens(displayedTokens));
     } else {
       // status === "error"
       parts.push("error");
     }
 
-    if (this.agent.maxInputTokens) {
-      const tokensForPct =
-        inputTokens || (this.agent.estimatedInputTokens ?? 0);
-      const pct = Math.round((tokensForPct / this.agent.maxInputTokens) * 100);
+    // Percentage uses the SAME value as display (invariant)
+    if (this.agent.maxInputTokens && displayedTokens) {
+      const pct = Math.round(
+        (displayedTokens / this.agent.maxInputTokens) * 100,
+      );
       parts.push(`(${pct}%)`);
     }
 
@@ -108,7 +102,7 @@ export class AgentTreeItem extends vscode.TreeItem {
       if (this.agent.turnCount > 1) {
         md.appendMarkdown(`**Turns:** ${this.agent.turnCount}\n\n`);
         md.appendMarkdown(
-          `**Total Input:** ${this.agent.totalInputTokens.toLocaleString()}\n\n`,
+          `**Max Input:** ${this.agent.maxObservedInputTokens.toLocaleString()}\n\n`,
         );
         md.appendMarkdown(
           `**Total Output:** ${this.agent.totalOutputTokens.toLocaleString()}\n\n`,
@@ -169,8 +163,12 @@ export class AgentTreeItem extends vscode.TreeItem {
         );
       case "complete": {
         // Check context utilization for color
-        if (this.agent.maxInputTokens && this.agent.inputTokens) {
-          const pct = this.agent.inputTokens / this.agent.maxInputTokens;
+        const inputTokens =
+          this.agent.turnCount > 1
+            ? this.agent.maxObservedInputTokens
+            : this.agent.inputTokens;
+        if (this.agent.maxInputTokens && inputTokens) {
+          const pct = inputTokens / this.agent.maxInputTokens;
           if (pct > 0.9) {
             return new vscode.ThemeIcon(
               "check",
@@ -223,9 +221,9 @@ class LastSessionTreeItem extends vscode.TreeItem {
     super("Last Session", vscode.TreeItemCollapsibleState.None);
 
     const tokens =
-      stats.totalInputTokens >= 1000
-        ? `${(stats.totalInputTokens / 1000).toFixed(1)}k`
-        : stats.totalInputTokens.toString();
+      stats.maxObservedInputTokens >= 1000
+        ? `${(stats.maxObservedInputTokens / 1000).toFixed(1)}k`
+        : stats.maxObservedInputTokens.toString();
 
     this.description = `${stats.agentCount} agent${stats.agentCount !== 1 ? "s" : ""}, ${tokens} context tokens`;
     this.tooltip = this.formatTooltip(stats);
@@ -242,7 +240,7 @@ class LastSessionTreeItem extends vscode.TreeItem {
     md.appendMarkdown(`**Agents:** ${stats.agentCount}\n\n`);
     md.appendMarkdown(`**Main Agent Turns:** ${stats.mainAgentTurns}\n\n`);
     md.appendMarkdown(
-      `**Max Context:** ${stats.totalInputTokens.toLocaleString()} tokens\n\n`,
+      `**Max Context:** ${stats.maxObservedInputTokens.toLocaleString()} tokens\n\n`,
     );
     md.appendMarkdown(
       `**Total Output:** ${stats.totalOutputTokens.toLocaleString()} tokens\n\n`,

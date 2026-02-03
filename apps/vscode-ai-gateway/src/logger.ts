@@ -9,6 +9,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ConfigService, type LogLevel } from "./config";
+import { safeJsonStringify } from "./utils/serialize.js";
 
 export type { LogLevel } from "./config";
 
@@ -283,7 +284,7 @@ export class Logger {
         break;
     }
 
-    const argsStr = args.length > 0 ? ` ${JSON.stringify(args)}` : "";
+    const argsStr = args.length > 0 ? ` ${safeJsonStringify(args)}` : "";
     const fullFormatted = formatted + argsStr;
 
     if (this.outputChannel) {
@@ -354,7 +355,7 @@ export class Logger {
       };
 
       // JSONL line for easy parsing
-      fs.appendFileSync(apiErrorsPath, `${JSON.stringify(errorEntry)}\n`);
+      fs.appendFileSync(apiErrorsPath, `${safeJsonStringify(errorEntry)}\n`);
 
       // Also log a summary to the main log
       this.error(

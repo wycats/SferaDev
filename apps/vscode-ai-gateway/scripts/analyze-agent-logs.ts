@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/// <reference types="node" />
 /**
  * Agent Log Analysis Script
  *
@@ -46,7 +47,10 @@ interface AgentSnapshotEntry {
   parentConversationHash?: string;
   inputTokens: number;
   outputTokens: number;
-  totalInputTokens: number;
+  /** @deprecated Use maxObservedInputTokens - kept for backward compatibility with old logs */
+  totalInputTokens?: number;
+  /** Maximum observed input tokens (new field name) */
+  maxObservedInputTokens?: number;
   totalOutputTokens: number;
   turnCount: number;
   estimatedInputTokens?: number;
@@ -155,7 +159,7 @@ interface LogAnalysis {
     name: string;
     isMain: boolean;
     turnCount: number;
-    totalInputTokens: number;
+    maxObservedInputTokens: number;
     totalOutputTokens: number;
     firstSeen: string;
     lastSeen: string;
@@ -209,7 +213,9 @@ function extractTokenAccuracy(events: DiagnosticEvent[]): TokenAccuracySummary {
 
       // Track the maximum values seen (tokens accumulate/grow)
       const estimated = agent.estimatedInputTokens ?? existing?.estimated ?? 0;
-      const actual = agent.totalInputTokens;
+      // Support both old (totalInputTokens) and new (maxObservedInputTokens) field names
+      const actual =
+        agent.maxObservedInputTokens ?? agent.totalInputTokens ?? 0;
 
       agentData.set(agent.id, {
         name: agent.name,
@@ -574,7 +580,7 @@ function analyzeEvents(
       name: string;
       isMain: boolean;
       turnCount: number;
-      totalInputTokens: number;
+      maxObservedInputTokens: number;
       totalOutputTokens: number;
       firstSeen: string;
       lastSeen: string;
@@ -593,11 +599,12 @@ function analyzeEvents(
 
   for (const event of events) {
     // Track invariant violations
-    if (event.invariants?.violations?.length > 0) {
+    const violations = event.invariants?.violations;
+    if (violations && violations.length > 0) {
       violationEvents.push({
         timestamp: event.timestamp,
         event: event.event,
-        violations: event.invariants.violations,
+        violations,
       });
     }
 
@@ -615,18 +622,21 @@ function analyzeEvents(
     // Track agents from tree snapshots
     if (event.tree?.agents) {
       for (const agent of event.tree.agents) {
+        // Support both old (totalInputTokens) and new (maxObservedInputTokens) field names
+        const inputTokens =
+          agent.maxObservedInputTokens ?? agent.totalInputTokens ?? 0;
         const existing = agentStats.get(agent.id);
         if (existing) {
           existing.lastSeen = event.timestamp;
           existing.turnCount = agent.turnCount;
-          existing.totalInputTokens = agent.totalInputTokens;
+          existing.maxObservedInputTokens = inputTokens;
           existing.totalOutputTokens = agent.totalOutputTokens;
         } else {
           agentStats.set(agent.id, {
             name: agent.name,
             isMain: agent.isMain,
             turnCount: agent.turnCount,
-            totalInputTokens: agent.totalInputTokens,
+            maxObservedInputTokens: inputTokens,
             totalOutputTokens: agent.totalOutputTokens,
             firstSeen: event.timestamp,
             lastSeen: event.timestamp,
@@ -643,7 +653,9 @@ function analyzeEvents(
     if (event.event === "AGENT_STARTED" || event.event === "AGENT_RESUMED") {
       summary = `${event.event}: ${agentName ?? "unknown"}${isMain ? " (main)" : ""}`;
     } else if (event.event === "AGENT_COMPLETED") {
-      const tokens = event.data?.totalInputTokens as number | undefined;
+      // Support both old and new field names in event data
+      const tokens = (event.data?.maxObservedInputTokens ??
+        event.data?.totalInputTokens) as number | undefined;
       summary = `${event.event}: ${agentName ?? "unknown"} (${tokens ?? 0} tokens)`;
     } else if (event.event === "CLAIM_CREATED") {
       const childName = event.data?.expectedChildAgentName as
@@ -653,10 +665,22 @@ function analyzeEvents(
     } else if (event.event === "CLAIM_MATCHED") {
       const childName = event.data?.matchedChildName as string | undefined;
       summary = `${event.event}: "${childName}"`;
+    } else if (event.event === "TOOL_CALL_DETECTED") {
+      const toolName = event.data?.toolName as string | undefined;
+      const extractedName = event.data?.extractedName as string | undefined;
+      const argKeys = event.data?.argKeys as string[] | undefined;
+      const rawArgs = event.data?.rawArgs as
+        | Record<string, unknown>
+        | undefined;
+      summary = `${event.event}: ${toolName} → "${extractedName}" (keys: ${argKeys?.join(", ") ?? "none"})`;
+      if (rawArgs) {
+        summary += ` | args: ${JSON.stringify(rawArgs)}`;
+      }
     }
 
-    if (event.invariants?.violations?.length > 0) {
-      summary += ` ⚠️ ${event.invariants.violations.length} violation(s)`;
+    const violationsForSummary = event.invariants?.violations;
+    if (violationsForSummary && violationsForSummary.length > 0) {
+      summary += ` ⚠️ ${violationsForSummary.length} violation(s)`;
     }
 
     timeline.push({
@@ -685,7 +709,7 @@ function analyzeEvents(
 
   for (const agent of agentStats.values()) {
     totalTurns += agent.turnCount;
-    maxInputTokens = Math.max(maxInputTokens, agent.totalInputTokens);
+    maxInputTokens = Math.max(maxInputTokens, agent.maxObservedInputTokens);
     totalOutputTokens += agent.totalOutputTokens;
   }
 
@@ -774,13 +798,9 @@ function buildUnifiedTimeline(
   // Add our events
   for (const event of events) {
     const agentId = event.data?.agentId as string | undefined;
-    const canonicalAgentId = event.data?.canonicalAgentId as
-      | string
-      | undefined;
+    const canonicalAgentId = event.data?.canonicalAgentId as string | undefined;
     const agent =
-      (agentId
-        ? event.tree.agents.find((a) => a.id === agentId)
-        : undefined) ??
+      (agentId ? event.tree.agents.find((a) => a.id === agentId) : undefined) ??
       (canonicalAgentId
         ? event.tree.agents.find((a) => a.id === canonicalAgentId)
         : undefined) ??
@@ -967,7 +987,7 @@ function formatNarrative(
     for (const agent of analysis.agents) {
       const mainTag = agent.isMain ? " (main)" : "";
       lines.push(
-        `${agent.id}: ${agent.name}${mainTag} | ${agent.turnCount} turns | ${agent.totalInputTokens}→${agent.totalOutputTokens} tokens`,
+        `${agent.id}: ${agent.name}${mainTag} | ${agent.turnCount} turns | ${agent.maxObservedInputTokens}→${agent.totalOutputTokens} tokens`,
       );
     }
   }

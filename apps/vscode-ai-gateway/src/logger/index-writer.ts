@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { safeJsonStringify } from "../utils/serialize.js";
 import type { LogEntry } from "./types";
 
 export class IndexWriter {
@@ -11,7 +12,7 @@ export class IndexWriter {
       await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
       await fs.promises.appendFile(
         filePath,
-        `${JSON.stringify(entry)}\n`,
+        `${safeJsonStringify(entry)}\n`,
         "utf8",
       );
     } catch {

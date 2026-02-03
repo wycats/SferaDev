@@ -8,10 +8,10 @@ import type { PersistentStore, StoreConfig, StoredEnvelope } from "./types.js";
 
 const LEGACY_VERSION = 0;
 
-type LegacyLookup = {
+interface LegacyLookup {
   key: string;
   value: unknown;
-};
+}
 
 /**
  * Persistent store backed by VS Code memento storage.
@@ -265,7 +265,7 @@ export class PersistentStoreImpl<T> implements PersistentStore<T> {
   private evictOldestEntries<R extends Record<string, { fetchedAt: number }>>(
     record: R,
   ): R {
-    const maxEntries = this.config.maxEntries!;
+    const maxEntries = this.config.maxEntries ?? Infinity;
     const entries = Object.entries(record);
     if (entries.length <= maxEntries) return record;
 
@@ -287,7 +287,7 @@ export class PersistentStoreImpl<T> implements PersistentStore<T> {
   }
 
   private fireAndForget(promise: Thenable<void>, action: string): void {
-    void promise.then(undefined, (error) => {
+    void promise.then(undefined, (error: unknown) => {
       logger.warn(
         `Persistence store ${this.config.key} (${this.scope}) failed to ${action}.`,
         error,

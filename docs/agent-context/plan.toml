@@ -376,11 +376,6 @@ label = "Delete orphaned CalibrationManager code (RFC 029 removed calibration)"
 status = "pending"
 
 [[epochs.phases.goals]]
-id = "fix-underestimation"
-label = "Fix ~13% token underestimation in provideTokenCount (add per-message overhead)"
-status = "pending"
-
-[[epochs.phases.goals]]
 id = "token-diagnostics"
 label = "Add TOKEN_ESTIMATED/TOKEN_ACTUAL events to TreeDiagnostics for AI self-review"
 status = "pending"
@@ -393,6 +388,11 @@ status = "pending"
 [[epochs.phases.goals]]
 id = "cleanup-dead-code"
 label = "Delete orphaned TokenCache.cacheActual and CallSequenceTracker unused paths"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "safe-serialize"
+label = "Add safe serialization utilities to prevent JSON.stringify stack overflow"
 status = "pending"
 
 [[epochs.phases]]

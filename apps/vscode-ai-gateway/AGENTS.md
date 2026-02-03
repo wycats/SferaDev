@@ -135,3 +135,87 @@ may send system prompts as Assistant messages (role=2).
 - ❌ OpenAI Chat Completions documentation
 - ❌ OpenAI Responses API documentation (it's similar but not identical)
 - ❌ Vercel AI SDK `streamText`/`generateText` examples (that's SDK format, not wire format)
+
+---
+
+## Agent Token UI
+
+### User-Facing Goals
+
+The Agent Token UI provides **glanceable status** for users working with AI agents:
+
+| Question                          | UI Element         | How It's Shown                     |
+| --------------------------------- | ------------------ | ---------------------------------- |
+| "How full is my context?"         | Percentage + color | `71.4k (56%)`, green/orange/red    |
+| "Which agent is active?"          | Spinner icon       | `loading~spin` on streaming agents |
+| "Are subagents nested correctly?" | Tree hierarchy     | Children indented under parent     |
+| "Is something wrong?"             | Error icon         | Red error indicator                |
+
+**The user never needs to see**: conversation hashes, claims, VS Code internals, or raw logs.
+
+### Developer Diagnostics
+
+When the UI is wrong, we have rich diagnostic data. **Use it before asking the user for screenshots.**
+
+#### The Narrative Tool
+
+```bash
+node scripts/analyze-agent-logs.ts /path/to/workspace --narrative
+```
+
+This outputs a **unified timeline** that correlates:
+
+- Our extension's tree snapshots (agent state, claims, invariants)
+- VS Code's internal request logs (model calls, tool invocations)
+
+#### What the Narrative Shows
+
+```
+16:10:08.691 [CLAIM_CREATED] anthropic/claude-opus-4.5 (main) expecting "review"
+16:10:08.763 [AGENT_COMPLETED] anthropic/claude-opus-4.5 (main)
+             └─ VS Code: ccreq:246e2ddf | 8334ms | [panel/editAgent-external]
+
+--- Final Tree State ---
+├─ [main] (1036918f) ✓ 69.1k [3]
+└─ [sub] (6760da7c) ✓ 71.4k [1]    ← BUG: should be child of main!
+```
+
+#### Proactive Debugging Checklist
+
+Before asking the user, check:
+
+1. **Run the narrative**: `node scripts/analyze-agent-logs.ts . --narrative`
+2. **Check Final Tree State**: Are agents at the correct hierarchy level?
+3. **Check for orphan subagents**: `parentConversationHash: null` on non-main agents = bug
+4. **Check claims**: Was a CLAIM_CREATED event logged before the subagent started?
+5. **Check invariant violations**: Look for `⚠️ N violation(s)` in the timeline
+
+#### Common Issues & Where to Look
+
+| Symptom                | Check                                     | Likely Cause                     |
+| ---------------------- | ----------------------------------------- | -------------------------------- |
+| Subagent at root level | `parentConversationHash` in tree snapshot | Claim not created or not matched |
+| Wrong percentage       | `maxInputTokens` in tree snapshot         | Model info not enriched          |
+| Agent stuck streaming  | `status` field in tree snapshot           | Completion event not received    |
+| Duplicate agents       | Agent IDs in tree snapshot                | Identity matching failure        |
+
+#### Key Data in Tree Snapshots
+
+Each log entry contains a full tree snapshot with:
+
+- `agents[]`: All tracked agents with their state
+  - `id`, `name`, `status`, `isMain`
+  - `inputTokens`, `outputTokens`, `totalInputTokens`, `totalOutputTokens`
+  - `conversationHash`, `agentTypeHash`, `parentConversationHash`
+  - `maxInputTokens` (for percentage calculation)
+- `claims[]`: Pending child claims awaiting match
+- `treeText`: Human-readable tree visualization
+- `invariants`: Automated consistency checks
+
+#### Adding Diagnostic Logging
+
+When debugging a new issue:
+
+1. Add logging to `treeDiagnostics.log()` calls in `status-bar.ts`
+2. Include relevant data in the `data` parameter
+3. The narrative tool will automatically include it in the timeline

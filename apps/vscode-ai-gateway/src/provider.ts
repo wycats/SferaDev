@@ -286,12 +286,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     token: CancellationToken,
   ): Promise<void> {
     // Generate a simple chat ID for per-chat logging (first 8 chars of hash + timestamp)
+    // Use hashMessage instead of JSON.stringify to avoid circular reference issues
+    // that can occur with VS Code's internal message structures
     const chatHash = createHash("sha256")
-      .update(
-        chatMessages
-          .map((m) => `${String(m.role)}${JSON.stringify(m.content)}`)
-          .join("|"),
-      )
+      .update(chatMessages.map((m) => hashMessage(m)).join("|"))
       .digest("hex")
       .substring(0, 8);
     const chatId = `chat-${chatHash}-${Date.now().toString()}`;
@@ -683,16 +681,15 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         `${messages.length.toString()} messages, ${estimate.newMessageCount.toString()} new)`,
     );
 
-    // Add tool schema tokens (critical - can be 50k+ tokens)
+    // NOTE: Tool schema tokens are NOT added here.
+    // VS Code embeds tool definitions in the system prompt message, so counting
+    // options.tools separately would double-count them. The message estimation
+    // above already includes the system prompt content (with embedded tools).
+    // Evidence: estimates were consistently ~15k over actuals when we added tool tokens.
     const tokenCounter = this.tokenEstimator.getTokenCounter();
     if (options?.tools && options.tools.length > 0) {
-      const toolTokens = tokenCounter.countToolsTokens(
-        options.tools,
-        model.family,
-      );
-      total += toolTokens;
       logger.debug(
-        `Added ${toolTokens.toString()} tokens for ${options.tools.length.toString()} tool schemas`,
+        `Skipping separate tool token count (${options.tools.length.toString()} tools) - already in system prompt`,
       );
     }
 
@@ -775,6 +772,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       const enriched = await this.enricher.enrichModel(modelId, apiKey);
       if (enriched) {
         this.enrichedModels.set(modelId, enriched);
+        this.modelInfoChangeEmitter.fire();
         logger.debug(`Enriched model ${modelId}:`, {
           context_length: enriched.context_length,
           input_modalities: enriched.input_modalities,

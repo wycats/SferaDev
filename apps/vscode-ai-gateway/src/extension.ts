@@ -11,6 +11,7 @@ import { treeDiagnostics } from "./diagnostics/tree-diagnostics";
 import { initializeOutputChannel, logger } from "./logger";
 import { VercelAIChatModelProvider } from "./provider";
 import { TokenStatusBar } from "./status-bar";
+import { tryStringify } from "./utils/serialize.js";
 
 console.log("[DIAG] extension.ts: imports complete");
 
@@ -130,7 +131,7 @@ export function activate(context: vscode.ExtensionContext) {
             response.markdown(chunk.value);
           } else if (chunk instanceof vscode.LanguageModelToolCallPart) {
             logger.debug(
-              `[ChatParticipant] Tool call: ${chunk.name}(${JSON.stringify(chunk.input)})`,
+              `[ChatParticipant] Tool call: ${chunk.name}(${tryStringify(chunk.input)})`,
             );
           }
         }

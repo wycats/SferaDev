@@ -76,6 +76,66 @@ completion_log = "Updated script header documentation to include --tokens/-t fla
 [[plan.goals]]
 id = "cleanup-dead-code"
 title = "Delete orphaned TokenCache.cacheActual and CallSequenceTracker unused paths"
+
+[[plan.goals]]
+id = "safe-serialize"
+title = "Add safe serialization utilities to prevent JSON.stringify stack overflow"
+
+[[plan.goals.tasks]]
+id = "SS-1"
+title = "Add safe-stable-stringify dependency to package.json"
+status = "completed"
+completed_at = "2026-02-02T23:03:34.783018672+00:00"
+completion_log = "Added safe-stable-stringify ^2.5.0 to dependencies via pnpm add"
+
+[[plan.goals.tasks]]
+id = "SS-2"
+title = "Create src/utils/serialize.ts with safeJsonStringify() and safeInspect() wrappers"
+status = "completed"
+completed_at = "2026-02-02T23:04:08.549702732+00:00"
+completion_log = "Created src/utils/serialize.ts with safeJsonStringify(), safeInspect(), and tryStringify() utilities"
+
+[[plan.goals.tasks]]
+id = "SS-3"
+title = "Migrate tree-diagnostics.ts JSONL writer to use safeJsonStringify"
+status = "completed"
+completed_at = "2026-02-02T23:04:40.492437897+00:00"
+completion_log = "Migrated tree-diagnostics.ts to use safeJsonStringify for JSONL output"
+
+[[plan.goals.tasks]]
+id = "SS-4"
+title = "Migrate forensic-capture.ts JSONL writer to use safeJsonStringify"
+status = "completed"
+completed_at = "2026-02-02T23:05:28.026893719+00:00"
+completion_log = "Migrated forensic-capture.ts JSONL writer to use safeJsonStringify"
+
+[[plan.goals.tasks]]
+id = "SS-5"
+title = "Fix tokens/counter.ts JSON.stringify(part.input) - VS Code object risk"
+status = "completed"
+completed_at = "2026-02-02T23:06:00.489660524+00:00"
+completion_log = "Fixed tokens/counter.ts to use tryStringify for part.input (VS Code object)"
+
+[[plan.goals.tasks]]
+id = "SS-6"
+title = "Fix extension.ts JSON.stringify(chunk.input) - VS Code object risk"
+status = "completed"
+completed_at = "2026-02-02T23:06:34.833278911+00:00"
+completion_log = "Fixed extension.ts to use tryStringify for chunk.input (VS Code object)"
+
+[[plan.goals.tasks]]
+id = "SS-7"
+title = "Migrate other JSONL writers (logger.ts, index-writer.ts, request-logger.ts)"
+status = "completed"
+completed_at = "2026-02-02T23:07:58.441902418+00:00"
+completion_log = "Migrated JSONL writers in logger.ts, index-writer.ts, and request-logger.ts to use safeJsonStringify"
+
+[[plan.goals.tasks]]
+id = "SS-8"
+title = "Build and test extension to verify no regressions"
+status = "completed"
+completed_at = "2026-02-02T23:08:35.384763600+00:00"
+completion_log = "Build passes. 3 pre-existing test failures in models.test.ts (unrelated to serialization changes). 356 tests pass."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

@@ -20,7 +20,7 @@ const baseAgent = (
   status: "complete",
   inputTokens: 0,
   outputTokens: 0,
-  totalInputTokens: 0,
+  maxObservedInputTokens: 0,
   totalOutputTokens: 0,
   turnCount: 0,
   ...overrides,

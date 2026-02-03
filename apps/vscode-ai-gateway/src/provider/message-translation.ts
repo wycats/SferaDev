@@ -32,6 +32,7 @@ import {
   LanguageModelToolResultPart,
 } from "vscode";
 import { logger } from "../logger.js";
+import { tryStringify } from "../utils/serialize.js";
 import { detectImageMimeType } from "./image-utils.js";
 
 /**
@@ -157,7 +158,7 @@ export function translateMessage(
         arguments:
           typeof inputValue === "string"
             ? inputValue
-            : JSON.stringify(inputValue ?? {}),
+            : tryStringify(inputValue ?? {}),
       };
       items.push(functionCallItem as ItemParam);
     } else if (part instanceof LanguageModelToolResultPart) {
@@ -177,7 +178,7 @@ export function translateMessage(
       const output =
         typeof part.content === "string"
           ? part.content
-          : JSON.stringify(part.content);
+          : tryStringify(part.content);
       if (output.trim() === "") {
         logger.debug("[OpenResponses] Skipping empty tool result content");
         continue;

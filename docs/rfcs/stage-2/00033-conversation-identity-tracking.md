@@ -707,6 +707,18 @@ describe("Conversation Identity Tracking", () => {
 });
 ```
 
+## Token Display Invariants
+
+When displaying token usage in the TreeView or status bar:
+
+1. **Display/Percentage Coherence**: The displayed token value and the value used to compute percentage MUST be identical.
+2. **Estimate Consistency**: If using an estimate (streaming state), the percentage MUST be computed from the same estimate value.
+3. **Multi-turn Consistency**: For multi-turn conversations, accumulated totals MUST be used consistently for both display and percentage.
+
+**Rationale**: Mismatches between the numeric display and percentage indicator confuse users and indicate bugs in the token tracking logic.
+
+**See Also**: RFC 00040 (Token State Model Simplification) for the authoritative token state model and additional invariants.
+
 ## Migration Path
 
 ### Backward Compatibility

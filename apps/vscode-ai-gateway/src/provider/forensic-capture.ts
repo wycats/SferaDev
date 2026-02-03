@@ -16,6 +16,7 @@ import type {
   LanguageModelChatMessage,
 } from "vscode";
 import { logger } from "../logger";
+import { safeJsonStringify } from "../utils/serialize.js";
 
 export interface FullContentCapture {
   systemPrompt?: string;
@@ -220,9 +221,26 @@ function getMessageHash(message: LanguageModelChatMessage): string {
       const data = part.data;
       parts.push(`data:${part.mimeType}:${data.length.toString()}`);
     } else if ("callId" in part && "name" in part) {
-      // Include tool call/result info
+      // Include tool call/result info - extract specific fields to avoid
+      // circular references in VS Code's internal message structures
       const isResult = "toolResult" in part;
-      const resultHash = isResult ? hashContent(JSON.stringify(part)) : "";
+      let resultHash = "";
+      if (isResult) {
+        try {
+          // Extract only the serializable fields we need
+          const safeToolResult = {
+            callId: part.callId,
+            name: part.name,
+            content:
+              "content" in part
+                ? String((part as { content?: unknown }).content)
+                : undefined,
+          };
+          resultHash = hashContent(JSON.stringify(safeToolResult));
+        } catch {
+          resultHash = "unserializable";
+        }
+      }
       parts.push(
         `tool:${part.name}:${part.callId}${isResult ? `:${resultHash}` : ""}`,
       );
@@ -517,8 +535,8 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
     // Ensure directory exists
     await fs.promises.mkdir(outputDir, { recursive: true });
 
-    // Append capture as JSON line
-    const line = `${JSON.stringify(capture)}\n`;
+    // Append capture as JSON line (use safe stringify to handle any circular refs)
+    const line = `${safeJsonStringify(capture)}\n`;
     await fs.promises.appendFile(outputFile, line, "utf-8");
 
     logger.info(

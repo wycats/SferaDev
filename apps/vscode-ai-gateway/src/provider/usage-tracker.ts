@@ -28,33 +28,11 @@ export interface TokenUsage {
 }
 
 /**
- * Aggregate usage statistics
- */
-export interface AggregateUsage {
-  /** Total input tokens across all requests */
-  totalInputTokens: number;
-  /** Total output tokens across all requests */
-  totalOutputTokens: number;
-  /** Total tokens across all requests */
-  totalTokens: number;
-  /** Number of requests tracked */
-  requestCount: number;
-}
-
-/**
- * Usage tracker that maintains per-request and aggregate statistics
+ * Usage tracker that maintains per-request statistics
  */
 export class UsageTracker {
   /** Usage by request/chat ID */
   private requestUsage = new Map<string, TokenUsage>();
-
-  /** Aggregate usage for the session */
-  private aggregate: AggregateUsage = {
-    totalInputTokens: 0,
-    totalOutputTokens: 0,
-    totalTokens: 0,
-    requestCount: 0,
-  };
 
   /** Listeners for usage updates */
   private listeners = new Set<(usage: TokenUsage, requestId: string) => void>();
@@ -84,12 +62,6 @@ export class UsageTracker {
     // Store per-request usage
     this.requestUsage.set(requestId, tokenUsage);
 
-    // Update aggregate
-    this.aggregate.totalInputTokens += tokenUsage.inputTokens;
-    this.aggregate.totalOutputTokens += tokenUsage.outputTokens;
-    this.aggregate.totalTokens += tokenUsage.totalTokens;
-    this.aggregate.requestCount += 1;
-
     // Notify listeners
     for (const listener of this.listeners) {
       try {
@@ -110,13 +82,6 @@ export class UsageTracker {
    */
   getUsage(requestId: string): TokenUsage | undefined {
     return this.requestUsage.get(requestId);
-  }
-
-  /**
-   * Get aggregate usage statistics.
-   */
-  getAggregate(): Readonly<AggregateUsage> {
-    return { ...this.aggregate };
   }
 
   /**
@@ -147,12 +112,6 @@ export class UsageTracker {
    */
   clear(): void {
     this.requestUsage.clear();
-    this.aggregate = {
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-      totalTokens: 0,
-      requestCount: 0,
-    };
   }
 
   /**

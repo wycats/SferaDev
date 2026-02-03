@@ -58,8 +58,8 @@ export interface AgentEntry {
   inputTokens: number;
   /** Output tokens from the most recent turn */
   outputTokens: number;
-  /** Cumulative input tokens across all turns in this conversation */
-  totalInputTokens: number;
+  /** Maximum observed input tokens across all turns (each turn includes full context) */
+  maxObservedInputTokens: number;
   /** Cumulative output tokens across all turns in this conversation */
   totalOutputTokens: number;
   /** Number of turns (request/response cycles) in this conversation */
@@ -332,7 +332,7 @@ export class TokenStatusBar implements vscode.Disposable {
       lastUpdateTime: now,
       inputTokens: 0,
       outputTokens: 0,
-      totalInputTokens: 0,
+      maxObservedInputTokens: 0,
       totalOutputTokens: 0,
       turnCount: 0,
       maxInputTokens: maxTokens,
@@ -508,7 +508,7 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.firstUserMessageHash =
         firstUserMessageHash ?? existingAgent.firstUserMessageHash;
       // Don't reset inputTokens/outputTokens - they'll be updated in completeAgent
-      // Keep totalInputTokens/totalOutputTokens for accumulation
+      // Keep maxObservedInputTokens/totalOutputTokens for accumulation
       existingAgent.contextManagement = undefined;
       existingAgent.dimmed = false;
       existingAgent.completionOrder = undefined;
@@ -561,9 +561,28 @@ export class TokenStatusBar implements vscode.Disposable {
       return existingAgent.id;
     }
 
+    // Extract agent name from context first (needed for claim matching)
+    // We need to do this before determining isMain because claim matching affects the decision
+    const preliminaryIsMain = this.mainAgentId === null;
+    const extractedAgentName = this.extractAgentName(
+      agentId,
+      modelId,
+      preliminaryIsMain,
+    );
+
+    // Try to match a pending claim to get parent linkage and expected name
+    // This must happen BEFORE determining isMain, because:
+    // - If there's a claim match, this is definitely a subagent
+    // - If there's no claim match and system prompt changed, it's likely still the main agent
+    //   (VS Code can inject conversation summaries that change the system prompt hash)
+    const claimMatch =
+      agentTypeHash !== undefined
+        ? this.matchChildClaim(extractedAgentName, agentTypeHash)
+        : null;
+
     // Determine if this is the main agent or a subagent
-    // Main agent: first agent OR same system prompt hash as main
-    // Subagent: different system prompt hash than main
+    // Main agent: first agent OR same system prompt hash as main OR no claim match
+    // Subagent: different system prompt hash AND has a claim match
     let isMain: boolean;
     if (this.mainAgentId === null) {
       // First agent is always main
@@ -572,12 +591,26 @@ export class TokenStatusBar implements vscode.Disposable {
       if (systemPromptHash) {
         this.mainSystemPromptHash = systemPromptHash;
       }
+    } else if (claimMatch !== null) {
+      // If there's a claim match, this is definitely a subagent
+      // (parent agent called runSubagent and created a claim for this child)
+      isMain = false;
     } else if (systemPromptHash && this.mainSystemPromptHash) {
-      // If we have hashes, use them to determine main vs subagent
-      isMain = systemPromptHash === this.mainSystemPromptHash;
-      // Update mainAgentId if this is a new main agent request
-      if (isMain) {
+      // No claim match - check if system prompt hash matches
+      if (systemPromptHash === this.mainSystemPromptHash) {
+        // Same hash, definitely main agent
+        isMain = true;
         this.mainAgentId = agentId;
+      } else {
+        // Different hash but no claim - likely main agent with updated system prompt
+        // (VS Code can inject conversation summaries that change the hash)
+        // Update the main system prompt hash to track the new value
+        isMain = true;
+        this.mainAgentId = agentId;
+        this.mainSystemPromptHash = systemPromptHash;
+        logger.info(
+          `[StatusBar] Main agent system prompt hash updated: ${this.mainSystemPromptHash?.slice(0, 8)} -> ${systemPromptHash.slice(0, 8)}`,
+        );
       }
     } else if (systemPromptHash && !this.mainSystemPromptHash) {
       // First request had no hash, but this one does - treat as new main
@@ -588,18 +621,21 @@ export class TokenStatusBar implements vscode.Disposable {
       // No hash info - fall back to first-agent-is-main behavior
       isMain = false;
     }
-
-    // Extract agent name from context first (needed for claim matching)
-    const extractedAgentName = this.extractAgentName(agentId, modelId, isMain);
-
-    // Try to match a pending claim to get parent linkage and expected name
-    const claimMatch =
-      agentTypeHash !== undefined
-        ? this.matchChildClaim(extractedAgentName, agentTypeHash)
-        : null;
     const parentConversationHash = claimMatch?.parentConversationHash ?? null;
-    // Use the expected name from the claim if available (more authoritative), otherwise use extracted
-    const agentName = claimMatch?.expectedChildName ?? extractedAgentName;
+    // Determine the agent name:
+    // 1. If there's a claim match, use the expected name from the claim (most authoritative)
+    // 2. If this is the main agent, re-extract the name with the correct isMain value
+    // 3. Otherwise, use the preliminary extracted name
+    let agentName: string;
+    if (claimMatch?.expectedChildName) {
+      agentName = claimMatch.expectedChildName;
+    } else if (isMain && !preliminaryIsMain) {
+      // We determined this is main agent after preliminary check said it wasn't
+      // Re-extract with correct isMain value to get the model name instead of "sub"
+      agentName = this.extractAgentName(agentId, modelId, true);
+    } else {
+      agentName = extractedAgentName;
+    }
 
     const agent: AgentEntry = {
       id: agentId,
@@ -608,7 +644,7 @@ export class TokenStatusBar implements vscode.Disposable {
       lastUpdateTime: now,
       inputTokens: 0,
       outputTokens: 0,
-      totalInputTokens: 0,
+      maxObservedInputTokens: 0,
       totalOutputTokens: 0,
       turnCount: 0,
       maxInputTokens: maxTokens,
@@ -707,8 +743,8 @@ export class TokenStatusBar implements vscode.Disposable {
     agent.outputTokens = usage.outputTokens;
     // Track max input (each turn's input includes full context, so max = current context size)
     // Accumulate output (each turn generates new tokens)
-    agent.totalInputTokens = Math.max(
-      agent.totalInputTokens,
+    agent.maxObservedInputTokens = Math.max(
+      agent.maxObservedInputTokens,
       usage.inputTokens,
     );
     agent.totalOutputTokens += usage.outputTokens;
@@ -716,6 +752,8 @@ export class TokenStatusBar implements vscode.Disposable {
     agent.maxInputTokens = usage.maxInputTokens;
     agent.modelId = usage.modelId;
     agent.status = "complete";
+    // Clear streaming estimate now that we have actual tokens (RFC 00040)
+    agent.estimatedInputTokens = undefined;
     agent.lastUpdateTime = Date.now();
     agent.contextManagement = usage.contextManagement;
     agent.completionOrder = this.completedAgentCount;
@@ -1056,7 +1094,7 @@ export class TokenStatusBar implements vscode.Disposable {
   private formatAgentUsage(agent: AgentEntry): string {
     // Use accumulated totals for multi-turn conversations
     const inputTokens =
-      agent.turnCount > 1 ? agent.totalInputTokens : agent.inputTokens;
+      agent.turnCount > 1 ? agent.maxObservedInputTokens : agent.inputTokens;
     const outputTokens =
       agent.turnCount > 1 ? agent.totalOutputTokens : agent.outputTokens;
     const input = this.formatTokenCount(inputTokens);
@@ -1151,7 +1189,7 @@ export class TokenStatusBar implements vscode.Disposable {
         if (agent.turnCount > 1) {
           lines.push(`   Turns: ${agent.turnCount.toString()}`);
           lines.push(
-            `   Total Input: ${agent.totalInputTokens.toLocaleString()}`,
+            `   Max Input: ${agent.maxObservedInputTokens.toLocaleString()}`,
           );
           if (this.config.showOutputTokens) {
             lines.push(
@@ -1169,7 +1207,9 @@ export class TokenStatusBar implements vscode.Disposable {
         }
         if (agent.maxInputTokens) {
           const tokensForPct =
-            agent.turnCount > 1 ? agent.totalInputTokens : agent.inputTokens;
+            agent.turnCount > 1
+              ? agent.maxObservedInputTokens
+              : agent.inputTokens;
           const pct = Math.round((tokensForPct / agent.maxInputTokens) * 100);
           lines.push(
             `   Context: ${pct.toString()}% of ${agent.maxInputTokens.toLocaleString()}`,
@@ -1242,6 +1282,35 @@ export class TokenStatusBar implements vscode.Disposable {
   }
 
   /**
+   * Check if an agent has children still in the tree or pending claims
+   */
+  private hasChildrenInTree(agent: AgentEntry): boolean {
+    // An agent is a parent if other agents reference its conversationHash or agentTypeHash
+    const parentHash = agent.conversationHash ?? agent.agentTypeHash;
+    if (!parentHash) return false;
+
+    // Check for existing children
+    for (const [, other] of this.agents) {
+      if (other.parentConversationHash === parentHash) {
+        return true;
+      }
+    }
+
+    // Also check for pending claims that reference this agent as parent
+    // This prevents removing a parent before its claimed children start
+    for (const claim of this.claimRegistry.getClaims()) {
+      if (
+        claim.parentConversationHash === parentHash ||
+        claim.parentAgentTypeHash === parentHash
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Age agents based on completed request count (dim and remove old agents)
    */
   private ageAgents(): void {
@@ -1253,6 +1322,10 @@ export class TokenStatusBar implements vscode.Disposable {
       if (agent.status === "streaming") continue;
       // Skip agents without completion order
       if (agent.completionOrder === undefined) continue;
+      // CRITICAL: Never remove the main agent - it anchors the tree
+      if (agent.isMain) continue;
+      // Don't remove agents that have children still in the tree
+      if (this.hasChildrenInTree(agent)) continue;
 
       // Calculate how many agents have completed since this one
       const agentAge = this.completedAgentCount - agent.completionOrder - 1;
@@ -1410,7 +1483,10 @@ export class TokenStatusBar implements vscode.Disposable {
       timestamp: Date.now(),
       agentCount: agents.length,
       mainAgentTurns: mainAgent?.turnCount ?? 0,
-      totalInputTokens: Math.max(...agents.map((a) => a.totalInputTokens), 0),
+      maxObservedInputTokens: Math.max(
+        ...agents.map((a) => a.maxObservedInputTokens),
+        0,
+      ),
       totalOutputTokens: agents.reduce(
         (sum, a) => sum + a.totalOutputTokens,
         0,

@@ -10,6 +10,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import type { AgentEntry } from "../status-bar.js";
+import { safeJsonStringify } from "../utils/serialize.js";
 import type { PendingChildClaim } from "../identity/claim-registry.js";
 
 const LOG_DIR = ".logs";
@@ -34,11 +35,12 @@ export interface AgentSnapshotEntry {
   parentConversationHash?: string;
   inputTokens: number;
   outputTokens: number;
-  totalInputTokens: number;
+  maxObservedInputTokens: number;
   totalOutputTokens: number;
   turnCount: number;
   /** Estimated input tokens (before API response) */
   estimatedInputTokens?: number;
+  maxInputTokens?: number | undefined;
 }
 
 export interface ClaimSnapshotEntry {
@@ -170,7 +172,7 @@ export class TreeDiagnostics {
     };
 
     try {
-      fs.appendFileSync(this.logPath, JSON.stringify(entry) + "\n");
+      fs.appendFileSync(this.logPath, safeJsonStringify(entry) + "\n");
     } catch {
       // Log write failed - disable to avoid repeated errors
       this.enabled = false;
@@ -210,10 +212,10 @@ export class TreeDiagnostics {
       const status =
         agent.status === "streaming"
           ? "⏳"
-          : agent.status === "completed"
+          : agent.status === "complete"
             ? "✓"
             : "✗";
-      const tokens = `${(agent.totalInputTokens / 1000).toFixed(1)}k→${(agent.totalOutputTokens / 1000).toFixed(1)}k`;
+      const tokens = `${(agent.maxObservedInputTokens / 1000).toFixed(1)}k→${(agent.totalOutputTokens / 1000).toFixed(1)}k`;
       const turns = agent.turnCount > 0 ? ` [${agent.turnCount}]` : "";
 
       lines.push(
@@ -410,10 +412,13 @@ export class TreeDiagnostics {
         status: agent.status,
         inputTokens: agent.inputTokens,
         outputTokens: agent.outputTokens,
-        totalInputTokens: agent.totalInputTokens,
+        maxObservedInputTokens: agent.maxObservedInputTokens,
         totalOutputTokens: agent.totalOutputTokens,
         turnCount: agent.turnCount,
       };
+      if (agent.maxInputTokens !== undefined) {
+        entry.maxInputTokens = agent.maxInputTokens;
+      }
       // Include estimated tokens if available
       if (agent.estimatedInputTokens !== undefined) {
         entry.estimatedInputTokens = agent.estimatedInputTokens;

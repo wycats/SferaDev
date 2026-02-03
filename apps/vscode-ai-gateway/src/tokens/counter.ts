@@ -2,6 +2,7 @@ import * as crypto from "node:crypto";
 import { getEncoding } from "js-tiktoken";
 import * as vscode from "vscode";
 import { logger } from "../logger";
+import { tryStringify } from "../utils/serialize.js";
 import { LRUCache } from "./lru-cache";
 
 interface Encoding {
@@ -184,7 +185,8 @@ export class TokenCounter {
     part: vscode.LanguageModelToolCallPart,
     modelFamily: string,
   ): number {
-    const inputJson = JSON.stringify(part.input);
+    // Use tryStringify to handle potential circular refs in VS Code objects
+    const inputJson = tryStringify(part.input);
     const payload = `${part.name}\n${inputJson}`;
     return this.estimateTextTokens(payload, modelFamily) + 4;
   }
