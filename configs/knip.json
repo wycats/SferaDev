@@ -2,114 +2,20 @@
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"workspaces": {
 		".": {
-			"entry": ["turbo.json", ".github/workflows/scripts/*.ts"]
-		},
-		"apps/website": {
-			"entry": ["app/**/*.{ts,tsx}", "lib/**/*.ts", "components/**/*.tsx", "vercel.ts"],
-			"project": ["**/*.{ts,tsx}"],
-			"ignore": ["**/*.d.ts"]
-		},
-		"apps/photocall": {
-			"entry": [
-				"app/**/*.{ts,tsx}",
-				"components/**/*.tsx",
-				"lib/**/*.ts",
-				"hooks/**/*.ts",
-				"convex/**/*.ts",
-				"scripts/**/*.ts"
-			],
-			"project": ["**/*.{ts,tsx}"],
-			"ignore": ["**/*.d.ts", "convex/_generated/**"],
-			"ignoreDependencies": ["jszip"],
-			"includeEntryExports": false
-		},
-		"apps/openapi": {
-			"entry": ["src/app/**/*.{ts,tsx}", "src/lib/**/*.ts", "src/components/**/*.tsx"],
-			"project": ["src/**/*.{ts,tsx}"],
-			"ignore": ["**/*.d.ts"],
-			"ignoreDependencies": ["tailwindcss", "tw-animate-css"]
+			"entry": ["eslint.config.js"],
+			"ignore": [".reference/**"]
 		},
 		"apps/vscode-ai-gateway": {
+			"entry": ["src/extension.ts", "scripts/*.ts"],
 			"project": ["src/**/*.ts"],
 			"ignoreDependencies": ["@types/json-schema"]
 		},
-		"packages/ai-gateway-proxy": {
+		"packages/openresponses-client": {
 			"entry": ["src/index.ts"],
-			"project": ["src/**/*.{ts,tsx}"]
-		},
-		"packages/rollup-plugin-import-cdn": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"]
-		},
-		"packages/openapi-utils": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.{ts,tsx}"],
-			"ignoreDependencies": ["@types/react", "@types/react-dom", "react", "react-dom"]
-		},
-		"packages/vercel-api-js": {
-			"entry": [
-				"src/index.ts",
-				"src/mcp.ts",
-				"src/types.ts",
-				"src/schemas.ts",
-				"src/components.ts"
-			],
-			"project": ["src/**/*.ts"],
-			"ignore": ["src/generated/**", "src/utils/mcp.ts"],
-			"ignoreDependencies": ["@kubb/core", "@sferadev/openapi-utils"],
-			"includeEntryExports": false
-		},
-		"packages/v0-api": {
-			"entry": [
-				"src/index.ts",
-				"src/mcp.ts",
-				"src/types.ts",
-				"src/schemas.ts",
-				"src/components.ts"
-			],
-			"project": ["src/**/*.ts"],
-			"ignore": ["src/generated/**"],
-			"ignoreDependencies": [
-				"@kubb/core",
-				"@kubb/plugin-zod",
-				"@kubb/react",
-				"@sferadev/openapi-utils"
-			],
-			"includeEntryExports": false
-		},
-		"packages/cloudflare-api": {
-			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
 			"project": ["src/**/*.ts"],
 			"includeEntryExports": false
-		},
-		"packages/netlify-api": {
-			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
-			"project": ["src/**/*.ts"],
-			"includeEntryExports": false
-		},
-		"packages/zoom-api-js": {
-			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
-			"project": ["src/**/*.ts"],
-			"includeEntryExports": false
-		},
-		"packages/keycloak-api": {
-			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
-			"project": ["src/**/*.ts"],
-			"includeEntryExports": false
-		},
-		"packages/nuki-api-js": {
-			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
-			"project": ["src/**/*.ts"],
-			"includeEntryExports": false
-		},
-		"packages/litellm-api": {
-			"entry": ["src/index.ts", "openapi-codegen.config.ts"],
-			"project": ["src/**/*.ts"],
-			"includeEntryExports": false
-		},
-		"configs/tsconfig": {}
+		}
 	},
-	"ignoreWorkspaces": ["configs/tsconfig"],
 	"ignoreExportsUsedInFile": true,
 	"rules": {
 		"duplicates": "off",

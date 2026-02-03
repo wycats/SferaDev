@@ -90,9 +90,7 @@ export function translateMessage(
   );
 
   // Collect content parts
-  type UserContent =
-    | InputTextContentParam
-    | InputImageContentParamAutoParam;
+  type UserContent = InputTextContentParam | InputImageContentParamAutoParam;
   type AssistantContent = OutputTextContentParam;
   const contentParts: (UserContent | AssistantContent)[] = [];
 
