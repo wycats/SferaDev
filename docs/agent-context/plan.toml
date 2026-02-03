@@ -373,27 +373,29 @@ aliases = ["01kgbg66ynthsrx3mqn2fzadxn"]
 [[epochs.phases.goals]]
 id = "delete-calibration-manager"
 label = "Delete orphaned CalibrationManager code (RFC 029 removed calibration)"
-status = "pending"
+status = "withdrawn"
 
 [[epochs.phases.goals]]
 id = "token-diagnostics"
 label = "Add TOKEN_ESTIMATED/TOKEN_ACTUAL events to TreeDiagnostics for AI self-review"
-status = "pending"
+status = "withdrawn"
 
 [[epochs.phases.goals]]
 id = "narrative-tokens"
 label = "Extend narrative tool with --tokens flag for estimation accuracy analysis"
-status = "pending"
+status = "completed"
+completion_log = "All 7 tasks completed: AgentSnapshotEntry extended, --tokens flag added, token accuracy interfaces defined, extraction and formatting implemented, integrated into formatNarrative, documentation updated."
 
 [[epochs.phases.goals]]
 id = "cleanup-dead-code"
 label = "Delete orphaned TokenCache.cacheActual and CallSequenceTracker unused paths"
-status = "pending"
+status = "withdrawn"
 
 [[epochs.phases.goals]]
 id = "safe-serialize"
 label = "Add safe serialization utilities to prevent JSON.stringify stack overflow"
-status = "pending"
+status = "completed"
+completion_log = "All 8 tasks completed: safe-stable-stringify added, serialize.ts utilities created, migrated tree-diagnostics, forensic-capture, counter.ts, extension.ts, and other JSONL writers. Build passes, 356 tests pass."
 
 [[epochs.phases]]
 id = "01kgbg6cpxvd67bq84rbcq3zzj"
