@@ -123,7 +123,7 @@ describe("ConfigService", () => {
     });
 
     hoisted.getConfigChangeCallback()?.({
-      affectsConfiguration: (s: string) => s === "vercelAiGateway",
+      affectsConfiguration: (s: string) => s === "vercel.ai",
     });
 
     expect(onChange).toHaveBeenCalled();

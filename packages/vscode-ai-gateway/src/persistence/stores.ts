@@ -23,7 +23,7 @@ export interface SessionStats {
 }
 
 export const SESSION_STATS_STORE: StoreConfig<SessionStats> = {
-  key: "vercelAiGateway.sessionStats",
+  key: "vercel.ai.sessionStats",
   version: 1,
   scope: "global",
   defaultValue: {

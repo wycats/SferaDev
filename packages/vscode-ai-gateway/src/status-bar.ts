@@ -164,7 +164,7 @@ export class TokenStatusBar implements vscode.Disposable {
       100,
     );
     this.statusBarItem.name = "Vercel AI Token Usage";
-    this.statusBarItem.command = "vercelAiGateway.showTokenDetails";
+    this.statusBarItem.command = "vercel.ai.showTokenDetails";
     this.hide();
 
     this.cleanupInterval = setInterval(() => {

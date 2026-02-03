@@ -54,18 +54,14 @@ async function runTests(): Promise<TestResult[]> {
 // ============== TESTS ==============
 
 test("Extension should be present", async () => {
-  const ext = vscode.extensions.getExtension(
-    "SferaDev.vscode-extension-vercel-ai",
-  );
+  const ext = vscode.extensions.getExtension("vercel.vscode-ai-gateway");
   if (!ext) {
     throw new Error("Extension not found");
   }
 });
 
 test("Extension should activate", async () => {
-  const ext = vscode.extensions.getExtension(
-    "SferaDev.vscode-extension-vercel-ai",
-  );
+  const ext = vscode.extensions.getExtension("vercel.vscode-ai-gateway");
   if (!ext) {
     throw new Error("Extension not found");
   }
@@ -86,7 +82,7 @@ test("selectChatModels should return Vercel models", async () => {
   // Select specifically our Vercel AI Gateway models
   const allModels = await vscode.lm.selectChatModels();
   const vercelModels = await vscode.lm.selectChatModels({
-    vendor: "vercelAiGateway",
+    vendor: "vercel",
   });
 
   console.log(`    Total models: ${allModels.length}`);
@@ -119,7 +115,7 @@ test("selectChatModels should return Vercel models", async () => {
 
 test("Forensic: Enable capture and check options passed to provider", async () => {
   // Enable forensic capture via settings
-  const config = vscode.workspace.getConfiguration("vercelAiGateway.debug");
+  const config = vscode.workspace.getConfiguration("vercel.ai.debug");
   await config.update(
     "forensicCapture",
     true,
@@ -131,7 +127,7 @@ test("Forensic: Enable capture and check options passed to provider", async () =
 test("Forensic: Capture sendRequest protocol with Vercel model", async () => {
   // Specifically select Vercel AI Gateway models
   const vercelModels = await vscode.lm.selectChatModels({
-    vendor: "vercelAiGateway",
+    vendor: "vercel",
   });
 
   if (vercelModels.length === 0) {
@@ -216,7 +212,7 @@ test("Forensic: Capture sendRequest protocol with Vercel model", async () => {
 
 test("Forensic: Multi-turn conversation simulation", async () => {
   const vercelModels = await vscode.lm.selectChatModels({
-    vendor: "vercelAiGateway",
+    vendor: "vercel",
   });
 
   if (vercelModels.length === 0) {
@@ -288,7 +284,7 @@ test("Forensic: Subagent-style request (fresh context)", async () => {
   // This simulates what happens when Copilot spawns a subagent
 
   const vercelModels = await vscode.lm.selectChatModels({
-    vendor: "vercelAiGateway",
+    vendor: "vercel",
   });
 
   if (vercelModels.length === 0) {
@@ -353,7 +349,7 @@ test("Forensic: Register chat participant and capture context", async () => {
 
       // Now make a request to our Vercel model from within the participant
       const vercelModels = await vscode.lm.selectChatModels({
-        vendor: "vercelAiGateway",
+        vendor: "vercel",
       });
       if (vercelModels.length > 0) {
         const model = vercelModels[0]!;
@@ -426,7 +422,7 @@ test("Forensic: Register chat participant and capture context", async () => {
   // First, let's see what models are selected in chat
   const allModels = await vscode.lm.selectChatModels({});
   console.log(`    Available models: ${allModels.length}`);
-  const vercelModels = allModels.filter((m) => m.vendor === "vercelAiGateway");
+  const vercelModels = allModels.filter((m) => m.vendor === "vercel");
   console.log(`    Vercel models: ${vercelModels.length}`);
 
   try {

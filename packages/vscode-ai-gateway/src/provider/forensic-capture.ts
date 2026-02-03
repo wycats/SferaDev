@@ -2,7 +2,7 @@
  * Forensic Capture Module
  *
  * Captures detailed request data for debugging and analysis.
- * Enable via setting: vercelAiGateway.debug.forensicCapture
+ * Enable via setting: vercel.ai.debug.forensicCapture
  * Output: ~/.vscode-ai-gateway/forensic-captures.jsonl
  */
 
@@ -265,7 +265,7 @@ function hashToolSchema(tool: {
 function extractFullContent(
   input: CaptureInput,
 ): FullContentCapture | undefined {
-  const config = vscode.workspace.getConfiguration("vercelAiGateway.debug");
+  const config = vscode.workspace.getConfiguration("vercel.ai.debug");
   const captureFullContent = config.get<boolean>(
     "forensicCaptureFullContent",
     false,

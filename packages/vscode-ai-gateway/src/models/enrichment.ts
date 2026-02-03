@@ -7,7 +7,7 @@ import {
 import { logger } from "../logger";
 import { parseModelIdentity } from "./identity";
 
-const ENRICHMENT_CACHE_KEY = "vercelAiGateway.enrichmentCache";
+const ENRICHMENT_CACHE_KEY = "vercel.ai.enrichmentCache";
 
 export interface EnrichmentResponse {
   data: {

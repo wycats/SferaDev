@@ -1,5 +1,5 @@
 {
-	"name": "@sferadev/tsconfig",
+	"name": "@vercel/tsconfig",
 	"version": "0.0.0",
 	"private": true,
 	"license": "MIT",

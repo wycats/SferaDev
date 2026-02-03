@@ -128,9 +128,7 @@ describe("Logger", () => {
   describe("constructor", () => {
     it("should load configuration on creation", () => {
       new Logger();
-      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith(
-        "vercelAiGateway",
-      );
+      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercel.ai");
     });
 
     it("should use shared output channel when enabled and initialized", () => {
@@ -522,7 +520,7 @@ describe("Logger", () => {
 
       // Trigger configuration change
       configChangeCallback?.({
-        affectsConfiguration: (s: string) => s === "vercelAiGateway",
+        affectsConfiguration: (s: string) => s === "vercel.ai",
       });
 
       // Now info should log

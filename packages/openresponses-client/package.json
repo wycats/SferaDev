@@ -42,7 +42,7 @@
 		"@kubb/plugin-oas": "catalog:",
 		"@kubb/plugin-ts": "catalog:",
 		"@kubb/plugin-zod": "catalog:",
-		"@sferadev/tsconfig": "workspace:*",
+		"@vercel/tsconfig": "workspace:*",
 		"@types/node": "catalog:",
 		"zod": "catalog:",
 		"typescript": "catalog:",

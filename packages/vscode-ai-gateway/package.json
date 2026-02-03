@@ -1,10 +1,10 @@
 {
-  "name": "vscode-extension-vercel-ai",
+  "name": "vscode-ai-gateway",
   "private": true,
-  "displayName": "Vercel AI Gateway",
+  "displayName": "Vercel AI",
   "description": "VS Code extension that provides Vercel AI models via the Language Model API",
   "version": "0.2.3",
-  "publisher": "SferaDev",
+  "publisher": "vercel",
   "license": "MIT",
   "icon": "images/icon.png",
   "type": "module",
@@ -37,18 +37,18 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onStartupFinished",
-    "onLanguageModelChatProvider:vercelAiGateway"
+    "onLanguageModelChatProvider:vercel"
   ],
   "contributes": {
     "languageModelChatProviders": [
       {
-        "vendor": "vercelAiGateway",
-        "displayName": "Vercel AI Gateway"
+        "vendor": "vercel",
+        "displayName": "Vercel AI"
       }
     ],
     "chatParticipants": [
       {
-        "id": "vercelAiGateway.chat",
+        "id": "vercel.ai.chat",
         "name": "vercel",
         "description": "Chat using Vercel AI Gateway models",
         "commands": []
@@ -57,16 +57,16 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vercelAiGateway",
+          "id": "vercel.ai",
           "title": "AI Gateway",
           "icon": "images/icon.png"
         }
       ]
     },
     "views": {
-      "vercelAiGateway": [
+      "vercel.ai": [
         {
-          "id": "vercelAiGateway.agentTree",
+          "id": "vercel.ai.agentTree",
           "name": "Agent Tokens",
           "contextualTitle": "Agent Token Usage",
           "visibility": "visible"
@@ -75,23 +75,23 @@
     },
     "commands": [
       {
-        "command": "vercelAiGateway.manage",
+        "command": "vercel.ai.manage",
         "title": "Manage Authentication",
         "category": "Vercel AI Gateway"
       },
       {
-        "command": "vercelAiGateway.showTokenDetails",
+        "command": "vercel.ai.showTokenDetails",
         "title": "Show Token Usage Details",
         "category": "Vercel AI Gateway"
       },
       {
-        "command": "vercelAiGateway.refreshAgentTree",
+        "command": "vercel.ai.refreshAgentTree",
         "title": "Refresh Agent Tree",
         "category": "Vercel AI Gateway",
         "icon": "$(refresh)"
       },
       {
-        "command": "vercelAiGateway.dumpDiagnostics",
+        "command": "vercel.ai.dumpDiagnostics",
         "title": "Dump Agent Tree Diagnostics",
         "category": "Vercel AI Gateway"
       }
@@ -99,8 +99,8 @@
     "menus": {
       "view/title": [
         {
-          "command": "vercelAiGateway.refreshAgentTree",
-          "when": "view == vercelAiGateway.agentTree",
+          "command": "vercel.ai.refreshAgentTree",
+          "when": "view == vercel.ai.agentTree",
           "group": "navigation"
         }
       ]
@@ -108,17 +108,17 @@
     "configuration": {
       "title": "Vercel AI Gateway",
       "properties": {
-        "vercelAiGateway.endpoint": {
+        "vercel.ai.endpoint": {
           "type": "string",
           "default": "https://ai-gateway.vercel.sh",
           "description": "AI Gateway endpoint URL. Change for self-hosted or regional deployments."
         },
-        "vercelAiGateway.models.default": {
+        "vercel.ai.models.default": {
           "type": "string",
           "default": "",
           "description": "Default model ID (e.g., 'anthropic/claude-sonnet-4-20250514'). Leave empty to show model picker."
         },
-        "vercelAiGateway.logging.level": {
+        "vercel.ai.logging.level": {
           "type": "string",
           "enum": [
             "off",
@@ -139,17 +139,17 @@
             "Log everything including trace-level diagnostic messages"
           ]
         },
-        "vercelAiGateway.debug.forensicCapture": {
+        "vercel.ai.debug.forensicCapture": {
           "type": "boolean",
           "default": false,
           "description": "Enable forensic capture mode. Writes detailed request data to ~/.vscode-ai-gateway/forensic-captures.jsonl for debugging conversation identifiers."
         },
-        "vercelAiGateway.debug.forensicCaptureFullContent": {
+        "vercel.ai.debug.forensicCaptureFullContent": {
           "type": "boolean",
           "default": false,
           "description": "⚠️ SENSITIVE: Capture FULL message content including system prompts and user messages. Only enable for debugging - captures may contain sensitive data."
         },
-        "vercelAiGateway.models.userSelectable": {
+        "vercel.ai.models.userSelectable": {
           "type": "boolean",
           "default": false,
           "description": "Make all models user-selectable by default. Normally models are hidden until enabled via 'Manage Models'. Enable this for testing or if you want all models immediately available in the picker."
@@ -173,7 +173,7 @@
     "release": "pnpm run package && vsce publish --no-dependencies"
   },
   "devDependencies": {
-    "@sferadev/tsconfig": "workspace:*",
+    "@vercel/tsconfig": "workspace:*",
     "@types/json-schema": "catalog:",
     "@types/mocha": "^10.0.6",
     "@types/node": "catalog:",

@@ -125,7 +125,7 @@ vi.mock("vscode", () => ({
 
 // Mock the auth module
 vi.mock("./auth", () => ({
-  VERCEL_AI_AUTH_PROVIDER_ID: "vercelAiAuth",
+  VERCEL_AI_AUTH_PROVIDER_ID: "vercel.ai",
 }));
 
 vi.mock("./models", () => ({

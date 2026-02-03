@@ -100,11 +100,11 @@ async function main(): Promise<void> {
     fs.mkdirSync(userSettingsDir, { recursive: true });
     const testSettings = {
       // Make all models user-selectable so they appear in the chat model picker
-      "vercelAiGateway.models.userSelectable": true,
+      "vercel.ai.models.userSelectable": true,
       // Enable forensic capture for debugging
-      "vercelAiGateway.debug.forensicCapture": true,
+      "vercel.ai.debug.forensicCapture": true,
       // Set logging to debug level for test visibility
-      "vercelAiGateway.logging.level": "debug",
+      "vercel.ai.logging.level": "debug",
     };
     fs.writeFileSync(
       path.join(userSettingsDir, "settings.json"),

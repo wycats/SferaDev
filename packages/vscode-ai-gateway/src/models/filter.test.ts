@@ -103,9 +103,7 @@ describe("ModelFilter", () => {
   describe("filterModels", () => {
     it("should load configuration on creation", () => {
       new ModelFilter();
-      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith(
-        "vercelAiGateway",
-      );
+      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercel.ai");
     });
 
     it("should register configuration change listener", () => {

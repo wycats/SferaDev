@@ -70,9 +70,7 @@ describe("TokenEstimator", () => {
   describe("constructor", () => {
     it("should load configuration on creation", () => {
       new TokenEstimator();
-      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith(
-        "vercelAiGateway",
-      );
+      expect(hoisted.mockGetConfiguration).toHaveBeenCalledWith("vercel.ai");
     });
 
     it("should register configuration change listener", () => {

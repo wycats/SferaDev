@@ -163,7 +163,7 @@ describe("VercelAIAuthenticationProvider", () => {
     it("should return stored sessions", async () => {
       const testSession = createTestSessionData({ id: "session-1" });
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([testSession]),
       );
 
@@ -186,7 +186,7 @@ describe("VercelAIAuthenticationProvider", () => {
       });
 
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([nearExpirySession]),
       );
 
@@ -219,7 +219,7 @@ describe("VercelAIAuthenticationProvider", () => {
       });
 
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([nearExpirySession]),
       );
 
@@ -261,11 +261,11 @@ describe("VercelAIAuthenticationProvider", () => {
       });
 
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([nearExpirySession]),
       );
       await mockContext.globalState.update(
-        "vercelAiGateway.activeSession",
+        "vercel.ai.activeSession",
         "oidc-session",
       );
 
@@ -294,11 +294,11 @@ describe("VercelAIAuthenticationProvider", () => {
       });
 
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([nearExpirySession]),
       );
       await mockContext.globalState.update(
-        "vercelAiGateway.activeSession",
+        "vercel.ai.activeSession",
         "oidc-session",
       );
 
@@ -334,7 +334,7 @@ describe("VercelAIAuthenticationProvider", () => {
       });
 
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([nearExpirySession]),
       );
 
@@ -354,14 +354,14 @@ describe("VercelAIAuthenticationProvider", () => {
       const session2 = createTestSessionData({ id: "session-2" });
 
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([session1, session2]),
       );
 
       await authProvider.removeSession("session-1");
 
       const storedSessions = JSON.parse(
-        (await mockContext.secrets.get("vercelAiGateway.sessions")) ?? "[]",
+        (await mockContext.secrets.get("vercel.ai.sessions")) ?? "[]",
       ) as StoredSessionData[];
       expect(storedSessions).toHaveLength(1);
       const storedSession = storedSessions[0];
@@ -375,7 +375,7 @@ describe("VercelAIAuthenticationProvider", () => {
     it("should fire session change event when session is removed", async () => {
       const session = createTestSessionData({ id: "session-1" });
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([session]),
       );
 
@@ -421,7 +421,7 @@ describe("VercelAIAuthenticationProvider", () => {
   describe("session data persistence", () => {
     it("should handle corrupted session data gracefully", async () => {
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         "invalid json{",
       );
 
@@ -430,7 +430,7 @@ describe("VercelAIAuthenticationProvider", () => {
       expect(sessions).toEqual([]);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockContext.secrets.delete).toHaveBeenCalledWith(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
       );
     });
   });
@@ -445,7 +445,7 @@ describe("VercelAIAuthenticationProvider", () => {
       });
 
       await mockContext.secrets.store(
-        "vercelAiGateway.sessions",
+        "vercel.ai.sessions",
         JSON.stringify([nearExpirySession]),
       );
 

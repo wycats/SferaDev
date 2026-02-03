@@ -1,12 +1,12 @@
-export const EXTENSION_ID = "vercelAiGateway";
-export const VSCODE_EXTENSION_ID = "SferaDev.vscode-extension-vercel-ai";
+export const EXTENSION_ID = "vercel.ai";
+export const VSCODE_EXTENSION_ID = "vercel.vscode-ai-gateway";
 export const DEFAULT_BASE_URL = "https://ai-gateway.vercel.sh";
 export const MODELS_ENDPOINT = "/v1/models";
 export const MODELS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 export const ENRICHMENT_ENDPOINT_PATTERN = "/v1/models";
 export const ENRICHMENT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 export const TOKEN_REFRESH_MARGIN = 15 * 60 * 1000; // 15 minutes
-export const LAST_SELECTED_MODEL_KEY = "vercelAiGateway.lastSelectedModel";
+export const LAST_SELECTED_MODEL_KEY = "vercel.ai.lastSelectedModel";
 
 /**
  * Conservative token limits to prevent high-context degradation.

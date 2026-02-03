@@ -470,7 +470,7 @@ export function createAgentTreeView(statusBar: TokenStatusBar): {
   const provider = new AgentTreeDataProvider();
   provider.setStatusBar(statusBar);
 
-  const treeView = vscode.window.createTreeView("vercelAiGateway.agentTree", {
+  const treeView = vscode.window.createTreeView("vercel.ai.agentTree", {
     treeDataProvider: provider,
     showCollapseAll: false,
   });

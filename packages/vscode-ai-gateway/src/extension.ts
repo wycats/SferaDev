@@ -72,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register refresh command for agent tree
   context.subscriptions.push(
-    vscode.commands.registerCommand("vercelAiGateway.refreshAgentTree", () => {
+    vscode.commands.registerCommand("vercel.ai.refreshAgentTree", () => {
       treeProvider.refresh();
     }),
   );
@@ -90,7 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register the chat participant (allows @vercel mentions in chat)
   const chatParticipant = vscode.chat.createChatParticipant(
-    "vercelAiGateway.chat",
+    "vercel.ai.chat",
     async (request, context, response, token) => {
       logger.info(
         `[ChatParticipant] Received request: "${request.prompt.slice(0, 50)}..."`,
@@ -134,7 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register command to show token details
   const tokenDetailsCommand = vscode.commands.registerCommand(
-    "vercelAiGateway.showTokenDetails",
+    "vercel.ai.showTokenDetails",
     () => {
       const usage = statusBar.getLastUsage();
       if (!usage) {
@@ -171,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register command to dump agent tree diagnostics
   const dumpDiagnosticsCommand = vscode.commands.registerCommand(
-    "vercelAiGateway.dumpDiagnostics",
+    "vercel.ai.dumpDiagnostics",
     () => {
       const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
       if (!workspaceRoot) {

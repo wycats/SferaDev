@@ -27,10 +27,10 @@ export class ConfigService implements vscode.Disposable {
   private readonly disposable: vscode.Disposable;
 
   constructor() {
-    this.config = vscode.workspace.getConfiguration("vercelAiGateway");
+    this.config = vscode.workspace.getConfiguration("vercel.ai");
     this.disposable = vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("vercelAiGateway")) {
-        this.config = vscode.workspace.getConfiguration("vercelAiGateway");
+      if (event.affectsConfiguration("vercel.ai")) {
+        this.config = vscode.workspace.getConfiguration("vercel.ai");
         this.emitter.fire();
       }
     });
