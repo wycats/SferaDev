@@ -116,8 +116,7 @@ export function translateRequest(
     toolChoice = "none";
   }
 
-  // Keep `instructions` for OpenAI provider compatibility but use finalInput
-  // which includes the developer message for non-OpenAI providers
+  // Return instructions if present - the gateway handles translation for all providers
   if (instructions) {
     return { input: finalInput, instructions, tools, toolChoice };
   }
