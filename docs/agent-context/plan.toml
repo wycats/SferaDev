@@ -428,7 +428,7 @@ aliases = ["01kgbg6cpxvd67bq84rbcq3zzj"]
 [[epochs]]
 id = "01kgjmbq8658mgjyrzmn3nc39x"
 title = "Codebase Health"
-status = "active"
+status = "pending"
 ulid = "01KGJMNKAHZEF8QA3AFR98H4D0"
 slug = "01kgjmbq8658mgjyrzmn3nc39x"
 aliases = ["01kgjmbq8658mgjyrzmn3nc39x"]
@@ -480,7 +480,7 @@ aliases = ["review-delta-estimation"]
 [[epochs.phases]]
 id = "01kgjmc973vv40jcwkh41k0cd9"
 title = "Phase 1: Critical Fixes (P0)"
-status = "active"
+status = "completed"
 ulid = "01KGJMNKAH7BVJ0C831T13VKJ3"
 slug = "01kgjmc973vv40jcwkh41k0cd9"
 aliases = ["01kgjmc973vv40jcwkh41k0cd9"]

@@ -2,77 +2,25 @@
 # Implementation Plan
 
 [phase]
-id = "01kgjmc973vv40jcwkh41k0cd9"
-title = "Phase 1: Critical Fixes (P0)"
+id = "01kgjmcke2fq6rg6rkknaccsmj"
+title = "Phase 2: Correctness Fixes (P1)"
 rfcs = []
 
 [plan]
 [[plan.goals]]
-id = "fix-openresponses-exports"
+id = "fix-agent-lifecycle"
 
 [[plan.goals]]
-id = "create-contributing-docs"
-
-[[plan.goals.tasks]]
-id = "create-contributing-md"
-title = "Create CONTRIBUTING.md with architecture and workflow documentation"
-status = "completed"
-completed_at = "2026-02-03T22:18:49.516881120+00:00"
-completion_log = "Created draft CONTRIBUTING.md with architecture overview, development workflow, critical warnings, and debugging guidance. PER cycle completed with one fix (incorrect pnpm filter name)."
+id = "fix-sensitive-logging"
 
 [[plan.goals]]
-id = "enforce-content-type-invariants"
-
-[[plan.goals.tasks]]
-id = "test-content-type-mapping"
-title = "Add unit tests for translateMessages verifying User→input_text and Assistant→output_text"
-status = "completed"
-completed_at = "2026-02-03T22:51:51.499459299+00:00"
-completion_log = "Added content type invariant tests for User→input_text and Assistant→output_text in message-translation.test.ts"
-
-[[plan.goals.tasks]]
-id = "refactor-content-type-casts"
-title = "Refactor translateMessages to use discriminated unions instead of type casts"
-status = "completed"
-completed_at = "2026-02-03T23:06:37.155406660+00:00"
-completion_log = "Refactored `createMessageItem` with overloads and role-specific content arrays to remove content type casts; updated translateMessage accordingly and verified tests (pnpm test) passing."
-
-[[plan.goals.tasks]]
-id = "test-tool-flat-structure"
-title = "Add test verifying tools use flat structure (not nested under function)"
-status = "completed"
-completed_at = "2026-02-03T22:51:52.469986457+00:00"
-completion_log = "Added flat tool structure test in request-builder.test.ts"
+id = "fix-memory-leaks"
 
 [[plan.goals]]
-id = "protect-system-prompt-extraction"
-
-[[plan.goals.tasks]]
-id = "canary-test-system-prompt"
-title = "Add canary test asserting extractSystemPrompt is exported and callable"
-status = "completed"
-completed_at = "2026-02-03T22:51:50.454554628+00:00"
-completion_log = "Added canary test in system-prompt.test.ts asserting extractSystemPrompt is exported and callable"
-
-[[plan.goals.tasks]]
-id = "integration-test-system-prompt"
-title = "Add integration test: System role message → instructions field in API request"
-status = "completed"
-completed_at = "2026-02-03T23:00:13.492896882+00:00"
-completion_log = "Added integration test verifying extractSystemPrompt is called in translateRequest pipeline. Tests: System→instructions, message slicing, no-system-prompt case."
+id = "fix-sse-parsing"
 
 [[plan.goals]]
-id = "fix-pnpm-filter-mismatch"
-
-[[plan.goals.tasks]]
-id = "fix-pnpm-filter"
-title = "Change filter from vscode-extension-vercel-ai to vscode-ai-gateway in root package.json"
-status = "completed"
-completed_at = "2026-02-03T22:51:49.620062532+00:00"
-completion_log = "Updated root package.json to use correct filter name vscode-ai-gateway"
-
-[[plan.goals]]
-id = "evaluate-monorepo-structure"
+id = "fix-stream-cancellation"
 
 
 
