@@ -33,7 +33,9 @@ completion_log = "Added content type invariant tests for User→input_text and A
 [[plan.goals.tasks]]
 id = "refactor-content-type-casts"
 title = "Refactor translateMessages to use discriminated unions instead of type casts"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-03T23:06:37.155406660+00:00"
+completion_log = "Refactored `createMessageItem` with overloads and role-specific content arrays to remove content type casts; updated translateMessage accordingly and verified tests (pnpm test) passing."
 
 [[plan.goals.tasks]]
 id = "test-tool-flat-structure"

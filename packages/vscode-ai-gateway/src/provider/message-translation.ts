@@ -14,12 +14,15 @@
  */
 
 import type {
+  AssistantMessageItemParam,
+  DeveloperMessageItemParam,
   FunctionCallItemParam,
   FunctionCallOutputItemParam,
   InputImageContentParamAutoParam,
   InputTextContentParam,
   ItemParam,
   OutputTextContentParam,
+  UserMessageItemParam,
 } from "openresponses-client";
 import {
   type LanguageModelChatMessage,
@@ -92,7 +95,10 @@ export function translateMessage(
   // Collect content parts
   type UserContent = InputTextContentParam | InputImageContentParamAutoParam;
   type AssistantContent = OutputTextContentParam;
-  const contentParts: (UserContent | AssistantContent)[] = [];
+  const userContentParts: UserContent[] = [];
+  const assistantContentParts: AssistantContent[] = [];
+  const contentParts =
+    openResponsesRole === "assistant" ? assistantContentParts : userContentParts;
 
   for (const part of message.content) {
     if (part instanceof LanguageModelTextPart) {
@@ -100,12 +106,12 @@ export function translateMessage(
       const sanitizedText = sanitizeSpecialTokens(part.value);
       // Use input_text for User role, output_text for Assistant
       if (openResponsesRole === "assistant") {
-        contentParts.push({
+        assistantContentParts.push({
           type: "output_text",
           text: sanitizedText,
         });
       } else {
-        contentParts.push({
+        userContentParts.push({
           type: "input_text",
           text: sanitizedText,
         });
@@ -120,7 +126,7 @@ export function translateMessage(
         // WORKAROUND: VS Code may pass a wildcard `image/*` mimeType; resolve it
         // so the data URL includes a concrete MIME for inferMediaType().
         const dataUrl = `data:${resolvedMimeType};base64,${base64}`;
-        contentParts.push({
+        userContentParts.push({
           type: "input_image",
           image_url: dataUrl,
         });
@@ -132,7 +138,10 @@ export function translateMessage(
       //
       // First, flush any accumulated content
       if (contentParts.length > 0) {
-        const messageItem = createMessageItem(openResponsesRole, contentParts);
+        const messageItem =
+          openResponsesRole === "assistant"
+            ? createMessageItem("assistant", assistantContentParts)
+            : createMessageItem("user", userContentParts);
         if (messageItem) {
           items.push(messageItem);
         }
@@ -151,7 +160,7 @@ export function translateMessage(
             ? inputValue
             : tryStringify(inputValue ?? {}),
       };
-      items.push(functionCallItem as ItemParam);
+      items.push(functionCallItem);
     } else if (part instanceof LanguageModelToolResultPart) {
       // Emit function_call_output item for tool results.
       // This MUST follow a corresponding function_call item with matching call_id.
@@ -159,7 +168,10 @@ export function translateMessage(
       //
       // First, flush any accumulated content
       if (contentParts.length > 0) {
-        const messageItem = createMessageItem(openResponsesRole, contentParts);
+        const messageItem =
+          openResponsesRole === "assistant"
+            ? createMessageItem("assistant", assistantContentParts)
+            : createMessageItem("user", userContentParts);
         if (messageItem) {
           items.push(messageItem);
         }
@@ -181,13 +193,16 @@ export function translateMessage(
         call_id: part.callId,
         output,
       };
-      items.push(functionCallOutputItem as ItemParam);
+      items.push(functionCallOutputItem);
     }
   }
 
   // Flush remaining content
   if (contentParts.length > 0) {
-    const messageItem = createMessageItem(openResponsesRole, contentParts);
+    const messageItem =
+      openResponsesRole === "assistant"
+        ? createMessageItem("assistant", assistantContentParts)
+        : createMessageItem("user", userContentParts);
     if (messageItem) {
       items.push(messageItem);
     }
@@ -207,13 +222,25 @@ export function translateMessage(
  * to be a STRING, not an array of content objects. If content is structured
  * as an array, the API returns 400 Invalid input.
  */
+type UserContent = InputTextContentParam | InputImageContentParamAutoParam;
+type AssistantContent = OutputTextContentParam;
+type DeveloperContent = InputTextContentParam;
+
+export function createMessageItem(
+  role: "user",
+  content: UserContent[],
+): UserMessageItemParam | null;
+export function createMessageItem(
+  role: "assistant",
+  content: AssistantContent[],
+): AssistantMessageItemParam | null;
+export function createMessageItem(
+  role: "developer",
+  content: DeveloperContent[],
+): DeveloperMessageItemParam | null;
 export function createMessageItem(
   role: "user" | "assistant" | "developer",
-  content: (
-    | InputTextContentParam
-    | InputImageContentParamAutoParam
-    | OutputTextContentParam
-  )[],
+  content: UserContent[] | AssistantContent[] | DeveloperContent[],
 ): ItemParam | null {
   // Helper to extract and join text from content parts
   const joinText = () =>
@@ -229,28 +256,37 @@ export function createMessageItem(
 
   if (textOnly) {
     const text = joinText();
-    return text
-      ? ({ type: "message", role, content: text } as ItemParam)
-      : null;
+    if (!text) return null;
+    if (role === "assistant") {
+      return { type: "message", role: "assistant", content: text };
+    }
+    if (role === "developer") {
+      return { type: "message", role: "developer", content: text };
+    }
+    return { type: "message", role: "user", content: text };
   }
 
   // Mixed content (has images) - only user messages support this
   if (role === "user") {
-    const filtered = content.filter((part) =>
-      "text" in part ? part.text.length > 0 : true,
-    );
+    const filtered = content.filter((part): part is UserContent => {
+      if (part.type === "input_text") {
+        return part.text.length > 0;
+      }
+      return part.type === "input_image";
+    });
     if (filtered.length === 0) return null;
     return {
       type: "message",
       role: "user",
-      content: filtered as (
-        | InputTextContentParam
-        | InputImageContentParamAutoParam
-      )[],
+      content: filtered,
     };
   }
 
   // Assistant/developer with mixed content (shouldn't happen) → fallback to text
   const text = joinText();
-  return text ? ({ type: "message", role, content: text } as ItemParam) : null;
+  if (!text) return null;
+  if (role === "assistant") {
+    return { type: "message", role: "assistant", content: text };
+  }
+  return { type: "message", role: "developer", content: text };
 }

@@ -497,22 +497,26 @@ aliases = ["fix-openresponses-exports"]
 [[epochs.phases.goals]]
 id = "create-contributing-docs"
 label = "Create CONTRIBUTING.md with architecture and workflow documentation"
-status = "pending"
+status = "completed"
+completion_log = "CONTRIBUTING.md created with architecture, workflow, and critical warnings documentation"
 
 [[epochs.phases.goals]]
 id = "enforce-content-type-invariants"
 label = "Add compile-time or runtime validation for input_text/output_text content types"
-status = "pending"
+status = "completed"
+completion_log = "Tests enforce User→input_text, Assistant→output_text; function overloads already in place for compile-time safety"
 
 [[epochs.phases.goals]]
 id = "protect-system-prompt-extraction"
 label = "Add test that fails if extractSystemPrompt is removed or broken"
-status = "pending"
+status = "completed"
+completion_log = "Canary test guards export, integration test verifies pipeline usage in translateRequest"
 
 [[epochs.phases.goals]]
 id = "fix-pnpm-filter-mismatch"
 label = "Align pnpm filter name with actual package name"
-status = "pending"
+status = "completed"
+completion_log = "Fixed pnpm filter from vscode-extension-vercel-ai to vscode-ai-gateway in root package.json"
 
 [[epochs.phases.goals]]
 id = "evaluate-monorepo-structure"
