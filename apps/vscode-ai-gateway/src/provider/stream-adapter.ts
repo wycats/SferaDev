@@ -168,6 +168,14 @@ export class StreamAdapter {
   /** Function calls being assembled from streaming deltas */
   private functionCalls = new Map<string, FunctionCallState>();
 
+  /** Reverse lookup: callId → responseId for fallback cases */
+  private callIdToResponseId = new Map<string, string>();
+
+  /** Generate composite key for function call state */
+  private getCallKey(callId: string): string {
+    return `${this.responseId ?? "unknown"}:${callId}`;
+  }
+
   /** Tool calls already emitted to VS Code (tracked by itemId) */
   private emittedToolCalls = new Set<string>();
 
@@ -546,12 +554,14 @@ export class StreamAdapter {
           `[OpenResponses] Function call streaming started: name=${name}, callId=${callId}, itemId=${id}`,
         );
 
-        this.functionCalls.set(callId, {
+        const key = this.getCallKey(callId);
+        this.functionCalls.set(key, {
           callId,
           name,
           argumentsBuffer: "",
           itemId: id,
         });
+        this.callIdToResponseId.set(callId, this.responseId ?? "unknown");
       } else {
         logger.warn(
           `[OpenResponses] Function call item missing callId or name: callId=${callId}, name=${name}`,
@@ -568,12 +578,14 @@ export class StreamAdapter {
         `[OpenResponses] Function call detected via call_id/name (no type field): name=${name}, callId=${callId}, itemId=${id}`,
       );
 
-      this.functionCalls.set(callId, {
+      const key = this.getCallKey(callId);
+      this.functionCalls.set(key, {
         callId,
         name,
         argumentsBuffer: "",
         itemId: id,
       });
+      this.callIdToResponseId.set(callId, this.responseId ?? "unknown");
     } else if (itemType !== "message" && itemType !== "reasoning") {
       // Log any unexpected item types we're not handling
       logger.warn(
@@ -641,7 +653,10 @@ export class StreamAdapter {
       );
 
       // Remove from tracking (keyed by callId for now, but we track emission by itemId)
-      this.functionCalls.delete(callId);
+      const responseIdForCall =
+        this.callIdToResponseId.get(callId) ?? this.responseId ?? "unknown";
+      this.functionCalls.delete(`${responseIdForCall}:${callId}`);
+      this.callIdToResponseId.delete(callId);
 
       let parsedArgs: ToolCallArguments = {};
       try {
@@ -925,7 +940,15 @@ export class StreamAdapter {
 
     // Fallback: check if item_id is actually the call_id
     if (!state) {
-      state = this.functionCalls.get(itemId);
+      // Try with current responseId
+      state = this.functionCalls.get(this.getCallKey(itemId));
+      // Fallback: try with stored responseId for this callId
+      if (!state) {
+        const storedResponseId = this.callIdToResponseId.get(itemId);
+        if (storedResponseId) {
+          state = this.functionCalls.get(`${storedResponseId}:${itemId}`);
+        }
+      }
       if (state) {
         logger.debug(
           `[OpenResponses] function_call_arguments.delta: found state via callId lookup (itemId=${itemId})`,
@@ -956,9 +979,9 @@ export class StreamAdapter {
     let foundCallId: string | undefined;
     let foundState: FunctionCallState | undefined;
 
-    for (const [callId, state] of this.functionCalls) {
+    for (const [compositeKey, state] of this.functionCalls) {
       if (state.itemId === itemId) {
-        foundCallId = callId;
+        foundCallId = compositeKey;
         foundState = state;
         break;
       }
@@ -967,12 +990,27 @@ export class StreamAdapter {
     // Fallback: check if item_id is actually the call_id
     // The Vercel AI Gateway sometimes sends call_id in the item_id field
     if (!foundState) {
-      foundState = this.functionCalls.get(itemId);
+      // Try with current responseId first
+      const compositeKey = this.getCallKey(itemId);
+      foundState = this.functionCalls.get(compositeKey);
       if (foundState) {
-        foundCallId = itemId;
+        foundCallId = compositeKey;
         logger.debug(
-          `[OpenResponses] function_call_arguments.done: found state via callId lookup (itemId=${itemId}, name=${foundState.name})`,
+          `[OpenResponses] function_call_arguments.done: found state via composite key lookup (itemId=${itemId}, name=${foundState.name})`,
         );
+      } else {
+        // Fallback: try with stored responseId for this callId
+        const storedResponseId = this.callIdToResponseId.get(itemId);
+        if (storedResponseId) {
+          const storedCompositeKey = `${storedResponseId}:${itemId}`;
+          foundState = this.functionCalls.get(storedCompositeKey);
+          if (foundState) {
+            foundCallId = storedCompositeKey;
+            logger.debug(
+              `[OpenResponses] function_call_arguments.done: found state via stored responseId lookup (itemId=${itemId}, name=${foundState.name})`,
+            );
+          }
+        }
       }
     }
 
@@ -1005,6 +1043,7 @@ export class StreamAdapter {
 
       // Clean up state
       this.functionCalls.delete(foundCallId);
+      this.callIdToResponseId.delete(foundState.callId);
       // Track by BOTH itemId and callId to catch all duplicate patterns
       this.emittedToolCalls.add(foundState.itemId);
       this.emittedCallIds.add(foundState.callId);
@@ -1066,6 +1105,7 @@ export class StreamAdapter {
    */
   reset(): void {
     this.functionCalls.clear();
+    this.callIdToResponseId.clear();
     this.emittedToolCalls.clear();
     this.emittedCallIds.clear();
     this.textContent.clear();

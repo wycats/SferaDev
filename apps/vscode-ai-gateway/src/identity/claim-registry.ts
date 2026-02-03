@@ -172,6 +172,17 @@ export class ClaimRegistry {
     return [...this.claims];
   }
 
+  /**
+   * Clear all pending claims without disposing the registry.
+   */
+  clearAll(): void {
+    const count = this.claims.length;
+    this.claims = [];
+    if (count > 0) {
+      logger.debug(`[ClaimRegistry] Cleared ${count} claims`);
+    }
+  }
+
   dispose(): void {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);

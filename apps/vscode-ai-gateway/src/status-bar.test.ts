@@ -272,42 +272,104 @@ describe("TokenStatusBar", () => {
 
   describe("agent lifecycle and aging", () => {
     it("dims agent after 2 newer completions", () => {
-      // First agent completes
-      statusBar.startAgent("agent-1", 50000, 128000);
+      // First agent completes (main agent)
+      statusBar.startAgent(
+        "agent-1",
+        50000,
+        128000,
+        undefined,
+        "main-hash",
+        "type-1",
+      );
       statusBar.completeAgent("agent-1", {
         inputTokens: 50000,
         outputTokens: 1000,
       });
 
-      // Two more agents complete
-      statusBar.startAgent("agent-2", 30000, 128000);
+      // Create claims for subagents (required for proper subagent detection)
+      statusBar.createChildClaim("agent-1", "sub2");
+      statusBar.createChildClaim("agent-1", "sub3");
+      statusBar.createChildClaim("agent-1", "sub4");
+
+      // Three subagents complete - first subagent should be dimmed after 2 newer completions
+      statusBar.startAgent(
+        "agent-2",
+        30000,
+        128000,
+        undefined,
+        "sub-hash",
+        "type-2",
+      );
       statusBar.completeAgent("agent-2", {
         inputTokens: 30000,
         outputTokens: 500,
       });
 
-      statusBar.startAgent("agent-3", 20000, 128000);
+      statusBar.startAgent(
+        "agent-3",
+        20000,
+        128000,
+        undefined,
+        "sub-hash",
+        "type-3",
+      );
       statusBar.completeAgent("agent-3", {
         inputTokens: 20000,
         outputTokens: 300,
       });
 
+      statusBar.startAgent(
+        "agent-4",
+        15000,
+        128000,
+        undefined,
+        "sub-hash",
+        "type-4",
+      );
+      statusBar.completeAgent("agent-4", {
+        inputTokens: 15000,
+        outputTokens: 200,
+      });
+
       const agents = statusBar.getAgents();
+      // Main agent should NOT be dimmed (it's always kept)
       const agent1 = agents.find((a) => a.id === "agent-1");
-      expect(agent1?.dimmed).toBe(true);
+      expect(agent1?.dimmed).toBe(false);
+      // First subagent should be dimmed after 2 newer completions
+      const agent2 = agents.find((a) => a.id === "agent-2");
+      expect(agent2?.dimmed).toBe(true);
     });
 
     it("removes agent after 5 newer completions", () => {
-      // First agent completes
-      statusBar.startAgent("agent-1", 50000, 128000);
+      // First agent completes (main agent)
+      statusBar.startAgent(
+        "agent-1",
+        50000,
+        128000,
+        undefined,
+        "main-hash",
+        "type-1",
+      );
       statusBar.completeAgent("agent-1", {
         inputTokens: 50000,
         outputTokens: 1000,
       });
 
-      // Five more agents complete
-      for (let i = 2; i <= 6; i++) {
-        statusBar.startAgent(`agent-${i.toString()}`, 10000, 128000);
+      // Create claims for all subagents (required for proper subagent detection)
+      for (let i = 2; i <= 7; i++) {
+        statusBar.createChildClaim("agent-1", `sub${i.toString()}`);
+      }
+
+      // Six subagents complete - first subagent should be removed after 5 newer completions
+      for (let i = 2; i <= 7; i++) {
+        statusBar.startAgent(
+          `agent-${i.toString()}`,
+          10000,
+          128000,
+          undefined,
+          "sub-hash",
+          `type-${i.toString()}`,
+        );
         statusBar.completeAgent(`agent-${i.toString()}`, {
           inputTokens: 10000,
           outputTokens: 100,
@@ -315,8 +377,12 @@ describe("TokenStatusBar", () => {
       }
 
       const agents = statusBar.getAgents();
+      // Main agent should NOT be removed (it's always kept)
       const agent1 = agents.find((a) => a.id === "agent-1");
-      expect(agent1).toBeUndefined();
+      expect(agent1).toBeDefined();
+      // First subagent should be removed after 5 newer completions
+      const agent2 = agents.find((a) => a.id === "agent-2");
+      expect(agent2).toBeUndefined();
     });
 
     it("clears all agents", () => {
@@ -332,9 +398,11 @@ describe("TokenStatusBar", () => {
   describe("multi-agent display", () => {
     it("shows subagent alongside main agent when active", () => {
       // Main agent starts and completes (with maxInputTokens for consistent format)
-      // Use a system prompt hash to enable subagent detection
+      // Use a system prompt hash and agentTypeHash for proper subagent detection
       const mainHash = "main-system-prompt-hash-abc123";
       const subagentHash = "subagent-system-prompt-hash-xyz789";
+      const mainTypeHash = "main-type-hash";
+      const subTypeHash = "sub-type-hash";
 
       statusBar.startAgent(
         "main-agent",
@@ -342,6 +410,7 @@ describe("TokenStatusBar", () => {
         128000,
         "anthropic:claude-sonnet-4",
         mainHash,
+        mainTypeHash,
       );
       statusBar.completeAgent("main-agent", {
         inputTokens: 52000,
@@ -349,13 +418,23 @@ describe("TokenStatusBar", () => {
         maxInputTokens: 128000,
       });
 
-      // Subagent starts with different system prompt hash
-      statusBar.startAgent("recon-agent", 8000, 128000, "recon", subagentHash);
+      // Create a claim for the subagent (required for proper subagent detection)
+      statusBar.createChildClaim("main-agent", "recon");
+
+      // Subagent starts with different system prompt hash and matching claim
+      statusBar.startAgent(
+        "recon-agent",
+        8000,
+        128000,
+        "recon",
+        subagentHash,
+        subTypeHash,
+      );
 
       // Should show both agents - main uses x/max format, subagent shows "sub"
-      // (subagent detection works via different system prompt hash)
+      // (subagent detection works via claim matching)
       expect(mockStatusBarItem.text).toContain("52.0k/128.0k");
-      expect(mockStatusBarItem.text).toContain("▸ sub");
+      expect(mockStatusBarItem.text).toContain("▸ recon");
     });
 
     it("shows tooltip with all agent details", () => {
@@ -374,6 +453,61 @@ describe("TokenStatusBar", () => {
 
       expect(mockStatusBarItem.tooltip).toContain("claude-sonnet-4");
       expect(mockStatusBarItem.tooltip).toContain("52,000");
+    });
+
+    it("detects subagent via claim even with identical hashes (regression: 104% bug)", () => {
+      // This is a regression test for Issue #4: Subagent detection bypass causes 104% token display
+      // The bug occurred when a subagent had the SAME system prompt hash and agent type hash
+      // as the main agent, causing claim matching to be skipped entirely.
+      const sameHash = "identical-hash-for-both";
+      const sameTypeHash = "identical-type-hash";
+
+      // Main agent starts with specific hashes
+      statusBar.startAgent(
+        "main-agent",
+        50000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        sameHash,
+        sameTypeHash,
+      );
+      statusBar.completeAgent("main-agent", {
+        inputTokens: 52000,
+        outputTokens: 1000,
+        maxInputTokens: 128000,
+      });
+
+      // Create a claim for the subagent
+      statusBar.createChildClaim("main-agent", "execute");
+
+      // Subagent starts with IDENTICAL hashes (this was the bug trigger)
+      // The claim should still be matched because we check claims FIRST
+      statusBar.startAgent(
+        "sub-agent",
+        8000,
+        128000,
+        "execute",
+        sameHash,
+        sameTypeHash,
+      );
+
+      const agents = statusBar.getAgents();
+      const mainAgent = agents.find((a) => a.id === "main-agent");
+      const subAgent = agents.find((a) => a.id === "sub-agent");
+
+      // Both agents should exist
+      expect(mainAgent).toBeDefined();
+      expect(subAgent).toBeDefined();
+
+      // Main agent should be marked as main
+      expect(mainAgent?.isMain).toBe(true);
+
+      // Subagent should NOT be marked as main (it matched the claim)
+      expect(subAgent?.isMain).toBe(false);
+
+      // Display should show both agents, not 104% (which would happen if subagent was treated as main)
+      expect(mockStatusBarItem.text).toContain("52.0k/128.0k");
+      expect(mockStatusBarItem.text).toContain("▸ execute");
     });
   });
 });

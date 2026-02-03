@@ -23,6 +23,7 @@ export class TokenCache {
   digestMessage(message: vscode.LanguageModelChatMessage): string {
     const content = {
       role: message.role,
+      name: message.name,
       parts: this.serializeParts(message.content),
     };
     const serialized = JSON.stringify(content);

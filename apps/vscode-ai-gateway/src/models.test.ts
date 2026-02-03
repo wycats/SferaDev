@@ -75,7 +75,7 @@ describe("ModelsClient", () => {
           capabilities: { reasoning: boolean; webSearch: boolean };
         }[];
       }
-    ).transformToVSCodeModels;
+    ).transformToVSCodeModels.bind(client);
     return transform(models);
   };
 

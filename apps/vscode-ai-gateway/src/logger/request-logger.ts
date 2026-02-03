@@ -54,7 +54,8 @@ export class RequestLogger {
     this.captureEvents = options.captureEvents;
     this.indexWriter = options.indexWriter ?? new IndexWriter();
     this.sessionManager =
-      options.sessionManager ?? new SessionManager(this.indexWriter);
+      options.sessionManager ??
+      new SessionManager(this.indexWriter, this.sessionId);
     this.startedAt = new Date();
   }
 
