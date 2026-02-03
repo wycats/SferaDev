@@ -55,7 +55,9 @@ completion_log = "Added canary test in system-prompt.test.ts asserting extractSy
 [[plan.goals.tasks]]
 id = "integration-test-system-prompt"
 title = "Add integration test: System role message → instructions field in API request"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-03T23:00:13.492896882+00:00"
+completion_log = "Added integration test verifying extractSystemPrompt is called in translateRequest pipeline. Tests: System→instructions, message slicing, no-system-prompt case."
 
 [[plan.goals]]
 id = "fix-pnpm-filter-mismatch"
