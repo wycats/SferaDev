@@ -1,6 +1,6 @@
 ---
 description: "The custom agent is used to explore the codebase"
-model: Claude Opus 4.5 (vercelAiGateway)
+model: Claude Opus 4.5 (vercel)
 tools:
   [
     "execute/getTerminalOutput",

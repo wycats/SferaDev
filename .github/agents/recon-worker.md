@@ -1,6 +1,6 @@
 ---
 description: "Gathers raw information from the codebase for a parent agent. Returns findings without interpretation."
-model: GPT-5.2-Codex (vercelAiGateway)
+model: GPT-5.2-Codex (vercel)
 tools:
   [
     "execute/getTerminalOutput",

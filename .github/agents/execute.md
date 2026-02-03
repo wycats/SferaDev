@@ -1,6 +1,6 @@
 ---
 description: "Executes detailed plans from users or parent agents, breaking complex tasks into steps and completing them methodically."
-model: GPT-5.2-Codex (vercelAiGateway)
+model: GPT-5.2-Codex (vercel)
 tools:
   [
     "execute",

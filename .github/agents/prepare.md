@@ -1,6 +1,6 @@
 ---
 description: "Audits planning documents against the codebase to ensure plans are complete, accurate, and ready for execution—identifying gaps in either direction."
-model: Claude Opus 4.5 (vercelAiGateway)
+model: Claude Opus 4.5 (vercel)
 tools:
   [
     "read",

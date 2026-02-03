@@ -1,6 +1,6 @@
 ---
 description: "This agent reviews code, plans, or documents provided by the user or parent agents, providing structured feedback, identifying issues, and suggesting improvements."
-model: Claude Opus 4.5 (vercelAiGateway)
+model: Claude Opus 4.5 (vercel)
 tools:
   [
     "read",
