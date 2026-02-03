@@ -27,12 +27,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/SferaDev/SferaDev",
-    "directory": "packages/vscode-ai-gateway"
+    "url": "https://github.com/vercel-labs/vscode-ai-gateway"
   },
-  "homepage": "https://github.com/SferaDev/SferaDev/tree/main/packages/vscode-ai-gateway#readme",
+  "homepage": "https://github.com/vercel-labs/vscode-ai-gateway#readme",
   "bugs": {
-    "url": "https://github.com/SferaDev/SferaDev/issues"
+    "url": "https://github.com/vercel-labs/vscode-ai-gateway/issues"
   },
   "main": "./out/extension.js",
   "activationEvents": [

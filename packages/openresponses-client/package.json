@@ -6,8 +6,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/SferaDev/SferaDev",
-		"directory": "packages/openresponses-client"
+		"url": "https://github.com/vercel-labs/vscode-ai-gateway"
 	},
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",

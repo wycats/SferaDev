@@ -12,7 +12,7 @@ A VS Code extension that provides [Vercel AI Gateway](https://vercel.com/docs/ai
 
 ## Quick Start
 
-1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=SferaDev.vscode-extension-vercel-ai)
+1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=vercel.vscode-ai-gateway)
 2. Open Command Palette (`Cmd/Ctrl + Shift + P`)
 3. Run "Vercel AI Gateway: Manage Authentication"
 4. Enter your API key (starts with `vck_`)
@@ -38,7 +38,7 @@ See the [openresponses-client documentation](../../packages/openresponses-client
 
 ## Documentation
 
-- **Extension Docs**: [https://sferadev.com/docs/packages/vscode-extension-vercel-ai](https://sferadev.com/docs/packages/vscode-extension-vercel-ai)
+- **Extension Docs**: [https://github.com/vercel-labs/vscode-ai-gateway](https://github.com/vercel-labs/vscode-ai-gateway)
 - **OpenResponses Spec**: [../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md](../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md)
 - **OpenAPI Schema**: [../../packages/openresponses-client/openapi.json](../../packages/openresponses-client/openapi.json)
 
