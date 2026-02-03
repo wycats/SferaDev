@@ -428,7 +428,7 @@ aliases = ["01kgbg6cpxvd67bq84rbcq3zzj"]
 [[epochs]]
 id = "01kgjmbq8658mgjyrzmn3nc39x"
 title = "Codebase Health"
-status = "pending"
+status = "active"
 ulid = "01KGJMNKAHZEF8QA3AFR98H4D0"
 slug = "01kgjmbq8658mgjyrzmn3nc39x"
 aliases = ["01kgjmbq8658mgjyrzmn3nc39x"]
@@ -527,7 +527,7 @@ completion_log = "Moved to ideas backlog - not a P0 fix, future consideration"
 [[epochs.phases]]
 id = "01kgjmcke2fq6rg6rkknaccsmj"
 title = "Phase 2: Correctness Fixes (P1)"
-status = "pending"
+status = "active"
 ulid = "01KGJMNKAHG7RBBXY2KYG317AN"
 slug = "01kgjmcke2fq6rg6rkknaccsmj"
 aliases = ["01kgjmcke2fq6rg6rkknaccsmj"]
