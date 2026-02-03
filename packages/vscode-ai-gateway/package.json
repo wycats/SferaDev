@@ -36,7 +36,8 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onStartupFinished",
-    "onLanguageModelChatProvider:vercel"
+    "onLanguageModelChatProvider:vercel",
+    "onView:vercel.ai.agentTree"
   ],
   "contributes": {
     "languageModelChatProviders": [
@@ -56,14 +57,14 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vercel.ai",
+          "id": "vercel-ai",
           "title": "AI Gateway",
           "icon": "images/icon.png"
         }
       ]
     },
     "views": {
-      "vercel.ai": [
+      "vercel-ai": [
         {
           "id": "vercel.ai.agentTree",
           "name": "Agent Tokens",
