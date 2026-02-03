@@ -4,20 +4,18 @@
  * Translates VS Code LanguageModelChatMessage instances to OpenResponses API format.
  * Handles all VS Code part types:
  * - LanguageModelTextPart → input_text/output_text
- * - LanguageModelDataPart → input_file (for images - see WORKAROUND below)
+ * - LanguageModelDataPart → input_image (for images - see WORKAROUND below)
  * - LanguageModelToolCallPart → function_call
  * - LanguageModelToolResultPart → function_call_output
  *
- * WORKAROUND: We use input_file instead of input_image for images because
- * the gateway hardcodes mediaType: 'image/*' for input_image, which Anthropic
- * rejects. input_file uses inferMediaType() which extracts the MIME from the
- * data URL. See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
+ * WORKAROUND: We still resolve the concrete image MIME type because VS Code
+ * often reports a wildcard like `image/*`. We must detect the real MIME and
+ * embed it in the data URL so inferMediaType() can determine the type.
  */
 
 import type {
   FunctionCallItemParam,
   FunctionCallOutputItemParam,
-  InputFileContentParam,
   InputImageContentParamAutoParam,
   InputTextContentParam,
   ItemParam,
@@ -92,12 +90,9 @@ export function translateMessage(
   );
 
   // Collect content parts
-  // Note: We use input_file for images due to gateway bug with input_image
-  // (gateway hardcodes mediaType: 'image/*' which Anthropic rejects)
   type UserContent =
     | InputTextContentParam
-    | InputImageContentParamAutoParam
-    | InputFileContentParam;
+    | InputImageContentParamAutoParam;
   type AssistantContent = OutputTextContentParam;
   const contentParts: (UserContent | AssistantContent)[] = [];
 
@@ -124,14 +119,12 @@ export function translateMessage(
         // Resolve the actual mime type - VS Code may pass "image/*" wildcard
         // which the API rejects. Detect from magic bytes if needed.
         const resolvedMimeType = detectImageMimeType(part.data, part.mimeType);
-        // WORKAROUND: Use input_file instead of input_image because the gateway
-        // hardcodes mediaType: 'image/*' for input_image, which Anthropic rejects.
-        // input_file uses inferMediaType() which extracts the MIME from the data URL.
-        // See: packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md
+        // WORKAROUND: VS Code may pass a wildcard `image/*` mimeType; resolve it
+        // so the data URL includes a concrete MIME for inferMediaType().
         const dataUrl = `data:${resolvedMimeType};base64,${base64}`;
         contentParts.push({
-          type: "input_file",
-          file_data: dataUrl,
+          type: "input_image",
+          image_url: dataUrl,
         });
       }
     } else if (part instanceof LanguageModelToolCallPart) {
@@ -221,7 +214,6 @@ export function createMessageItem(
   content: (
     | InputTextContentParam
     | InputImageContentParamAutoParam
-    | InputFileContentParam
     | OutputTextContentParam
   )[],
 ): ItemParam | null {
@@ -244,7 +236,7 @@ export function createMessageItem(
       : null;
   }
 
-  // Mixed content (has images/files) - only user messages support this
+  // Mixed content (has images) - only user messages support this
   if (role === "user") {
     const filtered = content.filter((part) =>
       "text" in part ? part.text.length > 0 : true,
@@ -256,7 +248,6 @@ export function createMessageItem(
       content: filtered as (
         | InputTextContentParam
         | InputImageContentParamAutoParam
-        | InputFileContentParam
       )[],
     };
   }
