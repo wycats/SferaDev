@@ -436,7 +436,7 @@ aliases = ["01kgjmbq8658mgjyrzmn3nc39x"]
 [[epochs.phases]]
 id = "01kgjmc08g68fch8zrxd6p37bd"
 title = "Phase 0: Housekeeping"
-status = "active"
+status = "completed"
 ulid = "01KGJMNKAH54GHDJ6J7WBRBZS7"
 slug = "01kgjmc08g68fch8zrxd6p37bd"
 aliases = ["01kgjmc08g68fch8zrxd6p37bd"]
@@ -445,42 +445,42 @@ aliases = ["01kgjmc08g68fch8zrxd6p37bd"]
 id = "review-stream-handling"
 label = "Run epoch review for Stream Handling & Token Estimation"
 status = "completed"
+completion_log = "Epoch reviewed via exo epoch review"
 ulid = "01KGJMNKAHRP89NQ279W83T67E"
 slug = "review-stream-handling"
 aliases = ["review-stream-handling"]
-completion_log = "Epoch reviewed via exo epoch review"
 
 [[epochs.phases.goals]]
 id = "review-config"
 label = "Run epoch review for Configuration & Logging Expansion"
 status = "completed"
+completion_log = "Epoch reviewed via exo epoch review"
 ulid = "01KGJMNKAHHCA58RGF2YKPTM6C"
 slug = "review-config"
 aliases = ["review-config"]
-completion_log = "Epoch reviewed via exo epoch review"
 
 [[epochs.phases.goals]]
 id = "review-model-mapping"
 label = "Run epoch review for High-Fidelity Model Mapping"
 status = "completed"
+completion_log = "Epoch reviewed via exo epoch review"
 ulid = "01KGJMNKAH26X68574TGSYWMKB"
 slug = "review-model-mapping"
 aliases = ["review-model-mapping"]
-completion_log = "Epoch reviewed via exo epoch review"
 
 [[epochs.phases.goals]]
 id = "review-delta-estimation"
 label = "Run epoch review for Delta-Based Token Estimation"
 status = "completed"
+completion_log = "Bankrupt epoch - review not applicable"
 ulid = "01KGJMNKAH1R6G5KXXP777GDA0"
 slug = "review-delta-estimation"
 aliases = ["review-delta-estimation"]
-completion_log = "Bankrupt epoch - review not applicable"
 
 [[epochs.phases]]
 id = "01kgjmc973vv40jcwkh41k0cd9"
 title = "Phase 1: Critical Fixes (P0)"
-status = "pending"
+status = "active"
 ulid = "01KGJMNKAH7BVJ0C831T13VKJ3"
 slug = "01kgjmc973vv40jcwkh41k0cd9"
 aliases = ["01kgjmc973vv40jcwkh41k0cd9"]

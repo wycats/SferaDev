@@ -2,24 +2,14 @@
 # Implementation Plan
 
 [phase]
-id = "01kgjmc08g68fch8zrxd6p37bd"
-title = "Phase 0: Housekeeping"
+id = "01kgjmc973vv40jcwkh41k0cd9"
+title = "Phase 1: Critical Fixes (P0)"
 rfcs = []
 
 [plan]
-
 [[plan.goals]]
-id = "review-stream-handling"
+id = "fix-openresponses-exports"
 
-[[plan.goals]]
-id = "review-config"
-
-[[plan.goals]]
-id = "review-model-mapping"
-
-[[plan.goals]]
-id = "review-delta-estimation"
-# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
 [verification]
