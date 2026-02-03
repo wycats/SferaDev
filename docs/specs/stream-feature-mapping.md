@@ -30,25 +30,25 @@ This reference document captures the mapping between the Vercel AI SDK's streami
 
 The extension intentionally sets `maxInputTokens` from the model's `context_window` directly. This is a deliberate design choice documented in RFC 008:
 
-- Preflight token validation warns when approaching limits ([provider.ts#L264-L283](../../../apps/vscode-ai-gateway/src/provider.ts#L264-L283))
-- `maxOutputTokens` is reported separately from `max_tokens` ([models.ts#L123](../../../apps/vscode-ai-gateway/src/models.ts#L123))
+- Preflight token validation warns when approaching limits ([provider.ts#L264-L283](../../../packages/vscode-ai-gateway/src/provider.ts#L264-L283))
+- `maxOutputTokens` is reported separately from `max_tokens` ([models.ts#L123](../../../packages/vscode-ai-gateway/src/models.ts#L123))
 - VS Code receives accurate information to make its own decisions
 
 ### 2. Stream Chunk Schema Mismatch (✅ FIXED)
 
 The stream handlers now correctly accept both standard and legacy field names:
 
-- **`text-delta`**: Uses `textDelta` with `text` fallback ([provider.ts#L700-L707](../../../apps/vscode-ai-gateway/src/provider.ts#L700-L707))
-- **`reasoning-delta`**: Uses `delta` with `text` fallback ([provider.ts#L816-L836](../../../apps/vscode-ai-gateway/src/provider.ts#L816-L836))
-- **`error`**: Uses `error` field correctly ([provider.ts#L1024-L1031](../../../apps/vscode-ai-gateway/src/provider.ts#L1024-L1031))
+- **`text-delta`**: Uses `textDelta` with `text` fallback ([provider.ts#L700-L707](../../../packages/vscode-ai-gateway/src/provider.ts#L700-L707))
+- **`reasoning-delta`**: Uses `delta` with `text` fallback ([provider.ts#L816-L836](../../../packages/vscode-ai-gateway/src/provider.ts#L816-L836))
+- **`error`**: Uses `error` field correctly ([provider.ts#L1024-L1031](../../../packages/vscode-ai-gateway/src/provider.ts#L1024-L1031))
 
 ### 3. Tool Result Message Format (✅ FIXED)
 
 Tool result handling has been fixed with the following implementation:
 
-1. **`toolNameMap` construction**: First pass scans all `LanguageModelToolCallPart` entries to build `toolCallId → toolName` mapping ([provider.ts#L1060-L1072](../../../apps/vscode-ai-gateway/src/provider.ts#L1060-L1072))
+1. **`toolNameMap` construction**: First pass scans all `LanguageModelToolCallPart` entries to build `toolCallId → toolName` mapping ([provider.ts#L1060-L1072](../../../packages/vscode-ai-gateway/src/provider.ts#L1060-L1072))
 2. **Output format**: Uses `output: { type: 'text', value: ... }` per SDK schema
-3. **Cross-message correlation**: `convertSingleMessage` receives `toolNameMap` for result lookups ([provider.ts#L1077-L1144](../../../apps/vscode-ai-gateway/src/provider.ts#L1077-L1144))
+3. **Cross-message correlation**: `convertSingleMessage` receives `toolNameMap` for result lookups ([provider.ts#L1077-L1144](../../../packages/vscode-ai-gateway/src/provider.ts#L1077-L1144))
 
 > **Note**: The output schema uses `output: { type, value }` structure. If AI SDK changes to expect `result: string`, this will need updating.
 
@@ -57,8 +57,8 @@ Tool result handling has been fixed with the following implementation:
 VS Code's `LanguageModelChatMessageRole` enum only defines `User` (1) and `Assistant` (2)—**there is no `System` role**. This is a VS Code API limitation, not an extension bug.
 
 **Current approach:**
-- Pre-user assistant messages are rewritten to `system` role in `fixSystemMessages()` ([provider.ts#L1241-L1248](../../../apps/vscode-ai-gateway/src/provider.ts#L1241-L1248))
-- System prompts are passed via the SDK's `system` parameter ([provider.ts#L336-L341](../../../apps/vscode-ai-gateway/src/provider.ts#L336-L341))
+- Pre-user assistant messages are rewritten to `system` role in `fixSystemMessages()` ([provider.ts#L1241-L1248](../../../packages/vscode-ai-gateway/src/provider.ts#L1241-L1248))
+- System prompts are passed via the SDK's `system` parameter ([provider.ts#L336-L341](../../../packages/vscode-ai-gateway/src/provider.ts#L336-L341))
 
 **Future**: If VS Code adds a `System` role, update the enum mapping.
 
@@ -367,8 +367,8 @@ From the [Vercel AI SDK Stream Protocol](https://ai-sdk.dev/docs/ai-sdk-ui/strea
 
 > **Audit Note**: Line numbers verified against actual codebase on 2026-01-26. Files located at:
 >
-> - `provider.ts`: `.reference/SferaDev/apps/vscode-ai-gateway/src/provider.ts`
-> - `models.ts`: `.reference/SferaDev/apps/vscode-ai-gateway/src/models.ts`
+> - `provider.ts`: `.reference/SferaDev/packages/vscode-ai-gateway/src/provider.ts`
+> - `models.ts`: `.reference/SferaDev/packages/vscode-ai-gateway/src/models.ts`
 
 ### BLOCKER: Token Limit Miscommunication
 
@@ -635,7 +635,7 @@ case "tool-call":
 1. **Account for tool schemas in token estimation** (`provider.ts:225-264`) - Underestimation causes failures
 2. **Handle tool-call streaming deltas** - May miss tool calls from some providers
 3. **Pass maxTokens into streamText** (`provider.ts:163`) - Prevent output from exceeding budget
-4. **Fix tests** (`.reference/SferaDev/apps/vscode-ai-gateway/test/provider.test.ts`) - Tests use wrong field names and mask bugs
+4. **Fix tests** (`.reference/SferaDev/packages/vscode-ai-gateway/test/provider.test.ts`) - Tests use wrong field names and mask bugs
 
 ### Nice to Have
 
@@ -1073,7 +1073,7 @@ if (this.lastEstimatedInputTokens > 0 && this.lastRequestInputTokens !== null) {
 
 ## Implementation Plan for Execute Agent
 
-**Target Directory**: `.reference/SferaDev/apps/vscode-ai-gateway/`
+**Target Directory**: `.reference/SferaDev/packages/vscode-ai-gateway/`
 
 ### Phase 1: Critical Fixes (Must Complete)
 

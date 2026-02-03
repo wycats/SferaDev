@@ -163,11 +163,11 @@ Improve the fidelity of model metadata fetching from Vercel AI Gateway and mappi
 
 The original implementation had several fidelity gaps. This RFC proposed fixes that have now been implemented:
 
-1. **✅ `family` parsing** — Implemented via `parseModelIdentity()` ([models/identity.ts](../../apps/vscode-ai-gateway/src/models/identity.ts))
+1. **✅ `family` parsing** — Implemented via `parseModelIdentity()` ([models/identity.ts](../../packages/vscode-ai-gateway/src/models/identity.ts))
 2. **✅ `version` parsing** — Implemented in same function with date/version regex
-3. **✅ `maxInputTokens`** — Now uses full `context_window` ([models.ts#L122](../../apps/vscode-ai-gateway/src/models.ts#L122))
-4. **✅ Model type filtering** — Filters to `chat`, `language`, or unspecified types ([models.ts#L106-L107](../../apps/vscode-ai-gateway/src/models.ts#L106-L107))
-5. **✅ Capability detection** — Includes `reasoning`, `web-search` tags ([models.ts#L117-L134](../../apps/vscode-ai-gateway/src/models.ts#L117-L134))
+3. **✅ `maxInputTokens`** — Now uses full `context_window` ([models.ts#L122](../../packages/vscode-ai-gateway/src/models.ts#L122))
+4. **✅ Model type filtering** — Filters to `chat`, `language`, or unspecified types ([models.ts#L106-L107](../../packages/vscode-ai-gateway/src/models.ts#L106-L107))
+5. **✅ Capability detection** — Includes `reasoning`, `web-search` tags ([models.ts#L117-L134](../../packages/vscode-ai-gateway/src/models.ts#L117-L134))
 
 ~~These issues reduce the effectiveness of VS Code's model selection UI and can cause suboptimal behavior during conversations.~~
 
@@ -215,7 +215,7 @@ function parseModelIdentity(modelId: string): ParsedModelIdentity {
 
 ### Phase 2: Accurate Token Limits (✅ Implemented)
 
-Now uses the true `context_window` value for `maxInputTokens` ([models.ts#L122](../../apps/vscode-ai-gateway/src/models.ts#L122)):
+Now uses the true `context_window` value for `maxInputTokens` ([models.ts#L122](../../packages/vscode-ai-gateway/src/models.ts#L122)):
 
 ```typescript
 // Current implementation:
@@ -223,7 +223,7 @@ maxInputTokens: model.context_window,
 maxOutputTokens: model.max_tokens,
 ```
 
-Preflight validation in the request path warns when approaching limits ([provider.ts#L264-L283](../../apps/vscode-ai-gateway/src/provider.ts#L264-L283)):
+Preflight validation in the request path warns when approaching limits ([provider.ts#L264-L283](../../packages/vscode-ai-gateway/src/provider.ts#L264-L283)):
 
 ```typescript
 const TOKEN_WARNING_THRESHOLD = 0.9; // 90% of limit
@@ -245,7 +245,7 @@ function validateTokenBudget(
 
 ### Phase 3: Model Type Filtering (✅ Implemented)
 
-Models are filtered by `type` field to only include language models in chat ([models.ts#L106-L107](../../apps/vscode-ai-gateway/src/models.ts#L106-L107)):
+Models are filtered by `type` field to only include language models in chat ([models.ts#L106-L107](../../packages/vscode-ai-gateway/src/models.ts#L106-L107)):
 
 ```typescript
 interface VercelModel {
@@ -262,7 +262,7 @@ function filterChatModels(models: VercelModel[]): VercelModel[] {
 
 ### Phase 4: Enhanced Capability Detection (✅ Implemented)
 
-Capability detection now includes all supported tags ([models.ts#L117-L134](../../apps/vscode-ai-gateway/src/models.ts#L117-L134)):
+Capability detection now includes all supported tags ([models.ts#L117-L134](../../packages/vscode-ai-gateway/src/models.ts#L117-L134)):
 
 ```typescript
 interface ModelCapabilities {
@@ -288,7 +288,7 @@ function detectCapabilities(model: VercelModel): ModelCapabilities {
 
 ### Phase 5: Optional Per-Model Enrichment (✅ Implemented)
 
-Per-model enrichment is implemented via `ModelEnricher` class ([models/enrichment.ts](../../apps/vscode-ai-gateway/src/models/enrichment.ts)) with:
+Per-model enrichment is implemented via `ModelEnricher` class ([models/enrichment.ts](../../packages/vscode-ai-gateway/src/models/enrichment.ts)) with:
 
 - In-memory + persistent caching via `globalState`
 - Configurable TTL (5 minutes default)

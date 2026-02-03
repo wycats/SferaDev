@@ -8,7 +8,7 @@ This document maps all the moving parts involved in token counting for the VS Co
 
 ### 1. OUR EXTENSION (vscode-ai-gateway) - OPEN SOURCE
 
-**Location:** `apps/vscode-ai-gateway/`
+**Location:** `packages/vscode-ai-gateway/`
 
 **Key Files:**
 
@@ -427,4 +427,4 @@ Copilot renderPrompt()
 
 - VS Code Source: `.reference/vscode/`
 - Copilot Chat Source: `.reference/vscode-copilot-chat/`
-- Our Extension: `apps/vscode-ai-gateway/`
+- Our Extension: `packages/vscode-ai-gateway/`

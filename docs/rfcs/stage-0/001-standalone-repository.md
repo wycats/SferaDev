@@ -13,7 +13,7 @@ Extract the VS Code AI Gateway extension from the SferaDev monorepo into a stand
 
 ## Motivation
 
-The current extension lives in `apps/vscode-ai-gateway/` within the SferaDev monorepo. While this structure works for development, an official Vercel extension requires:
+The current extension lives in `packages/vscode-ai-gateway/` within the SferaDev monorepo. While this structure works for development, an official Vercel extension requires:
 
 1. **Clear ownership**: A dedicated repository under the `vercel` organization signals official support
 2. **Simplified contributions**: External contributors can focus on extension-specific code

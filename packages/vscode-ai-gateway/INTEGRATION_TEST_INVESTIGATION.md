@@ -40,7 +40,7 @@ Run automated integration tests that can exercise the VS Code Language Model API
 
 ### F5: Extension path was wrong (FIXED)
 
-- Bug: `extensionDevelopmentPath` resolved to `apps/` instead of `apps/vscode-ai-gateway/`
+- Bug: `extensionDevelopmentPath` resolved to `apps/` instead of `packages/vscode-ai-gateway/`
 - Fix: Changed from `path.resolve(__dirname, '../../..')` to `path.resolve(__dirname, '../..')`
 - **Verified**: 2026-02-01
 
@@ -432,7 +432,7 @@ The `chatId` we generate (`chat-xxx-timestamp`) is our own construct. VS Code pr
 
 ```bash
 # Run tests
-cd apps/vscode-ai-gateway
+cd packages/vscode-ai-gateway
 pnpm build && pnpm exec tsc -p tsconfig.test.json
 VSCODE_TEST_WRAPPER=true /run/host/usr/bin/xvfb-run --auto-servernum \
   --server-args="-screen 0 1280x1024x24 -nolisten tcp" -- \

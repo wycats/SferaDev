@@ -412,7 +412,7 @@ Based on investigation of the current codebase:
 
 ### Reasoning/Thinking Content
 
-**Current location:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts)
+**Current location:** [stream-adapter.ts](../../packages/vscode-ai-gateway/src/provider/stream-adapter.ts)
 
 Reasoning events from OpenResponses are currently handled but emit `LanguageModelTextPart`:
 
@@ -436,7 +436,7 @@ System prompts from config are mapped to OpenResponses `developer` role. Per Ope
 
 ### Capability Exposure
 
-**Current location:** Model transformation in [models.ts](../../apps/vscode-ai-gateway/src/models.ts)
+**Current location:** Model transformation in [models.ts](../../packages/vscode-ai-gateway/src/models.ts)
 
 Capabilities are inferred from model tags (tool calling, image support) and enrichment data. This aligns well with the proposed `languageModelCapabilities` API shape.
 

@@ -189,7 +189,7 @@ This ensures consistent handling of file and data chunks across all VS Code inte
 
 ## Implementation Notes
 
-Implemented in apps/vscode-ai-gateway/src/provider.ts, including the hybrid token estimation flow, message conversion utilities, and MIME/data part handling that feed the VS Code language model provider.
+Implemented in packages/vscode-ai-gateway/src/provider.ts, including the hybrid token estimation flow, message conversion utilities, and MIME/data part handling that feed the VS Code language model provider.
 
 ## Drawbacks
 

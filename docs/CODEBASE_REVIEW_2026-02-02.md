@@ -31,7 +31,7 @@ This review identified **29 issues** across the vscode-ai-gateway extension code
 
 ### 1. Tool-call state keying allows overwrites
 
-**Location:** [provider/stream-adapter.ts](apps/vscode-ai-gateway/src/provider/stream-adapter.ts)  
+**Location:** [provider/stream-adapter.ts](packages/vscode-ai-gateway/src/provider/stream-adapter.ts)  
 **Severity:** 🔴 Critical  
 **Status:** ✅ FIXED
 
@@ -66,7 +66,7 @@ The gateway can reuse `toolCallId` values across different responses. When this 
 
 ### 2. Session ID mismatch between RequestLogger and SessionManager
 
-**Location:** [logger/request-logger.ts](apps/vscode-ai-gateway/src/logger/request-logger.ts), [logger/session-manager.ts](apps/vscode-ai-gateway/src/logger/session-manager.ts)  
+**Location:** [logger/request-logger.ts](packages/vscode-ai-gateway/src/logger/request-logger.ts), [logger/session-manager.ts](packages/vscode-ai-gateway/src/logger/session-manager.ts)  
 **Severity:** 🔴 Critical  
 **Status:** ✅ FIXED
 
@@ -121,7 +121,7 @@ this.sessionManager =
 
 ### 3. Sensitive data logged without redaction
 
-**Location:** [logger/request-logger.ts](apps/vscode-ai-gateway/src/logger/request-logger.ts), [provider/forensic-capture.ts](apps/vscode-ai-gateway/src/provider/forensic-capture.ts)  
+**Location:** [logger/request-logger.ts](packages/vscode-ai-gateway/src/logger/request-logger.ts), [provider/forensic-capture.ts](packages/vscode-ai-gateway/src/provider/forensic-capture.ts)  
 **Severity:** 🔴 Critical  
 **Status:** ⚠️ Open
 
@@ -174,7 +174,7 @@ function redactSensitiveData(data: unknown): unknown {
 
 ### 4. Subagent detection bypass causes 104% token display
 
-**Location:** [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts)  
+**Location:** [status-bar.ts](packages/vscode-ai-gateway/src/status-bar.ts)  
 **Severity:** 🔴 Critical  
 **Status:** ✅ FIXED
 
@@ -230,7 +230,7 @@ This caused:
 
 ### 5. System prompt duplication
 
-**Location:** [provider/system-prompt.ts](apps/vscode-ai-gateway/src/provider/system-prompt.ts)  
+**Location:** [provider/system-prompt.ts](packages/vscode-ai-gateway/src/provider/system-prompt.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -248,7 +248,7 @@ Return only one form of system prompt, not both.
 
 ### 6. Response-level errors not surfaced
 
-**Location:** [provider.ts](apps/vscode-ai-gateway/src/provider.ts), [provider/openresponses-chat.ts](apps/vscode-ai-gateway/src/provider/openresponses-chat.ts)  
+**Location:** [provider.ts](packages/vscode-ai-gateway/src/provider.ts), [provider/openresponses-chat.ts](packages/vscode-ai-gateway/src/provider/openresponses-chat.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -274,7 +274,7 @@ Check `error` after `executeChat` returns and handle appropriately.
 
 ### 7. Message hash excludes name field
 
-**Location:** [tokens/cache.ts](apps/vscode-ai-gateway/src/tokens/cache.ts)  
+**Location:** [tokens/cache.ts](packages/vscode-ai-gateway/src/tokens/cache.ts)  
 **Severity:** 🟠 Important  
 **Status:** ✅ FIXED
 
@@ -306,7 +306,7 @@ const content = {
 
 ### 8. Tool hash ignores content
 
-**Location:** [tokens/sequence-tracker.ts](apps/vscode-ai-gateway/src/tokens/sequence-tracker.ts)  
+**Location:** [tokens/sequence-tracker.ts](packages/vscode-ai-gateway/src/tokens/sequence-tracker.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -319,7 +319,7 @@ Include tool input/output content in the hash.
 
 ### 9. Unbounded TokenCache
 
-**Location:** [tokens/cache.ts](apps/vscode-ai-gateway/src/tokens/cache.ts)  
+**Location:** [tokens/cache.ts](packages/vscode-ai-gateway/src/tokens/cache.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -340,7 +340,7 @@ Use an LRU cache with a maximum size (e.g., 10,000 entries).
 
 ### 10. Unbounded ConversationState.knownStates
 
-**Location:** [tokens/conversation-state.ts](apps/vscode-ai-gateway/src/tokens/conversation-state.ts)  
+**Location:** [tokens/conversation-state.ts](packages/vscode-ai-gateway/src/tokens/conversation-state.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -359,7 +359,7 @@ Add TTL-based eviction or maximum entry count.
 
 ### 11. Claim matching order prioritizes name over type-hash
 
-**Location:** [identity/claim-registry.ts](apps/vscode-ai-gateway/src/identity/claim-registry.ts)  
+**Location:** [identity/claim-registry.ts](packages/vscode-ai-gateway/src/identity/claim-registry.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -384,7 +384,7 @@ Match by `(name, agentTypeHash)` tuple first, then fall back to name-only or typ
 
 ### 12. 64-bit hash truncation reduces collision resistance
 
-**Location:** [identity/hash-utils.ts](apps/vscode-ai-gateway/src/identity/hash-utils.ts)  
+**Location:** [identity/hash-utils.ts](packages/vscode-ai-gateway/src/identity/hash-utils.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -405,7 +405,7 @@ Use at least 128 bits (32 hex chars) for identity hashes.
 
 ### 13. contextWindowSize overwritten when undefined
 
-**Location:** [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts)  
+**Location:** [status-bar.ts](packages/vscode-ai-gateway/src/status-bar.ts)  
 **Severity:** 🟠 Important  
 **Status:** ✅ FIXED
 
@@ -423,7 +423,7 @@ agent.maxInputTokens = usage.maxInputTokens ?? agent.maxInputTokens;
 
 ### 14. clearAgents doesn't clear claims
 
-**Location:** [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts)  
+**Location:** [status-bar.ts](packages/vscode-ai-gateway/src/status-bar.ts)  
 **Severity:** 🟠 Important  
 **Status:** ✅ FIXED
 
@@ -450,7 +450,7 @@ Stale claims could influence future subagent matching and prevent parent removal
 
 ### 15. Inconsistent warning threshold basis
 
-**Location:** [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts)  
+**Location:** [status-bar.ts](packages/vscode-ai-gateway/src/status-bar.ts)  
 **Severity:** 🟠 Important
 
 **Problem:**
@@ -469,7 +469,7 @@ Use a consistent metric for warning thresholds.
 
 ### 16. OIDC cancel surfaced as error
 
-**Location:** [vercel-auth.ts](apps/vscode-ai-gateway/src/vercel-auth.ts)  
+**Location:** [vercel-auth.ts](packages/vscode-ai-gateway/src/vercel-auth.ts)  
 **Severity:** 🟡 Minor
 
 User cancellation during OIDC flow is surfaced as an error toast instead of a graceful cancel.
@@ -478,7 +478,7 @@ User cancellation during OIDC flow is surfaced as an error toast instead of a gr
 
 ### 17. Dead config watcher
 
-**Location:** [config.ts](apps/vscode-ai-gateway/src/config.ts)  
+**Location:** [config.ts](packages/vscode-ai-gateway/src/config.ts)  
 **Severity:** 🟡 Minor
 
 Status bar config watcher is effectively dead (hardcoded to `true`).
@@ -487,7 +487,7 @@ Status bar config watcher is effectively dead (hardcoded to `true`).
 
 ### 18. Misleading "Built" timestamp
 
-**Location:** [extension.ts](apps/vscode-ai-gateway/src/extension.ts)  
+**Location:** [extension.ts](packages/vscode-ai-gateway/src/extension.ts)  
 **Severity:** 🟡 Minor
 
 ```typescript
@@ -500,7 +500,7 @@ This generates the timestamp at activation time, not build time.
 
 ### 19. Missing URL validation
 
-**Location:** [config.ts](apps/vscode-ai-gateway/src/config.ts)  
+**Location:** [config.ts](packages/vscode-ai-gateway/src/config.ts)  
 **Severity:** 🟡 Minor
 
 `openResponsesBaseUrl` lacks validation for malformed URLs.
@@ -509,7 +509,7 @@ This generates the timestamp at activation time, not build time.
 
 ### 20. Broken markdown in deltas
 
-**Location:** [provider/stream-adapter.ts](apps/vscode-ai-gateway/src/provider/stream-adapter.ts)  
+**Location:** [provider/stream-adapter.ts](packages/vscode-ai-gateway/src/provider/stream-adapter.ts)  
 **Severity:** 🟡 Minor
 
 Refusal/reasoning deltas emitted as italicized chunks can produce broken markdown when split mid-word.
@@ -518,7 +518,7 @@ Refusal/reasoning deltas emitted as italicized chunks can produce broken markdow
 
 ### 21. Tool result counting incomplete
 
-**Location:** [tokens/counter.ts](apps/vscode-ai-gateway/src/tokens/counter.ts)  
+**Location:** [tokens/counter.ts](packages/vscode-ai-gateway/src/tokens/counter.ts)  
 **Severity:** 🟡 Minor
 
 ```typescript
@@ -537,7 +537,7 @@ Ignores string or undefined results.
 
 ### 22. NaN estimates possible
 
-**Location:** [tokens/estimator.ts](apps/vscode-ai-gateway/src/tokens/estimator.ts)  
+**Location:** [tokens/estimator.ts](packages/vscode-ai-gateway/src/tokens/estimator.ts)  
 **Severity:** 🟡 Minor
 
 `contextWindowSize` cast without validation can produce NaN in calculations.
@@ -546,7 +546,7 @@ Ignores string or undefined results.
 
 ### 23. TTL expiry doesn't clear stored entry
 
-**Location:** [persistence/store.ts](apps/vscode-ai-gateway/src/persistence/store.ts)  
+**Location:** [persistence/store.ts](packages/vscode-ai-gateway/src/persistence/store.ts)  
 **Severity:** 🟡 Minor
 
 When TTL expires, the store returns defaults without clearing the stored entry.
@@ -555,7 +555,7 @@ When TTL expires, the store returns defaults without clearing the stored entry.
 
 ### 24. Timer disposal not guaranteed
 
-**Location:** [identity/claim-registry.ts](apps/vscode-ai-gateway/src/identity/claim-registry.ts)  
+**Location:** [identity/claim-registry.ts](packages/vscode-ai-gateway/src/identity/claim-registry.ts)  
 **Severity:** 🟡 Minor
 
 Cleanup interval relies on callers to invoke `dispose()`. If not called, interval leaks.
@@ -564,7 +564,7 @@ Cleanup interval relies on callers to invoke `dispose()`. If not called, interva
 
 ### 25. No in-flight dedupe for model enrichment
 
-**Location:** [models/enrichment.ts](apps/vscode-ai-gateway/src/models/enrichment.ts)  
+**Location:** [models/enrichment.ts](packages/vscode-ai-gateway/src/models/enrichment.ts)  
 **Severity:** 🟡 Minor
 
 Concurrent calls for the same model trigger duplicate fetches.
@@ -573,7 +573,7 @@ Concurrent calls for the same model trigger duplicate fetches.
 
 ### 26. Sync file I/O in IndexWriter
 
-**Location:** [logger/index-writer.ts](apps/vscode-ai-gateway/src/logger/index-writer.ts)  
+**Location:** [logger/index-writer.ts](packages/vscode-ai-gateway/src/logger/index-writer.ts)  
 **Severity:** 🟡 Minor
 
 Uses synchronous file operations that can block the extension host under load.
@@ -582,7 +582,7 @@ Uses synchronous file operations that can block the extension host under load.
 
 ### 27. Log integrity risk
 
-**Location:** [logger/index-writer.ts](apps/vscode-ai-gateway/src/logger/index-writer.ts)  
+**Location:** [logger/index-writer.ts](packages/vscode-ai-gateway/src/logger/index-writer.ts)  
 **Severity:** 🟡 Minor
 
 Files written directly without temp+rename pattern. Crash during write can corrupt logs.
@@ -591,7 +591,7 @@ Files written directly without temp+rename pattern. Crash during write can corru
 
 ### 28. No session end marker
 
-**Location:** [logger/session-manager.ts](apps/vscode-ai-gateway/src/logger/session-manager.ts)  
+**Location:** [logger/session-manager.ts](packages/vscode-ai-gateway/src/logger/session-manager.ts)  
 **Severity:** 🟡 Minor
 
 No explicit session end marker makes lifecycle boundaries ambiguous.
@@ -600,7 +600,7 @@ No explicit session end marker makes lifecycle boundaries ambiguous.
 
 ### 29. Unbounded logs
 
-**Location:** [logger/\*.ts](apps/vscode-ai-gateway/src/logger/)  
+**Location:** [logger/\*.ts](packages/vscode-ai-gateway/src/logger/)  
 **Severity:** 🟡 Minor
 
 Only `output.log` is rotated; other log files (`events.jsonl`, `errors.jsonl`) grow indefinitely.

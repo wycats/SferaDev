@@ -23,8 +23,8 @@ RFC 008 Phase 5 implemented the `ModelEnricher` class that fetches per-model met
 
 **Implementation status:**
 
-- ✅ Enrichment data is fetched via `ModelEnricher` ([models/enrichment.ts](../../apps/vscode-ai-gateway/src/models/enrichment.ts))
-- ✅ Enrichment is applied to model list in `applyEnrichmentToModels()` ([provider.ts#L150-L181](../../apps/vscode-ai-gateway/src/provider.ts#L150-L181))
+- ✅ Enrichment data is fetched via `ModelEnricher` ([models/enrichment.ts](../../packages/vscode-ai-gateway/src/models/enrichment.ts))
+- ✅ Enrichment is applied to model list in `applyEnrichmentToModels()` ([provider.ts#L150-L181](../../packages/vscode-ai-gateway/src/provider.ts#L150-L181))
 - ✅ `onDidChangeLanguageModelChatInformation` fires after enrichment to refresh VS Code
 - ✅ Configuration toggle exists (`models.enrichmentEnabled`)
 
@@ -107,7 +107,7 @@ The RFC proposes two viable ways to apply enrichment to the model list:
 
 ### Configuration (✅ Implemented)
 
-Setting exists to enable/disable enrichment ([config.ts](../../apps/vscode-ai-gateway/src/config.ts), [package.json](../../apps/vscode-ai-gateway/package.json)):
+Setting exists to enable/disable enrichment ([config.ts](../../packages/vscode-ai-gateway/src/config.ts), [package.json](../../packages/vscode-ai-gateway/package.json)):
 
 ```json
 {
@@ -135,7 +135,7 @@ get modelsEnrichmentEnabled(): boolean {
 
 ### Token Limit Handling (✅ Implemented)
 
-The implementation maps `/v1/models` `context_window` directly to `maxInputTokens` in `ModelsClient.transformToVSCodeModels()`. Enrichment `context_length` overrides are applied in `applyEnrichmentToModels()` ([provider.ts#L150-L181](../../apps/vscode-ai-gateway/src/provider.ts#L150-L181)).
+The implementation maps `/v1/models` `context_window` directly to `maxInputTokens` in `ModelsClient.transformToVSCodeModels()`. Enrichment `context_length` overrides are applied in `applyEnrichmentToModels()` ([provider.ts#L150-L181](../../packages/vscode-ai-gateway/src/provider.ts#L150-L181)).
 
 ### Image Capability Detection
 
@@ -213,7 +213,7 @@ interface LanguageModelChatProvider {
 
 Use this event for the event-based refresh approach: after enrichment completes, fire the event so VS Code re-queries `provideLanguageModelChatInformation()` and updates the picker.
 
-**Implementation Location**: `apps/vscode-ai-gateway/src/provider.ts`
+**Implementation Location**: `packages/vscode-ai-gateway/src/provider.ts`
 
 **Key Methods**:
 
@@ -226,29 +226,29 @@ Use this event for the event-based refresh approach: after enrichment completes,
 ### Phase 1: Core Refinement Logic
 
 - [ ] **Update `provideLanguageModelChatInformation()`** to support enrichment
-  - File: `apps/vscode-ai-gateway/src/provider.ts`
+  - File: `packages/vscode-ai-gateway/src/provider.ts`
   - Location: Line ~155
   - Change: Either apply inline enrichment or return base list and rely on event refresh
 
 - [ ] **Inline enrichment path (Approach A)**
-  - File: `apps/vscode-ai-gateway/src/models.ts`
+  - File: `packages/vscode-ai-gateway/src/models.ts`
   - Location: `ModelsClient.getModels()` / `transformToVSCodeModels()`
   - Logic: Apply enriched `context_length` (if different) and `input_modalities` → `capabilities.imageInput`
 
 - [ ] **Event-based refresh path (Approach B)**
-  - File: `apps/vscode-ai-gateway/src/provider.ts`
+  - File: `packages/vscode-ai-gateway/src/provider.ts`
   - Location: Enrichment completion point (see `enrichModelIfNeeded()` around line 228)
   - Logic: Fire `onDidChangeLanguageModelChatInformation` after enrichment completes
 
 ### Phase 2: Configuration
 
 - [ ] **Add `models.enrichmentEnabled` setting**
-  - File: `apps/vscode-ai-gateway/package.json`
+  - File: `packages/vscode-ai-gateway/package.json`
   - Section: `contributes.configuration.properties`
   - Default: `true`
 
 - [ ] **Add accessor to `ConfigService`**
-  - File: `apps/vscode-ai-gateway/src/config.ts`
+  - File: `packages/vscode-ai-gateway/src/config.ts`
   - Logic:
     ```typescript
     get modelsEnrichmentEnabled(): boolean {
@@ -259,24 +259,24 @@ Use this event for the event-based refresh approach: after enrichment completes,
 ### Phase 3: Error Handling & Edge Cases
 
 - [ ] **Wrap enrichment in try-catch**
-  - File: `apps/vscode-ai-gateway/src/provider.ts`
+  - File: `packages/vscode-ai-gateway/src/provider.ts`
   - Location: `provideLanguageModelChatInformation()`
   - Behavior: Log warning, continue with base info
 
 - [ ] **Validate enriched data schema**
-  - File: `apps/vscode-ai-gateway/src/models.ts` (Approach A) or `apps/vscode-ai-gateway/src/provider.ts` (Approach B)
+  - File: `packages/vscode-ai-gateway/src/models.ts` (Approach A) or `packages/vscode-ai-gateway/src/provider.ts` (Approach B)
   - Method: `transformToVSCodeModels()` or event refresh mapping
   - Checks: Numeric limits > 0, array types, field existence
 
 - [ ] **Handle missing/partial enrichment fields**
-  - File: `apps/vscode-ai-gateway/src/models.ts` (Approach A) or `apps/vscode-ai-gateway/src/provider.ts` (Approach B)
+  - File: `packages/vscode-ai-gateway/src/models.ts` (Approach A) or `packages/vscode-ai-gateway/src/provider.ts` (Approach B)
   - Method: `transformToVSCodeModels()` or event refresh mapping
   - Strategy: Apply only available refinements, don't fail if fields missing
 
 ### Phase 4: Testing
 
 - [ ] **Unit tests for enrichment-to-capability mapping**
-  - File: `apps/vscode-ai-gateway/src/models.test.ts` (or new file)
+  - File: `packages/vscode-ai-gateway/src/models.test.ts` (or new file)
   - Cases:
     - Apply context_length (only if different) to maxInputTokens
     - Apply image modality to `capabilities.imageInput` boolean
@@ -313,7 +313,7 @@ Use this event for the event-based refresh approach: after enrichment completes,
   - Provider event refresh: when and why `onDidChangeLanguageModelChatInformation` fires
 
 - [ ] **Update README with enrichment capabilities**
-  - File: `apps/vscode-ai-gateway/README.md`
+  - File: `packages/vscode-ai-gateway/README.md`
   - Section: Features
   - Content: Explain automatic capability refinement and config option
 
@@ -401,5 +401,5 @@ Enrich all models at extension activation.
 - [RFC 008: High-Fidelity Model Mapping](./008-high-fidelity-model-mapping.md)
 - [VS Code Language Model API](https://code.visualstudio.com/api/references/vscode-api#LanguageModelChatInformation)
 - [Vercel AI Gateway Models Endpoint](https://vercel.ai-gateway.com/docs/endpoints/models)
-- Implementation: [apps/vscode-ai-gateway/src/models/enrichment.ts](../../apps/vscode-ai-gateway/src/models/enrichment.ts)
-- Provider: [apps/vscode-ai-gateway/src/provider.ts](../../apps/vscode-ai-gateway/src/provider.ts)
+- Implementation: [packages/vscode-ai-gateway/src/models/enrichment.ts](../../packages/vscode-ai-gateway/src/models/enrichment.ts)
+- Provider: [packages/vscode-ai-gateway/src/provider.ts](../../packages/vscode-ai-gateway/src/provider.ts)

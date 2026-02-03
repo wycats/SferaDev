@@ -23,11 +23,11 @@ The codebase has multiple ad-hoc persistence patterns:
 
 **Source locations:**
 
-- Models: [src/models.ts](apps/vscode-ai-gateway/src/models.ts) — `MODELS_CACHE_KEY`, `PersistentModelsCache`
-- Enrichment: [src/models/enrichment.ts](apps/vscode-ai-gateway/src/models/enrichment.ts) — `ENRICHMENT_CACHE_KEY`
+- Models: [src/models.ts](packages/vscode-ai-gateway/src/models.ts) — `MODELS_CACHE_KEY`, `PersistentModelsCache`
+- Enrichment: [src/models/enrichment.ts](packages/vscode-ai-gateway/src/models/enrichment.ts) — `ENRICHMENT_CACHE_KEY`
 - ~~Calibration~~: **Removed** — RFC 029 simplified to delta-only estimation, no calibration persistence needed
-- Auth: [src/auth.ts](apps/vscode-ai-gateway/src/auth.ts) — session ID only; tokens use SecretStorage (out of scope)
-- LastModel: [src/provider.ts](apps/vscode-ai-gateway/src/provider.ts) — `LAST_SELECTED_MODEL_KEY`
+- Auth: [src/auth.ts](packages/vscode-ai-gateway/src/auth.ts) — session ID only; tokens use SecretStorage (out of scope)
+- LastModel: [src/provider.ts](packages/vscode-ai-gateway/src/provider.ts) — `LAST_SELECTED_MODEL_KEY`
 
 **Note on SecretStorage**: AuthProvider stores session ID in globalState but actual tokens/credentials in VS Code's `SecretStorage` API. SecretStorage is explicitly **out of scope** for this RFC as it has different security semantics.
 

@@ -76,7 +76,7 @@ Now we check **both** conditions with OR logic.
 
 ### Location
 
-[src/status-bar.ts#L380-L410](apps/vscode-ai-gateway/src/status-bar.ts#L380-L410)
+[src/status-bar.ts#L380-L410](packages/vscode-ai-gateway/src/status-bar.ts#L380-L410)
 
 ---
 
@@ -86,17 +86,17 @@ Now we check **both** conditions with OR logic.
 
 | File                                                                                              | Purpose                                                 |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| [src/status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts)                                     | Main agent tracking, subagent detection, claim matching |
-| [src/identity/claim-registry.ts](apps/vscode-ai-gateway/src/identity/claim-registry.ts)           | Temporal claim system for parent-child linking          |
-| [src/diagnostics/tree-diagnostics.ts](apps/vscode-ai-gateway/src/diagnostics/tree-diagnostics.ts) | **NEW**: Flight recorder for debugging                  |
-| [src/agent-tree.ts](apps/vscode-ai-gateway/src/agent-tree.ts)                                     | TreeView provider for VS Code sidebar                   |
+| [src/status-bar.ts](packages/vscode-ai-gateway/src/status-bar.ts)                                     | Main agent tracking, subagent detection, claim matching |
+| [src/identity/claim-registry.ts](packages/vscode-ai-gateway/src/identity/claim-registry.ts)           | Temporal claim system for parent-child linking          |
+| [src/diagnostics/tree-diagnostics.ts](packages/vscode-ai-gateway/src/diagnostics/tree-diagnostics.ts) | **NEW**: Flight recorder for debugging                  |
+| [src/agent-tree.ts](packages/vscode-ai-gateway/src/agent-tree.ts)                                     | TreeView provider for VS Code sidebar                   |
 
 ### Tests
 
 | File                                                                                                | Purpose                                            |
 | --------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| [src/identity/tree-invariants.test.ts](apps/vscode-ai-gateway/src/identity/tree-invariants.test.ts) | **NEW**: Property tests for tree composition rules |
-| [src/identity/claim-registry.test.ts](apps/vscode-ai-gateway/src/identity/claim-registry.test.ts)   | Claim registry unit tests (updated for 90s expiry) |
+| [src/identity/tree-invariants.test.ts](packages/vscode-ai-gateway/src/identity/tree-invariants.test.ts) | **NEW**: Property tests for tree composition rules |
+| [src/identity/claim-registry.test.ts](packages/vscode-ai-gateway/src/identity/claim-registry.test.ts)   | Claim registry unit tests (updated for 90s expiry) |
 
 ---
 
@@ -153,7 +153,7 @@ In the VS Code Output panel (Vercel AI Gateway):
 
 ```bash
 # Run all identity tests
-cd apps/vscode-ai-gateway && pnpm test -- --run src/identity/
+cd packages/vscode-ai-gateway && pnpm test -- --run src/identity/
 
 # Run specific test files
 pnpm test -- --run src/identity/tree-invariants.test.ts

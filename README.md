@@ -9,7 +9,7 @@ This extension enables VS Code users to access a wide range of AI models (GPT-4,
 ## Repository Structure
 
 ```
-├── apps/vscode-ai-gateway/     # The VS Code extension
+├── packages/vscode-ai-gateway/     # The VS Code extension
 ├── packages/openresponses-client/  # TypeScript client for OpenResponses API
 ├── configs/tsconfig/           # Shared TypeScript configuration
 └── docs/                       # Documentation, RFCs, and research
@@ -33,7 +33,7 @@ This extension enables VS Code users to access a wide range of AI models (GPT-4,
 pnpm install
 
 # Build the extension
-cd apps/vscode-ai-gateway
+cd packages/vscode-ai-gateway
 pnpm build
 
 # Package and install
@@ -47,13 +47,13 @@ code --install-extension *.vsix
 # Run tests
 pnpm test
 
-# Build in watch mode (from apps/vscode-ai-gateway)
+# Build in watch mode (from packages/vscode-ai-gateway)
 pnpm build --watch
 ```
 
 ## Documentation
 
-- [Extension README](apps/vscode-ai-gateway/README.md) - Extension-specific documentation
+- [Extension README](packages/vscode-ai-gateway/README.md) - Extension-specific documentation
 - [OpenResponses API](docs/OPENRESPONSES.md) - API integration details
 - [RFCs](docs/rfcs/) - Design decisions and proposals
 - [Research](docs/research/) - API research and type definitions

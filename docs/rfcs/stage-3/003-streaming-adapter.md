@@ -11,7 +11,7 @@ Extract the VS Code streaming adapter and chunk handling logic into a reusable p
 
 ## Motivation
 
-The existing extension embeds complex stream handling in `apps/vscode-ai-gateway/src/provider.ts`. This logic should be reusable across VS Code integrations while maintaining consistent behavior for tool calls, reasoning parts, and data chunk adaptation.
+The existing extension embeds complex stream handling in `packages/vscode-ai-gateway/src/provider.ts`. This logic should be reusable across VS Code integrations while maintaining consistent behavior for tool calls, reasoning parts, and data chunk adaptation.
 
 ## Detailed Design
 
@@ -165,7 +165,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
 ## Implementation Notes
 
-Implemented in apps/vscode-ai-gateway/src/provider.ts, where the streaming response handling maps AI SDK `fullStream` chunks to VS Code `LanguageModelResponsePart` instances and applies the updated chunk handling logic.
+Implemented in packages/vscode-ai-gateway/src/provider.ts, where the streaming response handling maps AI SDK `fullStream` chunks to VS Code `LanguageModelResponsePart` instances and applies the updated chunk handling logic.
 
 ## Drawbacks
 

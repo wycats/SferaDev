@@ -187,7 +187,7 @@ The server then exceeded max restart attempts (3) and became unavailable.
 ```toml
 # exosuit.toml - marks the root of the exo project
 [tasks]
-build = { cmd = "pnpm build", desc = "Build the extension", cwd = "apps/vscode-ai-gateway" }
+build = { cmd = "pnpm build", desc = "Build the extension", cwd = "packages/vscode-ai-gateway" }
 ```
 
 After creating this file, LM tools correctly identified the SferaDev project.

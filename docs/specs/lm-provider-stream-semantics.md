@@ -224,7 +224,7 @@ new LanguageModelTextPart(" [Source](https://...)")
 
 **Placement:** Annotations are emitted inline as they arrive, which may interrupt text flow. This is a tradeoff - buffering would lose the association with the surrounding text.
 
-**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleAnnotationAdded()`
+**Source:** [stream-adapter.ts](../../packages/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleAnnotationAdded()`
 
 ### 2.8 Refusals (OpenResponses)
 
@@ -240,7 +240,7 @@ new LanguageModelTextPart("*I cannot help with that request.*")
 
 **Rationale:** Italics provide visual distinction without requiring a custom part type. Users can immediately recognize that the model declined rather than responded.
 
-**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleRefusalDelta()`
+**Source:** [stream-adapter.ts](../../packages/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleRefusalDelta()`
 
 ### 2.7 Annotations and Citations (OpenResponses)
 
@@ -256,7 +256,7 @@ new LanguageModelTextPart(" [Source](https://...)")
 
 **Placement:** Annotations are emitted inline as they arrive, which may interrupt text flow. This is a tradeoff - buffering would lose the association with the surrounding text.
 
-**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleAnnotationAdded()`
+**Source:** [stream-adapter.ts](../../packages/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleAnnotationAdded()`
 
 ### 2.8 Refusals (OpenResponses)
 
@@ -272,7 +272,7 @@ new LanguageModelTextPart("*I cannot help with that request.*")
 
 **Rationale:** Italics provide visual distinction without requiring a custom part type. Users can immediately recognize that the model declined rather than responded.
 
-**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleRefusalDelta()`
+**Source:** [stream-adapter.ts](../../packages/vscode-ai-gateway/src/provider/stream-adapter.ts) - `handleRefusalDelta()`
 
 ---
 
@@ -352,7 +352,7 @@ When translating OpenResponses `function_call` items to VS Code `LanguageModelTo
 
 Implementations MUST deduplicate by `id` to avoid reporting the same tool call multiple times to VS Code.
 
-**Source:** [stream-adapter.ts](../../apps/vscode-ai-gateway/src/provider/stream-adapter.ts) - see `emittedToolCalls` Set and comments explaining the rationale.
+**Source:** [stream-adapter.ts](../../packages/vscode-ai-gateway/src/provider/stream-adapter.ts) - see `emittedToolCalls` Set and comments explaining the rationale.
 
 ### 3.6 Parallel Tool Calls
 

@@ -12,7 +12,7 @@ Enhance the VS Code AI Gateway extension's logging infrastructure to provide bet
 
 ### Current State
 
-The extension has a configurable `Logger` class in [logger.ts](../../apps/vscode-ai-gateway/src/logger.ts) with the following characteristics:
+The extension has a configurable `Logger` class in [logger.ts](../../packages/vscode-ai-gateway/src/logger.ts) with the following characteristics:
 
 **Strengths:**
 
@@ -26,13 +26,13 @@ The extension has a configurable `Logger` class in [logger.ts](../../apps/vscode
 1. **No Trace Level**: Debug is the most verbose level, but high-frequency operations (token estimation loops, individual tool calls) need an even more granular level to avoid flooding debug logs.
 
 2. **Scattered Console Usage**: Several files bypass the logger entirely:
-   - [provider.ts](../../apps/vscode-ai-gateway/src/provider.ts): `console.error` for error handling
-   - [auth.ts](../../apps/vscode-ai-gateway/src/auth.ts): `console.log` for authentication debugging
+   - [provider.ts](../../packages/vscode-ai-gateway/src/provider.ts): `console.error` for error handling
+   - [auth.ts](../../packages/vscode-ai-gateway/src/auth.ts): `console.log` for authentication debugging
    - These calls don't respect the configured log level
 
 3. **Silent Operations**: Critical operations have no logging at all:
-   - [models.ts](../../apps/vscode-ai-gateway/src/models.ts): No logs for API calls, response handling, or errors
-   - [enrichment.ts](../../apps/vscode-ai-gateway/src/models/enrichment.ts): No logs for cache hits/misses, enrichment timing
+   - [models.ts](../../packages/vscode-ai-gateway/src/models.ts): No logs for API calls, response handling, or errors
+   - [enrichment.ts](../../packages/vscode-ai-gateway/src/models/enrichment.ts): No logs for cache hits/misses, enrichment timing
 
 4. **No Structured Logging**: Logs are plain strings, making automated parsing and analysis difficult.
 

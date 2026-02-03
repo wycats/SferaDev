@@ -190,7 +190,7 @@ The `conversationHash` follows a two-phase lifecycle:
 
 ## Detailed Implementation Specification
 
-### File: `apps/vscode-ai-gateway/src/identity/hash-utils.ts` (NEW)
+### File: `packages/vscode-ai-gateway/src/identity/hash-utils.ts` (NEW)
 
 ```typescript
 import { createHash } from "node:crypto";
@@ -260,7 +260,7 @@ export function hashUserMessage(text: string): string {
 }
 ```
 
-### File: `apps/vscode-ai-gateway/src/identity/claim-registry.ts` (NEW)
+### File: `packages/vscode-ai-gateway/src/identity/claim-registry.ts` (NEW)
 
 ```typescript
 import { logger } from "../logger.js";
@@ -384,7 +384,7 @@ export class ClaimRegistry {
 }
 ```
 
-### File: `apps/vscode-ai-gateway/src/status-bar.ts` (MODIFY)
+### File: `packages/vscode-ai-gateway/src/status-bar.ts` (MODIFY)
 
 **Changes to `AgentEntry` interface:**
 
@@ -459,7 +459,7 @@ completeAgent(
 }
 ```
 
-### File: `apps/vscode-ai-gateway/src/provider/openresponses-chat.ts` (MODIFY)
+### File: `packages/vscode-ai-gateway/src/provider/openresponses-chat.ts` (MODIFY)
 
 **Add runSubagent detection in the streaming loop:**
 
@@ -485,7 +485,7 @@ if (part instanceof LanguageModelToolCallPart) {
 }
 ```
 
-### File: `apps/vscode-ai-gateway/src/agent-tree.ts` (MODIFY)
+### File: `packages/vscode-ai-gateway/src/agent-tree.ts` (MODIFY)
 
 **Update `getChildren` to use parent-child relationships:**
 
@@ -523,7 +523,7 @@ private hasChildren(agent: AgentEntry, allAgents: AgentEntry[]): boolean {
 
 ## Test Cases
 
-### Unit Tests: `apps/vscode-ai-gateway/src/identity/hash-utils.test.ts`
+### Unit Tests: `packages/vscode-ai-gateway/src/identity/hash-utils.test.ts`
 
 ```typescript
 import { describe, it, expect } from "vitest";
@@ -613,7 +613,7 @@ describe("hashUserMessage", () => {
 });
 ```
 
-### Unit Tests: `apps/vscode-ai-gateway/src/identity/claim-registry.test.ts`
+### Unit Tests: `packages/vscode-ai-gateway/src/identity/claim-registry.test.ts`
 
 ```typescript
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -678,7 +678,7 @@ describe("ClaimRegistry", () => {
 });
 ```
 
-### Integration Test Outline: `apps/vscode-ai-gateway/src/test/suite/conversation-identity.test.ts`
+### Integration Test Outline: `packages/vscode-ai-gateway/src/test/suite/conversation-identity.test.ts`
 
 ```typescript
 // Integration test outline - requires VS Code test harness

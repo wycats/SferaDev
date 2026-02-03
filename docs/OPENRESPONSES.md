@@ -25,7 +25,7 @@ This document provides quick access to OpenResponses documentation for agents wo
 | OpenAPI Specification       | [packages/openresponses-client/openapi.json](../packages/openresponses-client/openapi.json)                             |
 | Client Package README       | [packages/openresponses-client/README.md](../packages/openresponses-client/README.md)                                   |
 | Client AGENTS.md            | [packages/openresponses-client/AGENTS.md](../packages/openresponses-client/AGENTS.md)                                   |
-| VS Code Extension AGENTS.md | [apps/vscode-ai-gateway/AGENTS.md](../apps/vscode-ai-gateway/AGENTS.md)                                                 |
+| VS Code Extension AGENTS.md | [packages/vscode-ai-gateway/AGENTS.md](../packages/vscode-ai-gateway/AGENTS.md)                                                 |
 
 ### External Documentation
 
@@ -70,4 +70,4 @@ This document provides quick access to OpenResponses documentation for agents wo
 ## Packages Using OpenResponses
 
 - **openresponses-client** (`packages/openresponses-client/`) - TypeScript client for the API
-- **vscode-ai-gateway** (`apps/vscode-ai-gateway/`) - VS Code extension using the client
+- **vscode-ai-gateway** (`packages/vscode-ai-gateway/`) - VS Code extension using the client

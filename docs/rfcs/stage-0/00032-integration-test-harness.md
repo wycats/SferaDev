@@ -41,7 +41,7 @@ We need to empirically discover unique conversation identifiers for the VS Code 
 ### Test Infrastructure
 
 ```
-apps/vscode-ai-gateway/
+packages/vscode-ai-gateway/
 ├── src/
 │   └── test/
 │       ├── runTest.ts          # Test runner (launches VS Code)
@@ -249,7 +249,7 @@ For GitHub Actions (Linux), the wrapper script handles xvfb automatically:
 
 - name: Run integration tests
   run: pnpm test:integration
-  working-directory: apps/vscode-ai-gateway
+  working-directory: packages/vscode-ai-gateway
 ```
 
 The wrapper script (`scripts/test-integration.js`) detects xvfb-run and uses it automatically.

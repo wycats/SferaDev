@@ -11,7 +11,7 @@ Extract the stream chunk handling, token estimation, and VS Code adapter logic f
 
 ## Motivation
 
-The current `apps/vscode-ai-gateway/src/provider.ts` contains ~750 lines of sophisticated logic for:
+The current `packages/vscode-ai-gateway/src/provider.ts` contains ~750 lines of sophisticated logic for:
 
 1. **Stream chunk mapping**: Converting Vercel AI SDK's `fullStream` chunks to VS Code `LanguageModelResponsePart`
 2. **Token estimation**: Hybrid approach combining actual usage tracking with character-based estimation
@@ -526,7 +526,7 @@ function buildToolNameMap(
 ### Usage in Extension
 
 ```typescript
-// apps/vscode-ai-gateway/src/provider.ts
+// packages/vscode-ai-gateway/src/provider.ts
 import {
   VSCodeStreamAdapter,
   HybridTokenEstimator,
