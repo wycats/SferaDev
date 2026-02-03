@@ -2,11 +2,23 @@
 # Implementation Plan
 
 [phase]
-id = "01kgbg66ynthsrx3mqn2fzadxn"
-title = "Phase 3: Calibration Loop"
-rfcs = ["029"]
+id = "01kgjmc08g68fch8zrxd6p37bd"
+title = "Phase 0: Housekeeping"
+rfcs = []
 
 [plan]
+
+[[plan.goals]]
+id = "review-stream-handling"
+
+[[plan.goals]]
+id = "review-config"
+
+[[plan.goals]]
+id = "review-model-mapping"
+
+[[plan.goals]]
+id = "review-delta-estimation"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

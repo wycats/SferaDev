@@ -304,8 +304,8 @@ aliases = ["integration-tests"]
 
 [[epochs]]
 id = "01kgbg5kb1b3pn7m86wem0515t"
-title = "Hybrid Token Calibration (RFC 029)"
-status = "active"
+title = "Delta-Based Token Estimation (RFC 029)"
+status = "bankrupt"
 ulid = "01KGBG8XGSGZC1MNV4QBR6XCAV"
 slug = "01kgbg5kb1b3pn7m86wem0515t"
 aliases = ["01kgbg5kb1b3pn7m86wem0515t"]
@@ -364,7 +364,7 @@ aliases = ["01kgbg61xj3mgs7fjfj674t4cp"]
 [[epochs.phases]]
 id = "01kgbg66ynthsrx3mqn2fzadxn"
 title = "Phase 3: Calibration Loop"
-status = "active"
+status = "completed"
 rfcs = ["029"]
 ulid = "01KGBG8XGSMGS0RRVTC7JFHNE6"
 slug = "01kgbg66ynthsrx3mqn2fzadxn"
@@ -373,39 +373,182 @@ aliases = ["01kgbg66ynthsrx3mqn2fzadxn"]
 [[epochs.phases.goals]]
 id = "delete-calibration-manager"
 label = "Delete orphaned CalibrationManager code (RFC 029 removed calibration)"
-status = "withdrawn"
+status = "bankrupt"
+ulid = "01KGJMNKAHES1M0A9DV05DA9CH"
+slug = "delete-calibration-manager"
+aliases = ["delete-calibration-manager"]
 
 [[epochs.phases.goals]]
 id = "token-diagnostics"
 label = "Add TOKEN_ESTIMATED/TOKEN_ACTUAL events to TreeDiagnostics for AI self-review"
-status = "withdrawn"
+status = "bankrupt"
+ulid = "01KGJMNKAHQV0M01T38WCXSKJD"
+slug = "token-diagnostics"
+aliases = ["token-diagnostics"]
 
 [[epochs.phases.goals]]
 id = "narrative-tokens"
 label = "Extend narrative tool with --tokens flag for estimation accuracy analysis"
 status = "completed"
 completion_log = "All 7 tasks completed: AgentSnapshotEntry extended, --tokens flag added, token accuracy interfaces defined, extraction and formatting implemented, integrated into formatNarrative, documentation updated."
+ulid = "01KGJMNKAHX27W2G85ETTJ5T76"
+slug = "narrative-tokens"
+aliases = ["narrative-tokens"]
 
 [[epochs.phases.goals]]
 id = "cleanup-dead-code"
 label = "Delete orphaned TokenCache.cacheActual and CallSequenceTracker unused paths"
-status = "withdrawn"
+status = "bankrupt"
+ulid = "01KGJMNKAHPRPX5GW7HGBCN5TT"
+slug = "cleanup-dead-code"
+aliases = ["cleanup-dead-code"]
 
 [[epochs.phases.goals]]
 id = "safe-serialize"
 label = "Add safe serialization utilities to prevent JSON.stringify stack overflow"
 status = "completed"
 completion_log = "All 8 tasks completed: safe-stable-stringify added, serialize.ts utilities created, migrated tree-diagnostics, forensic-capture, counter.ts, extension.ts, and other JSONL writers. Build passes, 356 tests pass."
+ulid = "01KGJMNKAHYADH82643M80Q218"
+slug = "safe-serialize"
+aliases = ["safe-serialize"]
 
 [[epochs.phases]]
 id = "01kgbg6cpxvd67bq84rbcq3zzj"
 title = "Phase 4: Cleanup & Migration"
-status = "pending"
+status = "bankrupt"
 goals = []
 rfcs = ["029"]
 ulid = "01KGBG8XGSNQJ3ZY18DGNFQKG0"
 slug = "01kgbg6cpxvd67bq84rbcq3zzj"
 aliases = ["01kgbg6cpxvd67bq84rbcq3zzj"]
+
+[[epochs]]
+id = "01kgjmbq8658mgjyrzmn3nc39x"
+title = "Codebase Health"
+status = "active"
+ulid = "01KGJMNKAHZEF8QA3AFR98H4D0"
+slug = "01kgjmbq8658mgjyrzmn3nc39x"
+aliases = ["01kgjmbq8658mgjyrzmn3nc39x"]
+
+[[epochs.phases]]
+id = "01kgjmc08g68fch8zrxd6p37bd"
+title = "Phase 0: Housekeeping"
+status = "active"
+ulid = "01KGJMNKAH54GHDJ6J7WBRBZS7"
+slug = "01kgjmc08g68fch8zrxd6p37bd"
+aliases = ["01kgjmc08g68fch8zrxd6p37bd"]
+
+[[epochs.phases.goals]]
+id = "review-stream-handling"
+label = "Run epoch review for Stream Handling & Token Estimation"
+status = "pending"
+ulid = "01KGJMNKAHRP89NQ279W83T67E"
+slug = "review-stream-handling"
+aliases = ["review-stream-handling"]
+
+[[epochs.phases.goals]]
+id = "review-config"
+label = "Run epoch review for Configuration & Logging Expansion"
+status = "pending"
+ulid = "01KGJMNKAHHCA58RGF2YKPTM6C"
+slug = "review-config"
+aliases = ["review-config"]
+
+[[epochs.phases.goals]]
+id = "review-model-mapping"
+label = "Run epoch review for High-Fidelity Model Mapping"
+status = "pending"
+ulid = "01KGJMNKAH26X68574TGSYWMKB"
+slug = "review-model-mapping"
+aliases = ["review-model-mapping"]
+
+[[epochs.phases.goals]]
+id = "review-delta-estimation"
+label = "Run epoch review for Delta-Based Token Estimation"
+status = "pending"
+ulid = "01KGJMNKAH1R6G5KXXP777GDA0"
+slug = "review-delta-estimation"
+aliases = ["review-delta-estimation"]
+
+[[epochs.phases]]
+id = "01kgjmc973vv40jcwkh41k0cd9"
+title = "Phase 1: Critical Fixes (P0)"
+status = "pending"
+ulid = "01KGJMNKAH7BVJ0C831T13VKJ3"
+slug = "01kgjmc973vv40jcwkh41k0cd9"
+aliases = ["01kgjmc973vv40jcwkh41k0cd9"]
+
+[[epochs.phases.goals]]
+id = "fix-openresponses-exports"
+label = "Fix broken package exports in openresponses-client (./types, ./schemas)"
+status = "pending"
+ulid = "01KGJP2PYTF3Q8ZRED495ZK0XD"
+slug = "fix-openresponses-exports"
+aliases = ["fix-openresponses-exports"]
+
+[[epochs.phases]]
+id = "01kgjmcke2fq6rg6rkknaccsmj"
+title = "Phase 2: Correctness Fixes (P1)"
+status = "pending"
+ulid = "01KGJMNKAHG7RBBXY2KYG317AN"
+slug = "01kgjmcke2fq6rg6rkknaccsmj"
+aliases = ["01kgjmcke2fq6rg6rkknaccsmj"]
+
+[[epochs.phases.goals]]
+id = "fix-agent-lifecycle"
+label = "Ensure agent lifecycle completes on all terminal stream events"
+status = "pending"
+ulid = "01KGJP2PYTWSD4ZAR9CAB5W1WE"
+slug = "fix-agent-lifecycle"
+aliases = ["fix-agent-lifecycle"]
+
+[[epochs.phases.goals]]
+id = "fix-sensitive-logging"
+label = "Add opt-in and redaction for sensitive data logging"
+status = "pending"
+ulid = "01KGJP2PYT9WDQE9NXK9D0HCYP"
+slug = "fix-sensitive-logging"
+aliases = ["fix-sensitive-logging"]
+
+[[epochs.phases.goals]]
+id = "fix-memory-leaks"
+label = "Add bounded eviction for messageHashes and modelFamilyCache"
+status = "pending"
+ulid = "01KGJP2PYTRFCPF645JNNMQ67B"
+slug = "fix-memory-leaks"
+aliases = ["fix-memory-leaks"]
+
+[[epochs.phases.goals]]
+id = "fix-sse-parsing"
+label = "Harden SSE parsing for CRLF and multiline data payloads"
+status = "pending"
+ulid = "01KGJP2PYTKS1VDGTT10RF2T7E"
+slug = "fix-sse-parsing"
+aliases = ["fix-sse-parsing"]
+
+[[epochs.phases.goals]]
+id = "fix-stream-cancellation"
+label = "Add cancellation handling for streaming to prevent connection leaks"
+status = "pending"
+ulid = "01KGJP2PYTGX7J5KJJ7287F2T6"
+slug = "fix-stream-cancellation"
+aliases = ["fix-stream-cancellation"]
+
+[[epochs.phases]]
+id = "01kgjmcvf2f9w5bcaw6qaxx2x0"
+title = "Phase 3: Foundation Work"
+status = "pending"
+ulid = "01KGJMNKAH4QSRZYHGHYBZRJPZ"
+slug = "01kgjmcvf2f9w5bcaw6qaxx2x0"
+aliases = ["01kgjmcvf2f9w5bcaw6qaxx2x0"]
+
+[[epochs.phases.goals]]
+id = "fix-model-family-encoding"
+label = "Improve model-family encoding accuracy for non-OpenAI models"
+status = "pending"
+ulid = "01KGJP2PYTCV7JVQNFNBSNW1BG"
+slug = "fix-model-family-encoding"
+aliases = ["fix-model-family-encoding"]
 
 [[epochs]]
 id = "vercel-transition-epoch"
@@ -426,7 +569,7 @@ aliases = ["phase-branding"]
 [[epochs.phases.goals]]
 id = "publisher-change"
 label = "Change publisher from SferaDev to vercel"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP3SBB2T7SES5Q3K96S"
 slug = "publisher-change"
 aliases = ["publisher-change"]
@@ -434,7 +577,7 @@ aliases = ["publisher-change"]
 [[epochs.phases.goals]]
 id = "namespace-change"
 label = "Change vendor namespace from vercelAiGateway to vercel.ai"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP31F1F0M32BBJEM5H6"
 slug = "namespace-change"
 aliases = ["namespace-change"]
@@ -490,7 +633,7 @@ aliases = ["phase-migration"]
 [[epochs.phases.goals]]
 id = "settings-migration"
 label = "Implement settings migration script"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP35T05TXH078JQJTNS"
 slug = "settings-migration"
 aliases = ["settings-migration"]
