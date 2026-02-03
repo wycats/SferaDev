@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import { createAgentTreeView } from "./agent-tree";
 import { VercelAIAuthenticationProvider } from "./auth";
 import { ConfigService, INFERENCE_DEFAULTS } from "./config";
-import { EXTENSION_ID, VSCODE_EXTENSION_ID } from "./constants";
+import { EXTENSION_ID, VENDOR_ID, VSCODE_EXTENSION_ID } from "./constants";
 import { treeDiagnostics } from "./diagnostics/tree-diagnostics";
 import { initializeOutputChannel, logger } from "./logger";
 import { VercelAIChatModelProvider } from "./provider";
@@ -82,7 +82,7 @@ export function activate(context: vscode.ExtensionContext) {
   provider.setStatusBar(statusBar);
   context.subscriptions.push(provider);
   const providerDisposable = vscode.lm.registerLanguageModelChatProvider(
-    EXTENSION_ID,
+    VENDOR_ID,
     provider,
   );
   context.subscriptions.push(providerDisposable);

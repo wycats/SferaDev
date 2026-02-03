@@ -420,10 +420,7 @@ describe("VercelAIAuthenticationProvider", () => {
 
   describe("session data persistence", () => {
     it("should handle corrupted session data gracefully", async () => {
-      await mockContext.secrets.store(
-        "vercel.ai.sessions",
-        "invalid json{",
-      );
+      await mockContext.secrets.store("vercel.ai.sessions", "invalid json{");
 
       const sessions = await authProvider.getSessions();
 

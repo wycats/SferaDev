@@ -1,50 +1,50 @@
 {
-	"name": "openresponses-client",
-	"version": "0.1.0",
-	"description": "TypeScript client for the OpenResponses API with streaming support",
-	"type": "module",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/vercel-labs/vscode-ai-gateway"
-	},
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		},
-		"./types": {
-			"types": "./src/generated/types/index.d.ts"
-		},
-		"./schemas": {
-			"types": "./src/generated/schemas.ts",
-			"import": "./src/generated/schemas.ts"
-		}
-	},
-	"files": [
-		"dist",
-		"src/generated"
-	],
-	"scripts": {
-		"build": "tsc",
-		"dev": "tsc --watch",
-		"tsc": "tsc --noEmit",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"generate": "kubb"
-	},
-	"devDependencies": {
-		"@kubb/cli": "catalog:",
-		"@kubb/core": "catalog:",
-		"@kubb/plugin-oas": "catalog:",
-		"@kubb/plugin-ts": "catalog:",
-		"@kubb/plugin-zod": "catalog:",
-		"@vercel/tsconfig": "workspace:*",
-		"@types/node": "catalog:",
-		"zod": "catalog:",
-		"typescript": "catalog:",
-		"vitest": "catalog:"
-	}
+  "name": "openresponses-client",
+  "version": "0.1.0",
+  "description": "TypeScript client for the OpenResponses API with streaming support",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vercel-labs/vscode-ai-gateway"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./src/generated/types/index.d.ts"
+    },
+    "./schemas": {
+      "types": "./src/generated/schemas.ts",
+      "import": "./src/generated/schemas.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src/generated"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "tsc": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate": "kubb"
+  },
+  "devDependencies": {
+    "@kubb/cli": "catalog:",
+    "@kubb/core": "catalog:",
+    "@kubb/plugin-oas": "catalog:",
+    "@kubb/plugin-ts": "catalog:",
+    "@kubb/plugin-zod": "catalog:",
+    "@vercel/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "zod": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
 }

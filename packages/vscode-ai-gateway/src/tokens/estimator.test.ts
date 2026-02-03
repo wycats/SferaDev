@@ -31,10 +31,7 @@ vi.mock("vscode", () => ({
   },
 }));
 
-import {
-  ESTIMATION_MODES,
-  TokenEstimator,
-} from "./estimator";
+import { ESTIMATION_MODES, TokenEstimator } from "./estimator";
 
 describe("TokenEstimator", () => {
   beforeEach(() => {

@@ -1,4 +1,5 @@
 export const EXTENSION_ID = "vercel.ai";
+export const VENDOR_ID = "vercel";
 export const VSCODE_EXTENSION_ID = "vercel.vscode-ai-gateway";
 export const DEFAULT_BASE_URL = "https://ai-gateway.vercel.sh";
 export const MODELS_ENDPOINT = "/v1/models";
