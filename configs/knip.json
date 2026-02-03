@@ -1,24 +1,24 @@
 {
-	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"workspaces": {
-		".": {
-			"entry": ["eslint.config.js"],
-			"ignore": [".reference/**"]
-		},
-		"apps/vscode-ai-gateway": {
-			"entry": ["src/extension.ts", "scripts/*.ts"],
-			"project": ["src/**/*.ts"],
-			"ignoreDependencies": ["@types/json-schema"]
-		},
-		"packages/openresponses-client": {
-			"entry": ["src/index.ts"],
-			"project": ["src/**/*.ts"],
-			"includeEntryExports": false
-		}
-	},
-	"ignoreExportsUsedInFile": true,
-	"rules": {
-		"duplicates": "off",
-		"optionalPeerDependencies": "off"
-	}
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["eslint.config.js"],
+      "ignore": [".reference/**"]
+    },
+    "packages/vscode-ai-gateway": {
+      "entry": ["src/extension.ts", "scripts/*.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@types/json-schema"]
+    },
+    "packages/openresponses-client": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+      "includeEntryExports": false
+    }
+  },
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "duplicates": "off",
+    "optionalPeerDependencies": "off"
+  }
 }

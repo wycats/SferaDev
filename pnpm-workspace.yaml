@@ -1,5 +1,5 @@
 packages:
-  - apps/vscode-ai-gateway
+  - packages/vscode-ai-gateway
   - packages/openresponses-client
   - configs/tsconfig
 

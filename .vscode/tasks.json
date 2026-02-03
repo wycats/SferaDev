@@ -4,7 +4,7 @@
 		{
 			"label": "Build and Install Extension",
 			"type": "shell",
-			"command": "cd apps/vscode-ai-gateway && pnpm package && code --install-extension *.vsix --force && rm -f *.vsix",
+			"command": "cd packages/vscode-ai-gateway && pnpm package && code --install-extension *.vsix --force && rm -f *.vsix",
 			"group": {
 				"kind": "build",
 				"isDefault": true
@@ -18,14 +18,14 @@
 		{
 			"label": "Build Extension (no install)",
 			"type": "shell",
-			"command": "cd apps/vscode-ai-gateway && pnpm build",
+			"command": "cd packages/vscode-ai-gateway && pnpm build",
 			"group": "build",
 			"problemMatcher": []
 		},
 		{
 			"label": "Test Extension",
 			"type": "shell",
-			"command": "cd apps/vscode-ai-gateway && pnpm test",
+			"command": "cd packages/vscode-ai-gateway && pnpm test",
 			"group": "test",
 			"problemMatcher": []
 		}

@@ -3,14 +3,14 @@
 # the extension from walking up to parent directories.
 
 [tasks]
-build = { cmd = "pnpm build", desc = "Build the extension", cwd = "apps/vscode-ai-gateway" }
-test = { cmd = "pnpm test", desc = "Run tests", cwd = "apps/vscode-ai-gateway" }
+build = { cmd = "pnpm build", desc = "Build the extension", cwd = "packages/vscode-ai-gateway" }
+test = { cmd = "pnpm test", desc = "Run tests", cwd = "packages/vscode-ai-gateway" }
 lint = { cmd = "pnpm lint", desc = "Run linter", cwd = "root" }
-typecheck = { cmd = "pnpm tsc", desc = "Run TypeScript type checker", cwd = "apps/vscode-ai-gateway" }
-check = { cmd = "pnpm tsc && pnpm lint && pnpm test", desc = "Run all checks (typecheck, lint, test)", cwd = "apps/vscode-ai-gateway" }
+typecheck = { cmd = "pnpm tsc", desc = "Run TypeScript type checker", cwd = "packages/vscode-ai-gateway" }
+check = { cmd = "pnpm tsc && pnpm lint && pnpm test", desc = "Run all checks (typecheck, lint, test)", cwd = "packages/vscode-ai-gateway" }
 
 [tdd]
 [[tdd.runners]]
-glob = "apps/vscode-ai-gateway/**/*.ts"
+glob = "packages/vscode-ai-gateway/**/*.ts"
 command = "pnpm exec vitest run {relative_file}"
-cwd = "apps/vscode-ai-gateway"
+cwd = "packages/vscode-ai-gateway"

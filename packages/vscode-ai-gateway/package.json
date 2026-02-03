@@ -28,9 +28,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/SferaDev/SferaDev",
-    "directory": "apps/vscode-ai-gateway"
+    "directory": "packages/vscode-ai-gateway"
   },
-  "homepage": "https://github.com/SferaDev/SferaDev/tree/main/apps/vscode-ai-gateway#readme",
+  "homepage": "https://github.com/SferaDev/SferaDev/tree/main/packages/vscode-ai-gateway#readme",
   "bugs": {
     "url": "https://github.com/SferaDev/SferaDev/issues"
   },
