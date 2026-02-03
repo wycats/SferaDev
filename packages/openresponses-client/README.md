@@ -1,5 +1,7 @@
 # OpenResponses Client
 
+> **Internal package** — This is a workspace-internal client for the VS Code AI Gateway extension. It is not published to npm.
+
 A TypeScript client library for the [OpenResponses API](https://www.openresponses.org/).
 
 ## ⚠️ IMPORTANT: API Format
@@ -18,10 +20,12 @@ This package implements the **OpenResponses wire protocol**, which is:
 - **[OpenAPI Schema](./openapi.json)** - Machine-readable API specification
 - **[Official Reference](https://www.openresponses.org/reference)** - Canonical API reference
 
-## Installation
+## Usage
 
-```bash
-pnpm add openresponses-client
+This package is used internally by `@vercel/vscode-ai-gateway`. Import from the workspace:
+
+```typescript
+import { createClient } from "openresponses-client";
 ```
 
 ## Quick Start
