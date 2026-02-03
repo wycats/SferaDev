@@ -8,6 +8,7 @@ import { PersistenceManagerImpl } from "./manager.js";
 
 export * from "./types.js";
 export * from "./stores.js";
+export { migrateStorageKeys } from "./migration.js";
 
 /**
  * Create a persistence manager using the VS Code extension context.

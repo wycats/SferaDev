@@ -9,6 +9,7 @@ import { ConfigService, INFERENCE_DEFAULTS } from "./config";
 import { EXTENSION_ID, VENDOR_ID, VSCODE_EXTENSION_ID } from "./constants";
 import { treeDiagnostics } from "./diagnostics/tree-diagnostics";
 import { initializeOutputChannel, logger } from "./logger";
+import { migrateStorageKeys } from "./persistence/migration.js";
 import { VercelAIChatModelProvider } from "./provider";
 import { TokenStatusBar } from "./status-bar";
 import { tryStringify } from "./utils/serialize.js";
@@ -18,7 +19,7 @@ console.log("[DIAG] extension.ts: imports complete");
 // Build timestamp for reload detection - generated at build time
 const BUILD_TIMESTAMP = new Date().toISOString();
 // Build signature - change this when making significant changes to verify deployment
-const BUILD_SIGNATURE = "disguised-system-prompt-fix";
+const BUILD_SIGNATURE = "storage-key-migration";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("[DIAG] extension.ts: activate() called");
@@ -40,6 +41,10 @@ export function activate(context: vscode.ExtensionContext) {
   logger.info(
     `Inference defaults: temperature=${INFERENCE_DEFAULTS.temperature.toString()}, topP=${INFERENCE_DEFAULTS.topP.toString()}, maxOutput=${INFERENCE_DEFAULTS.maxOutputTokens.toString()}`,
   );
+
+  // Migrate storage keys from old vercelAiGateway.* namespace to vercel.ai.*
+  // This must run before any storage reads to ensure data continuity
+  void migrateStorageKeys(context);
 
   // Register the authentication provider
   const authProvider = new VercelAIAuthenticationProvider(context);

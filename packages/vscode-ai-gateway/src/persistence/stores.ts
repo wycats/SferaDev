@@ -34,4 +34,6 @@ export const SESSION_STATS_STORE: StoreConfig<SessionStats> = {
     totalOutputTokens: 0,
     modelId: null,
   },
+  // Legacy key from pre-rebrand extension (SferaDev -> Vercel)
+  legacyKeys: ["vercelAiGateway.sessionStats"],
 };
