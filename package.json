@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "knip": "knip --config configs/knip.json",
-    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+    "clean": "rm -rf node_modules packages/*/node_modules"
   },
   "devDependencies": {
     "@ai-sdk/openai": "catalog:",
