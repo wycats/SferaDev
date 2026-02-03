@@ -242,11 +242,6 @@ export class ToolHistoryManager {
     };
   }
 
-  /**${entry.result}`,
-      isError: entry.isError,
-    };
-  }
-
   /**
    * Summarize older tool calls into a concise representation.
    */

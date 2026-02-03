@@ -3,8 +3,8 @@ title: SSE-to-VS Code State Machine Mapping
 stage: 0
 feature: Unknown
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00022: SSE-to-VS Code State Machine Mapping
@@ -309,5 +309,5 @@ VS Code has a `LanguageModelThinkingPart` class for streaming reasoning content 
 - [VS Code Language Model API](https://code.visualstudio.com/api/extension-guides/language-model)
 - [LM Provider Stream Semantics](../specs/lm-provider-stream-semantics.md) - Our internal spec for stream behavior
 - [OpenResponses Specification](https://www.openresponses.org/)
-- [Local LM Types](../research/language-model-types.d.ts)
-- [Message Translation Mapping](../research/message-translation-mapping.md)
+- [Local LM Types](./appendix/language-model-types.d.ts)
+- [Message Translation Mapping](./message-translation-mapping.md)

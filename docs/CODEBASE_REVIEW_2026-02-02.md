@@ -442,6 +442,7 @@ clearAgents(): void {
 Stale claims could influence future subagent matching and prevent parent removal via `hasChildrenInTree()`.
 
 **Fix Applied:**
+
 - Added `clearAll()` method to `ClaimRegistry`
 - Call `this.claimRegistry.clearAll()` in `clearAgents()`
 - Log `previousClaimCount` in debug output

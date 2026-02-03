@@ -158,4 +158,4 @@ For each API:
 - RFC 00021: VS Code Proposed Language Model Provider APIs
 - RFC 00023: Proposed API Build Strategy
 - [VS Code proposed API docs](https://code.visualstudio.com/api/advanced-topics/using-proposed-api)
-- `docs/research/message-translation-mapping.md`
+- `docs/specs/message-translation-mapping.md`

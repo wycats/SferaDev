@@ -16,3 +16,4 @@ json/
 .context/
 .logs/
 .reference/
+.private/

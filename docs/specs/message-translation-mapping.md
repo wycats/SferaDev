@@ -4,10 +4,10 @@
 >
 > **Reference Documentation**:
 >
-> - VS Code Language Model API: [docs/research/language-model-types.d.ts](../language-model-types.d.ts)
-> - OpenResponses API Spec: [packages/openresponses-client/openapi.json](../../../packages/openresponses-client/openapi.json)
-> - **Implementation Constraints**: [packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md](../../../packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md)
-> - OpenResponses Zod Schemas: [packages/openresponses-client/src/generated/schemas.ts](../../../packages/openresponses-client/src/generated/schemas.ts)
+> - VS Code Language Model API: [docs/specs/appendix/language-model-types.d.ts](./appendix/language-model-types.d.ts)
+> - OpenResponses API Spec: [packages/openresponses-client/openapi.json](../../packages/openresponses-client/openapi.json)
+> - **Implementation Constraints**: [packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md](../../packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md)
+> - OpenResponses Zod Schemas: [packages/openresponses-client/src/generated/schemas.ts](../../packages/openresponses-client/src/generated/schemas.ts)
 
 This document defines the canonical mapping from VS Code Language Model API types to OpenResponses API types.
 
@@ -16,7 +16,7 @@ This document defines the canonical mapping from VS Code Language Model API type
 ## ⚠️ Critical Implementation Notes
 
 Before reading the type mappings, understand these constraints discovered through
-empirical testing (see [IMPLEMENTATION_CONSTRAINTS.md](../../../packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md)):
+empirical testing (see [IMPLEMENTATION_CONSTRAINTS.md](../../packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md)):
 
 1. **`function_call` is NOT a valid input item** - Only `message` and `function_call_output` are accepted
 2. **Assistant messages must use string or `input_text` content** - NOT `output_text` (that's for responses only)
@@ -215,7 +215,7 @@ All message items have `type: "message"` and a role-specific `role`.
 
 > ⚠️ **CRITICAL**: The OpenAPI spec shows `FunctionCallItemParam` as part of the `ItemParam` union,
 > but the actual Vercel AI Gateway implementation does NOT accept `function_call` as an input item.
-> See [IMPLEMENTATION_CONSTRAINTS.md](../../../packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md).
+> See [IMPLEMENTATION_CONSTRAINTS.md](../../packages/openresponses-client/IMPLEMENTATION_CONSTRAINTS.md).
 
 **Translation Strategy**:
 
