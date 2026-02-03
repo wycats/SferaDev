@@ -98,7 +98,9 @@ export function translateMessage(
   const userContentParts: UserContent[] = [];
   const assistantContentParts: AssistantContent[] = [];
   const contentParts =
-    openResponsesRole === "assistant" ? assistantContentParts : userContentParts;
+    openResponsesRole === "assistant"
+      ? assistantContentParts
+      : userContentParts;
 
   for (const part of message.content) {
     if (part instanceof LanguageModelTextPart) {

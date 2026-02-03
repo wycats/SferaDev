@@ -1,7 +1,9 @@
-[meta]
-schema_version = "1.0.0"
-exo_version = "0.1.0"
-# READ-ONLY: Use 'exo' CLI to modify this file.
-# Ideas Backlog
-
-# Add ideas using: exo idea "Your idea title"
+[[ideas]]
+id = "c75510be-5c04-4191-84bd-40848982c779"
+title = "Evaluate merging openresponses-client into extension package"
+description = "Simplify monorepo structure by potentially merging the internal openresponses-client package into the main vscode-ai-gateway package. The client is only used internally and adds build complexity."
+status = "new"
+created_at = "2026-02-03T23:10:16.266Z"
+source = "user"
+tags = []
+related_tasks = []

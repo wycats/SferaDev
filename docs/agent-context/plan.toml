@@ -521,7 +521,8 @@ completion_log = "Fixed pnpm filter from vscode-extension-vercel-ai to vscode-ai
 [[epochs.phases.goals]]
 id = "evaluate-monorepo-structure"
 label = "Evaluate merging openresponses-client into extension package"
-status = "pending"
+status = "completed"
+completion_log = "Moved to ideas backlog - not a P0 fix, future consideration"
 
 [[epochs.phases]]
 id = "01kgjmcke2fq6rg6rkknaccsmj"

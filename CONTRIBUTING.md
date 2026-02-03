@@ -75,9 +75,10 @@ cd packages/vscode-ai-gateway
 pnpm package
 ```
 
-Local installation:
+Local installation (from the extension package directory):
 
 ```bash
+cd packages/vscode-ai-gateway
 code --install-extension *.vsix
 ```
 
@@ -103,10 +104,12 @@ code --install-extension *.vsix
 
 These are required invariants (from AGENTS.md):
 
-- OpenResponses is **not** the OpenAI Chat Completions API.
-- Content type rules: User uses `input_text`, Assistant uses `output_text`.
+- OpenResponses is **not** the OpenAI Chat Completions API (and not the Vercel AI SDK).
+- Content type rules: User messages use `input_text`, Assistant messages use `output_text`.
 - Tools use a **flat** structure (not nested under `function`).
 - **DO NOT remove** `extractSystemPrompt()` from openresponses-chat.ts.
+
+These invariants are enforced by tests in `message-translation.test.ts`, `request-builder.test.ts`, and `system-prompt.test.ts`.
 
 ## Testing
 
