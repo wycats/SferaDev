@@ -71,15 +71,13 @@ pnpm lint:fix
 Packaging:
 
 ```bash
-cd packages/vscode-ai-gateway
 pnpm package
 ```
 
-Local installation (from the extension package directory):
+Local installation (packages and installs in one step):
 
 ```bash
-cd packages/vscode-ai-gateway
-code --install-extension *.vsix
+pnpm install-local
 ```
 
 ## Architecture Overview

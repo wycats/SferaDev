@@ -6,6 +6,7 @@
     "build": "pnpm --filter vscode-ai-gateway build",
     "test": "pnpm --filter vscode-ai-gateway test",
     "package": "pnpm --filter vscode-ai-gateway package",
+    "install-local": "pnpm package && code --install-extension packages/vscode-ai-gateway/*.vsix --force",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "knip": "knip --config configs/knip.json",
