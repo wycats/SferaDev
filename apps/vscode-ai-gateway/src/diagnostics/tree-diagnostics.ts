@@ -53,8 +53,21 @@ export interface ClaimSnapshotEntry {
 export interface InvariantCheckResult {
   singleMainAgent: boolean;
   mainAgentExists: boolean;
+  /**
+   * @deprecated Use noUnexpectedOrphans instead. Orphaned subagents are expected
+   * when claims expire - they are shown at root level in the tree view.
+   */
   allChildrenHaveParent: boolean;
+  /**
+   * @deprecated Use noUnexpectedOrphans instead. Orphaned subagents are expected
+   * when claims expire - they are shown at root level in the tree view.
+   */
   noOrphanChildren: boolean;
+  /**
+   * True if no main agents are orphaned. Orphaned subagents are allowed
+   * (expected when claims expire), but orphaned main agents indicate a bug.
+   */
+  noUnexpectedOrphans: boolean;
   noDuplicateIds: boolean;
   claimsHaveValidParent: boolean;
   noExpiredClaims: boolean;
@@ -320,10 +333,17 @@ export class TreeDiagnostics {
       ...agentTypeHashes,
     ]);
 
+    // All agents with parentConversationHash that don't have a matching parent
     const missingParentAgents = snapshot.agents.filter(
       (agent) =>
         agent.parentConversationHash &&
         !parentIdentifiers.has(agent.parentConversationHash),
+    );
+
+    // Only main agents with missing parents are unexpected - orphaned subagents
+    // are expected when claims expire (they are shown at root level in tree view)
+    const unexpectedOrphanAgents = missingParentAgents.filter(
+      (agent) => agent.isMain,
     );
 
     const missingClaimParents = snapshot.claims.filter(
@@ -339,8 +359,11 @@ export class TreeDiagnostics {
     const singleMainAgent = mainCount <= 1;
     const mainAgentExists =
       snapshot.agents.length === 0 ? true : mainCount === 1;
+    // Deprecated: kept for backward compatibility
     const allChildrenHaveParent = missingParentAgents.length === 0;
     const noOrphanChildren = missingParentAgents.length === 0;
+    // New: only flags orphaned main agents (orphaned subagents are expected)
+    const noUnexpectedOrphans = unexpectedOrphanAgents.length === 0;
     const noDuplicateIds = duplicateIds.size === 0;
     const claimsHaveValidParent = missingClaimParents.length === 0;
     const noExpiredClaims = expiredClaims.length === 0;
@@ -357,15 +380,12 @@ export class TreeDiagnostics {
       );
     }
 
-    if (!allChildrenHaveParent) {
+    // Note: allChildrenHaveParent and noOrphanChildren are deprecated.
+    // Orphaned subagents are expected when claims expire - they are shown at root level.
+    // We only report violations for orphaned MAIN agents (which should never happen).
+    if (!noUnexpectedOrphans) {
       violations.push(
-        `Invariant allChildrenHaveParent failed: ${missingParentAgents.length} agents missing parents.`,
-      );
-    }
-
-    if (!noOrphanChildren) {
-      violations.push(
-        `Invariant noOrphanChildren failed: ${missingParentAgents.length} orphaned agents.`,
+        `Invariant noUnexpectedOrphans failed: ${unexpectedOrphanAgents.length} main agent(s) orphaned.`,
       );
     }
 
@@ -394,6 +414,7 @@ export class TreeDiagnostics {
       mainAgentExists,
       allChildrenHaveParent,
       noOrphanChildren,
+      noUnexpectedOrphans,
       noDuplicateIds,
       claimsHaveValidParent,
       noExpiredClaims,
