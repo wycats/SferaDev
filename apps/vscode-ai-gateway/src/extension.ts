@@ -61,9 +61,6 @@ export function activate(context: vscode.ExtensionContext) {
   // Create the token status bar
   const statusBar = new TokenStatusBar();
   statusBar.initializePersistence(context);
-  statusBar.setConfig({
-    showOutputTokens: configService.statusBarShowOutputTokens,
-  });
   context.subscriptions.push(statusBar);
   logger.debug("Token status bar created");
 
@@ -77,17 +74,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("vercelAiGateway.refreshAgentTree", () => {
       treeProvider.refresh();
-    }),
-  );
-
-  // Watch for config changes
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("vercelAiGateway.statusBar")) {
-        statusBar.setConfig({
-          showOutputTokens: configService.statusBarShowOutputTokens,
-        });
-      }
     }),
   );
 

@@ -115,21 +115,6 @@ describe("TokenStatusBar", () => {
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
 
-    it("shows output tokens when configured", () => {
-      statusBar.setConfig({ showOutputTokens: true });
-      statusBar.startAgent("agent-1", 50000, 128000);
-      statusBar.completeAgent("agent-1", {
-        inputTokens: 52000,
-        outputTokens: 1500,
-        maxInputTokens: 128000,
-      });
-
-      // Padded format with output tokens
-      expect(mockStatusBarItem.text).toBe(
-        `$(symbol-number) ${fs}52.0k/128.0k (${fs}${fs}1.5k out)`,
-      );
-    });
-
     it("stores usage for later retrieval", () => {
       statusBar.startAgent("agent-1");
       const usage = {
@@ -508,6 +493,78 @@ describe("TokenStatusBar", () => {
       // Display should show both agents, not 104% (which would happen if subagent was treated as main)
       expect(mockStatusBarItem.text).toContain("52.0k/128.0k");
       expect(mockStatusBarItem.text).toContain("▸ execute");
+    });
+
+    it("main agent resumes correctly when pending claims exist (regression: claim misattribution)", () => {
+      // This is a regression test for the bug where main agent's subsequent turns
+      // were incorrectly attributed to pending subagent claims.
+      // The bug occurred because:
+      // 1. extractAgentName returns "sub" when isMain=false
+      // 2. Claim matching has a FIFO fallback for "sub" agents
+      // 3. Main agent's turn would match the first pending claim
+      const mainHash = "main-system-hash";
+      const mainTypeHash = "main-type-hash";
+
+      // Main agent starts
+      statusBar.startAgent(
+        "main-agent",
+        50000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        mainHash,
+        mainTypeHash,
+        "first-user-msg",
+      );
+      statusBar.completeAgent("main-agent", {
+        inputTokens: 52000,
+        outputTokens: 1000,
+        maxInputTokens: 128000,
+      });
+
+      // Create a claim for a subagent (e.g., "recon")
+      statusBar.createChildClaim("main-agent", "recon");
+
+      // Main agent makes another turn (same hashes = resume)
+      // This should NOT match the "recon" claim
+      const resumedId = statusBar.startAgent(
+        "main-agent-turn2",
+        55000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        mainHash,
+        mainTypeHash,
+        "first-user-msg",
+      );
+
+      const agents = statusBar.getAgents();
+
+      // Should still have only 1 agent (main agent resumed, not a new subagent)
+      expect(agents.length).toBe(1);
+
+      // The resumed agent should be the main agent
+      const mainAgent = agents[0];
+      expect(mainAgent?.isMain).toBe(true);
+      expect(mainAgent?.name).toBe("claude-sonnet-4");
+
+      // The agent ID should be aliased to the original main agent
+      expect(resumedId).toBe("main-agent");
+
+      // The "recon" claim should still be pending (not consumed)
+      // We can verify this by starting a real subagent and seeing it gets the claim
+      statusBar.startAgent(
+        "recon-agent",
+        8000,
+        128000,
+        "recon",
+        "different-hash",
+        "different-type",
+      );
+
+      const agentsAfter = statusBar.getAgents();
+      const reconAgent = agentsAfter.find((a) => a.id === "recon-agent");
+      expect(reconAgent).toBeDefined();
+      expect(reconAgent?.isMain).toBe(false);
+      expect(reconAgent?.name).toBe("recon");
     });
   });
 });

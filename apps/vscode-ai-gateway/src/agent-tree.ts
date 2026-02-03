@@ -310,8 +310,24 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
         return [];
       }
 
-      // Root level: agents with no parent conversation
-      const rootAgents = agents.filter((a) => !a.parentConversationHash);
+      // Build set of valid parent identifiers (conversationHash or agentTypeHash)
+      const parentIdentifiers = new Set<string>();
+      for (const agent of agents) {
+        if (agent.conversationHash) {
+          parentIdentifiers.add(agent.conversationHash);
+        }
+        if (agent.agentTypeHash) {
+          parentIdentifiers.add(agent.agentTypeHash);
+        }
+      }
+
+      // Root level: agents with no parent conversation OR orphaned agents
+      // (agents whose parentConversationHash doesn't match any existing agent)
+      const rootAgents = agents.filter(
+        (a) =>
+          !a.parentConversationHash ||
+          !parentIdentifiers.has(a.parentConversationHash),
+      );
 
       // Sort by start time (most recent first)
       const sortByTime = (a: AgentEntry, b: AgentEntry) =>
@@ -355,7 +371,9 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
     if (agent.conversationHash) {
       if (
         allAgents.some(
-          (a) => a.parentConversationHash === agent.conversationHash,
+          (a) =>
+            a.parentConversationHash === agent.conversationHash &&
+            a.id !== agent.id,
         )
       ) {
         return true;
@@ -365,7 +383,11 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
     // (before parent has computed its conversationHash)
     if (agent.agentTypeHash) {
       if (
-        allAgents.some((a) => a.parentConversationHash === agent.agentTypeHash)
+        allAgents.some(
+          (a) =>
+            a.parentConversationHash === agent.agentTypeHash &&
+            a.id !== agent.id,
+        )
       ) {
         return true;
       }
@@ -388,7 +410,8 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
       for (const agent of allAgents) {
         if (
           agent.parentConversationHash === parent.conversationHash &&
-          !seenIds.has(agent.id)
+          !seenIds.has(agent.id) &&
+          agent.id !== parent.id
         ) {
           children.push(agent);
           seenIds.add(agent.id);
@@ -402,7 +425,8 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
       for (const agent of allAgents) {
         if (
           agent.parentConversationHash === parent.agentTypeHash &&
-          !seenIds.has(agent.id)
+          !seenIds.has(agent.id) &&
+          agent.id !== parent.id
         ) {
           children.push(agent);
           seenIds.add(agent.id);

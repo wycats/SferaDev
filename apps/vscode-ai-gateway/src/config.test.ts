@@ -79,7 +79,9 @@ describe("ConfigService", () => {
     // These are now hardcoded, not configurable
     expect(config.defaultTemperature).toBe(INFERENCE_DEFAULTS.temperature);
     expect(config.defaultTopP).toBe(INFERENCE_DEFAULTS.topP);
-    expect(config.defaultMaxOutputTokens).toBe(INFERENCE_DEFAULTS.maxOutputTokens);
+    expect(config.defaultMaxOutputTokens).toBe(
+      INFERENCE_DEFAULTS.maxOutputTokens,
+    );
     expect(config.timeout).toBe(INFERENCE_DEFAULTS.timeoutMs);
   });
 
@@ -98,7 +100,6 @@ describe("ConfigService", () => {
     expect(config.tokensEstimationMode).toBe("balanced");
     expect(config.tokensCharsPerToken).toBe(4);
     expect(config.modelsEnrichmentEnabled).toBe(true);
-    expect(config.statusBarShowOutputTokens).toBe(true);
   });
 
   it("notifies listeners on configuration changes", () => {
@@ -135,6 +136,8 @@ describe("ConfigService", () => {
     });
 
     const config = new ConfigService();
-    expect(() => { config.dispose(); }).not.toThrow();
+    expect(() => {
+      config.dispose();
+    }).not.toThrow();
   });
 });

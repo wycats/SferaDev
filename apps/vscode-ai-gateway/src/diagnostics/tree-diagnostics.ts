@@ -201,11 +201,20 @@ export class TreeDiagnostics {
     }
 
     // Render agents recursively
+    const visitedIds = new Set<string>();
+
     const renderAgent = (
       agent: AgentSnapshotEntry,
       indent: string,
       isLast: boolean,
     ): void => {
+      if (visitedIds.has(agent.id)) {
+        const prefix = isLast ? "└─" : "├─";
+        lines.push(`${indent}${prefix} [CYCLE: ${agent.id.slice(-8)}]`);
+        return;
+      }
+      visitedIds.add(agent.id);
+
       const prefix = isLast ? "└─" : "├─";
       const marker = agent.isMain ? "[main]" : `[${agent.name}]`;
       const hash = agent.agentTypeHash?.slice(0, 8) ?? "????????";

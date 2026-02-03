@@ -98,13 +98,6 @@ const AGENT_REMOVE_AFTER_REQUESTS = 5; // Remove after 5 newer agents complete
 const AGENT_CLEANUP_INTERVAL_MS = 2_000; // Check for stale agents every 2 seconds
 
 /**
- * Configuration interface (subset of ConfigService)
- */
-export interface StatusBarConfig {
-  showOutputTokens: boolean;
-}
-
-/**
  * Token estimation state for status bar display.
  * Shows whether we have known actual token counts or are estimating.
  */
@@ -145,9 +138,6 @@ export class TokenStatusBar implements vscode.Disposable {
   private mainSystemPromptHash: string | null = null;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private completedAgentCount = 0;
-
-  // Configuration
-  private config: StatusBarConfig = { showOutputTokens: false };
 
   // Estimation state tracking
   private estimationStates = new Map<string, EstimationState>();
@@ -201,13 +191,6 @@ export class TokenStatusBar implements vscode.Disposable {
     // Return null if no meaningful data (timestamp 0 means never saved)
     if (stats.timestamp === 0) return null;
     return stats;
-  }
-
-  /**
-   * Update configuration
-   */
-  setConfig(config: StatusBarConfig): void {
-    this.config = config;
   }
 
   /**
@@ -416,16 +399,6 @@ export class TokenStatusBar implements vscode.Disposable {
         ? `${systemPromptHash}:${firstUserMessageHash}`
         : null;
 
-    // CRITICAL FIX: Check for pending claims FIRST, BEFORE partialKey matching.
-    //
-    // The bug: If a child agent has the same systemPromptHash AND agentTypeHash
-    // as the parent (which can happen when VS Code injects summaries), the old
-    // `couldBeSubagent` check would be false, and the child would be merged
-    // into the parent via partialKey matching.
-    //
-    // The fix: Always check for claim matches when there are pending claims,
-    // regardless of hash similarity. If a parent called runSubagent, the next
-    // request should be treated as a potential child.
     const hasPendingClaims = this.claimRegistry.getPendingClaimCount() > 0;
 
     // Log subagent detection context for debugging
@@ -455,8 +428,85 @@ export class TokenStatusBar implements vscode.Disposable {
       }),
     );
 
-    // Check for claim match FIRST - if there's a pending claim, this could be a child
-    // regardless of whether the hashes match the parent
+    // Check for partialKey match (resume existing agent)
+    const existingAgent = partialKey
+      ? this.agentsByPartialKey.get(partialKey)
+      : undefined;
+
+    // CRITICAL: If this would resume the MAIN agent, do NOT check claims.
+    // This prevents the main agent's subsequent turns from being incorrectly
+    // attributed to a pending subagent claim.
+    //
+    // However, if this would resume a NON-main agent (subagent), we still need
+    // to check claims first because a child agent might have identical hashes
+    // to its parent (VS Code can inject summaries that make hashes match).
+    if (existingAgent?.isMain) {
+      // Resume the main agent - skip claim matching entirely
+      this.agentIdAliases.set(agentId, existingAgent.id);
+      existingAgent.status = "streaming";
+      existingAgent.lastUpdateTime = now;
+      existingAgent.estimatedInputTokens = estimatedTokens;
+      existingAgent.maxInputTokens =
+        maxTokens ?? existingAgent.maxInputTokens ?? undefined;
+      existingAgent.modelId = modelId ?? existingAgent.modelId;
+      existingAgent.systemPromptHash =
+        systemPromptHash ?? existingAgent.systemPromptHash;
+      existingAgent.agentTypeHash =
+        agentTypeHash ?? existingAgent.agentTypeHash;
+      existingAgent.firstUserMessageHash =
+        firstUserMessageHash ?? existingAgent.firstUserMessageHash;
+      existingAgent.contextManagement = undefined;
+      existingAgent.dimmed = false;
+      existingAgent.completionOrder = undefined;
+
+      this.mainAgentId = existingAgent.id;
+      if (systemPromptHash) {
+        this.mainSystemPromptHash = systemPromptHash;
+      }
+      this.activeAgentId = existingAgent.id;
+
+      logger.info(
+        `[StatusBar] Main Agent RESUMED (partialKey match, skipped claim check)`,
+        JSON.stringify({
+          timestamp: now,
+          agentId: agentId.slice(-8),
+          canonicalAgentId: existingAgent.id.slice(-8),
+          isMain: true,
+          modelId: existingAgent.modelId,
+          estimatedTokens,
+          maxTokens,
+          name: existingAgent.name,
+          systemPromptHash: systemPromptHash?.slice(0, 8),
+          agentTypeHash: existingAgent.agentTypeHash?.slice(0, 8),
+          partialKey: partialKey?.slice(0, 20),
+          totalAgents: this.agents.size,
+          pendingClaimsSkipped: hasPendingClaims,
+        }),
+      );
+
+      treeDiagnostics.log(
+        "AGENT_RESUMED",
+        {
+          agentId: agentId.slice(-8),
+          canonicalAgentId: existingAgent.id.slice(-8),
+          isMain: true,
+          name: existingAgent.name,
+          partialKey: partialKey?.slice(0, 20),
+          systemPromptHash: systemPromptHash?.slice(0, 8),
+          pendingClaimsSkipped: hasPendingClaims,
+        },
+        this.createTreeSnapshot(),
+        { vscodeSessionId: vscode.env.sessionId },
+      );
+
+      this.updateDisplay();
+      this._onDidChangeAgents.fire();
+      return existingAgent.id;
+    }
+
+    // For non-main agents (or new agents), check claims FIRST.
+    // This handles the case where a child agent has identical hashes to its parent
+    // (VS Code can inject summaries that make hashes match).
     if (hasPendingClaims && agentTypeHash) {
       const extractedName = this.extractAgentName(agentId, modelId, false);
       const claimMatch = this.matchChildClaim(extractedName, agentTypeHash);
@@ -488,11 +538,8 @@ export class TokenStatusBar implements vscode.Disposable {
       }
     }
 
-    // Now check for partialKey match (resume existing agent)
-    // This only happens if there was no claim match
-    const existingAgent = partialKey
-      ? this.agentsByPartialKey.get(partialKey)
-      : undefined;
+    // Check for partialKey match for non-main agents
+    // (We already handled main agent resume above)
 
     if (existingAgent) {
       this.agentIdAliases.set(agentId, existingAgent.id);
@@ -571,13 +618,23 @@ export class TokenStatusBar implements vscode.Disposable {
       preliminaryIsMain,
     );
 
+    // CRITICAL: Don't do claim matching if this looks like the main agent.
+    // This prevents the main agent's turns from being incorrectly attributed to
+    // pending subagent claims when there's no partialKey to identify it as a resume.
+    //
+    // We consider this "likely main" if:
+    // 1. There's no main agent yet (first agent is always main), OR
+    // 2. The system prompt hash matches the main agent's hash
+    const likelyMainAgent =
+      this.mainAgentId === null ||
+      (systemPromptHash !== undefined &&
+        this.mainSystemPromptHash !== undefined &&
+        systemPromptHash === this.mainSystemPromptHash);
+
     // Try to match a pending claim to get parent linkage and expected name
-    // This must happen BEFORE determining isMain, because:
-    // - If there's a claim match, this is definitely a subagent
-    // - If there's no claim match and system prompt changed, it's likely still the main agent
-    //   (VS Code can inject conversation summaries that change the system prompt hash)
+    // Only do this if this doesn't look like the main agent.
     const claimMatch =
-      agentTypeHash !== undefined
+      !likelyMainAgent && agentTypeHash !== undefined
         ? this.matchChildClaim(extractedAgentName, agentTypeHash)
         : null;
 
@@ -1102,15 +1159,9 @@ export class TokenStatusBar implements vscode.Disposable {
 
     if (agent.maxInputTokens) {
       const max = this.formatTokenCount(agent.maxInputTokens);
-      if (this.config.showOutputTokens) {
-        return `${input}/${max} (${this.formatTokenCount(outputTokens)} out)`;
-      }
       return `${input}/${max}`;
     }
 
-    if (this.config.showOutputTokens) {
-      return `${input} in, ${this.formatTokenCount(outputTokens)} out`;
-    }
     return `${input} in`;
   }
 
@@ -1192,19 +1243,11 @@ export class TokenStatusBar implements vscode.Disposable {
           lines.push(
             `   Max Input: ${agent.maxObservedInputTokens.toLocaleString()}`,
           );
-          if (this.config.showOutputTokens) {
-            lines.push(
-              `   Total Output: ${agent.totalOutputTokens.toLocaleString()}`,
-            );
-          }
           lines.push(
             `   Last Turn: ${agent.inputTokens.toLocaleString()} in, ${agent.outputTokens.toLocaleString()} out`,
           );
         } else {
           lines.push(`   Input: ${agent.inputTokens.toLocaleString()}`);
-          if (this.config.showOutputTokens) {
-            lines.push(`   Output: ${agent.outputTokens.toLocaleString()}`);
-          }
         }
         if (agent.maxInputTokens) {
           const tokensForPct =

@@ -165,11 +165,6 @@ export class ConfigService implements vscode.Disposable {
     return true;
   }
 
-  /** @deprecated Status bar always shows */
-  get statusBarShowOutputTokens(): boolean {
-    return true;
-  }
-
   /** @deprecated Tool truncation uses internal defaults */
   get toolTruncationRecentCalls(): number {
     return 6;

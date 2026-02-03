@@ -85,19 +85,11 @@ export function translateRequest(
     );
   }
 
-  // Prepend developer message for non-OpenAI providers (they ignore `instructions` field)
-  let finalInput = validInput;
-  if (instructions) {
-    const developerMessage: ItemParam = {
-      type: "message",
-      role: "developer",
-      content: instructions,
-    };
-    finalInput = [developerMessage, ...validInput];
-    logger.info(
-      `[OpenResponses] Prepended developer message (${instructions.length} chars)`,
-    );
-  }
+  // Note: We use the `instructions` field for system prompts.
+  // The OpenResponses gateway handles translation for different providers.
+  // We do NOT duplicate the system prompt as a developer message - that would
+  // cause duplication for OpenAI models which support the `instructions` field.
+  const finalInput = validInput;
 
   // Convert tools
   const tools: FunctionToolParam[] = [];
