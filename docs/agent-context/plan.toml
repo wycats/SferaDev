@@ -488,10 +488,36 @@ aliases = ["01kgjmc973vv40jcwkh41k0cd9"]
 [[epochs.phases.goals]]
 id = "fix-openresponses-exports"
 label = "Fix broken package exports in openresponses-client (./types, ./schemas)"
-status = "pending"
+status = "completed"
+completion_log = "Marked package as private (internal-only). Removed broken ./types export. Kept ./schemas for validation scripts. Build verified."
 ulid = "01KGJP2PYTF3Q8ZRED495ZK0XD"
 slug = "fix-openresponses-exports"
 aliases = ["fix-openresponses-exports"]
+
+[[epochs.phases.goals]]
+id = "create-contributing-docs"
+label = "Create CONTRIBUTING.md with architecture and workflow documentation"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "enforce-content-type-invariants"
+label = "Add compile-time or runtime validation for input_text/output_text content types"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "protect-system-prompt-extraction"
+label = "Add test that fails if extractSystemPrompt is removed or broken"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "fix-pnpm-filter-mismatch"
+label = "Align pnpm filter name with actual package name"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "evaluate-monorepo-structure"
+label = "Evaluate merging openresponses-client into extension package"
+status = "pending"
 
 [[epochs.phases]]
 id = "01kgjmcke2fq6rg6rkknaccsmj"

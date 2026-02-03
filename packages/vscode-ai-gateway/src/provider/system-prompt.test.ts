@@ -106,6 +106,12 @@ describe("system-prompt", () => {
   });
 
   describe("extractSystemPrompt", () => {
+    it("canary: stays exported and callable", () => {
+      // Canary test to prevent accidental removal or signature changes.
+      expect(typeof extractSystemPrompt).toBe("function");
+      expect(extractSystemPrompt([])).toBeUndefined();
+    });
+
     it("should return undefined for empty messages array", () => {
       expect(extractSystemPrompt([])).toBeUndefined();
     });
