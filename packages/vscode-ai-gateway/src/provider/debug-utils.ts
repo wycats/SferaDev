@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { CreateResponseBody } from "openresponses-client";
+import * as vscode from "vscode";
 import { logger } from "../logger.js";
 
 export interface SuspiciousRequestContext {
@@ -22,6 +23,19 @@ export function saveSuspiciousRequest(
   context: SuspiciousRequestContext,
 ): void {
   try {
+    const config = vscode.workspace.getConfiguration("vercel.ai");
+    const forensicEnabled = config.get<boolean>(
+      "debug.forensicCapture",
+      false,
+    );
+
+    if (!forensicEnabled) {
+      logger.debug(
+        "[OpenResponses] Skipping suspicious request capture (forensicCapture disabled)",
+      );
+      return;
+    }
+
     // Find workspace root by looking for package.json
     const workspaceRoot = process.cwd();
     const logsDir = resolve(workspaceRoot, ".logs");
