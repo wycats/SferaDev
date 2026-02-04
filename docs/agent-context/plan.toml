@@ -593,7 +593,7 @@ aliases = ["fix-model-family-encoding"]
 [[epochs]]
 id = "vercel-transition-epoch"
 title = "Vercel Transition"
-status = "pending"
+status = "active"
 ulid = "01KG0K3GP32H4JVKM3YHJKCW0K"
 slug = "vercel-transition-epoch"
 aliases = ["vercel-transition-epoch"]
@@ -634,7 +634,7 @@ aliases = ["visual-identity"]
 [[epochs.phases]]
 id = "phase-repository"
 title = "Standalone Repository (RFC 001)"
-status = "pending"
+status = "active"
 ulid = "01KG0K3GP3E0P85VTEFP4FGDY2"
 slug = "phase-repository"
 aliases = ["phase-repository"]
