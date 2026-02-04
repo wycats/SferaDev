@@ -432,6 +432,7 @@ status = "completed"
 ulid = "01KGJMNKAHZEF8QA3AFR98H4D0"
 slug = "01kgjmbq8658mgjyrzmn3nc39x"
 aliases = ["01kgjmbq8658mgjyrzmn3nc39x"]
+reviewed = true
 
 [[epochs.phases]]
 id = "01kgjmc08g68fch8zrxd6p37bd"
