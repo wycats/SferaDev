@@ -642,10 +642,11 @@ aliases = ["phase-repository"]
 [[epochs.phases.goals]]
 id = "repo-extraction"
 label = "Extract to vercel/vscode-ai-gateway repository"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP3TEXPV1B8TXPCVYPW"
 slug = "repo-extraction"
 aliases = ["repo-extraction"]
+completion_log = "Complete: Repository extracted to https://github.com/vercel-labs/vscode-ai-gateway. All URLs in package.json and READMEs point to the correct location."
 
 [[epochs.phases.goals]]
 id = "ci-setup"

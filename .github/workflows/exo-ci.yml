@@ -45,7 +45,7 @@ jobs:
         run: pnpm install
 
       - name: TypeScript Typecheck
-        run: pnpm --filter vscode-extension-vercel-ai run tsc
+        run: pnpm --filter vscode-ai-gateway run tsc
 
   lint:
     name: ESLint
@@ -93,5 +93,5 @@ jobs:
         run: pnpm install
 
       - name: Tests
-        run: pnpm --filter vscode-extension-vercel-ai run test
+        run: pnpm --filter vscode-ai-gateway run test
 

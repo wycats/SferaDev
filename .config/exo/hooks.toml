@@ -62,7 +62,7 @@ checks = ["typecheck", "lint", "test"]
 label = "TypeScript Typecheck"
 description = "Runs tsc --noEmit to catch type errors before commit."
 input_mode = "none"
-run = "pnpm --filter vscode-extension-vercel-ai run tsc"
+run = "pnpm --filter vscode-ai-gateway run tsc"
 
 [check."lint-fix"]
 label = "ESLint Fix"
@@ -81,10 +81,10 @@ run = "pnpm run lint"
 label = "Tests"
 description = "Runs the test suite."
 input_mode = "none"
-run = "pnpm --filter vscode-extension-vercel-ai run test"
+run = "pnpm --filter vscode-ai-gateway run test"
 
 [check.build]
 label = "Build"
 description = "Builds the extension to verify it compiles."
 input_mode = "none"
-run = "pnpm --filter vscode-extension-vercel-ai run build"
+run = "pnpm --filter vscode-ai-gateway run build"
