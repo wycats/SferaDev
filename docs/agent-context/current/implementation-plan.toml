@@ -2,14 +2,12 @@
 # Implementation Plan
 
 [phase]
-id = "phase-auth-triage"
-title = "Authentication (RFC 005b - Triage)"
-rfcs = []
+id = "01kgkqpde1s9zfqfe5s8x01zwz"
+title = "Transcript Capsule Implementation"
+rfcs = ["041"]
 
 [plan]
-[[plan.goals]]
-id = "evaluate-enterprise-oidc"
-
+# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
 [verification]

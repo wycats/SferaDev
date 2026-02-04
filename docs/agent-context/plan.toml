@@ -756,3 +756,15 @@ status = "pending"
 ulid = "01KG0K3GP3E8HSFS915XFANTFA"
 slug = "wait-for-sdk"
 aliases = ["wait-for-sdk"]
+
+[[epochs]]
+id = "01kgkqne5mcx9jk9nxs1gejtqq"
+title = "Agent Correlation (RFC 041)"
+status = "active"
+
+[[epochs.phases]]
+id = "01kgkqpde1s9zfqfe5s8x01zwz"
+title = "Transcript Capsule Implementation"
+status = "active"
+goals = []
+rfcs = ["041"]
