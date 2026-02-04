@@ -593,7 +593,7 @@ aliases = ["fix-model-family-encoding"]
 [[epochs]]
 id = "vercel-transition-epoch"
 title = "Vercel Transition"
-status = "pending"
+status = "active"
 ulid = "01KG0K3GP32H4JVKM3YHJKCW0K"
 slug = "vercel-transition-epoch"
 aliases = ["vercel-transition-epoch"]
@@ -669,7 +669,7 @@ aliases = ["marketplace-publishing"]
 [[epochs.phases]]
 id = "phase-migration"
 title = "Migration & Deprecation (RFC 007)"
-status = "pending"
+status = "active"
 ulid = "01KG0K3GP3MW3JGT7RV40STGWZ"
 slug = "phase-migration"
 aliases = ["phase-migration"]
@@ -685,18 +685,20 @@ aliases = ["settings-migration"]
 [[epochs.phases.goals]]
 id = "deprecation-notices"
 label = "Add deprecation notices to SferaDev extension"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP375KHCE8TJAHJW7K9"
 slug = "deprecation-notices"
 aliases = ["deprecation-notices"]
+completion_log = "Not needed: SferaDev references already purged from code. Only historical docs/comments remain."
 
 [[epochs.phases.goals]]
 id = "parallel-operation"
 label = "90-day parallel operation period"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP3GDP8ZZY1DK6SFB3T"
 slug = "parallel-operation"
 aliases = ["parallel-operation"]
+completion_log = "Not applicable: No parallel operation needed since we're not maintaining the old extension."
 
 [[epochs]]
 id = "triage-epoch"
