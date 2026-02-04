@@ -170,6 +170,10 @@ export async function executeOpenResponsesChat(
   let responseSent = false;
   let result: OpenResponsesChatResult = { success: false };
   let agentCompleted = false;
+  // Track hallucination detection state for capsule injection on abort (RFC 041)
+  let hallucinationDetected = false;
+  // Track accumulated text for capsule injection on hallucination abort
+  let hallucinationCleanText = "";
 
   const markAgentComplete = (usage?: Usage, responseText?: string) => {
     if (agentCompleted) return;
@@ -273,7 +277,6 @@ export async function executeOpenResponsesChat(
     let accumulatedText = "";
     // Initialize CapsuleGuard for hallucination defense (RFC 041)
     let guard: CapsuleGuard | undefined;
-    let hallucinationDetected = false;
     for await (const event of client.createStreamingResponse(
       requestBody,
       abortController.signal,
@@ -332,6 +335,8 @@ export async function executeOpenResponsesChat(
                 `[Capsule] Hallucination detected in stream, cancelling`,
               );
               hallucinationDetected = true;
+              // Save accumulated text + clean content for capsule injection
+              hallucinationCleanText = accumulatedText + cleanContent;
               abortController.abort();
 
               // Emit clean content (truncated before hallucination) if non-empty
@@ -526,6 +531,31 @@ export async function executeOpenResponsesChat(
       (error.name === "AbortError" || error.message.includes("abort"))
     ) {
       logger.debug(`[OpenResponses] Request was cancelled`);
+
+      // If hallucination was detected, inject capsule into truncated content
+      // RFC 041 invariant: every assistant response should carry a capsule
+      if (hallucinationDetected && hallucinationCleanText) {
+        const conversationId =
+          existingCapsule?.cid ?? generateConversationId();
+        const agentId = generateAgentId();
+        const parentId = existingCapsule?.pid;
+
+        const capsule: Capsule = {
+          cid: conversationId,
+          aid: agentId,
+          ...(parentId && { pid: parentId }),
+        };
+
+        const finalText = appendCapsuleToContent(hallucinationCleanText, capsule);
+
+        logger.info(
+          `[Capsule] Injected capsule after hallucination abort: cid=${capsule.cid}, aid=${capsule.aid}${capsule.pid ? `, pid=${capsule.pid}` : ""}`,
+        );
+
+        markAgentComplete(undefined, finalText);
+        return { success: true, finishReason: "stop" };
+      }
+
       markAgentError();
       return { success: false, error: "Cancelled" };
     }

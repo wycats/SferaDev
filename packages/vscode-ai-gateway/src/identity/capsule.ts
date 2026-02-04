@@ -68,24 +68,30 @@ export function parseCapsule(commentString: string): Capsule | null {
 
 /**
  * Extract a capsule from message content by looking for the HTML comment.
- * Searches for capsule at the end of the content (where it should be appended).
+ * Searches for the LAST capsule in the content (the one we appended at the end).
+ * This prevents spoofing by earlier example capsules in the text.
  *
  * @param content - The message content to search
  * @returns The parsed capsule, or null if not found
  */
 export function extractCapsuleFromContent(content: string): Capsule | null {
-  // Look for the capsule pattern anywhere in the content
-  const commentMatch = content.match(
-    /<!-- v\.cid:(\S+) aid:(\S+)(?:\s+pid:(\S+))? -->/,
-  );
+  // Use global regex to find ALL matches, then take the LAST one
+  // This prevents spoofing by earlier example capsules in the content
+  const pattern = /<!-- v\.cid:(\S+) aid:(\S+)(?:\s+pid:(\S+))? -->/g;
+  let lastMatch: RegExpExecArray | null = null;
+  let match: RegExpExecArray | null;
 
-  if (!commentMatch) {
+  while ((match = pattern.exec(content)) !== null) {
+    lastMatch = match;
+  }
+
+  if (!lastMatch) {
     return null;
   }
 
-  const cid = commentMatch[1]!;
-  const aid = commentMatch[2]!;
-  const pid = commentMatch[3];
+  const cid = lastMatch[1]!;
+  const aid = lastMatch[2]!;
+  const pid = lastMatch[3];
 
   const capsule: Capsule = {
     cid,
