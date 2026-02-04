@@ -660,10 +660,11 @@ completion_log = "Complete: Fixed pnpm filter (vscode-extension-vercel-ai → vs
 [[epochs.phases.goals]]
 id = "marketplace-publishing"
 label = "Configure Marketplace publishing"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP3Z1YRQEM5K7KATZN9"
 slug = "marketplace-publishing"
 aliases = ["marketplace-publishing"]
+completion_log = "Deferred: Not ready to publish yet. Added to ideas backlog for future work."
 
 [[epochs.phases]]
 id = "phase-migration"
