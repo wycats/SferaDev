@@ -123,7 +123,9 @@ describe("CapsuleGuard", () => {
     });
 
     it("should handle legitimate HTML comments", () => {
-      const result = guard.processTextDelta("<!-- This is a normal comment -->");
+      const result = guard.processTextDelta(
+        "<!-- This is a normal comment -->",
+      );
 
       expect(result.shouldCancel).toBe(false);
       expect(result.cleanContent).toBe("<!-- This is a normal comment -->");

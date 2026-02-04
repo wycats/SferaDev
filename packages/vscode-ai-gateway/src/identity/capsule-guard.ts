@@ -49,22 +49,22 @@ export class CapsuleGuard {
 
       // Determine where in the NEW TEXT the pattern starts
       const oldBufferLength = this.buffer.length;
-      
+
       if (matchStart < oldBufferLength) {
         // Pattern started in previous buffer, entire current text is contaminated
         return { shouldCancel: true, cleanContent: "" };
       }
-      
+
       // Pattern starts in the new text
       const hallucStartIndex = matchStart - oldBufferLength;
       const cleanContent = text.substring(0, hallucStartIndex);
-      
+
       // Update buffer before returning (for consistency)
       this.buffer = fullBuffer;
       if (this.buffer.length > this.BUFFER_SIZE) {
         this.buffer = this.buffer.slice(-this.BUFFER_SIZE);
       }
-      
+
       return { shouldCancel: true, cleanContent };
     }
 

@@ -17,6 +17,7 @@ Goals 3-4 (Hallucination Defense) are **80% ready** for implementation. The foun
 ## Verified Assumptions ✅
 
 ### 1. **Capsule Module is Complete**
+
 - ✅ `src/identity/capsule.ts` exists with all required functions
   - `formatCapsule()` - converts Capsule → HTML comment
   - `parseCapsule()` - converts HTML comment → Capsule
@@ -34,12 +35,14 @@ Goals 3-4 (Hallucination Defense) are **80% ready** for implementation. The foun
   - Edge cases (empty buffer, malformed input)
 
 ### 2. **Hallucination Detection Logic is Proven**
+
 - ✅ `detectHallucinatedCapsule()` function already implemented and tested
 - ✅ Pattern detection for `<!-- v.cid:`, `<!-- v.aid:`, `<!-- v.pid:` works correctly
 - ✅ Default buffer size of 20 chars is appropriate
 - ✅ Test case: `detectHallucinatedCapsule("text... <!-- v.cid:")` → `true`
 
 ### 3. **Stream Infrastructure Exists**
+
 - ✅ `src/provider/openresponses-chat.ts` has:
   - Streaming request loop: `for await (const event of client.createStreamingResponse())`
   - Text delta event handling
@@ -65,13 +68,15 @@ Goals 3-4 (Hallucination Defense) are **80% ready** for implementation. The foun
 
 **Issue**: RFC specifies integration into `VSCodeStreamAdapter.handle()` method, but this class doesn't exist with that signature.
 
-**Reality**: 
+**Reality**:
+
 - `StreamAdapter` (not "VSCodeStreamAdapter") is a **stateless event adapter**
 - Its `adapt(event)` method is purely functional—it doesn't maintain stream state
 - It has **no access to cancellation tokens** or stream control
 - The actual stream loop is in `executeOpenResponsesChat()` at line 248-253
 
 **RFC Quote (incorrect)**:
+
 ```typescript
 // In StreamAdapter or openresponses-chat.ts
 class CapsuleGuard { ... }
@@ -92,6 +97,7 @@ for await (const event of client.createStreamingResponse(
 ```
 
 **Implementation Location**:
+
 - Create `CapsuleGuard` class in `src/provider/stream-adapter.ts` or new file `src/provider/capsule-guard.ts`
 - Instantiate `guard = new CapsuleGuard()` before the loop (line 248)
 - Call `guard.onTextDelta(text, () => abortController.abort())` when emitting text parts
@@ -103,16 +109,19 @@ for await (const event of client.createStreamingResponse(
 **Issue**: The RFC example shows a simple buffer, but real implementation needs clarification.
 
 **Reality**:
+
 - `StreamAdapter` already maintains `textContent` Map (line 100-106) for state
 - But `CapsuleGuard` needs its **own rolling buffer**, independent of adapter state
 - The buffer should track **cumulative deltas since last event check**
 
-**Why**: 
+**Why**:
+
 - Text deltas come in chunks: `"Hello"`, `" "`, `"world"`
 - Need to check the boundary where hallucination might start
 - Pattern `<!-- v.cid:` could span multiple deltas
 
 **Implementation**:
+
 ```typescript
 class CapsuleGuard {
   private buffer = "";
@@ -120,16 +129,16 @@ class CapsuleGuard {
 
   onTextDelta(text: string, onHallucination: () => void): string {
     this.buffer = (this.buffer + text).slice(-this.maxBufferSize);
-    
+
     if (detectHallucinatedCapsule(this.buffer)) {
       onHallucination(); // This will call abortController.abort()
       // Return truncated text (stop at hallucination start)
       return this.truncateAtHallucination(text);
     }
-    
+
     return text; // Pass through unchanged
   }
-  
+
   reset(): void {
     this.buffer = "";
   }
@@ -143,6 +152,7 @@ class CapsuleGuard {
 ### **No Hard Blockers**
 
 All dependencies are satisfied:
+
 - ✅ Capsule core module exists (Goals 1-2 complete)
 - ✅ Cancellation token infrastructure exists
 - ✅ Text delta handling exists
@@ -180,6 +190,7 @@ executeOpenResponsesChat()
 ### Phase: Goals 3-4 Execution (Recommended Sequence)
 
 #### Step 1: Create CapsuleGuard Class
+
 **File**: `src/provider/capsule-guard.ts` (new file)
 **Effort**: 30 min
 **Complexity**: Low
@@ -200,13 +211,13 @@ export class CapsuleGuard {
     onHallucination: () => void,
   ): { text: string; hallucinated: boolean } {
     this.buffer = (this.buffer + text).slice(-this.maxBufferSize);
-    
+
     if (detectHallucinatedCapsule(this.buffer)) {
       onHallucination();
       const truncated = this.truncateAtHallucination(text);
       return { text: truncated, hallucinated: true };
     }
-    
+
     return { text, hallucinated: false };
   }
 
@@ -226,6 +237,7 @@ export class CapsuleGuard {
 ```
 
 #### Step 2: Integrate into executeOpenResponsesChat()
+
 **File**: `src/provider/openresponses-chat.ts`
 **Effort**: 45 min
 **Complexity**: Medium (state management)
@@ -244,7 +256,7 @@ for (const part of adapted.parts) {
     const guardResult = guard.onTextDelta(part.value, () => {
       abortController.abort();
     });
-    
+
     if (guardResult.hallucinated) {
       logger.warn(
         `[OpenResponses] Hallucinated capsule detected, cancelling stream`,
@@ -252,7 +264,7 @@ for (const part of adapted.parts) {
       // Don't emit the truncated part, just stop
       break;
     }
-    
+
     progress.report(new LanguageModelTextPart(guardResult.text));
   } else {
     progress.report(part);
@@ -264,24 +276,28 @@ guard.reset();
 ```
 
 #### Step 3: Write Integration Tests
+
 **File**: `src/provider/capsule-guard.test.ts` (new file)
 **Effort**: 1 hour
 **Complexity**: Medium
 
 Test cases:
+
 - ✅ `onTextDelta()` with safe text (no hallucination)
-- ✅ Pattern match across deltas: `"text... "` + `"<!-- v.cid:"` 
+- ✅ Pattern match across deltas: `"text... "` + `"<!-- v.cid:"`
 - ✅ Truncation at hallucination start point
 - ✅ Buffer rolling (keep last 30 chars)
 - ✅ Callback firing on detection
 - ✅ Reset clears buffer
 
 #### Step 4: Add E2E Test to openresponses-chat.test.ts
+
 **File**: `src/provider/openresponses-chat.test.ts`
 **Effort**: 45 min
 **Complexity**: Medium
 
 Mock scenario:
+
 - Model generates: `"Hello world<!-- v.cid:malicious"`
 - Stream should be cancelled at `"Hello world"`
 - Verify `abortController.abort()` was called
@@ -313,13 +329,13 @@ Goals 3-4 Implementation
 
 ## Risk Assessment
 
-| Risk | Severity | Mitigation |
-|------|----------|-----------|
-| Hallucination detection fires spuriously (false positive) | Medium | Extensive testing with real models, production monitoring |
-| Truncation loses context | Low | Pattern is unique (`<!-- v.cid:`), unlikely to appear in legitimate output |
-| Buffer performance (string concat) | Low | 30-char buffer is tiny; negligible overhead |
-| Cancellation doesn't propagate | Low | Uses proven VS Code CancellationToken + AbortController pattern |
-| Tests pass locally but fail in E2E | Medium | Mock streaming scenarios with boundary conditions |
+| Risk                                                      | Severity | Mitigation                                                                 |
+| --------------------------------------------------------- | -------- | -------------------------------------------------------------------------- |
+| Hallucination detection fires spuriously (false positive) | Medium   | Extensive testing with real models, production monitoring                  |
+| Truncation loses context                                  | Low      | Pattern is unique (`<!-- v.cid:`), unlikely to appear in legitimate output |
+| Buffer performance (string concat)                        | Low      | 30-char buffer is tiny; negligible overhead                                |
+| Cancellation doesn't propagate                            | Low      | Uses proven VS Code CancellationToken + AbortController pattern            |
+| Tests pass locally but fail in E2E                        | Medium   | Mock streaming scenarios with boundary conditions                          |
 
 ---
 
@@ -357,32 +373,37 @@ Goals 3-4 Implementation
 ## Questions Resolved
 
 ### Q: What if the model completes the capsule before we truncate?
+
 **A**: Detection happens on deltas, not complete patterns. The moment `<!-- v.cid:` appears, we abort.
 
 ### Q: Can CapsuleGuard be placed elsewhere?
+
 **A**: No. Must be in the **stream loop** where we have:
+
 1. Access to each text delta
 2. Access to `abortController.abort()`
 3. Ability to mutate the reported text
 
 ### Q: Should CapsuleGuard state be per-request or global?
+
 **A**: Per-request. Create new instance in `executeOpenResponsesChat()`, reset in finally block.
 
 ### Q: What about tool calls and reasoning content?
+
 **A**: Hallucination defense only applies to **text deltas** (the visible content). Tool calls use function_call_arguments events, which have different structure and aren't user-facing.
 
 ---
 
 ## Appendix: Code Locations Reference
 
-| Component | File | Lines | Status |
-|-----------|------|-------|--------|
-| Capsule module | `src/identity/capsule.ts` | 1-180 | ✅ Complete |
-| Capsule tests | `src/identity/capsule.test.ts` | 1-421 | ✅ Complete |
-| Stream loop | `src/provider/openresponses-chat.ts` | 248-320 | ← Hook here |
-| StreamAdapter | `src/provider/stream-adapter.ts` | 155-250 | Reference only |
-| Text delta handler | `src/provider/stream-adapter.ts` | 741-750 | Stateless mapper |
-| Abort setup | `src/provider/openresponses-chat.ts` | 144-149 | Existing |
+| Component          | File                                 | Lines   | Status           |
+| ------------------ | ------------------------------------ | ------- | ---------------- |
+| Capsule module     | `src/identity/capsule.ts`            | 1-180   | ✅ Complete      |
+| Capsule tests      | `src/identity/capsule.test.ts`       | 1-421   | ✅ Complete      |
+| Stream loop        | `src/provider/openresponses-chat.ts` | 248-320 | ← Hook here      |
+| StreamAdapter      | `src/provider/stream-adapter.ts`     | 155-250 | Reference only   |
+| Text delta handler | `src/provider/stream-adapter.ts`     | 741-750 | Stateless mapper |
+| Abort setup        | `src/provider/openresponses-chat.ts` | 144-149 | Existing         |
 
 ---
 

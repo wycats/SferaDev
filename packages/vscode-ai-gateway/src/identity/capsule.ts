@@ -53,16 +53,16 @@ export function parseCapsule(commentString: string): Capsule | null {
   const cid = match[1]!;
   const aid = match[2]!;
   const pid = match[3];
-  
+
   const capsule: Capsule = {
     cid,
     aid,
   };
-  
+
   if (pid) {
     capsule.pid = pid;
   }
-  
+
   return capsule;
 }
 
@@ -86,16 +86,16 @@ export function extractCapsuleFromContent(content: string): Capsule | null {
   const cid = commentMatch[1]!;
   const aid = commentMatch[2]!;
   const pid = commentMatch[3];
-  
+
   const capsule: Capsule = {
     cid,
     aid,
   };
-  
+
   if (pid) {
     capsule.pid = pid;
   }
-  
+
   return capsule;
 }
 
@@ -155,7 +155,10 @@ export function removeCapsuleFromContent(content: string): string {
  * @param capsule - The capsule to append
  * @returns Content with capsule appended
  */
-export function appendCapsuleToContent(content: string, capsule: Capsule): string {
+export function appendCapsuleToContent(
+  content: string,
+  capsule: Capsule,
+): string {
   // Remove existing capsule if present
   const cleaned = removeCapsuleFromContent(content);
   // Append new capsule

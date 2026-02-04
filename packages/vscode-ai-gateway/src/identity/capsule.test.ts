@@ -91,8 +91,7 @@ describe("Capsule Format & Parsing", () => {
     });
 
     it("should handle capsule with extra spaces around pid", () => {
-      const comment =
-        "<!-- v.cid:conv_abc aid:agent_xyz pid:agent_parent -->";
+      const comment = "<!-- v.cid:conv_abc aid:agent_xyz pid:agent_parent -->";
       const parsed = parseCapsule(comment);
       expect(parsed?.pid).toBe("agent_parent");
     });
@@ -141,8 +140,7 @@ describe("Capsule Content Operations", () => {
     });
 
     it("should extract capsule from middle of content", () => {
-      const content =
-        "Line 1\n<!-- v.cid:conv_123 aid:agent_456 -->\nLine 2";
+      const content = "Line 1\n<!-- v.cid:conv_123 aid:agent_456 -->\nLine 2";
       const capsule = extractCapsuleFromContent(content);
 
       expect(capsule).toEqual({
@@ -168,8 +166,7 @@ describe("Capsule Content Operations", () => {
 
   describe("removeCapsuleFromContent", () => {
     it("should remove capsule from end of content", () => {
-      const content =
-        "Response text\n<!-- v.cid:conv_123 aid:agent_456 -->";
+      const content = "Response text\n<!-- v.cid:conv_123 aid:agent_456 -->";
       const cleaned = removeCapsuleFromContent(content);
 
       expect(cleaned).toBe("Response text");
@@ -184,8 +181,7 @@ describe("Capsule Content Operations", () => {
     });
 
     it("should remove capsule with parent ID", () => {
-      const content =
-        "Content\n<!-- v.cid:conv_a aid:agent_b pid:agent_c -->";
+      const content = "Content\n<!-- v.cid:conv_a aid:agent_b pid:agent_c -->";
       const cleaned = removeCapsuleFromContent(content);
 
       expect(cleaned).toBe("Content");
@@ -214,8 +210,7 @@ describe("Capsule Content Operations", () => {
     });
 
     it("should replace existing capsule with new one", () => {
-      const content =
-        "Content\n<!-- v.cid:conv_old aid:agent_old -->";
+      const content = "Content\n<!-- v.cid:conv_old aid:agent_old -->";
       const newCapsule: Capsule = {
         cid: "conv_new",
         aid: "agent_new",
@@ -239,7 +234,9 @@ describe("Capsule Content Operations", () => {
       const result = appendCapsuleToContent(content, capsule);
 
       expect(result).toContain("Response");
-      expect(result).toContain("<!-- v.cid:conv_123 aid:agent_456 pid:agent_parent -->");
+      expect(result).toContain(
+        "<!-- v.cid:conv_123 aid:agent_456 pid:agent_parent -->",
+      );
     });
   });
 });

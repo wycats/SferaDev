@@ -31,8 +31,11 @@ import type { ConfigService } from "../config.js";
 import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
 import { CapsuleGuard } from "../identity/capsule-guard.js";
 import {
+  appendCapsuleToContent,
   type Capsule,
   extractCapsuleFromMessages,
+  generateAgentId,
+  generateConversationId,
 } from "../identity/capsule.js";
 import {
   extractTokenCountFromError,
@@ -462,7 +465,28 @@ export async function executeOpenResponsesChat(
         if (adapted.error) {
           markAgentError();
         } else {
-          markAgentComplete(adapted.usage, accumulatedText);
+          // Goal 6: Inject capsule into completed response
+          let finalText = accumulatedText;
+          if (adapted.usage) {
+            const conversationId =
+              existingCapsule?.cid ?? generateConversationId();
+            const agentId = generateAgentId();
+            const parentId = existingCapsule?.pid;
+
+            const capsule: Capsule = {
+              cid: conversationId,
+              aid: agentId,
+              ...(parentId && { pid: parentId }),
+            };
+
+            finalText = appendCapsuleToContent(accumulatedText, capsule);
+
+            logger.info(
+              `[Capsule] Injected capsule into response: cid=${capsule.cid}, aid=${capsule.aid}${capsule.pid ? `, pid=${capsule.pid}` : ""}`,
+            );
+          }
+
+          markAgentComplete(adapted.usage, finalText);
         }
 
         // Track usage and calibrate token estimation
