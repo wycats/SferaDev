@@ -270,14 +270,18 @@ export function createClient(options: ClientOptions) {
     }
 
     let eventCount = 0;
-    for await (const event of parseSSEStream(response.body)) {
-      eventCount++;
-      trace(`[OpenResponses] SSE event #${eventCount.toString()}`, event);
-      yield event;
+    try {
+      for await (const event of parseSSEStream(response.body)) {
+        eventCount++;
+        trace(`[OpenResponses] SSE event #${eventCount.toString()}`, event);
+        yield event;
+      }
+      debug(
+        `[OpenResponses] Stream completed with ${eventCount.toString()} events`,
+      );
+    } finally {
+      controller.abort();
     }
-    debug(
-      `[OpenResponses] Stream completed with ${eventCount.toString()} events`,
-    );
   }
 
   return {

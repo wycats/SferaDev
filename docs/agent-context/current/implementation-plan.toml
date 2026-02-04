@@ -78,6 +78,27 @@ completion_log = "Updated parseSSEChunk to accumulate consecutive data lines and
 [[plan.goals]]
 id = "fix-stream-cancellation"
 
+[[plan.goals.tasks]]
+id = "wrap-streaming-in-try-finally"
+title = "Wrap createStreamingResponse in try/finally to abort on early consumer exit"
+status = "completed"
+completed_at = "2026-02-04T00:31:33.918757537+00:00"
+completion_log = "Wrapped createStreamingResponse streaming loop in try/finally and aborts controller on exit."
+
+[[plan.goals.tasks]]
+id = "add-generator-return-cleanup"
+title = "Ensure cleanup runs when consumer calls generator.return()"
+status = "completed"
+completed_at = "2026-02-04T00:31:36.515660949+00:00"
+completion_log = "Ensured generator cleanup runs via try/finally abort in createStreamingResponse when consumer returns early."
+
+[[plan.goals.tasks]]
+id = "add-stream-cancellation-tests"
+title = "Add tests for early break, explicit return, and error cancellation scenarios"
+status = "completed"
+completed_at = "2026-02-04T00:31:37.956559285+00:00"
+completion_log = "Added streaming cancellation tests for early break, external abort, and stream error cleanup."
+
 
 
 [verification]
