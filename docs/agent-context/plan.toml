@@ -527,7 +527,7 @@ completion_log = "Moved to ideas backlog - not a P0 fix, future consideration"
 [[epochs.phases]]
 id = "01kgjmcke2fq6rg6rkknaccsmj"
 title = "Phase 2: Correctness Fixes (P1)"
-status = "active"
+status = "completed"
 ulid = "01KGJMNKAHG7RBBXY2KYG317AN"
 slug = "01kgjmcke2fq6rg6rkknaccsmj"
 aliases = ["01kgjmcke2fq6rg6rkknaccsmj"]
@@ -575,7 +575,7 @@ aliases = ["fix-stream-cancellation"]
 [[epochs.phases]]
 id = "01kgjmcvf2f9w5bcaw6qaxx2x0"
 title = "Phase 3: Foundation Work"
-status = "pending"
+status = "active"
 ulid = "01KGJMNKAH4QSRZYHGHYBZRJPZ"
 slug = "01kgjmcvf2f9w5bcaw6qaxx2x0"
 aliases = ["01kgjmcvf2f9w5bcaw6qaxx2x0"]
