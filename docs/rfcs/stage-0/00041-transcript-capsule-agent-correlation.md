@@ -159,7 +159,7 @@ class CapsuleGuard {
 
 ### 1. Metadata in API Response
 
-**Rejected**: OpenResponses/VS Code LM API don't provide persistent conversation IDs that survive context truncation.
+**Rejected**: OpenResponses `metadata` and `previous_response_id` fields are only passed through to OpenAI. For Anthropic, Gemini, and other providers, these fields are silently ignored. See [vercel/ai-gateway#1153](https://github.com/vercel/ai-gateway/issues/1153). The capsule approach is provider-agnostic.
 
 ### 2. External State Store
 
