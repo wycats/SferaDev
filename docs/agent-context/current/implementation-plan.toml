@@ -54,6 +54,27 @@ id = "fix-memory-leaks"
 [[plan.goals]]
 id = "fix-sse-parsing"
 
+[[plan.goals.tasks]]
+id = "add-sse-parsing-tests"
+title = "Add comprehensive SSE parsing tests (CRLF, multiline data, edge cases)"
+status = "completed"
+completed_at = "2026-02-04T00:23:57.709079455+00:00"
+completion_log = "Added parseSSEChunk unit tests covering LF/CRLF, mixed endings, multiline data, and edge cases."
+
+[[plan.goals.tasks]]
+id = "normalize-crlf"
+title = "Normalize CRLF to LF before splitting SSE events"
+status = "completed"
+completed_at = "2026-02-04T00:23:51.917917243+00:00"
+completion_log = "Normalized CRLF to LF in SSE stream buffering before splitting events."
+
+[[plan.goals.tasks]]
+id = "handle-multiline-data"
+title = "Join consecutive data: lines with newline before JSON parsing"
+status = "completed"
+completed_at = "2026-02-04T00:23:54.821888317+00:00"
+completion_log = "Updated parseSSEChunk to accumulate consecutive data lines and parse joined payloads."
+
 [[plan.goals]]
 id = "fix-stream-cancellation"
 
