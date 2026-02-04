@@ -583,10 +583,11 @@ aliases = ["01kgjmcvf2f9w5bcaw6qaxx2x0"]
 [[epochs.phases.goals]]
 id = "fix-model-family-encoding"
 label = "Improve model-family encoding accuracy for non-OpenAI models"
-status = "pending"
+status = "completed"
 ulid = "01KGJP2PYTCV7JVQNFNBSNW1BG"
 slug = "fix-model-family-encoding"
 aliases = ["fix-model-family-encoding"]
+completion_log = "Resolved by documentation: tiktoken cl100k_base is an acceptable approximation for non-OpenAI models. Added comprehensive documentation explaining the tradeoffs. Character fallback was considered but rejected as not more accurate. All 380 tests pass."
 
 [[epochs]]
 id = "vercel-transition-epoch"
