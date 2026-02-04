@@ -1015,7 +1015,7 @@ export class TokenStatusBar implements vscode.Disposable {
 
     // Build main part of display
     let mainText = "";
-    let icon = "$(symbol-number)";
+    let icon = "$(triangle-up)";
 
     if (mainAgent) {
       const hasCompaction =

@@ -111,7 +111,7 @@ describe("TokenStatusBar", () => {
       });
 
       // Padded format: " 52.0k" (6 chars), "128.0k" (6 chars)
-      expect(mockStatusBarItem.text).toBe(`$(symbol-number) ${fs}52.0k/128.0k`);
+      expect(mockStatusBarItem.text).toBe(`$(triangle-up) ${fs}52.0k/128.0k`);
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
 
