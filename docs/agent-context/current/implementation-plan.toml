@@ -2,19 +2,19 @@
 # Implementation Plan
 
 [phase]
-id = "phase-branding"
-title = "Branding & Identity (RFC 002)"
+id = "phase-repository"
+title = "Standalone Repository (RFC 001)"
 rfcs = []
 
 [plan]
 [[plan.goals]]
-id = "publisher-change"
+id = "repo-extraction"
 
 [[plan.goals]]
-id = "namespace-change"
+id = "ci-setup"
 
 [[plan.goals]]
-id = "visual-identity"
+id = "marketplace-publishing"
 
 
 
