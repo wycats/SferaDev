@@ -1,8 +1,9 @@
 # RFC 041: Transcript Capsule Agent Correlation
 
-**Status**: Stage 0 (Idea)  
+**Status**: Stage 1 (Proposal)  
 **Author**: Agent  
 **Created**: 2026-02-03  
+**Promoted**: 2026-02-03  
 **Related**: RFC 031 (Status Bar Subagent Flows), RFC 040 (Token State Model)
 
 ## Summary
