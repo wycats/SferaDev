@@ -2,19 +2,13 @@
 # Implementation Plan
 
 [phase]
-id = "phase-migration"
-title = "Migration & Deprecation (RFC 007)"
+id = "phase-auth-triage"
+title = "Authentication (RFC 005b - Triage)"
 rfcs = []
 
 [plan]
 [[plan.goals]]
-id = "settings-migration"
-
-[[plan.goals]]
-id = "deprecation-notices"
-
-[[plan.goals]]
-id = "parallel-operation"
+id = "evaluate-enterprise-oidc"
 
 
 
