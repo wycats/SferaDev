@@ -10,6 +10,31 @@ rfcs = []
 [[plan.goals]]
 id = "fix-agent-lifecycle"
 
+[[plan.goals.tasks]]
+id = "ensure-terminal-completion"
+title = "Ensure all terminal stream events (done, error, abort) trigger agent completion"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "handle-cancellation-completion"
+title = "Handle cancellation path (AbortError) agent completion"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "handle-no-content-completion"
+title = "Handle no-content path (noContent=true) agent completion"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-finally-cleanup"
+title = "Add finally block for guaranteed agent cleanup (defense-in-depth)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-terminal-event-tests"
+title = "Add comprehensive tests for all terminal event scenarios"
+status = "pending"
+
 [[plan.goals]]
 id = "fix-sensitive-logging"
 
