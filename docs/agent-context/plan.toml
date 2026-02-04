@@ -428,7 +428,7 @@ aliases = ["01kgbg6cpxvd67bq84rbcq3zzj"]
 [[epochs]]
 id = "01kgjmbq8658mgjyrzmn3nc39x"
 title = "Codebase Health"
-status = "active"
+status = "completed"
 ulid = "01KGJMNKAHZEF8QA3AFR98H4D0"
 slug = "01kgjmbq8658mgjyrzmn3nc39x"
 aliases = ["01kgjmbq8658mgjyrzmn3nc39x"]
@@ -575,7 +575,7 @@ aliases = ["fix-stream-cancellation"]
 [[epochs.phases]]
 id = "01kgjmcvf2f9w5bcaw6qaxx2x0"
 title = "Phase 3: Foundation Work"
-status = "active"
+status = "completed"
 ulid = "01KGJMNKAH4QSRZYHGHYBZRJPZ"
 slug = "01kgjmcvf2f9w5bcaw6qaxx2x0"
 aliases = ["01kgjmcvf2f9w5bcaw6qaxx2x0"]
@@ -584,10 +584,10 @@ aliases = ["01kgjmcvf2f9w5bcaw6qaxx2x0"]
 id = "fix-model-family-encoding"
 label = "Improve model-family encoding accuracy for non-OpenAI models"
 status = "completed"
+completion_log = "Resolved by documentation: tiktoken cl100k_base is an acceptable approximation for non-OpenAI models. Added comprehensive documentation explaining the tradeoffs. Character fallback was considered but rejected as not more accurate. All 380 tests pass."
 ulid = "01KGJP2PYTCV7JVQNFNBSNW1BG"
 slug = "fix-model-family-encoding"
 aliases = ["fix-model-family-encoding"]
-completion_log = "Resolved by documentation: tiktoken cl100k_base is an acceptable approximation for non-OpenAI models. Added comprehensive documentation explaining the tradeoffs. Character fallback was considered but rejected as not more accurate. All 380 tests pass."
 
 [[epochs]]
 id = "vercel-transition-epoch"

@@ -2,13 +2,19 @@
 # Implementation Plan
 
 [phase]
-id = "01kgjmcvf2f9w5bcaw6qaxx2x0"
-title = "Phase 3: Foundation Work"
+id = "phase-branding"
+title = "Branding & Identity (RFC 002)"
 rfcs = []
 
 [plan]
 [[plan.goals]]
-id = "fix-model-family-encoding"
+id = "publisher-change"
+
+[[plan.goals]]
+id = "namespace-change"
+
+[[plan.goals]]
+id = "visual-identity"
 
 
 
