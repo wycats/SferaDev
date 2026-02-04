@@ -593,7 +593,7 @@ aliases = ["fix-model-family-encoding"]
 [[epochs]]
 id = "vercel-transition-epoch"
 title = "Vercel Transition"
-status = "active"
+status = "pending"
 ulid = "01KG0K3GP32H4JVKM3YHJKCW0K"
 slug = "vercel-transition-epoch"
 aliases = ["vercel-transition-epoch"]
@@ -634,7 +634,7 @@ aliases = ["visual-identity"]
 [[epochs.phases]]
 id = "phase-repository"
 title = "Standalone Repository (RFC 001)"
-status = "active"
+status = "completed"
 ulid = "01KG0K3GP3E0P85VTEFP4FGDY2"
 slug = "phase-repository"
 aliases = ["phase-repository"]
@@ -643,28 +643,28 @@ aliases = ["phase-repository"]
 id = "repo-extraction"
 label = "Extract to vercel/vscode-ai-gateway repository"
 status = "completed"
+completion_log = "Complete: Repository extracted to https://github.com/vercel-labs/vscode-ai-gateway. All URLs in package.json and READMEs point to the correct location."
 ulid = "01KG0K3GP3TEXPV1B8TXPCVYPW"
 slug = "repo-extraction"
 aliases = ["repo-extraction"]
-completion_log = "Complete: Repository extracted to https://github.com/vercel-labs/vscode-ai-gateway. All URLs in package.json and READMEs point to the correct location."
 
 [[epochs.phases.goals]]
 id = "ci-setup"
 label = "Set up GitHub Actions CI/CD"
 status = "completed"
+completion_log = "Complete: Fixed pnpm filter (vscode-extension-vercel-ai → vscode-ai-gateway), regenerated workflow with exohook, fixed pre-existing TypeScript errors that were hidden. CI now runs correctly."
 ulid = "01KG0K3GP34AXD514Q5W2HJYK5"
 slug = "ci-setup"
 aliases = ["ci-setup"]
-completion_log = "Complete: Fixed pnpm filter (vscode-extension-vercel-ai → vscode-ai-gateway), regenerated workflow with exohook, fixed pre-existing TypeScript errors that were hidden. CI now runs correctly."
 
 [[epochs.phases.goals]]
 id = "marketplace-publishing"
 label = "Configure Marketplace publishing"
 status = "completed"
+completion_log = "Deferred: Not ready to publish yet. Added to ideas backlog for future work."
 ulid = "01KG0K3GP3Z1YRQEM5K7KATZN9"
 slug = "marketplace-publishing"
 aliases = ["marketplace-publishing"]
-completion_log = "Deferred: Not ready to publish yet. Added to ideas backlog for future work."
 
 [[epochs.phases]]
 id = "phase-migration"

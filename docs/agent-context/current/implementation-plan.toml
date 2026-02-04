@@ -2,19 +2,19 @@
 # Implementation Plan
 
 [phase]
-id = "phase-repository"
-title = "Standalone Repository (RFC 001)"
+id = "phase-migration"
+title = "Migration & Deprecation (RFC 007)"
 rfcs = []
 
 [plan]
 [[plan.goals]]
-id = "repo-extraction"
+id = "settings-migration"
 
 [[plan.goals]]
-id = "ci-setup"
+id = "deprecation-notices"
 
 [[plan.goals]]
-id = "marketplace-publishing"
+id = "parallel-operation"
 
 
 
