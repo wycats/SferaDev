@@ -6,7 +6,7 @@ const makeEvent = (delta: string) =>
   ({
     type: "response.output_text.delta",
     delta,
-  } as unknown as StreamingEvent);
+  }) as unknown as StreamingEvent;
 
 const createStream = () => {
   let streamController: ReadableStreamDefaultController<Uint8Array> | null =
@@ -45,7 +45,8 @@ describe("parseSSEChunk", () => {
   it("parses mixed CRLF/LF line endings with multiple events", () => {
     const first = makeEvent("one");
     const second = makeEvent("two");
-    const chunk = `data: ${JSON.stringify(first)}\r\n\r\n` +
+    const chunk =
+      `data: ${JSON.stringify(first)}\r\n\r\n` +
       `data: ${JSON.stringify(second)}\n`;
 
     expect(parseSSEChunk(chunk)).toEqual([first, second]);
@@ -54,9 +55,9 @@ describe("parseSSEChunk", () => {
   it("joins multiline data before parsing", () => {
     const expected = makeEvent("hello");
     const chunk =
-      "data: {\"type\":\"response.output_text.delta\"," +
+      'data: {"type":"response.output_text.delta",' +
       "\n" +
-      "data: \"delta\":\"hello\"}\n";
+      'data: "delta":"hello"}\n';
 
     expect(parseSSEChunk(chunk)).toEqual([expected]);
   });

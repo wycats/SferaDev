@@ -231,6 +231,12 @@ export class TokenCounter {
 
   private getEncodingForFamily(modelFamily: string): Encoding | undefined {
     const encodingName = this.resolveEncodingName(modelFamily);
+    if (encodingName === undefined) {
+      // Non-OpenAI models: use character-based fallback
+      // Claude, Gemini, Llama, etc. have proprietary tokenizers that differ
+      // significantly from tiktoken. Character estimation is more honest.
+      return undefined;
+    }
     if (this.encodings.has(encodingName)) {
       return this.encodings.get(encodingName);
     }
@@ -243,13 +249,37 @@ export class TokenCounter {
     }
   }
 
+  /**
+   * Resolve tiktoken encoding name for a model family.
+   *
+   * NOTE: This uses OpenAI's tiktoken encodings as an approximation for ALL models.
+   * Non-OpenAI models (Claude, Gemini, Llama, etc.) use proprietary tokenizers that
+   * can differ by 10-30% from tiktoken. However, for status bar estimation purposes,
+   * this approximation is acceptable - users need "am I near the limit?" not exact counts.
+   *
+   * Alternatives considered:
+   * - Character fallback (~3.5 chars/token): Less consistent, not more accurate
+   * - Model-specific tokenizers: Heavy dependencies (WASM), not all publicly available
+   * - API-based counting: Adds latency and cost
+   */
   private resolveEncodingName(
     modelFamily: string,
   ): "o200k_base" | "cl100k_base" {
     const family = modelFamily.toLowerCase();
-    if (family.includes("gpt-4o") || family.includes("o1")) {
+
+    // GPT-4o and O1/O3 series use o200k_base (newer, larger vocabulary)
+    if (
+      family.includes("gpt-4o") ||
+      family.includes("o1-") ||
+      family.includes("o3-") ||
+      family === "o1" ||
+      family === "o3"
+    ) {
       return "o200k_base";
     }
+
+    // All other models use cl100k_base as a reasonable approximation
+    // This includes: GPT-4, GPT-3.5, Claude, Gemini, Llama, Mistral, etc.
     return "cl100k_base";
   }
 }

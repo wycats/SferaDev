@@ -24,10 +24,7 @@ export function saveSuspiciousRequest(
 ): void {
   try {
     const config = vscode.workspace.getConfiguration("vercel.ai");
-    const forensicEnabled = config.get<boolean>(
-      "debug.forensicCapture",
-      false,
-    );
+    const forensicEnabled = config.get<boolean>("debug.forensicCapture", false);
 
     if (!forensicEnabled) {
       logger.debug(

@@ -87,11 +87,37 @@ describe("TokenCounter", () => {
     expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("o200k_base");
   });
 
-  it("uses cl100k_base for claude families", () => {
+  it("uses cl100k_base for gpt-4 families", () => {
+    const counter = new TokenCounter();
+    counter.estimateTextTokens("hello", "gpt-4-turbo");
+
+    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
+  });
+
+  it("uses cl100k_base for claude (approximation for non-OpenAI)", () => {
     const counter = new TokenCounter();
     counter.estimateTextTokens("hello", "claude-3-5-sonnet");
 
+    // Non-OpenAI models use cl100k_base as a reasonable approximation
+    // (see counter.ts resolveEncodingName for rationale)
     expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
+    expect(counter.usesCharacterFallback("claude-3-5-sonnet")).toBe(false);
+  });
+
+  it("uses cl100k_base for gemini (approximation for non-OpenAI)", () => {
+    const counter = new TokenCounter();
+    counter.estimateTextTokens("hello", "gemini-2.0-flash");
+
+    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
+    expect(counter.usesCharacterFallback("gemini-2.0-flash")).toBe(false);
+  });
+
+  it("uses cl100k_base for llama (approximation for non-OpenAI)", () => {
+    const counter = new TokenCounter();
+    counter.estimateTextTokens("hello", "llama-3.1-70b");
+
+    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
+    expect(counter.usesCharacterFallback("llama-3.1-70b")).toBe(false);
   });
 
   it("falls back to character estimation when encoding is unavailable", () => {

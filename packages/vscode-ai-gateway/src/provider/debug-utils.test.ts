@@ -87,7 +87,7 @@ describe("saveSuspiciousRequest", () => {
     });
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       "/tmp/workspace/.logs/last-suspicious-request.json",
-      expect.stringContaining("\"request\""),
+      expect.stringContaining('"request"'),
     );
   });
 });
