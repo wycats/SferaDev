@@ -597,6 +597,7 @@ status = "completed"
 ulid = "01KG0K3GP32H4JVKM3YHJKCW0K"
 slug = "vercel-transition-epoch"
 aliases = ["vercel-transition-epoch"]
+reviewed = true
 
 [[epochs.phases]]
 id = "phase-branding"
