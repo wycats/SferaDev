@@ -189,11 +189,25 @@ class CapsuleGuard {
 3. No visible artifacts in chat UI
 4. Hallucination defense triggers <1% of responses (ideally 0%)
 
-## Open Questions
+## Resolved Questions
 
-1. Should `conversationId` be user-visible (for debugging) or purely internal?
-2. Should we include a checksum/nonce to make hallucination harder?
-3. How do we handle conversations that predate this feature (no capsules)?
+### 1. Visibility of capsules
+
+**Decision**: HTML comments are acceptable. They're invisible in rendered markdown but visible if user copies raw text. This is fine—the format is clearly machine-generated and power users may find it useful for debugging.
+
+### 2. Checksum/nonce for hallucination defense
+
+**Decision**: Not needed. Stream cancellation on pattern detection (`<!-- v.cid:`) is sufficient. The model never completes the hallucination, so validating correctness is moot.
+
+### 3. Legacy conversations without capsules
+
+**Decision**: Generate on next assistant response, graceful degradation for old messages.
+
+- **New responses**: Always append capsule
+- **Old responses**: Cannot modify; fall back to existing heuristics (system prompt hash, etc.)
+- **Invariant**: Every assistant response we generate gets a capsule appended
+
+This ensures redundancy—if early messages are truncated from context, later ones still carry the ID.
 
 ## References
 
