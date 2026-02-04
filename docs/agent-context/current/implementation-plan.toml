@@ -72,6 +72,27 @@ completion_log = "Added tests covering disabled/enabled forensicCapture behavior
 [[plan.goals]]
 id = "fix-memory-leaks"
 
+[[plan.goals.tasks]]
+id = "add-conversation-state-eviction"
+title = "Add LRU eviction to ConversationStateTracker (max 100 entries)"
+status = "completed"
+completed_at = "2026-02-04T00:55:46.142808262+00:00"
+completion_log = "Added LRU access tracking with max 100 entries and eviction on record/lookup."
+
+[[plan.goals.tasks]]
+id = "add-conversation-state-ttl"
+title = "Add TTL-based cleanup for stale conversation states (1 hour)"
+status = "completed"
+completed_at = "2026-02-04T00:55:46.430868922+00:00"
+completion_log = "Added TTL cleanup (1 hour) with periodic cleanup on record/lookup."
+
+[[plan.goals.tasks]]
+id = "add-memory-leak-tests"
+title = "Add tests verifying LRU eviction and TTL cleanup behavior"
+status = "completed"
+completed_at = "2026-02-04T00:55:46.587544962+00:00"
+completion_log = "Added LRU eviction, recent-use preservation, and TTL cleanup tests."
+
 [[plan.goals]]
 id = "fix-sse-parsing"
 

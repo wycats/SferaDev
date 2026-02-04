@@ -242,4 +242,68 @@ describe("ConversationStateTracker", () => {
       expect(tracker.getState("gpt-4")).toBeUndefined();
     });
   });
+
+  describe("memory leak protections", () => {
+    it("evicts least recently used entries when max size is reached", () => {
+      for (let i = 0; i < 100; i += 1) {
+        tracker.recordActual([createMessage(1, `msg-${i.toString()}`)], "claude", i, `conv-${i.toString()}`);
+      }
+
+      expect(tracker.getState("claude", "conv-0")).toBeDefined();
+
+      tracker.recordActual(
+        [createMessage(1, "msg-100")],
+        "claude",
+        100,
+        "conv-100",
+      );
+
+      expect(tracker.getState("claude", "conv-0")).toBeUndefined();
+      expect(tracker.getState("claude", "conv-100")).toBeDefined();
+    });
+
+    it("preserves recently used entries in LRU eviction", () => {
+      for (let i = 0; i < 100; i += 1) {
+        tracker.recordActual([createMessage(1, `msg-${i.toString()}`)], "claude", i, `conv-${i.toString()}`);
+      }
+
+      const lookup = tracker.lookup(
+        [createMessage(1, "msg-0")],
+        "claude",
+        "conv-0",
+      );
+      expect(lookup.type).toBe("exact");
+
+      tracker.recordActual(
+        [createMessage(1, "msg-100")],
+        "claude",
+        100,
+        "conv-100",
+      );
+
+      expect(tracker.getState("claude", "conv-0")).toBeDefined();
+      expect(tracker.getState("claude", "conv-1")).toBeUndefined();
+    });
+
+    it("cleans up stale entries based on TTL", () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-02-03T00:00:00.000Z"));
+
+      tracker.recordActual([createMessage(1, "old")], "claude", 1, "conv-old");
+
+      vi.setSystemTime(new Date("2026-02-03T01:01:00.000Z"));
+
+      tracker.recordActual(
+        [createMessage(1, "new")],
+        "claude",
+        2,
+        "conv-new",
+      );
+
+      expect(tracker.getState("claude", "conv-old")).toBeUndefined();
+      expect(tracker.getState("claude", "conv-new")).toBeDefined();
+
+      vi.useRealTimers();
+    });
+  });
 });

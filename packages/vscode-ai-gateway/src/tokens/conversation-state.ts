@@ -49,6 +49,9 @@ export interface ConversationLookupResult {
 export class ConversationStateTracker {
   /** Most recent known state per conversation key */
   private knownStates = new Map<string, KnownConversationState>();
+  private accessOrder: string[] = [];
+  private readonly maxEntries = 100;
+  private readonly ttlMs = 60 * 60 * 1000;
 
   private computeKey(modelFamily: string, conversationId?: string): string {
     return conversationId ? `${modelFamily}:${conversationId}` : modelFamily;
@@ -67,6 +70,7 @@ export class ConversationStateTracker {
     actualTokens: number,
     conversationId?: string,
   ): void {
+    this.cleanupStale();
     const messageHashes = messages.map((m) => this.hashMessage(m));
     const key = this.computeKey(modelFamily, conversationId);
 
@@ -77,6 +81,8 @@ export class ConversationStateTracker {
       timestamp: Date.now(),
     };
 
+    this.touchKey(key);
+    this.evictIfNeeded(key);
     this.knownStates.set(key, state);
 
     logger.debug(
@@ -98,11 +104,13 @@ export class ConversationStateTracker {
     modelFamily: string,
     conversationId?: string,
   ): ConversationLookupResult {
+    this.cleanupStale();
     const key = this.computeKey(modelFamily, conversationId);
     const state = this.knownStates.get(key);
     if (!state) {
       return { type: "none" };
     }
+    this.touchKey(key);
 
     const currentHashes = messages.map((m) => this.hashMessage(m));
 
@@ -167,6 +175,45 @@ export class ConversationStateTracker {
    */
   clear(): void {
     this.knownStates.clear();
+    this.accessOrder = [];
+  }
+
+  private touchKey(key: string): void {
+    const index = this.accessOrder.indexOf(key);
+    if (index !== -1) {
+      this.accessOrder.splice(index, 1);
+    }
+    this.accessOrder.push(key);
+  }
+
+  private evictIfNeeded(key: string): void {
+    while (this.knownStates.size >= this.maxEntries) {
+      const oldest = this.accessOrder.shift();
+      if (!oldest) {
+        break;
+      }
+      if (!this.knownStates.has(oldest)) {
+        continue;
+      }
+      if (oldest === key) {
+        continue;
+      }
+      this.knownStates.delete(oldest);
+      break;
+    }
+  }
+
+  private cleanupStale(): void {
+    const now = Date.now();
+    for (const [key, state] of this.knownStates) {
+      if (now - state.timestamp > this.ttlMs) {
+        this.knownStates.delete(key);
+        const index = this.accessOrder.indexOf(key);
+        if (index !== -1) {
+          this.accessOrder.splice(index, 1);
+        }
+      }
+    }
   }
 
   /**
