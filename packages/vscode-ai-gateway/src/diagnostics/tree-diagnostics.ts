@@ -96,7 +96,8 @@ export type DiagnosticEventType =
   | "CLAIM_CREATED"
   | "CLAIM_MATCHED"
   | "CLAIM_EXPIRED"
-  | "CLAIM_NOT_MATCHED";
+  | "CLAIM_NOT_MATCHED"
+  | "TOOL_CALL_DETECTED";
 
 export interface DiagnosticEvent {
   timestamp: string;

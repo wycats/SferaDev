@@ -1153,8 +1153,8 @@ export class TokenStatusBar implements vscode.Disposable {
     // Use accumulated totals for multi-turn conversations
     const inputTokens =
       agent.turnCount > 1 ? agent.maxObservedInputTokens : agent.inputTokens;
-    const outputTokens =
-      agent.turnCount > 1 ? agent.totalOutputTokens : agent.outputTokens;
+    // Note: outputTokens available for future use:
+    // agent.turnCount > 1 ? agent.totalOutputTokens : agent.outputTokens
     const input = this.formatTokenCount(inputTokens);
 
     if (agent.maxInputTokens) {

@@ -112,7 +112,7 @@ describe("translateRequest system prompt extraction (integration)", () => {
       systemPromptMessage: "",
     };
 
-    const result = translateRequest(messages, options, configService);
+    const result = translateRequest(messages as never, options, configService as never);
 
     expect(result.instructions).toBe(systemText);
     expect(JSON.stringify(result.input)).not.toContain(systemText);
@@ -135,7 +135,7 @@ describe("translateRequest system prompt extraction (integration)", () => {
       systemPromptMessage: "",
     };
 
-    const result = translateRequest(messages, options, configService);
+    const result = translateRequest(messages as never, options, configService as never);
 
     const messageItems = result.input.filter(
       (item) => item.type === "message",
@@ -162,7 +162,7 @@ describe("translateRequest system prompt extraction (integration)", () => {
       systemPromptMessage: "",
     };
 
-    const result = translateRequest(messages, options, configService);
+    const result = translateRequest(messages as never, options, configService as never);
 
     expect(result.instructions).toBeUndefined();
   });

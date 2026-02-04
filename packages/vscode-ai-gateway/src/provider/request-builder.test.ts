@@ -85,10 +85,10 @@ describe("translateRequest tool structure", () => {
       systemPromptMessage: "",
     };
 
-    const result = translateRequest([], options, configService);
+    const result = translateRequest([], options, configService as never);
 
     expect(result.tools).toHaveLength(1);
-    const [tool] = result.tools;
+    const tool = result.tools[0]!;
     expect(tool.name).toBe("get_time");
     expect(tool.parameters).toEqual({
       type: "object",

@@ -67,7 +67,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
   };
 
   const options = { modelOptions: {} };
-  const chatMessages = [];
+  const chatMessages: unknown[] = [];
 
   const createToken = () => ({
     onCancellationRequested: () => ({ dispose: vi.fn() }),
@@ -119,7 +119,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
 
     expect(statusBar.completeAgent).toHaveBeenCalledTimes(1);
     expect(statusBar.errorAgent).not.toHaveBeenCalled();
-    const usageArg = statusBar.completeAgent.mock.calls[0][1];
+    const usageArg = statusBar.completeAgent.mock.calls[0]![1];
     expect(usageArg.inputTokens).toBe(1234);
     expect(usageArg.outputTokens).toBe(0);
   });

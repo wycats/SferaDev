@@ -528,7 +528,7 @@ describe("translateMessage content type invariants", () => {
     // This is the actual behavior - resolveOpenResponsesRole returns "assistant"
     // for any role that isn't explicitly User.
     const message = new LanguageModelChatMessage(
-      99, // Unknown role
+      99 as LanguageModelChatMessageRole, // Unknown role (cast to bypass type check)
       [new LanguageModelTextPart("Hello from unknown")],
     );
 
