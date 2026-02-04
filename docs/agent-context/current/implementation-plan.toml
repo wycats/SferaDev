@@ -13,27 +13,37 @@ id = "fix-agent-lifecycle"
 [[plan.goals.tasks]]
 id = "ensure-terminal-completion"
 title = "Ensure all terminal stream events (done, error, abort) trigger agent completion"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-04T00:12:06.704558382+00:00"
+completion_log = "Call agent completion/error for all terminal stream events with fallback usage handling."
 
 [[plan.goals.tasks]]
 id = "handle-cancellation-completion"
 title = "Handle cancellation path (AbortError) agent completion"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-04T00:12:06.983905912+00:00"
+completion_log = "Ensure AbortError path marks agent as errored before returning."
 
 [[plan.goals.tasks]]
 id = "handle-no-content-completion"
 title = "Handle no-content path (noContent=true) agent completion"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-04T00:12:07.371847167+00:00"
+completion_log = "Mark agents as errored when streaming completes with no content."
 
 [[plan.goals.tasks]]
 id = "add-finally-cleanup"
 title = "Add finally block for guaranteed agent cleanup (defense-in-depth)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-04T00:12:07.840174169+00:00"
+completion_log = "Add completion guard in finally block to prevent lingering streaming agents."
 
 [[plan.goals.tasks]]
 id = "add-terminal-event-tests"
 title = "Add comprehensive tests for all terminal event scenarios"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-04T00:12:08.252083792+00:00"
+completion_log = "Added OpenResponses chat lifecycle tests covering done/error/cancel/no-content paths."
 
 [[plan.goals]]
 id = "fix-sensitive-logging"

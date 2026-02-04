@@ -149,6 +149,44 @@ export async function executeOpenResponsesChat(
 
   let responseSent = false;
   let result: OpenResponsesChatResult = { success: false };
+  let agentCompleted = false;
+
+  const markAgentComplete = (usage?: Usage, responseText?: string) => {
+    if (agentCompleted) return;
+    agentCompleted = true;
+    if (!statusBar) return;
+
+    if (usage) {
+      statusBar.completeAgent(
+        chatId,
+        {
+          inputTokens: usage.input_tokens,
+          outputTokens: usage.output_tokens,
+          maxInputTokens: model.maxInputTokens,
+          modelId: model.id,
+        },
+        responseText,
+      );
+      return;
+    }
+
+    statusBar.completeAgent(
+      chatId,
+      {
+        inputTokens: Math.max(estimatedInputTokens, 0),
+        outputTokens: 0,
+        maxInputTokens: model.maxInputTokens,
+        modelId: model.id,
+      },
+      responseText,
+    );
+  };
+
+  const markAgentError = () => {
+    if (agentCompleted) return;
+    agentCompleted = true;
+    statusBar?.errorAgent(chatId);
+  };
 
   try {
     // Translate messages to OpenResponses format
@@ -357,20 +395,16 @@ export async function executeOpenResponsesChat(
           }),
         };
 
+        if (adapted.error) {
+          markAgentError();
+        } else {
+          markAgentComplete(adapted.usage, accumulatedText);
+        }
+
         // Track usage and calibrate token estimation
         if (adapted.usage) {
           logger.info(
             `[OpenResponses] Response: ${adapted.usage.input_tokens} in, ${adapted.usage.output_tokens} out tokens`,
-          );
-          statusBar?.completeAgent(
-            chatId,
-            {
-              inputTokens: adapted.usage.input_tokens,
-              outputTokens: adapted.usage.output_tokens,
-              maxInputTokens: model.maxInputTokens,
-              modelId: model.id,
-            },
-            accumulatedText,
           );
 
           // Calibrate token estimation from actual usage (RFC 029)
@@ -392,6 +426,7 @@ export async function executeOpenResponsesChat(
           `**Error**: No response received from model. Please try again.`,
         ),
       );
+      markAgentError();
       result = { success: false, error: "No content received" };
     }
 
@@ -403,6 +438,7 @@ export async function executeOpenResponsesChat(
       (error.name === "AbortError" || error.message.includes("abort"))
     ) {
       logger.debug(`[OpenResponses] Request was cancelled`);
+      markAgentError();
       return { success: false, error: "Cancelled" };
     }
 
@@ -448,12 +484,15 @@ export async function executeOpenResponsesChat(
       );
     }
 
-    statusBar?.errorAgent(chatId);
+    markAgentError();
     return tokenInfo
       ? { success: false, error: errorMessage, tokenInfo }
       : { success: false, error: errorMessage };
   } finally {
     abortSubscription.dispose();
     adapter.reset();
+    if (!agentCompleted && statusBar) {
+      markAgentError();
+    }
   }
 }
