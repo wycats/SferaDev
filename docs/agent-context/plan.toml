@@ -651,10 +651,11 @@ completion_log = "Complete: Repository extracted to https://github.com/vercel-la
 [[epochs.phases.goals]]
 id = "ci-setup"
 label = "Set up GitHub Actions CI/CD"
-status = "pending"
+status = "completed"
 ulid = "01KG0K3GP34AXD514Q5W2HJYK5"
 slug = "ci-setup"
 aliases = ["ci-setup"]
+completion_log = "Complete: Fixed pnpm filter (vscode-extension-vercel-ai → vscode-ai-gateway), regenerated workflow with exohook, fixed pre-existing TypeScript errors that were hidden. CI now runs correctly."
 
 [[epochs.phases.goals]]
 id = "marketplace-publishing"
