@@ -157,9 +157,13 @@ class CapsuleGuard {
 
 ## Alternatives Considered
 
-### 1. Metadata in API Response
+### 1. Metadata in API Request
 
-**Rejected**: OpenResponses `metadata` and `previous_response_id` fields are only passed through to OpenAI. For Anthropic, Gemini, and other providers, these fields are silently ignored. See [vercel/ai-gateway#1153](https://github.com/vercel/ai-gateway/issues/1153). The capsule approach is provider-agnostic.
+**Complementary, not alternative**: We could send the conversation ID via OpenResponses `metadata` on each request. This would let us know what ID to insert when the response comes back—without scanning previous messages.
+
+However, `metadata` is currently OpenAI-only; Anthropic/Gemini/others silently drop it. See [vercel/ai-gateway#1153](https://github.com/vercel/ai-gateway/issues/1153).
+
+**Current approach**: Scan previous assistant messages for existing capsule. If #1153 is fixed, we can optimize by sending the ID via `metadata` and skipping the scan.
 
 ### 2. External State Store
 
