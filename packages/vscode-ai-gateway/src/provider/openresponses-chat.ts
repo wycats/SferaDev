@@ -129,6 +129,8 @@ export async function executeOpenResponsesChat(
       `[Capsule] Found existing capsule in history: cid=${existingCapsule.cid}, aid=${existingCapsule.aid}${existingCapsule.pid ? `, pid=${existingCapsule.pid}` : ""}`,
     );
   }
+  // Note: existingCapsule will be used in Goal 6 (Injection) to maintain conversation ID
+  // across turns and for agent correlation.
 
   // Create client with trace logging
   const client = createClient({
@@ -328,7 +330,7 @@ export async function executeOpenResponsesChat(
               );
               hallucinationDetected = true;
               abortController.abort();
-              
+
               // Emit clean content (truncated before hallucination) if non-empty
               if (cleanContent) {
                 const cleanPart = new LanguageModelTextPart(cleanContent);
@@ -337,13 +339,13 @@ export async function executeOpenResponsesChat(
                 progress.report(cleanPart);
                 responseSent = true;
               }
-              
+
               // Skip emitting the full part (it contains hallucination)
               continue;
             }
           }
         }
-        
+
         // Skip emitting parts after hallucination detection
         if (hallucinationDetected) {
           continue;
