@@ -29,6 +29,7 @@ import {
 } from "vscode";
 import type { ConfigService } from "../config.js";
 import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
+import { CapsuleGuard } from "../identity/capsule-guard.js";
 import {
   extractTokenCountFromError,
   type ExtractedTokenInfo,
@@ -251,6 +252,9 @@ export async function executeOpenResponsesChat(
     const eventTypeCounts = new Map<string, number>();
     // Accumulate all text output for debugging suspicious requests
     let accumulatedText = "";
+    // Initialize CapsuleGuard for hallucination defense (RFC 041)
+    let guard: CapsuleGuard | undefined;
+    let hallucinationDetected = false;
     for await (const event of client.createStreamingResponse(
       requestBody,
       abortController.signal,
@@ -292,6 +296,45 @@ export async function executeOpenResponsesChat(
 
       // Report all parts to VS Code
       for (const part of adapted.parts) {
+        // Process text parts through CapsuleGuard for hallucination defense
+        if (part instanceof LanguageModelTextPart && !hallucinationDetected) {
+          // Initialize guard lazily on first text part
+          if (!guard) {
+            guard = new CapsuleGuard();
+          }
+
+          if (guard) {
+            const { shouldCancel, cleanContent } = guard.processTextDelta(
+              part.value,
+            );
+
+            if (shouldCancel) {
+              logger.warn(
+                `[Capsule] Hallucination detected in stream, cancelling`,
+              );
+              hallucinationDetected = true;
+              abortController.abort();
+              
+              // Emit clean content (truncated before hallucination) if non-empty
+              if (cleanContent) {
+                const cleanPart = new LanguageModelTextPart(cleanContent);
+                accumulatedText += cleanContent;
+                textPartCount++;
+                progress.report(cleanPart);
+                responseSent = true;
+              }
+              
+              // Skip emitting the full part (it contains hallucination)
+              continue;
+            }
+          }
+        }
+        
+        // Skip emitting parts after hallucination detection
+        if (hallucinationDetected) {
+          continue;
+        }
+
         // Log part types to diagnose tool call handling
         if (part instanceof LanguageModelToolCallPart) {
           toolCallCount++;
