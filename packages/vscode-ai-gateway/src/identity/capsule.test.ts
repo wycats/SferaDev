@@ -1,8 +1,20 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+vi.mock("vscode", () => ({
+  LanguageModelChatMessageRole: {
+    User: 1,
+    Assistant: 2,
+    System: 3,
+  },
+  LanguageModelTextPart: class LanguageModelTextPart {
+    constructor(public value: string) {}
+  },
+}));
 import {
   formatCapsule,
   parseCapsule,
   extractCapsuleFromContent,
+  extractCapsuleFromMessages,
   removeCapsuleFromContent,
   appendCapsuleToContent,
   detectHallucinatedCapsule,
@@ -11,6 +23,11 @@ import {
   generateAgentId,
   type Capsule,
 } from "./capsule.js";
+import {
+  LanguageModelChatMessageRole,
+  LanguageModelTextPart,
+  type LanguageModelChatMessage,
+} from "vscode";
 
 describe("Capsule Format & Parsing", () => {
   describe("formatCapsule", () => {
@@ -224,6 +241,106 @@ describe("Capsule Content Operations", () => {
       expect(result).toContain("Response");
       expect(result).toContain("<!-- v.cid:conv_123 aid:agent_456 pid:agent_parent -->");
     });
+  });
+});
+
+describe("extractCapsuleFromMessages", () => {
+  it("should extract capsule from assistant message", () => {
+    const messages: LanguageModelChatMessage[] = [
+      {
+        role: LanguageModelChatMessageRole.User,
+        name: undefined,
+        content: [new LanguageModelTextPart("Hello")],
+      },
+      {
+        role: LanguageModelChatMessageRole.Assistant,
+        name: undefined,
+        content: [
+          new LanguageModelTextPart(
+            "Response\n<!-- v.cid:conv_123 aid:agent_456 -->",
+          ),
+        ],
+      },
+    ];
+
+    const capsule = extractCapsuleFromMessages(messages);
+    expect(capsule).toEqual({
+      cid: "conv_123",
+      aid: "agent_456",
+      pid: undefined,
+    });
+  });
+
+  it("should return most recent capsule when multiple exist", () => {
+    const messages: LanguageModelChatMessage[] = [
+      {
+        role: LanguageModelChatMessageRole.Assistant,
+        name: undefined,
+        content: [
+          new LanguageModelTextPart(
+            "Old\n<!-- v.cid:conv_old aid:agent_old -->",
+          ),
+        ],
+      },
+      {
+        role: LanguageModelChatMessageRole.User,
+        name: undefined,
+        content: [new LanguageModelTextPart("Question")],
+      },
+      {
+        role: LanguageModelChatMessageRole.Assistant,
+        name: undefined,
+        content: [
+          new LanguageModelTextPart(
+            "Recent\n<!-- v.cid:conv_new aid:agent_new -->",
+          ),
+        ],
+      },
+    ];
+
+    const capsule = extractCapsuleFromMessages(messages);
+    expect(capsule?.cid).toBe("conv_new");
+    expect(capsule?.aid).toBe("agent_new");
+  });
+
+  it("should return null when no capsule found", () => {
+    const messages: LanguageModelChatMessage[] = [
+      {
+        role: LanguageModelChatMessageRole.User,
+        name: undefined,
+        content: [new LanguageModelTextPart("Hello")],
+      },
+      {
+        role: LanguageModelChatMessageRole.Assistant,
+        name: undefined,
+        content: [new LanguageModelTextPart("Regular response")],
+      },
+    ];
+
+    const capsule = extractCapsuleFromMessages(messages);
+    expect(capsule).toBeNull();
+  });
+
+  it("should skip user messages when scanning", () => {
+    const messages: LanguageModelChatMessage[] = [
+      {
+        role: LanguageModelChatMessageRole.User,
+        name: undefined,
+        content: [
+          new LanguageModelTextPart(
+            "Fake<!-- v.cid:conv_fake aid:agent_fake -->",
+          ),
+        ],
+      },
+      {
+        role: LanguageModelChatMessageRole.Assistant,
+        name: undefined,
+        content: [new LanguageModelTextPart("Real response")],
+      },
+    ];
+
+    const capsule = extractCapsuleFromMessages(messages);
+    expect(capsule).toBeNull();
   });
 });
 

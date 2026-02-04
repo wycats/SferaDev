@@ -31,6 +31,10 @@ import type { ConfigService } from "../config.js";
 import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
 import { CapsuleGuard } from "../identity/capsule-guard.js";
 import {
+  type Capsule,
+  extractCapsuleFromMessages,
+} from "../identity/capsule.js";
+import {
   extractTokenCountFromError,
   type ExtractedTokenInfo,
   logger,
@@ -57,6 +61,8 @@ export interface OpenResponsesChatOptions {
   chatId: string;
   /** Callback to calibrate token estimation from actual usage */
   onUsage?: (actualInputTokens: number) => void;
+  /** Existing capsule extracted from conversation history */
+  existingCapsule?: Capsule | null;
 }
 
 /**
@@ -115,6 +121,14 @@ export async function executeOpenResponsesChat(
   logger.debug(
     `[OpenResponses] Estimated input tokens: ${estimatedInputTokens.toString()}`,
   );
+
+  // Extract existing capsule from conversation history (Goal 5: Outbound Scanning)
+  const existingCapsule = extractCapsuleFromMessages(chatMessages);
+  if (existingCapsule) {
+    logger.info(
+      `[Capsule] Found existing capsule in history: cid=${existingCapsule.cid}, aid=${existingCapsule.aid}${existingCapsule.pid ? `, pid=${existingCapsule.pid}` : ""}`,
+    );
+  }
 
   // Create client with trace logging
   const client = createClient({

@@ -1,4 +1,9 @@
 import { createHash } from "node:crypto";
+import {
+  LanguageModelChatMessageRole,
+  type LanguageModelChatMessage,
+  LanguageModelTextPart,
+} from "vscode";
 
 /**
  * Represents an agent correlation capsule embedded in message content.
@@ -92,6 +97,40 @@ export function extractCapsuleFromContent(content: string): Capsule | null {
   }
   
   return capsule;
+}
+
+/**
+ * Extract capsule from conversation history by scanning assistant messages.
+ * Returns the most recent capsule found, or null if none exist.
+ *
+ * @param messages - The conversation history
+ * @returns The most recent capsule, or null if not found
+ */
+export function extractCapsuleFromMessages(
+  messages: readonly LanguageModelChatMessage[],
+): Capsule | null {
+  // Scan assistant messages in reverse order (most recent first)
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (!message) continue;
+
+    // Only scan assistant messages
+    if (message.role !== LanguageModelChatMessageRole.Assistant) {
+      continue;
+    }
+
+    // Check each text part in the message
+    for (const part of message.content) {
+      if (part instanceof LanguageModelTextPart) {
+        const capsule = extractCapsuleFromContent(part.value);
+        if (capsule) {
+          return capsule; // Return first (most recent) capsule found
+        }
+      }
+    }
+  }
+
+  return null; // No capsule found in history
 }
 
 /**
