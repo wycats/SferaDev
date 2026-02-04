@@ -170,6 +170,11 @@ export async function executeOpenResponsesChat(
       return;
     }
 
+    // Missing usage data is unexpected - log as error but don't crash
+    logger.error(
+      `[OpenResponses] Stream completed without usage data for chat ${chatId}. Using estimated tokens as fallback.`,
+    );
+
     statusBar.completeAgent(
       chatId,
       {
