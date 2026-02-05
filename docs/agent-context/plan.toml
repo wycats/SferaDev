@@ -764,9 +764,9 @@ status = "active"
 
 [[epochs.phases]]
 id = "01kgkqpde1s9zfqfe5s8x01zwz"
-title = "Transcript Capsule Implementation"
+title = "Digest-Based Token Correlation"
 status = "active"
-rfcs = ["041"]
+rfcs = ["042"]
 
 [[epochs.phases.goals]]
 id = "capsule-guard"

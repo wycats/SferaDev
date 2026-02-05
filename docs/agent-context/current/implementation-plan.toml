@@ -283,22 +283,30 @@ id = "forensic-capture"
 [[plan.goals.tasks]]
 id = "fc-enable-capture"
 title = "Enable forensic capture mode in provideLanguageModelChatResponse"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:02:59.147070330+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "fc-log-all-params"
 title = "Log complete messages, options, progress, token parameters"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:02:59.739962570+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "fc-multi-scenario"
 title = "Capture across scenarios: fresh chat, mid-switch, subagent"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:01.158204683+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "fc-document-surface"
 title = "Document the full input surface in research doc"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:01.553533460+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals]]
 id = "sanitization-testing"
@@ -306,22 +314,30 @@ id = "sanitization-testing"
 [[plan.goals.tasks]]
 id = "st-test-harness"
 title = "Create test harness that injects various formats into responses"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:02.332678618+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "st-test-html-comments"
 title = "Test HTML comments survival"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:03.511311694+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "st-test-zero-width"
 title = "Test zero-width characters and Unicode variation selectors"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:04.425257475+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "st-document-results"
 title = "Document sanitization results"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:05.252407127+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals]]
 id = "name-field-persistence"
@@ -329,17 +345,23 @@ id = "name-field-persistence"
 [[plan.goals.tasks]]
 id = "nf-read-api-source"
 title = "Read VS Code API source to understand name field handling"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:05.635370432+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "nf-test-name-set"
 title = "Test setting name on assistant messages and verify next turn"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:06.434637475+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "nf-document-findings"
 title = "Document name field persistence findings"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:07.752223893+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals]]
 id = "undocumented-properties"
@@ -347,17 +369,23 @@ id = "undocumented-properties"
 [[plan.goals.tasks]]
 id = "up-log-full-object"
 title = "Log full message object structure on each turn"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:08.598079464+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "up-compare-turns"
 title = "Compare input messages to what we sent on previous turn"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:09.077658418+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals.tasks]]
 id = "up-document-findings"
 title = "Document any undocumented persistent properties"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:09.774496978+00:00"
+completion_log = "Superseded: Capsule approach abandoned (RFC 041 withdrawn), replaced by digest correlation (RFC 042)"
 
 [[plan.goals]]
 id = "summarization-detection"
@@ -388,17 +416,23 @@ id = "openresponses-features"
 [[plan.goals.tasks]]
 id = "or-document-current"
 title = "Document current OpenResponses response_id and usage metadata"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:16.559347677+00:00"
+completion_log = "Deferred: OpenResponses features not needed for digest correlation approach"
 
 [[plan.goals.tasks]]
 id = "or-design-feature"
 title = "Design ideal server-side persistence feature"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:17.346030477+00:00"
+completion_log = "Deferred: OpenResponses features not needed for digest correlation approach"
 
 [[plan.goals.tasks]]
 id = "or-draft-request"
 title = "Draft feature request for OpenResponses team"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:18.030823979+00:00"
+completion_log = "Deferred: OpenResponses features not needed for digest correlation approach"
 
 [[plan.goals]]
 id = "content-hash-memento"
@@ -429,37 +463,51 @@ id = "digest-normalization"
 [[plan.goals.tasks]]
 id = "dn-normalize-message"
 title = "Implement normalizeMessage function per algebraic spec"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:26.590288489+00:00"
+completion_log = "Implemented in forensic-capture.ts: computeNormalizedDigest, buildDigestPart, stripOurAdditions"
 
 [[plan.goals.tasks]]
 id = "dn-normalize-part"
 title = "Implement normalizePart for text, toolCall, toolResult, data parts"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:27.083482036+00:00"
+completion_log = "Implemented in forensic-capture.ts: computeNormalizedDigest, buildDigestPart, stripOurAdditions"
 
 [[plan.goals.tasks]]
 id = "dn-strip-additions"
 title = "Implement stripOurAdditions (capsule markers, URL annotations)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:28.354574625+00:00"
+completion_log = "Implemented in forensic-capture.ts: computeNormalizedDigest, buildDigestPart, stripOurAdditions"
 
 [[plan.goals.tasks]]
 id = "dn-exclude-name"
 title = "Exclude name field from normalized messages"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:28.834821406+00:00"
+completion_log = "Implemented in forensic-capture.ts: computeNormalizedDigest, buildDigestPart, stripOurAdditions"
 
 [[plan.goals.tasks]]
 id = "dn-exclude-callid"
 title = "Exclude callId from tool call/result normalization"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:29.893491615+00:00"
+completion_log = "Implemented in forensic-capture.ts: computeNormalizedDigest, buildDigestPart, stripOurAdditions"
 
 [[plan.goals.tasks]]
 id = "dn-unit-tests"
 title = "Add unit tests for normalization (including A3 idempotence)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:30.372992251+00:00"
+completion_log = "Implemented in forensic-capture.ts: computeNormalizedDigest, buildDigestPart, stripOurAdditions"
 
 [[plan.goals.tasks]]
 id = "dn-digest-serialization"
 title = "Define deterministic digest serialization and lastMsgHash derivation"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:31.602989175+00:00"
+completion_log = "Implemented in forensic-capture.ts: computeNormalizedDigest, buildDigestPart, stripOurAdditions"
 
 [[plan.goals]]
 id = "prefix-index"
@@ -495,17 +543,23 @@ id = "tool-normalization"
 [[plan.goals.tasks]]
 id = "tn-include-result"
 title = "Include tool result content in normalized hash (currently missing)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:36.195232933+00:00"
+completion_log = "Implemented: buildDigestPart includes tool result, excludes callId per options"
 
 [[plan.goals.tasks]]
 id = "tn-drop-callid"
 title = "Drop callId from tool call/result hashes (currently included)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:36.954566610+00:00"
+completion_log = "Implemented: buildDigestPart includes tool result, excludes callId per options"
 
 [[plan.goals.tasks]]
 id = "tn-update-callers"
 title = "Update token-cache and conversation-state hash callers"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:03:37.594556646+00:00"
+completion_log = "Implemented: buildDigestPart includes tool result, excludes callId per options"
 
 [[plan.goals]]
 id = "role-handling"
@@ -540,17 +594,23 @@ completion_log = "Covered by av-a1-instrument: computeRawDigest captures assista
 [[plan.goals.tasks]]
 id = "av-a3-test"
 title = "Test: normalize(transform_out(x)) = normalize(x)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:02:41.398789043+00:00"
+completion_log = "A3 unit tests created in forensic-capture.test.ts: stripOurAdditions tests and normalization idempotence tests"
 
 [[plan.goals.tasks]]
 id = "av-a4-test"
 title = "Test: callId (itemId) round-trip stability"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:02:45.536401960+00:00"
+completion_log = "A4 tests verify normalized digest excludes callId, raw digest includes it"
 
 [[plan.goals.tasks]]
 id = "av-document-results"
 title = "Document verification results in RFC 042"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T02:02:50.153371141+00:00"
+completion_log = "RFC 042 updated with empirical findings: A1-A4 all 100% verified, 6 summarization shrink events detected"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

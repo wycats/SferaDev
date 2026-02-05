@@ -3,7 +3,7 @@
  * Forensic Capture Analysis Tool
  *
  * Analyzes what Copilot sends to our Language Model Provider.
- * Focus: Message structure, persistence surfaces, capsule behavior.
+ * Focus: Message structure, persistence surfaces, digest correlation.
  *
  * Usage: npx tsx scripts/analyze-forensic-captures.ts [command]
  *
@@ -11,7 +11,6 @@
  *   summary       - Overview of captures (default)
  *   last [n]      - Full content of last n captures (default 1)
  *   timeline      - Message count progression across captures
- *   capsules      - Find all capsule markers and context
  *   summarization - Detect conversation-summary tags
  *   raw [n]       - Raw JSON of last n captures
  *   messages      - Detailed message structure analysis
@@ -343,81 +342,6 @@ function cmdTimeline(): void {
   }
 }
 
-function cmdCapsules(): void {
-  const captures = loadCaptures();
-  console.log("# Capsule Marker Analysis\n");
-
-  const capsulePattern = /<!--\s*v\.cid:(\S+)\s+aid:(\S+)\s*-->/g;
-
-  for (const capture of captures) {
-    const fullContent = capture.fullContent as
-      | {
-          messages?: Array<{
-            role: string;
-            content: Array<{ type: string; text?: string }>;
-          }>;
-        }
-      | undefined;
-
-    if (!fullContent?.messages) continue;
-
-    const found: Array<{
-      index: number;
-      role: string;
-      cid: string;
-      aid: string;
-      context: string;
-    }> = [];
-
-    for (let i = 0; i < fullContent.messages.length; i++) {
-      const msg = fullContent.messages[i];
-      for (const part of msg.content) {
-        if (part.type === "text" && part.text) {
-          let match;
-          while ((match = capsulePattern.exec(part.text)) !== null) {
-            // Get context around the match
-            const start = Math.max(0, match.index - 50);
-            const end = Math.min(
-              part.text.length,
-              match.index + match[0].length + 50,
-            );
-            const context = part.text.slice(start, end).replace(/\n/g, "\\n");
-
-            found.push({
-              index: i,
-              role: msg.role,
-              cid: match[1],
-              aid: match[2],
-              context,
-            });
-          }
-        }
-      }
-    }
-
-    if (found.length > 0) {
-      console.log(`## Capture ${capture.sequence}\n`);
-      console.log(`Found ${found.length} capsule marker(s):\n`);
-
-      const uniqueCids = [...new Set(found.map((f) => f.cid))];
-      const uniqueAids = [...new Set(found.map((f) => f.aid))];
-      console.log(`Unique cids: ${uniqueCids.join(", ")}`);
-      console.log(`Unique aids: ${uniqueAids.join(", ")}\n`);
-
-      for (const f of found.slice(0, 5)) {
-        console.log(`[${f.index}] ${f.role}:`);
-        console.log(`  cid=${f.cid} aid=${f.aid}`);
-        console.log(`  context: ...${f.context}...`);
-        console.log();
-      }
-
-      if (found.length > 5) {
-        console.log(`... and ${found.length - 5} more\n`);
-      }
-    }
-  }
-}
-
 function cmdSummarization(): void {
   const captures = loadCaptures();
   console.log("# Summarization Detection\n");
@@ -476,9 +400,6 @@ switch (command) {
   case "timeline":
     cmdTimeline();
     break;
-  case "capsules":
-    cmdCapsules();
-    break;
   case "summarization":
     cmdSummarization();
     break;
@@ -497,7 +418,7 @@ switch (command) {
   default:
     console.log(`Unknown command: ${command}`);
     console.log(
-      "Commands: summary, last, timeline, capsules, summarization, raw, messages, keys, clear",
+      "Commands: summary, last, timeline, summarization, raw, messages, keys, clear",
     );
     process.exit(1);
 }

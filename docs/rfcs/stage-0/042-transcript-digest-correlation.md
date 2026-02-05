@@ -3,8 +3,8 @@ title: Transcript Digest Correlation for Token Tracking
 stage: 0
 feature: Unknown
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00043: Transcript Digest Correlation for Token Tracking
@@ -20,6 +20,7 @@ Design a system to correlate token counts with conversation transcripts using co
 ## Problem Statement
 
 We want to:
+
 1. Count tokens per chat window and per agent
 2. Identify summarization events to treat post-summarization as new context
 3. Link child agents to parent agents (ideally)
@@ -53,15 +54,18 @@ We cannot know conversation identity on turn 1. Multiple conversations may share
 `tokens(transcript_A) == tokens(transcript_B)` when `transcript_A == transcript_B`. For the purpose of showing accurate token counts, we don't need unique identity — equivalent transcripts have equivalent counts.
 
 **A3. Storage is Keyed by Digest**
+
 ```
 Memento: Map<digest(transcript), TokenUsage>
 ```
+
 LRU eviction is safe. Hundreds or thousands of entries is acceptable.
 
 **A4. OpenResponses is Authoritative for Token Counts**
 OpenResponses returns `usage` with `input_tokens` and `output_tokens`. This is the source of truth. We correlate these counts with the transcript that produced them.
 
 **A5. Identity Matters Only For:**
+
 1. **Pruning safety** — LRU handles this without needing true identity
 2. **Parent-child linking** — Currently unsolved (see Open Questions)
 
@@ -69,30 +73,30 @@ OpenResponses returns `usage` with `input_tokens` and `output_tokens`. This is t
 
 ### OpenResponses Usage
 
-| Claim | Status | Evidence |
-|-------|--------|----------|
-| Returns `usage` with `input_tokens`/`output_tokens` | ✅ Verified | OpenAPI spec, `ResponseResource` schema |
-| Usage can be null/missing | ⚠️ Yes | Schema allows null; code falls back to estimates |
-| Usage is passed through, not recalculated | ✅ Verified | `stream-adapter.ts`, `usage-tracker.ts` |
+| Claim                                               | Status      | Evidence                                         |
+| --------------------------------------------------- | ----------- | ------------------------------------------------ |
+| Returns `usage` with `input_tokens`/`output_tokens` | ✅ Verified | OpenAPI spec, `ResponseResource` schema          |
+| Usage can be null/missing                           | ⚠️ Yes      | Schema allows null; code falls back to estimates |
+| Usage is passed through, not recalculated           | ✅ Verified | `stream-adapter.ts`, `usage-tracker.ts`          |
 
 ### Message Structure
 
-| Property | Available | Usable for Correlation |
-|----------|-----------|------------------------|
-| `role` (1=User, 2=Assistant, 3=System) | ✅ | ❌ Not unique |
-| `name` | ✅ (often empty) | ❌ Read-only for us |
-| `content` (text, data, toolCall, toolResult) | ✅ | ✅ Primary material |
-| `callId` on tool parts | ✅ | ⚠️ May differ across turns |
-| Message-level `id` | ❌ None | N/A |
-| Conversation/chat panel ID | ❌ None | N/A |
+| Property                                     | Available        | Usable for Correlation     |
+| -------------------------------------------- | ---------------- | -------------------------- |
+| `role` (1=User, 2=Assistant, 3=System)       | ✅               | ❌ Not unique              |
+| `name`                                       | ✅ (often empty) | ❌ Read-only for us        |
+| `content` (text, data, toolCall, toolResult) | ✅               | ✅ Primary material        |
+| `callId` on tool parts                       | ✅               | ⚠️ May differ across turns |
+| Message-level `id`                           | ❌ None          | N/A                        |
+| Conversation/chat panel ID                   | ❌ None          | N/A                        |
 
 ### Summarization Detection
 
-| Finding | Status |
-|---------|--------|
-| Detectable via `<conversation-summary>` tag in User message | ✅ Verified |
-| Summary contains extractable parent identifier | ❌ No — prose only |
-| Message count drops indicate new conversation | ✅ Observable |
+| Finding                                                     | Status             |
+| ----------------------------------------------------------- | ------------------ |
+| Detectable via `<conversation-summary>` tag in User message | ✅ Verified        |
+| Summary contains extractable parent identifier              | ❌ No — prose only |
+| Message count drops indicate new conversation               | ✅ Observable      |
 
 ## The Correlation Problem
 
@@ -116,12 +120,14 @@ Turn N+1:
 **Can we compute `digest(messages[0..k])` on turn N and get the same result on turn N+1?**
 
 **Risk factors identified:**
+
 - Our output formatting (URL annotations, italics) becomes part of stored messages
 - Tool `callId` values in our response may not match what VS Code stores
 - We haven't verified VS Code replays messages byte-identically
 
 **Proposed solution:**
 Digest messages **on receipt, before any transformation**. This gives us:
+
 - `digest_input`: Hash of what VS Code sent us
 - We can verify on next turn if the prefix matches
 
@@ -130,26 +136,28 @@ Digest messages **on receipt, before any transformation**. This gives us:
 ```typescript
 function digestMessages(messages: LanguageModelChatMessage[]): string {
   // Normalize to stable representation
-  const normalized = messages.map(msg => ({
+  const normalized = messages.map((msg) => ({
     role: msg.role,
     // Exclude 'name' if unreliable
-    content: normalizeContent(msg.content)
+    content: normalizeContent(msg.content),
   }));
-  
+
   return sha256(JSON.stringify(normalized));
 }
 
-function normalizeContent(parts: LanguageModelChatMessageContentPart[]): NormalizedPart[] {
-  return parts.map(part => {
+function normalizeContent(
+  parts: LanguageModelChatMessageContentPart[],
+): NormalizedPart[] {
+  return parts.map((part) => {
     if (isTextPart(part)) {
-      return { type: 'text', value: part.value };
+      return { type: "text", value: part.value };
     }
     if (isToolCallPart(part)) {
       // Include name and input, but callId may be unstable
-      return { type: 'toolCall', name: part.name, input: part.input };
+      return { type: "toolCall", name: part.name, input: part.input };
     }
     if (isToolResultPart(part)) {
-      return { type: 'toolResult', name: part.name, result: part.toolResult };
+      return { type: "toolResult", name: part.name, result: part.toolResult };
     }
     // ... handle other types
   });
@@ -172,6 +180,7 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 ```
 
 **Eviction strategy**: LRU based on `timestamp`. Safe because:
+
 - Equivalent transcripts produce equivalent counts
 - If evicted and re-encountered, we just re-record from OpenResponses
 
@@ -181,7 +190,8 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 
 **Unknown**: Does VS Code replay messages byte-identically?
 
-**Test needed**: 
+**Test needed**:
+
 1. On turn N, compute digest of `messages[0..k]`
 2. On turn N+1, compute digest of `messages[0..k]` (same prefix)
 3. Compare — are they equal?
@@ -193,11 +203,13 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 **Unknown**: When we stream a response, how does it appear in `messages_N+1`?
 
 **Specifically**:
+
 - Is our URL annotation formatting preserved?
 - Is the tool `callId` we use preserved?
 - Are there any VS Code transformations?
 
 **Answer (2026-02-05)**:
+
 - URL annotations: Preserved (2589 Assistant messages, 0 mismatches)
 - Tool callId: Preserved (2568 tool operations, 0 mismatches)
 - VS Code transformations: None detected
@@ -207,6 +219,7 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 **Current state**: We can detect summarization via `<conversation-summary>`, but the summary contains no extractable parent identifier.
 
 **Options**:
+
 1. Accept we can't link parent-child reliably
 2. Inject a marker into our responses that survives summarization
 3. Use heuristics (e.g., summary text contains distinctive phrases we can match)
@@ -226,6 +239,7 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 ### Phase 1: Verify Digest Stability ✅ COMPLETED
 
 Add instrumentation to answer Q1 and Q2:
+
 - Log digest of messages on receipt
 - On subsequent turns, log digest of message prefix
 - Compare across turns
@@ -250,14 +264,15 @@ Length analysis:
 
 **Key Findings**:
 
-| Assumption | Result | Interpretation |
-|------------|--------|----------------|
-| A1: Non-Assistant messages preserved | ✅ 100% | VS Code preserves User/System messages verbatim |
-| A2: Assistant messages round-trip | ✅ 100% | Our streamed content returns unchanged |
-| A3: Normalized digest stable | ✅ N/A | No raw digest differences found — normalization wasn't needed |
-| A4: Tool callId stable | ✅ 100% | callId values are preserved across turns |
+| Assumption                           | Result  | Interpretation                                                |
+| ------------------------------------ | ------- | ------------------------------------------------------------- |
+| A1: Non-Assistant messages preserved | ✅ 100% | VS Code preserves User/System messages verbatim               |
+| A2: Assistant messages round-trip    | ✅ 100% | Our streamed content returns unchanged                        |
+| A3: Normalized digest stable         | ✅ N/A  | No raw digest differences found — normalization wasn't needed |
+| A4: Tool callId stable               | ✅ 100% | callId values are preserved across turns                      |
 
 **Summarization Detection**:
+
 - 6 message shrinks detected (possible summarization events)
 - 46 unexpected growth patterns (likely single-turn responses, tool results, etc.)
 
@@ -266,6 +281,7 @@ Length analysis:
 ### Phase 2: Implement Token Store
 
 If digest stability is confirmed:
+
 - Create `TokenStore` backed by Memento
 - Record `digest → usage` on each request
 - Implement LRU eviction

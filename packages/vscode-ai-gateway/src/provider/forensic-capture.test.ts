@@ -174,7 +174,10 @@ describe("A4 assumption: Tool callId stability", () => {
   type MockMessage = Parameters<typeof computeNormalizedDigest>[0];
 
   // Create a mock message with tool call
-  function createToolCallMessage(toolName: string, callId: string): MockMessage {
+  function createToolCallMessage(
+    toolName: string,
+    callId: string,
+  ): MockMessage {
     return {
       role: 2, // Assistant
       content: [
