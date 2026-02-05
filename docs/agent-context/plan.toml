@@ -760,12 +760,13 @@ aliases = ["wait-for-sdk"]
 [[epochs]]
 id = "01kgkqne5mcx9jk9nxs1gejtqq"
 title = "Agent Correlation (RFC 041)"
-status = "active"
+status = "completed"
+reviewed = true
 
 [[epochs.phases]]
 id = "01kgkqpde1s9zfqfe5s8x01zwz"
 title = "Digest-Based Token Correlation"
-status = "active"
+status = "completed"
 rfcs = ["042"]
 
 [[epochs.phases.goals]]
@@ -893,3 +894,43 @@ id = "token-persistence"
 label = "Persist token state to Memento storage"
 status = "completed"
 completion_log = "Implemented Memento-based persistence for ConversationStateTracker with save/restore, key-based lookup, and cross-session state recovery."
+
+[[epochs]]
+id = "01kgqrknaewkshpfjt4wyns061"
+title = "Rolling Correction & Token Display (RFC 047/044/049)"
+status = "active"
+
+[[epochs.phases]]
+id = "01kgqrm141nzq23wyxnzfs6n6v"
+title = "Phase 1: Correction Factor Infrastructure (RFC 047)"
+status = "active"
+goals = []
+rfcs = ["00047"]
+
+[[epochs.phases]]
+id = "01kgqrm6fjqy1xb0te56ks9r8r"
+title = "Phase 2: provideTokenCount Integration (RFC 047)"
+status = "pending"
+goals = []
+rfcs = ["00047"]
+
+[[epochs.phases]]
+id = "01kgqrmcab087zhk1pfs0hvw1f"
+title = "Phase 3: Summarization Detection (RFC 047)"
+status = "pending"
+goals = []
+rfcs = ["00047"]
+
+[[epochs.phases]]
+id = "01kgqrmhy9wagj12ksra2v180m"
+title = "Phase 4: Token Display Fixes (RFC 044)"
+status = "pending"
+goals = []
+rfcs = ["00044"]
+
+[[epochs.phases]]
+id = "01kgqrmqps27k6m4pr3gha40xg"
+title = "Phase 5: Assumption Validation Regime (RFC 049)"
+status = "pending"
+goals = []
+rfcs = ["00049"]
