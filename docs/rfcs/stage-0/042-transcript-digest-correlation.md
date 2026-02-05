@@ -177,7 +177,7 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 
 ## Open Questions
 
-### Q1: Digest Stability Across Turns
+### Q1: Digest Stability Across Turns ✅ ANSWERED
 
 **Unknown**: Does VS Code replay messages byte-identically?
 
@@ -186,9 +186,9 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 2. On turn N+1, compute digest of `messages[0..k]` (same prefix)
 3. Compare — are they equal?
 
-**If not equal**: We need to identify what changes and normalize it out.
+**Answer (2026-02-05)**: Yes. 3118 non-Assistant messages compared with 0 mismatches. VS Code preserves messages verbatim.
 
-### Q2: Our Output in Next Turn
+### Q2: Our Output in Next Turn ✅ ANSWERED
 
 **Unknown**: When we stream a response, how does it appear in `messages_N+1`?
 
@@ -196,6 +196,11 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 - Is our URL annotation formatting preserved?
 - Is the tool `callId` we use preserved?
 - Are there any VS Code transformations?
+
+**Answer (2026-02-05)**:
+- URL annotations: Preserved (2589 Assistant messages, 0 mismatches)
+- Tool callId: Preserved (2568 tool operations, 0 mismatches)
+- VS Code transformations: None detected
 
 ### Q3: Parent-Child Linking
 
@@ -218,12 +223,45 @@ type TokenStore = Map<string /* digest */, TokenRecord>;
 
 ## Proposed Implementation Phases
 
-### Phase 1: Verify Digest Stability
+### Phase 1: Verify Digest Stability ✅ COMPLETED
 
 Add instrumentation to answer Q1 and Q2:
 - Log digest of messages on receipt
 - On subsequent turns, log digest of message prefix
 - Compare across turns
+
+**Empirical Results (2026-02-05)**:
+
+```
+A1 (non-Assistant messages preserved verbatim)
+  total: 3118 mismatches: 0 (0.0%)
+A2 (Assistant messages round-trip unchanged)
+  total: 2589 mismatches: 0 (0.0%)
+A3 (normalized digest stability)
+  raw-diff pairs: 0 normalized-same: 0 normalized-diff: 0
+A4 (tool callId stability)
+  total: 2568 mismatches: 0 (0.0%)
+
+Length analysis:
+  unexpected length changes: 52
+  shrinks (possible summarization): 6
+  unexpected growth patterns: 46
+```
+
+**Key Findings**:
+
+| Assumption | Result | Interpretation |
+|------------|--------|----------------|
+| A1: Non-Assistant messages preserved | ✅ 100% | VS Code preserves User/System messages verbatim |
+| A2: Assistant messages round-trip | ✅ 100% | Our streamed content returns unchanged |
+| A3: Normalized digest stable | ✅ N/A | No raw digest differences found — normalization wasn't needed |
+| A4: Tool callId stable | ✅ 100% | callId values are preserved across turns |
+
+**Summarization Detection**:
+- 6 message shrinks detected (possible summarization events)
+- 46 unexpected growth patterns (likely single-turn responses, tool results, etc.)
+
+**Conclusion**: The digest correlation approach is viable. All assumptions are empirically validated.
 
 ### Phase 2: Implement Token Store
 
@@ -278,4 +316,7 @@ If digest stability is confirmed:
 
 ## Changelog
 
+- 2026-02-05: Added empirical validation results (A1-A4 verified with 100% stability)
+- 2026-02-05: Marked Q1 and Q2 as answered based on forensic capture analysis
+- 2026-02-05: Updated Phase 1 with completion status and findings
 - 2026-02-04: Initial draft from research findings

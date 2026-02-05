@@ -273,8 +273,10 @@ function serializeToolPayload(payload: unknown): string {
  *
  * Per digest-equivalence-algebra.md Section 6:
  * stripOurAdditions(text) = stripCapsuleMarker(stripUrlAnnotations(text))
+ *
+ * @visibleForTesting
  */
-function stripOurAdditions(text: string): string {
+export function stripOurAdditions(text: string): string {
   // Strip URL annotations formatted as ` [title](url)`
   // The annotation format from stream-adapter.ts: ` [${title}](${url})`
   // Pattern: space followed by markdown link
