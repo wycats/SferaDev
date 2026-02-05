@@ -67,7 +67,9 @@ export class HybridTokenEstimator {
 
   constructor(context: vscode.ExtensionContext) {
     // Pass globalState to ConversationStateTracker for persistence
-    this.conversationTracker = new ConversationStateTracker(context.globalState);
+    this.conversationTracker = new ConversationStateTracker(
+      context.globalState,
+    );
     this.sequenceTracker = new CallSequenceTracker();
     this.tokenCounter = new TokenCounter();
     this.tokenCache = new TokenCache();

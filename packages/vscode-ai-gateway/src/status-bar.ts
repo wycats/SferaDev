@@ -66,6 +66,8 @@ export interface AgentEntry {
   turnCount: number;
   maxInputTokens?: number | undefined;
   estimatedInputTokens?: number | undefined;
+  /** Estimated tokens for NEW messages only (delta from previous state) */
+  estimatedDeltaTokens?: number | undefined;
   modelId?: string | undefined;
   status: "streaming" | "complete" | "error";
   contextManagement?: ContextManagementInfo | undefined;
@@ -75,10 +77,10 @@ export interface AgentEntry {
   isMain: boolean;
   /** Order in which this agent completed (for aging) */
   completionOrder?: number | undefined;
-  /** Hash of system prompt - used to detect main vs subagent */
+  /** Hash of system prompt - diagnostics only */
   systemPromptHash?: string | undefined;
   // Identity tracking (RFC 00033)
-  /** Computed once at conversation start from systemPromptHash + toolSetHash */
+  /** Computed once at conversation start from toolSetHash */
   agentTypeHash?: string | undefined;
   /** Computed after first response; null until then */
   conversationHash?: string | null | undefined;
@@ -134,8 +136,6 @@ export class TokenStatusBar implements vscode.Disposable {
   private agents = new Map<string, AgentEntry>();
   private mainAgentId: string | null = null;
   private activeAgentId: string | null = null;
-  /** System prompt hash of the main agent - used to detect subagents */
-  private mainSystemPromptHash: string | null = null;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private completedAgentCount = 0;
 
@@ -151,7 +151,7 @@ export class TokenStatusBar implements vscode.Disposable {
   private claimRegistry = new ClaimRegistry();
   // Conversation hash lookup (deduplication + hierarchy)
   private agentsByConversationHash = new Map<string, AgentEntry>();
-  // Partial identity lookup (systemPromptHash + firstUserMessageHash)
+  // Partial identity lookup (firstUserMessageHash)
   private agentsByPartialKey = new Map<string, AgentEntry>();
   // Map request IDs to canonical agent IDs (for deduped conversations)
   private agentIdAliases = new Map<string, string>();
@@ -274,8 +274,8 @@ export class TokenStatusBar implements vscode.Disposable {
     if (agent.conversationHash) {
       this.agentsByConversationHash.delete(agent.conversationHash);
     }
-    if (agent.systemPromptHash && agent.firstUserMessageHash) {
-      const partialKey = `${agent.systemPromptHash}:${agent.firstUserMessageHash}`;
+    if (agent.firstUserMessageHash) {
+      const partialKey = agent.firstUserMessageHash;
       const mapped = this.agentsByPartialKey.get(partialKey);
       if (mapped?.id === agent.id) {
         this.agentsByPartialKey.delete(partialKey);
@@ -307,6 +307,7 @@ export class TokenStatusBar implements vscode.Disposable {
     firstUserMessageHash: string | undefined,
     partialKey: string | null,
     claimMatch: { parentConversationHash: string; expectedChildName: string },
+    estimatedDeltaTokens: number | undefined,
   ): string {
     const agent: AgentEntry = {
       id: agentId,
@@ -320,6 +321,7 @@ export class TokenStatusBar implements vscode.Disposable {
       turnCount: 0,
       maxInputTokens: maxTokens,
       estimatedInputTokens: estimatedTokens,
+      estimatedDeltaTokens,
       modelId,
       status: "streaming",
       dimmed: false,
@@ -381,7 +383,8 @@ export class TokenStatusBar implements vscode.Disposable {
    * @param estimatedTokens Estimated input tokens
    * @param maxTokens Maximum input tokens for the model
    * @param modelId Model identifier
-   * @param systemPromptHash Hash of the system prompt - used to detect subagents
+   * @param systemPromptHash Hash of the system prompt - diagnostics only
+   * @param estimatedDeltaTokens Estimated tokens for NEW messages only (delta)
    */
   startAgent(
     agentId: string,
@@ -391,13 +394,15 @@ export class TokenStatusBar implements vscode.Disposable {
     systemPromptHash?: string,
     agentTypeHash?: string,
     firstUserMessageHash?: string,
+    estimatedDeltaTokens?: number,
   ): string {
     const now = Date.now();
 
-    const partialKey =
-      systemPromptHash && firstUserMessageHash
-        ? `${systemPromptHash}:${firstUserMessageHash}`
-        : null;
+    // Use only firstUserMessageHash for partialKey - VS Code dynamically injects
+    // content (like <agents> blocks) into the system prompt, causing systemPromptHash
+    // to change between turns of the same conversation. System prompt hash is
+    // diagnostics-only and not used for identity decisions.
+    const partialKey = firstUserMessageHash ?? null;
 
     const hasPendingClaims = this.claimRegistry.getPendingClaimCount() > 0;
 
@@ -405,47 +410,50 @@ export class TokenStatusBar implements vscode.Disposable {
     const mainAgent = this.mainAgentId
       ? this.agents.get(this.mainAgentId)
       : null;
-    const hasDifferentSystemPrompt =
-      this.mainSystemPromptHash !== null &&
-      systemPromptHash !== undefined &&
-      systemPromptHash !== this.mainSystemPromptHash;
     const hasDifferentAgentType =
       mainAgent?.agentTypeHash !== undefined &&
       agentTypeHash !== undefined &&
       agentTypeHash !== mainAgent.agentTypeHash;
-
-    logger.info(
-      `[StatusBar] Subagent detection check`,
-      JSON.stringify({
-        agentId: agentId.slice(-8),
-        hasDifferentSystemPrompt,
-        hasDifferentAgentType,
-        hasPendingClaims,
-        mainAgentTypeHash: mainAgent?.agentTypeHash?.slice(0, 8),
-        thisAgentTypeHash: agentTypeHash?.slice(0, 8),
-        mainSystemPromptHash: this.mainSystemPromptHash?.slice(0, 8),
-        thisSystemPromptHash: systemPromptHash?.slice(0, 8),
-      }),
-    );
 
     // Check for partialKey match (resume existing agent)
     const existingAgent = partialKey
       ? this.agentsByPartialKey.get(partialKey)
       : undefined;
 
-    // CRITICAL: If this would resume the MAIN agent, do NOT check claims.
-    // This prevents the main agent's subsequent turns from being incorrectly
-    // attributed to a pending subagent claim.
-    //
-    // However, if this would resume a NON-main agent (subagent), we still need
-    // to check claims first because a child agent might have identical hashes
-    // to its parent (VS Code can inject summaries that make hashes match).
-    if (existingAgent?.isMain) {
+    logger.info(
+      `[StatusBar] Subagent detection check`,
+      JSON.stringify({
+        agentId: agentId.slice(-8),
+        hasDifferentAgentType,
+        hasPendingClaims,
+        mainAgentTypeHash: mainAgent?.agentTypeHash?.slice(0, 8),
+        thisAgentTypeHash: agentTypeHash?.slice(0, 8),
+        thisSystemPromptHash: systemPromptHash?.slice(0, 8),
+        existingAgentMaxTokens: existingAgent?.maxObservedInputTokens,
+        thisEstimatedTokens: estimatedTokens,
+      }),
+    );
+
+    // Token-based heuristic: If the new request has dramatically fewer tokens than
+    // the existing agent's max observed, it's likely a NEW agent (subagent), not a
+    // resume. A subagent starting fresh will have ~10-20k tokens, while a main agent
+    // mid-conversation might have 50-100k. Threshold: new < 50% of existing max.
+    const tokensSuspicious =
+      estimatedTokens !== undefined &&
+      existingAgent?.maxObservedInputTokens !== undefined &&
+      existingAgent.maxObservedInputTokens > 0 &&
+      estimatedTokens < existingAgent.maxObservedInputTokens * 0.5;
+
+    // Resume main agent if partialKey matches and tokens aren't suspicious.
+    // NOTE: agentTypeHash is NOT checked here - it's diagnostics only and can
+    // change between turns when VS Code adds/removes MCP tools.
+    if (existingAgent?.isMain && !tokensSuspicious) {
       // Resume the main agent - skip claim matching entirely
       this.agentIdAliases.set(agentId, existingAgent.id);
       existingAgent.status = "streaming";
       existingAgent.lastUpdateTime = now;
       existingAgent.estimatedInputTokens = estimatedTokens;
+      existingAgent.estimatedDeltaTokens = estimatedDeltaTokens;
       existingAgent.maxInputTokens =
         maxTokens ?? existingAgent.maxInputTokens ?? undefined;
       existingAgent.modelId = modelId ?? existingAgent.modelId;
@@ -460,9 +468,6 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.completionOrder = undefined;
 
       this.mainAgentId = existingAgent.id;
-      if (systemPromptHash) {
-        this.mainSystemPromptHash = systemPromptHash;
-      }
       this.activeAgentId = existingAgent.id;
 
       logger.info(
@@ -534,18 +539,26 @@ export class TokenStatusBar implements vscode.Disposable {
           firstUserMessageHash,
           partialKey,
           claimMatch,
+          estimatedDeltaTokens,
         );
       }
     }
 
     // Check for partialKey match for non-main agents
     // (We already handled main agent resume above)
+    //
+    // NOTE: agentTypeHash is NOT checked - it's diagnostics only.
+    // Resume is based on partialKey (firstUserMessageHash) only.
+    const canResumeExisting =
+      existingAgent &&
+      !existingAgent.isMain;
 
-    if (existingAgent) {
+    if (canResumeExisting) {
       this.agentIdAliases.set(agentId, existingAgent.id);
       existingAgent.status = "streaming";
       existingAgent.lastUpdateTime = now;
       existingAgent.estimatedInputTokens = estimatedTokens;
+      existingAgent.estimatedDeltaTokens = estimatedDeltaTokens;
       existingAgent.maxInputTokens =
         maxTokens ?? existingAgent.maxInputTokens ?? undefined;
       existingAgent.modelId = modelId ?? existingAgent.modelId;
@@ -563,9 +576,6 @@ export class TokenStatusBar implements vscode.Disposable {
 
       if (existingAgent.isMain) {
         this.mainAgentId = existingAgent.id;
-        if (systemPromptHash) {
-          this.mainSystemPromptHash = systemPromptHash;
-        }
       }
 
       this.activeAgentId = existingAgent.id;
@@ -622,14 +632,8 @@ export class TokenStatusBar implements vscode.Disposable {
     // This prevents the main agent's turns from being incorrectly attributed to
     // pending subagent claims when there's no partialKey to identify it as a resume.
     //
-    // We consider this "likely main" if:
-    // 1. There's no main agent yet (first agent is always main), OR
-    // 2. The system prompt hash matches the main agent's hash
-    const likelyMainAgent =
-      this.mainAgentId === null ||
-      (systemPromptHash !== undefined &&
-        this.mainSystemPromptHash !== undefined &&
-        systemPromptHash === this.mainSystemPromptHash);
+    // We consider this "likely main" if there's no main agent yet.
+    const likelyMainAgent = this.mainAgentId === null;
 
     // Try to match a pending claim to get parent linkage and expected name
     // Only do this if this doesn't look like the main agent.
@@ -639,45 +643,21 @@ export class TokenStatusBar implements vscode.Disposable {
         : null;
 
     // Determine if this is the main agent or a subagent
-    // Main agent: first agent OR same system prompt hash as main OR no claim match
-    // Subagent: different system prompt hash AND has a claim match
+    // Main agent: first agent OR no claim match
+    // Subagent: has a claim match
     let isMain: boolean;
     if (this.mainAgentId === null) {
       // First agent is always main
       isMain = true;
       this.mainAgentId = agentId;
-      if (systemPromptHash) {
-        this.mainSystemPromptHash = systemPromptHash;
-      }
     } else if (claimMatch !== null) {
       // If there's a claim match, this is definitely a subagent
       // (parent agent called runSubagent and created a claim for this child)
       isMain = false;
-    } else if (systemPromptHash && this.mainSystemPromptHash) {
-      // No claim match - check if system prompt hash matches
-      if (systemPromptHash === this.mainSystemPromptHash) {
-        // Same hash, definitely main agent
-        isMain = true;
-        this.mainAgentId = agentId;
-      } else {
-        // Different hash but no claim - likely main agent with updated system prompt
-        // (VS Code can inject conversation summaries that change the hash)
-        // Update the main system prompt hash to track the new value
-        isMain = true;
-        this.mainAgentId = agentId;
-        this.mainSystemPromptHash = systemPromptHash;
-        logger.info(
-          `[StatusBar] Main agent system prompt hash updated: ${this.mainSystemPromptHash?.slice(0, 8)} -> ${systemPromptHash.slice(0, 8)}`,
-        );
-      }
-    } else if (systemPromptHash && !this.mainSystemPromptHash) {
-      // First request had no hash, but this one does - treat as new main
+    } else {
+      // No claim match - treat as main agent
       isMain = true;
       this.mainAgentId = agentId;
-      this.mainSystemPromptHash = systemPromptHash;
-    } else {
-      // No hash info - fall back to first-agent-is-main behavior
-      isMain = false;
     }
     const parentConversationHash = claimMatch?.parentConversationHash ?? null;
     // Determine the agent name:
@@ -707,6 +687,7 @@ export class TokenStatusBar implements vscode.Disposable {
       turnCount: 0,
       maxInputTokens: maxTokens,
       estimatedInputTokens: estimatedTokens,
+      estimatedDeltaTokens,
       modelId,
       status: "streaming",
       dimmed: false,
@@ -739,7 +720,6 @@ export class TokenStatusBar implements vscode.Disposable {
         agentTypeHash: agentTypeHash?.slice(0, 8),
         firstUserMessageHash: firstUserMessageHash?.slice(0, 8),
         parentConversationHash: parentConversationHash?.slice(0, 8),
-        mainSystemPromptHash: this.mainSystemPromptHash?.slice(0, 8),
         totalAgents: this.agents.size,
         claimMatched: claimMatch !== null,
       }),
@@ -1027,11 +1007,19 @@ export class TokenStatusBar implements vscode.Disposable {
       if (mainAgent.status === "streaming") {
         icon = "$(loading~spin)";
         if (mainAgent.estimatedInputTokens && mainAgent.maxInputTokens) {
+          // Display the estimate during streaming
+          // - With delta: previousActual + estimatedDelta (smooth progression)
+          // - Without delta: full estimate (best available)
+          const displayTokens =
+            mainAgent.estimatedDeltaTokens !== undefined
+              ? mainAgent.maxObservedInputTokens +
+                mainAgent.estimatedDeltaTokens
+              : mainAgent.estimatedInputTokens;
           const pct = this.formatPercentage(
-            mainAgent.estimatedInputTokens,
+            displayTokens,
             mainAgent.maxInputTokens,
           );
-          mainText = `~${this.formatTokenCount(mainAgent.estimatedInputTokens)}/${this.formatTokenCount(mainAgent.maxInputTokens)} (${pct})`;
+          mainText = `~${this.formatTokenCount(displayTokens)}/${this.formatTokenCount(mainAgent.maxInputTokens)} (${pct})`;
         } else {
           mainText = "streaming...";
         }
@@ -1174,9 +1162,12 @@ export class TokenStatusBar implements vscode.Disposable {
       return;
     }
 
+    // During streaming: use delta if available, otherwise full estimate
     const tokens =
       agent.status === "streaming"
-        ? (agent.estimatedInputTokens ?? 0)
+        ? agent.estimatedDeltaTokens !== undefined
+          ? agent.maxObservedInputTokens + agent.estimatedDeltaTokens
+          : (agent.estimatedInputTokens ?? 0)
         : agent.inputTokens;
     const percentage = Math.round((tokens / agent.maxInputTokens) * 100);
 
@@ -1508,7 +1499,6 @@ export class TokenStatusBar implements vscode.Disposable {
     this.claimRegistry.clearAll();
     this.mainAgentId = null;
     this.activeAgentId = null;
-    this.mainSystemPromptHash = null;
     this.completedAgentCount = 0;
     logger.debug(
       `[StatusBar] All agents CLEARED`,

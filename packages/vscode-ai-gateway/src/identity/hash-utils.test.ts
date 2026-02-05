@@ -31,14 +31,14 @@ describe("computeToolSetHash", () => {
 });
 
 describe("computeAgentTypeHash", () => {
-  it("combines system prompt and tool set hashes", () => {
-    const hash = computeAgentTypeHash("abc123", "def456");
-    expect(hash).toMatch(/^[a-f0-9]{16}$/);
+  it("returns a 16-character prefix of the tool set hash", () => {
+    const hash = computeAgentTypeHash("def456def456def456");
+    expect(hash).toBe("def456def456def4");
   });
 
-  it("produces different hash for different inputs", () => {
-    const hash1 = computeAgentTypeHash("abc", "def");
-    const hash2 = computeAgentTypeHash("abc", "ghi");
+  it("produces different hashes for different tool set hashes", () => {
+    const hash1 = computeAgentTypeHash("abc123abc123abc123");
+    const hash2 = computeAgentTypeHash("def456def456def456");
     expect(hash1).not.toBe(hash2);
   });
 });

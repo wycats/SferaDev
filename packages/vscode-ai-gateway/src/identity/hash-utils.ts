@@ -14,16 +14,10 @@ export function computeToolSetHash(tools: readonly { name: string }[]): string {
 }
 
 /**
- * Compute the agent type hash from system prompt and tool set.
+ * Compute the agent type hash from the tool set hash.
  */
-export function computeAgentTypeHash(
-  systemPromptHash: string,
-  toolSetHash: string,
-): string {
-  return createHash("sha256")
-    .update(systemPromptHash + toolSetHash)
-    .digest("hex")
-    .substring(0, 16);
+export function computeAgentTypeHash(toolSetHash: string): string {
+  return toolSetHash.substring(0, 16);
 }
 
 /**

@@ -144,7 +144,7 @@ export async function executeOpenResponsesChat(
     abortController.abort();
   });
 
-  // Note: startAgent is called in provider.ts with systemPromptHash for subagent detection
+  // Note: startAgent is called in provider.ts with identity hashes
   // Do not call it here to avoid overwriting the agent entry
 
   let responseSent = false;

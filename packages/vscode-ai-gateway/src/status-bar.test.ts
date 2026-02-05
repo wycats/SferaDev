@@ -383,9 +383,9 @@ describe("TokenStatusBar", () => {
   describe("multi-agent display", () => {
     it("shows subagent alongside main agent when active", () => {
       // Main agent starts and completes (with maxInputTokens for consistent format)
-      // Use a system prompt hash and agentTypeHash for proper subagent detection
-      const mainHash = "main-system-prompt-hash-abc123";
-      const subagentHash = "subagent-system-prompt-hash-xyz789";
+      // Subagent detection uses claim registry + agentTypeHash differences
+      const mainHash = "main-system-prompt-hash-abc123"; // diagnostics only
+      const subagentHash = "subagent-system-prompt-hash-xyz789"; // diagnostics only
       const mainTypeHash = "main-type-hash";
       const subTypeHash = "sub-type-hash";
 
@@ -406,13 +406,13 @@ describe("TokenStatusBar", () => {
       // Create a claim for the subagent (required for proper subagent detection)
       statusBar.createChildClaim("main-agent", "recon");
 
-      // Subagent starts with different system prompt hash and matching claim
+      // Subagent starts with different agentTypeHash and matching claim
       statusBar.startAgent(
         "recon-agent",
         8000,
         128000,
         "recon",
-        subagentHash,
+        subagentHash, // diagnostics only
         subTypeHash,
       );
 
@@ -442,9 +442,9 @@ describe("TokenStatusBar", () => {
 
     it("detects subagent via claim even with identical hashes (regression: 104% bug)", () => {
       // This is a regression test for Issue #4: Subagent detection bypass causes 104% token display
-      // The bug occurred when a subagent had the SAME system prompt hash and agent type hash
-      // as the main agent, causing claim matching to be skipped entirely.
-      const sameHash = "identical-hash-for-both";
+      // The bug occurred when a subagent had the SAME agentTypeHash as the main agent,
+      // causing claim matching to be skipped entirely.
+      const sameHash = "identical-hash-for-both"; // diagnostics only
       const sameTypeHash = "identical-type-hash";
 
       // Main agent starts with specific hashes

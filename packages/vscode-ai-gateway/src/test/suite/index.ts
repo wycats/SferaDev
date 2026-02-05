@@ -754,7 +754,7 @@ test("Forensic: Analyze captured data for conversation patterns", async () => {
     console.log(`      - ${variant}`);
   }
 
-  // 4. Check system prompt hashes (key for subagent detection)
+  // 4. Check system prompt hashes (diagnostics only - not used for identity)
   const systemPromptHashes = captures.map(
     (c: { systemPrompt?: { hash?: string } }) => c.systemPrompt?.hash ?? "none",
   );
@@ -814,7 +814,7 @@ test("Forensic: Analyze captured data for conversation patterns", async () => {
     "    VS Code does NOT pass conversation IDs through options.modelOptions",
   );
   console.log(
-    "    Subagent detection must rely on system prompt fingerprinting",
+    "    Subagent detection relies on claim registry + agentTypeHash differences",
   );
 });
 

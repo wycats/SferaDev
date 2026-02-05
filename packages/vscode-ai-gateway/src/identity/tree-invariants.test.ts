@@ -175,8 +175,8 @@ describe("Tree Invariants", () => {
     });
   });
 
-  describe("Invariant 3: Different systemPromptHash creates subagent", () => {
-    it("should create new agent when systemPromptHash differs from main", () => {
+  describe("Invariant 3: Different agentTypeHash creates subagent", () => {
+    it("should create new agent when agentTypeHash differs from main", () => {
       tree.startAgent("agent-1", "hash-main", "type-main", "user-1");
       const result = tree.startAgent(
         "agent-2",
@@ -224,7 +224,7 @@ describe("Tree Invariants", () => {
       // Main creates claim for "recon"
       tree.createChildClaim("agent-1", "recon");
 
-      // Another request with SAME partialKey as main but different systemPromptHash
+      // Another request with SAME partialKey as main but different agentTypeHash
       // This simulates the bug: subagent has same firstUserMessageHash
       const result = tree.startAgent(
         "agent-2",
@@ -308,17 +308,16 @@ describe("Bug Reproduction: Same partialKey prevents subagent creation", () => {
     tree = new TestTreeState();
   });
 
-  it("CURRENT BUG: subagent with same firstUserMessageHash merges into main", () => {
-    // This test documents the current buggy behavior
+  it("FIXED: subagent with same firstUserMessageHash but pending claim creates new agent", () => {
+    // This test verifies the fix for the bug where subagents merged into main
     // Main agent starts
     tree.startAgent("agent-1", "hash-main", "type-main", "user-1");
 
     // Main creates claim for "recon"
     tree.createChildClaim("agent-1", "recon");
 
-    // Subagent starts with SAME firstUserMessageHash but different systemPromptHash
-    // In the buggy code, this would resume main because partialKey matches
-    // In the fixed code, claim matching should take precedence
+    // Subagent starts with SAME firstUserMessageHash but different agentTypeHash
+    // Claim matching takes precedence over partialKey matching
     const result = tree.startAgent("agent-2", "hash-sub", "type-sub", "user-1");
 
     // EXPECTED (fixed): Should create new agent with claim match

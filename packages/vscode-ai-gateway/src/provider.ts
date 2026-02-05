@@ -21,6 +21,46 @@ import {
 
 import { CONSERVATIVE_MAX_INPUT_TOKENS } from "./constants";
 
+/**
+ * VS Code may serialize message content parts as plain objects.
+ * This type represents a serialized text part with {text, type} structure.
+ */
+interface SerializedTextPart {
+  readonly type: "text";
+  readonly text: string;
+}
+
+/**
+ * Union of possible text part representations.
+ * At runtime, parts may be either LanguageModelTextPart instances or serialized objects.
+ */
+type TextPartLike = LanguageModelTextPart | SerializedTextPart;
+
+/**
+ * Type guard for text-like parts (either LanguageModelTextPart or serialized {type, text}).
+ */
+function isTextPart(part: unknown): part is TextPartLike {
+  if (part instanceof LanguageModelTextPart) return true;
+  return (
+    typeof part === "object" &&
+    part !== null &&
+    "type" in part &&
+    part.type === "text" &&
+    "text" in part &&
+    typeof (part as SerializedTextPart).text === "string"
+  );
+}
+
+/**
+ * Extract text value from a text-like part.
+ */
+function getTextValue(part: TextPartLike): string {
+  if (part instanceof LanguageModelTextPart) {
+    return part.value;
+  }
+  return part.text;
+}
+
 import { VERCEL_AI_AUTH_PROVIDER_ID } from "./auth";
 import { ConfigService } from "./config";
 import { ERROR_MESSAGES, LAST_SELECTED_MODEL_KEY } from "./constants";
@@ -313,7 +353,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       // Track current request for caching API actuals after response
       this.currentRequestMessages = chatMessages;
 
-      // Extract system prompt for subagent detection
+      // Extract system prompt for diagnostics logging
+      // NOTE: systemPromptHash is for diagnostics ONLY - not used for identity
       const systemPrompt = extractSystemPrompt(chatMessages);
       const systemPromptHash = systemPrompt
         ? createHash("sha256")
@@ -323,22 +364,23 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         : undefined;
 
       const { conversationId } = extractIdentity(chatMessages, {
-        ...(systemPromptHash !== undefined ? { systemPromptHash } : {}),
         modelId: model.id,
       });
 
       // Pre-flight check: estimate total tokens and validate against model limit
       // Now includes tool schemas (can be 50k+ tokens)
-      const estimatedTokens = this.estimateTotalInputTokens(
+      const tokenEstimate = this.estimateTotalInputTokens(
         model,
         chatMessages,
         token,
         conversationId,
         options.tools ? { tools: options.tools } : {},
       );
+      const estimatedTokens = tokenEstimate.total;
+      const estimatedDeltaTokens = tokenEstimate.delta;
       const maxInputTokens = model.maxInputTokens;
       logger.debug(
-        `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%)`,
+        `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%), delta: ${estimatedDeltaTokens?.toString() ?? "n/a"}`,
       );
 
       // Forensic capture for debugging conversation identifiers
@@ -406,16 +448,13 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
       // Start tracking this agent in the status bar
       const toolSetHash = computeToolSetHash(options.tools ?? []);
-      const agentTypeHash = systemPromptHash
-        ? computeAgentTypeHash(systemPromptHash, toolSetHash)
-        : undefined;
+      const agentTypeHash = computeAgentTypeHash(toolSetHash);
       const firstUserMessage = chatMessages.find(
         (m) => m.role === LanguageModelChatMessageRole.User,
       );
       const firstUserMessageText = firstUserMessage
-        ? Array.from(firstUserMessage.content)
-            .filter((part) => part instanceof LanguageModelTextPart)
-            .map((part) => part.value)
+        ? (Array.from(firstUserMessage.content).filter(isTextPart) as TextPartLike[])
+            .map(getTextValue)
             .join("")
         : undefined;
       const firstUserMessageHash = firstUserMessageText
@@ -430,6 +469,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         systemPromptHash,
         agentTypeHash,
         firstUserMessageHash,
+        estimatedDeltaTokens,
       );
 
       const apiKey = await this.getApiKey(false);
@@ -665,7 +705,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       }[];
       systemPrompt?: string;
     },
-  ): number {
+  ): { total: number; delta: number | undefined } {
     void _token;
 
     // Use conversation-level delta estimation
@@ -712,7 +752,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
     logger.debug(`Total input token estimate: ${total.toString()} tokens`);
 
-    return total;
+    // Return both total and delta (estimated tokens for new messages only)
+    // Only return delta when we have a known prefix - otherwise it's a full estimate
+    const delta = estimate.source === "delta" ? estimate.estimatedTokens : undefined;
+    return { total, delta };
   }
 
   /**
