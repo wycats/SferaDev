@@ -904,8 +904,27 @@ status = "active"
 id = "01kgqrm141nzq23wyxnzfs6n6v"
 title = "Phase 1: Correction Factor Infrastructure (RFC 047)"
 status = "active"
-goals = []
 rfcs = ["00047"]
+
+[[epochs.phases.goals]]
+id = "capture-sequence-estimate"
+label = "Capture SequenceTracker.totalEstimate at API call time"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "store-last-sequence-estimate"
+label = "Add lastSequenceEstimate field to KnownConversationState"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "update-record-actual"
+label = "Update recordActual() to accept and store sequenceEstimate"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "provider-capture"
+label = "Capture sequence estimate in provider before API call"
+status = "pending"
 
 [[epochs.phases]]
 id = "01kgqrm6fjqy1xb0te56ks9r8r"

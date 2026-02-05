@@ -7,6 +7,18 @@ title = "Phase 1: Correction Factor Infrastructure (RFC 047)"
 rfcs = ["00047"]
 
 [plan]
+
+[[plan.goals]]
+id = "capture-sequence-estimate"
+
+[[plan.goals]]
+id = "store-last-sequence-estimate"
+
+[[plan.goals]]
+id = "update-record-actual"
+
+[[plan.goals]]
+id = "provider-capture"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
