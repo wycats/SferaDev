@@ -1,6 +1,6 @@
 ---
 title: Status Bar Design for Subagent Flows
-stage: 0
+stage: withdrawn
 feature: Unknown
 exo:
     tool: exo rfc create
@@ -9,8 +9,18 @@ exo:
 
 # RFC 00031: Status Bar Design for Subagent Flows
 
-**Status**: Draft  
-**Created**: 2026-01-31
+**Status**: ~~Draft~~ **WITHDRAWN**  
+**Created**: 2026-01-31  
+**Withdrawn**: 2026-02-04
+
+> **⚠️ WITHDRAWN**: This RFC proposed "System Prompt Fingerprinting" as the primary mechanism for subagent detection. This approach was superseded by the **claim-based linking** mechanism in RFC 00033.
+>
+> **Key learnings**:
+> - `systemPromptHash` is unstable — VS Code injects dynamic content (summaries, `<agents>` blocks)
+> - `agentTypeHash` is unstable — VS Code adds/removes MCP tools mid-conversation
+> - Only `firstUserMessageHash` is stable for identity
+>
+> See [RFC 00033: Conversation Identity Tracking](../stage-2/00033-conversation-identity-tracking.md) for the current approach.
 
 ## Problem Statement
 

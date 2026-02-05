@@ -549,9 +549,7 @@ export class TokenStatusBar implements vscode.Disposable {
     //
     // NOTE: agentTypeHash is NOT checked - it's diagnostics only.
     // Resume is based on partialKey (firstUserMessageHash) only.
-    const canResumeExisting =
-      existingAgent &&
-      !existingAgent.isMain;
+    const canResumeExisting = existingAgent && !existingAgent.isMain;
 
     if (canResumeExisting) {
       this.agentIdAliases.set(agentId, existingAgent.id);

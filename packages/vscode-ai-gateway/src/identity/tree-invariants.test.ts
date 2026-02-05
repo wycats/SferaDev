@@ -46,12 +46,14 @@ class TestTreeState {
 
   /**
    * Compute partialKey for an agent.
+   * AXIOM: partialKey = firstUserMessageHash ONLY.
+   * systemPromptHash is diagnostics-only (VS Code injects dynamic content).
    */
   private computePartialKey(
-    systemPromptHash: string,
+    _systemPromptHash: string, // kept for test API compatibility, unused
     firstUserMessageHash: string,
   ): string {
-    return `${systemPromptHash}:${firstUserMessageHash}`;
+    return firstUserMessageHash;
   }
 
   /**
@@ -175,19 +177,21 @@ describe("Tree Invariants", () => {
     });
   });
 
-  describe("Invariant 3: Different agentTypeHash creates subagent", () => {
-    it("should create new agent when agentTypeHash differs from main", () => {
+  describe("Invariant 3: Same firstUserMessageHash resumes (agentTypeHash is diagnostics-only)", () => {
+    it("should resume when firstUserMessageHash matches, even with different agentTypeHash", () => {
+      // AXIOM: agentTypeHash is diagnostics-only, NOT used for identity
+      // Same firstUserMessageHash = same agent, regardless of agentTypeHash
       tree.startAgent("agent-1", "hash-main", "type-main", "user-1");
       const result = tree.startAgent(
         "agent-2",
-        "hash-sub",
-        "type-sub",
-        "user-1",
+        "hash-sub", // different systemPromptHash (diagnostics-only)
+        "type-sub", // different agentTypeHash (diagnostics-only)
+        "user-1",   // SAME firstUserMessageHash = SAME agent
       );
 
-      expect(result.action).toBe("started");
-      expect(tree.agents.get("agent-2")?.isMain).toBe(false);
-      expect(tree.agents.size).toBe(2);
+      expect(result.action).toBe("resumed");
+      expect(result.agentId).toBe("agent-1"); // Returns canonical ID
+      expect(tree.agents.size).toBe(1); // No new agent created
     });
   });
 

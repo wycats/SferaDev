@@ -40,34 +40,37 @@ Result: Cannot correlate multiple requests within same conversation, cannot link
 ### Layer 0: Conversation Resume Key (partialKey)
 
 ```
-partialKey = systemPromptHash + ":" + firstUserMessageHash
+partialKey = firstUserMessageHash
 ```
 
 - Used to resume an existing agent across multiple turns
-- **Does NOT include `agentTypeHash`** — tools may change mid-conversation
+- **Does NOT include `systemPromptHash` or `agentTypeHash`** — VS Code dynamically injects content (summaries, agent blocks) and changes tools mid-conversation
 - Distinguishes multiple chats in the same window (different first messages)
 - Computed immediately on first request (no waiting for response)
 
-### Layer 1: Agent Type Hash
+> **AXIOM**: `firstUserMessageHash` is the ONLY identity key for resume. All other hashes (`systemPromptHash`, `agentTypeHash`, `toolSetHash`) are diagnostics-only.
+
+### Layer 1: Agent Type Hash (Diagnostics Only)
 
 ```
-agentTypeHash = SHA-256(systemPromptHash + toolSetHash)[0:16]
+agentTypeHash = toolSetHash[0:16]
 ```
 
-- Used for **subagent detection**, not conversation identity
-- Different tools = might be a subagent (triggers claim matching)
-- **NOT used in partialKey** — tools change mid-conversation as VS Code adds/removes them
+- **Diagnostics only** — logged for debugging, NOT used for identity decisions
+- Used in **claim registry** for parent-child linking (temporal mechanism)
+- **NOT used for resume** — VS Code adds/removes MCP tools mid-conversation
+- Does NOT include `systemPromptHash` — VS Code injects dynamic content
 
 ### Layer 2: Conversation Instance Hash
 
 ```
-conversationHash = SHA-256(systemPromptHash + firstUserMessageHash + firstAssistantResponseHash)[0:16]
+conversationHash = SHA-256(agentTypeHash + firstUserMessageHash + firstAssistantResponseHash)[0:16]
 ```
 
 - Stable within one conversation (first user message and response don't change)
 - Different for each new conversation (user message provides uniqueness even if assistant response is generic)
 - Computed AFTER first assistant response received
-- **Uses `systemPromptHash` instead of `agentTypeHash`** for stability
+- Used for **parent-child linking** in claim registry, not for resume identity
 
 **Canonicalization Rules for `firstAssistantResponseHash`:**
 
@@ -134,19 +137,23 @@ interface PendingChildClaim {
 
 ### partialKey (Conversation Resume)
 
-The `partialKey` is computed on every request from `systemPromptHash:firstUserMessageHash`:
+The `partialKey` is simply `firstUserMessageHash`:
 
-- **Does NOT include tools** — VS Code dynamically adds/removes tools mid-conversation
+- **Does NOT include `systemPromptHash`** — VS Code injects dynamic content (summaries, `<agents>` blocks)
+- **Does NOT include tools** — VS Code dynamically adds/removes MCP tools mid-conversation
 - Enables resuming the same agent across multiple turns
 - Different chats in the same window have different first messages → different keys
 
-### agentTypeHash (Subagent Detection)
+> **Implementation**: See `status-bar.ts` line ~400: `const partialKey = firstUserMessageHash ?? null;`
 
-The `agentTypeHash` is used to **detect potential subagents**, not for conversation identity:
+### agentTypeHash (Diagnostics + Claim Linking)
 
-- Different `agentTypeHash` from main agent + pending claim → likely a subagent
-- Computed per-request (tools may change)
-- **NOT used in `partialKey`** — tool changes should not create new agents
+The `agentTypeHash` is **diagnostics-only** for logging, but used in the **claim registry** for parent-child linking:
+
+- **NOT used for resume identity** — VS Code changes tools mid-conversation
+- Used in `ClaimRegistry.createClaim()` as provisional parent identifier
+- Used in `ClaimRegistry.matchClaim()` as secondary matching strategy
+- Computed per-request from `toolSetHash` only (no `systemPromptHash`)
 
 ### conversationHash Backfill
 
@@ -174,7 +181,7 @@ The `conversationHash` follows a two-phase lifecycle:
 | Multiple subagents of same type          | Match by creation order within same type                                    |
 | Claim expires without match              | Log warning, child shows as orphan                                          |
 | VS Code restart mid-conversation         | State lost; new conversation starts fresh                                   |
-| Tool set changes mid-conversation        | `partialKey` unchanged (uses `systemPromptHash`, not `agentTypeHash`)       |
+| Tool set changes mid-conversation        | `partialKey` unchanged (uses `firstUserMessageHash` only)                   |
 | Multiple chats in same window            | Different `firstUserMessageHash` → different `partialKey` → separate agents |
 
 ## Success Criteria
@@ -211,16 +218,11 @@ export function computeToolSetHash(
 }
 
 /**
- * Compute the agent type hash from system prompt and tool set.
+ * Compute the agent type hash from tool set.
+ * NOTE: Does NOT include systemPromptHash — VS Code injects dynamic content.
  */
-export function computeAgentTypeHash(
-  systemPromptHash: string,
-  toolSetHash: string,
-): string {
-  return createHash("sha256")
-    .update(systemPromptHash + toolSetHash)
-    .digest("hex")
-    .substring(0, 16);
+export function computeAgentTypeHash(toolSetHash: string): string {
+  return toolSetHash.substring(0, 16);
 }
 
 /**

@@ -453,7 +453,11 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         (m) => m.role === LanguageModelChatMessageRole.User,
       );
       const firstUserMessageText = firstUserMessage
-        ? (Array.from(firstUserMessage.content).filter(isTextPart) as TextPartLike[])
+        ? (
+            Array.from(firstUserMessage.content).filter(
+              isTextPart,
+            ) as TextPartLike[]
+          )
             .map(getTextValue)
             .join("")
         : undefined;
@@ -754,7 +758,8 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
     // Return both total and delta (estimated tokens for new messages only)
     // Only return delta when we have a known prefix - otherwise it's a full estimate
-    const delta = estimate.source === "delta" ? estimate.estimatedTokens : undefined;
+    const delta =
+      estimate.source === "delta" ? estimate.estimatedTokens : undefined;
     return { total, delta };
   }
 
