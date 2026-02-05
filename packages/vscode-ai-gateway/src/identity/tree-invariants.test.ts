@@ -186,7 +186,7 @@ describe("Tree Invariants", () => {
         "agent-2",
         "hash-sub", // different systemPromptHash (diagnostics-only)
         "type-sub", // different agentTypeHash (diagnostics-only)
-        "user-1",   // SAME firstUserMessageHash = SAME agent
+        "user-1", // SAME firstUserMessageHash = SAME agent
       );
 
       expect(result.action).toBe("resumed");

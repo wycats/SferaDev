@@ -3,8 +3,8 @@ title: Status Bar Design for Subagent Flows
 stage: withdrawn
 feature: Unknown
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00031: Status Bar Design for Subagent Flows
@@ -16,6 +16,7 @@ exo:
 > **⚠️ WITHDRAWN**: This RFC proposed "System Prompt Fingerprinting" as the primary mechanism for subagent detection. This approach was superseded by the **claim-based linking** mechanism in RFC 00033.
 >
 > **Key learnings**:
+>
 > - `systemPromptHash` is unstable — VS Code injects dynamic content (summaries, `<agents>` blocks)
 > - `agentTypeHash` is unstable — VS Code adds/removes MCP tools mid-conversation
 > - Only `firstUserMessageHash` is stable for identity

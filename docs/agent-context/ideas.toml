@@ -17,3 +17,16 @@ created_at = "2026-02-04T02:13:30.834Z"
 source = "user"
 tags = []
 related_tasks = []
+
+[[ideas]]
+id = "45e04d0b-1f49-46bd-b1df-611139169ca4"
+title = "Conversation identity should include first assistant response"
+description = "Current approach uses only first user message hash, which may cause collisions when two conversations start with the same user message. Investigate impact and consider deferred identity extraction after turn 1. Logged during RFC 047 planning (2026-02-05)."
+status = "new"
+created_at = "2026-02-05T20:33:41.085Z"
+source = "user"
+tags = [
+    "identity",
+    "token-estimation",
+]
+related_tasks = []

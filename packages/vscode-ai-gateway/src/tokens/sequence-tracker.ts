@@ -116,6 +116,23 @@ export class CallSequenceTracker {
   }
 
   /**
+   * Check if the next onCall() would start a new sequence.
+   * 
+   * This is useful for applying adjustments BEFORE recording the call,
+   * since the adjustment needs to be included in the first message's estimate.
+   * 
+   * Returns true if:
+   * - No current sequence exists (first call ever, or after reset)
+   * - Gap since last call exceeds SEQUENCE_GAP threshold
+   */
+  wouldStartNewSequence(): boolean {
+    if (!this.currentSequence) {
+      return true;
+    }
+    return Date.now() - this.currentSequence.lastCallTime > this.SEQUENCE_GAP;
+  }
+
+  /**
    * Get the current sequence, if any.
    */
   getCurrentSequence(): CallSequence | null {

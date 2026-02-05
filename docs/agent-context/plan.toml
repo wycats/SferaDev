@@ -771,104 +771,125 @@ rfcs = ["042"]
 [[epochs.phases.goals]]
 id = "capsule-guard"
 label = "Implement CapsuleGuard RFC 041"
-status = "pending"
+status = "completed"
+completion_log = "Replaced capsule-guard.ts with RFC 041 CapsuleGuard implementation and new API surface."
 
 [[epochs.phases.goals]]
 id = "cid-token-estimation"
 label = "Connect capsule cid to token estimation"
-status = "pending"
+status = "completed"
+completion_log = "Implemented ConversationStateTracker with delta-based token estimation, lookup(), recordActual(), and wouldStartNewSequence()."
 
 [[epochs.phases.goals]]
 id = "cid-provider"
 label = "Update provider.ts to pre-generate conversationId from capsule"
-status = "pending"
+status = "completed"
+completion_log = "Integrated ConversationStateTracker into provider.ts with recordUsage() and estimateTotalInputTokens() using delta-based estimation."
 
 [[epochs.phases.goals]]
 id = "verify-capsule-cid"
 label = "Verify capsule cid flows to token estimation"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: HTML comment capsule approach invalidated by VS Code sanitization. Replaced by digest-based correlation (RFC 042)."
 
 [[epochs.phases.goals]]
 id = "cid-status-bar"
 label = "Use cid for agent correlation in status bar"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Depended on capsule extraction. Status bar integration will be revisited in RFC 044 display fixes."
 
 [[epochs.phases.goals]]
 id = "cid-agent-tree"
 label = "Use cid for agent hierarchy in agent tree"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Depended on capsule extraction. Agent tree integration not needed for core token estimation."
 
 [[epochs.phases.goals]]
 id = "cid-learned-correction"
 label = "Key learned token correction by cid"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Depended on capsule extraction. Learned correction will be implemented via RFC 047 rolling correction."
 
 [[epochs.phases.goals]]
 id = "verify-metadata-api"
 label = "Verify ChatResult.metadata API works in stable VS Code"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: ChatResult.metadata is for Chat Participants only, not Language Model API. Not applicable to our use case."
 
 [[epochs.phases.goals]]
 id = "forensic-capture"
 label = "Capture and document full Copilot input surface (Q5)"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Capsule approach abandoned. Forensic capture infrastructure exists but capsule-specific capture not needed."
 
 [[epochs.phases.goals]]
 id = "sanitization-testing"
 label = "Empirically determine what content survives VS Code sanitization (Q1)"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Capsule approach abandoned. VS Code sanitization behavior documented in RFC 041 withdrawal."
 
 [[epochs.phases.goals]]
 id = "name-field-persistence"
 label = "Verify if LanguageModelChatMessage.name field persists across turns (Q2)"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Capsule approach abandoned. Name field persistence not needed for digest-based correlation."
 
 [[epochs.phases.goals]]
 id = "undocumented-properties"
 label = "Inspect LanguageModelChatMessage for undocumented persistence surfaces (Q3)"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Capsule approach abandoned. Undocumented property exploration not needed for digest-based correlation."
 
 [[epochs.phases.goals]]
 id = "summarization-detection"
 label = "Identify patterns that indicate Copilot has summarized the conversation (Q4)"
-status = "pending"
+status = "abandoned"
+completion_log = "Deferred to RFC 047 epoch: Summarization detection is Phase 3 of rolling correction implementation."
 
 [[epochs.phases.goals]]
 id = "openresponses-features"
 label = "Explore OpenResponses server-side persistence options (Q6)"
-status = "pending"
+status = "abandoned"
+completion_log = "Deferred: OpenResponses features not needed for core token estimation. May revisit for future gateway enhancements."
 
 [[epochs.phases.goals]]
 id = "content-hash-memento"
 label = "Design and prototype content-hash correlation with Memento storage (Q7)"
-status = "pending"
+status = "abandoned"
+completion_log = "Superseded: Core functionality implemented in digest-normalization and token-persistence goals. Remaining prefix-index work deferred."
 
 [[epochs.phases.goals]]
 id = "digest-normalization"
 label = "Implement Digest Normalization Layer"
-status = "pending"
+status = "completed"
+completion_log = "Implemented computeNormalizedDigest() with canonical JSON serialization, tool call normalization, and comprehensive test coverage."
 
 [[epochs.phases.goals]]
 id = "tool-normalization"
 label = "Fix Tool Call/Result Normalization"
-status = "pending"
+status = "completed"
+completion_log = "Implemented normalizeToolCalls() with deterministic ordering by name+id, canonical JSON for arguments, and test coverage."
 
 [[epochs.phases.goals]]
 id = "prefix-index"
 label = "Implement (length, lastMsgHash) Prefix Index"
-status = "pending"
+status = "abandoned"
+completion_log = "Deferred: Prefix-based lookup optimization not on critical path. Current key-based lookup sufficient for RFC 047."
 
 [[epochs.phases.goals]]
 id = "role-handling"
 label = "Handle System Role Explicitly"
-status = "pending"
+status = "abandoned"
+completion_log = "Deferred: Role handling correctness work not on critical path. May revisit in RFC 049 assumption validation."
 
 [[epochs.phases.goals]]
 id = "algebra-verification"
 label = "Verify Algebraic Assumptions A1-A4"
-status = "pending"
+status = "completed"
+completion_log = "Verified delta algebra with 7 proof tests: identity, commutativity, associativity, prefix detection, and wouldStartNewSequence() correctness."
 
 [[epochs.phases.goals]]
 id = "token-persistence"
 label = "Persist token state to Memento storage"
-status = "pending"
+status = "completed"
+completion_log = "Implemented Memento-based persistence for ConversationStateTracker with save/restore, key-based lookup, and cross-session state recovery."

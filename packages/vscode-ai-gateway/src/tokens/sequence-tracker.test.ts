@@ -147,4 +147,125 @@ describe("CallSequenceTracker", () => {
       expect(tracker.getCurrentSequence()).toBeNull();
     });
   });
+
+  describe("H5 verification: first-message detection", () => {
+    it("getCurrentSequence() returns OLD sequence before onCall() after gap", () => {
+      // Turn 1: make some calls
+      tracker.onCall(makeEstimate(100));
+      tracker.onCall(makeEstimate(200));
+      const turn1Sequence = tracker.getCurrentSequence();
+      expect(turn1Sequence?.totalEstimate).toBe(300);
+
+      // Simulate 600ms gap (beyond 500ms threshold)
+      vi.advanceTimersByTime(600);
+
+      // KEY TEST: What does getCurrentSequence() return BEFORE the next onCall()?
+      const sequenceBeforeCall = tracker.getCurrentSequence();
+      
+      // H5 claim: currentSequence should be null
+      // Actual behavior: currentSequence is still the OLD sequence
+      expect(sequenceBeforeCall).not.toBeNull(); // REFUTES H5
+      expect(sequenceBeforeCall).toBe(turn1Sequence); // Same object!
+      expect(sequenceBeforeCall?.totalEstimate).toBe(300); // Still has old total
+
+      // Now call onCall() - THIS is when the new sequence is created
+      tracker.onCall(makeEstimate(50));
+      const turn2Sequence = tracker.getCurrentSequence();
+      
+      expect(turn2Sequence).not.toBe(turn1Sequence); // New sequence
+      expect(turn2Sequence?.totalEstimate).toBe(50); // Fresh total
+      expect(turn2Sequence?.calls).toHaveLength(1); // Only the new call
+    });
+
+    it("cannot detect first-message-in-turn by checking currentSequence === null", () => {
+      // This test documents WHY the RFC 045 algorithm is wrong
+      
+      tracker.onCall(makeEstimate(100));
+      vi.advanceTimersByTime(600); // Gap
+
+      // If we check currentSequence before onCall(), it's NOT null
+      const isFirstByNullCheck = tracker.getCurrentSequence() === null;
+      expect(isFirstByNullCheck).toBe(false); // Wrong signal!
+
+      // The only time currentSequence is null is:
+      // 1. Before any calls ever (fresh tracker)
+      // 2. After reset()
+      tracker.reset();
+      expect(tracker.getCurrentSequence()).toBeNull();
+    });
+
+    it("CAN detect first-message by comparing sequence identity after onCall()", () => {
+      // Alternative approach: check if onCall() created a NEW sequence
+      
+      tracker.onCall(makeEstimate(100));
+      // First sequence established (not used directly, but needed to set up state)
+      
+      vi.advanceTimersByTime(600); // Gap
+      
+      const seqBeforeCall = tracker.getCurrentSequence();
+      tracker.onCall(makeEstimate(50));
+      const seqAfterCall = tracker.getCurrentSequence();
+      
+      // We can detect "first in new sequence" by comparing before/after
+      const isFirstInNewSequence = seqAfterCall !== seqBeforeCall;
+      expect(isFirstInNewSequence).toBe(true);
+      // But this requires calling onCall() first, which is too late
+      // for applying the adjustment...
+    });
+  });
+
+  describe("wouldStartNewSequence", () => {
+    it("returns true when no sequence exists", () => {
+      expect(tracker.wouldStartNewSequence()).toBe(true);
+    });
+
+    it("returns false immediately after a call", () => {
+      tracker.onCall(makeEstimate(100));
+      expect(tracker.wouldStartNewSequence()).toBe(false);
+    });
+
+    it("returns false within 500ms gap", () => {
+      tracker.onCall(makeEstimate(100));
+      vi.advanceTimersByTime(400);
+      expect(tracker.wouldStartNewSequence()).toBe(false);
+    });
+
+    it("returns true after 500ms gap", () => {
+      tracker.onCall(makeEstimate(100));
+      vi.advanceTimersByTime(501);
+      expect(tracker.wouldStartNewSequence()).toBe(true);
+    });
+
+    it("returns true after reset", () => {
+      tracker.onCall(makeEstimate(100));
+      tracker.reset();
+      expect(tracker.wouldStartNewSequence()).toBe(true);
+    });
+
+    it("enables correct first-message detection pattern", () => {
+      // This test demonstrates the CORRECT pattern for RFC 045
+      
+      // Turn 1
+      tracker.onCall(makeEstimate(100));
+      tracker.onCall(makeEstimate(200));
+      
+      vi.advanceTimersByTime(600); // Gap
+      
+      // Turn 2 - BEFORE calling onCall, check if this would be first
+      const isFirstInTurn2 = tracker.wouldStartNewSequence();
+      expect(isFirstInTurn2).toBe(true);
+      
+      // Now we can apply adjustment and call onCall
+      const adjustment = 25000; // from getAdjustment()
+      const estimate = 500 + (isFirstInTurn2 ? adjustment : 0);
+      tracker.onCall(makeEstimate(estimate));
+      
+      // Subsequent calls in same turn
+      expect(tracker.wouldStartNewSequence()).toBe(false);
+      tracker.onCall(makeEstimate(500));
+      
+      // Verify total includes adjustment
+      expect(tracker.getCurrentSequence()?.totalEstimate).toBe(25500 + 500);
+    });
+  });
 });
