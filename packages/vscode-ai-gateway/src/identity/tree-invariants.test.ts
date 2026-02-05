@@ -41,7 +41,7 @@ class TestTreeState {
   agents = new Map<string, TestAgent>();
   agentsByPartialKey = new Map<string, TestAgent>();
   mainAgentId: string | null = null;
-  mainSystemPromptHash: string | null = null;
+  // NOTE: mainSystemPromptHash removed - systemPromptHash is diagnostics-only
   claimRegistry = new ClaimRegistry();
 
   /**
@@ -58,6 +58,11 @@ class TestTreeState {
 
   /**
    * Simulate startAgent logic (simplified from status-bar.ts).
+   *
+   * AXIOM: Identity is based on firstUserMessageHash ONLY.
+   * - systemPromptHash: diagnostics-only (VS Code injects dynamic content)
+   * - agentTypeHash: diagnostics-only, except for claim linking
+   * - Subagent detection: via claim registry, NOT hash comparison
    */
   startAgent(
     agentId: string,
@@ -71,11 +76,9 @@ class TestTreeState {
     );
 
     // Check for pending claim BEFORE partialKey matching
-    const extractedName =
-      this.mainSystemPromptHash &&
-      systemPromptHash !== this.mainSystemPromptHash
-        ? "sub"
-        : "main";
+    // Use generic "sub" name - real implementation extracts from agentId/modelId
+    const hasPendingClaims = this.claimRegistry.getPendingClaimCount() > 0;
+    const extractedName = hasPendingClaims ? "sub" : "main";
     const claimMatch = this.claimRegistry.matchClaim(
       extractedName,
       agentTypeHash,
@@ -97,7 +100,7 @@ class TestTreeState {
       return { action: "started", agentId, claimMatched: true };
     }
 
-    // Check for existing agent by partialKey
+    // Check for existing agent by partialKey (firstUserMessageHash only)
     const existingAgent = this.agentsByPartialKey.get(partialKey);
     if (existingAgent) {
       return {
@@ -107,11 +110,9 @@ class TestTreeState {
       };
     }
 
-    // New agent
-    const isMain =
-      this.mainAgentId === null ||
-      (this.mainSystemPromptHash !== null &&
-        systemPromptHash === this.mainSystemPromptHash);
+    // New agent - first agent is main, or no claim match = main
+    // AXIOM: systemPromptHash is NOT used for main/sub determination
+    const isMain = this.mainAgentId === null;
 
     const agent: TestAgent = {
       id: agentId,
@@ -125,9 +126,8 @@ class TestTreeState {
     this.agents.set(agentId, agent);
     this.agentsByPartialKey.set(partialKey, agent);
 
-    if (isMain && this.mainAgentId === null) {
+    if (isMain) {
       this.mainAgentId = agentId;
-      this.mainSystemPromptHash = systemPromptHash;
     }
 
     return { action: "started", agentId, claimMatched: false };
