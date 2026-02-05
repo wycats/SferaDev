@@ -57,6 +57,7 @@ export interface ConversationEstimate {
  * - Conversation-level delta estimation (known + tiktoken for new messages only)
  * - Per-message tiktoken estimation (fallback)
  * - Call sequence tracking
+ * - Persistent conversation state (survives extension restarts)
  */
 export class HybridTokenEstimator {
   private conversationTracker: ConversationStateTracker;
@@ -64,10 +65,9 @@ export class HybridTokenEstimator {
   private tokenCounter: TokenCounter;
   private tokenCache: TokenCache;
 
-   
-  constructor(_context: vscode.ExtensionContext) {
-    void _context;
-    this.conversationTracker = new ConversationStateTracker();
+  constructor(context: vscode.ExtensionContext) {
+    // Pass globalState to ConversationStateTracker for persistence
+    this.conversationTracker = new ConversationStateTracker(context.globalState);
     this.sequenceTracker = new CallSequenceTracker();
     this.tokenCounter = new TokenCounter();
     this.tokenCache = new TokenCache();

@@ -611,6 +611,51 @@ title = "Document verification results in RFC 042"
 status = "completed"
 completed_at = "2026-02-05T02:02:50.153371141+00:00"
 completion_log = "RFC 042 updated with empirical findings: A1-A4 all 100% verified, 6 summarization shrink events detected"
+
+[[plan.goals]]
+id = "token-persistence"
+
+[[plan.goals.tasks]]
+id = "tp-export-digest"
+title = "Export computeNormalizedDigest from forensic-capture.ts"
+status = "completed"
+completed_at = "2026-02-05T03:15:37.156616145+00:00"
+completion_log = "computeNormalizedDigest already exported from forensic-capture.ts (line 341)"
+
+[[plan.goals.tasks]]
+id = "tp-replace-hash"
+title = "Replace naive hashMessage with validated digest approach"
+status = "completed"
+completed_at = "2026-02-05T03:15:41.411981038+00:00"
+completion_log = "Replaced naive hashMessage with computeNormalizedDigest import; removed serializeParts method"
+
+[[plan.goals.tasks]]
+id = "tp-add-memento"
+title = "Add Memento parameter to ConversationStateTracker constructor"
+status = "completed"
+completed_at = "2026-02-05T03:15:45.521795870+00:00"
+completion_log = "Added optional memento parameter to ConversationStateTracker constructor; loads on init if provided"
+
+[[plan.goals.tasks]]
+id = "tp-save-load"
+title = "Implement loadFromStorage and saveToStorage methods"
+status = "completed"
+completed_at = "2026-02-05T03:15:50.399684682+00:00"
+completion_log = "Implemented loadFromStorage (on init) and saveToStorage (debounced 1s) with PersistedConversationState schema"
+
+[[plan.goals.tasks]]
+id = "tp-wire-context"
+title = "Wire globalState through HybridTokenEstimator to tracker"
+status = "completed"
+completed_at = "2026-02-05T03:15:55.247018455+00:00"
+completion_log = "HybridTokenEstimator now passes context.globalState to ConversationStateTracker constructor"
+
+[[plan.goals.tasks]]
+id = "tp-tests"
+title = "Add persistence round-trip tests"
+status = "completed"
+completed_at = "2026-02-05T03:15:59.187609181+00:00"
+completion_log = "Added 6 persistence tests: save, load, round-trip, stale filtering, clear, in-memory fallback"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

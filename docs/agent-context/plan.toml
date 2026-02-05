@@ -867,3 +867,8 @@ status = "pending"
 id = "algebra-verification"
 label = "Verify Algebraic Assumptions A1-A4"
 status = "pending"
+
+[[epochs.phases.goals]]
+id = "token-persistence"
+label = "Persist token state to Memento storage"
+status = "pending"

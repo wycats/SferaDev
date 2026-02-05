@@ -9,11 +9,13 @@
  * - The bulk of the context has known-accurate token count
  * - We only estimate the delta (typically one new message)
  * - Error is bounded to a single message, not the entire context
+ *
+ * Persistence: When provided with a Memento, state survives extension restarts.
  */
 
-import * as crypto from "node:crypto";
 import type * as vscode from "vscode";
 import { logger } from "../logger";
+import { computeNormalizedDigest } from "../provider/forensic-capture";
 
 /**
  * A known conversation state from an API response.
@@ -44,6 +46,21 @@ export interface ConversationLookupResult {
 }
 
 /**
+ * Persisted state schema for Memento storage.
+ */
+interface PersistedConversationState {
+  version: number;
+  timestamp: number;
+  entries: Array<{
+    key: string;
+    state: KnownConversationState;
+  }>;
+}
+
+const STORAGE_KEY = "conversationStateTracker.v1";
+const STORAGE_VERSION = 1;
+
+/**
  * Tracks known conversation states for delta-based token estimation.
  */
 export class ConversationStateTracker {
@@ -52,6 +69,15 @@ export class ConversationStateTracker {
   private accessOrder: string[] = [];
   private readonly maxEntries = 100;
   private readonly ttlMs = 60 * 60 * 1000;
+  private readonly memento: vscode.Memento | undefined;
+  private saveDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor(memento?: vscode.Memento) {
+    this.memento = memento;
+    if (memento) {
+      this.loadFromStorage();
+    }
+  }
 
   private computeKey(modelFamily: string, conversationId?: string): string {
     return conversationId ? `${modelFamily}:${conversationId}` : modelFamily;
@@ -71,7 +97,7 @@ export class ConversationStateTracker {
     conversationId?: string,
   ): void {
     this.cleanupStale();
-    const messageHashes = messages.map((m) => this.hashMessage(m));
+    const messageHashes = messages.map((m) => computeNormalizedDigest(m));
     const key = this.computeKey(modelFamily, conversationId);
 
     const state: KnownConversationState = {
@@ -84,6 +110,7 @@ export class ConversationStateTracker {
     this.touchKey(key);
     this.evictIfNeeded(key);
     this.knownStates.set(key, state);
+    this.scheduleSave();
 
     logger.debug(
       `[ConversationState] Recorded: ${messageHashes.length.toString()} messages, ` +
@@ -112,7 +139,7 @@ export class ConversationStateTracker {
     }
     this.touchKey(key);
 
-    const currentHashes = messages.map((m) => this.hashMessage(m));
+    const currentHashes = messages.map((m) => computeNormalizedDigest(m));
 
     // Check for exact match
     if (
@@ -171,11 +198,21 @@ export class ConversationStateTracker {
   }
 
   /**
-   * Clear all known states.
+   * Clear all known states (including persisted storage).
    */
   clear(): void {
     this.knownStates.clear();
     this.accessOrder = [];
+    if (this.memento) {
+      void this.memento.update(STORAGE_KEY, undefined);
+    }
+  }
+
+  /**
+   * Get the number of stored entries (for testing/debugging).
+   */
+  size(): number {
+    return this.knownStates.size;
   }
 
   private touchKey(key: string): void {
@@ -205,6 +242,7 @@ export class ConversationStateTracker {
 
   private cleanupStale(): void {
     const now = Date.now();
+    let changed = false;
     for (const [key, state] of this.knownStates) {
       if (now - state.timestamp > this.ttlMs) {
         this.knownStates.delete(key);
@@ -212,57 +250,88 @@ export class ConversationStateTracker {
         if (index !== -1) {
           this.accessOrder.splice(index, 1);
         }
+        changed = true;
       }
+    }
+    if (changed) {
+      this.scheduleSave();
     }
   }
 
   /**
-   * Hash a message for comparison.
+   * Load state from Memento storage.
    */
-  private hashMessage(message: vscode.LanguageModelChatMessage): string {
-    const content = {
-      role: message.role,
-      name: message.name,
-      parts: this.serializeParts(message.content),
-    };
-    return crypto
-      .createHash("sha256")
-      .update(JSON.stringify(content))
-      .digest("hex");
+  private loadFromStorage(): void {
+    if (!this.memento) return;
+
+    try {
+      const stored = this.memento.get<PersistedConversationState>(STORAGE_KEY);
+      if (!stored || stored.version !== STORAGE_VERSION) {
+        logger.debug("[ConversationState] No valid stored state found");
+        return;
+      }
+
+      // Filter out stale entries during load
+      const now = Date.now();
+      let loadedCount = 0;
+      for (const entry of stored.entries) {
+        if (now - entry.state.timestamp <= this.ttlMs) {
+          this.knownStates.set(entry.key, entry.state);
+          this.accessOrder.push(entry.key);
+          loadedCount++;
+        }
+      }
+
+      logger.info(
+        `[ConversationState] Loaded ${loadedCount.toString()} entries from storage`,
+      );
+    } catch (error) {
+      logger.warn("[ConversationState] Failed to load from storage", error);
+    }
   }
 
   /**
-   * Serialize message parts for hashing.
+   * Save state to Memento storage (debounced).
    */
-  private serializeParts(
-    content: vscode.LanguageModelChatMessage["content"],
-  ): unknown[] {
-    const parts: unknown[] = [];
-    for (const part of content) {
-      if ("value" in part && typeof part.value === "string") {
-        // TextPart
-        parts.push({ type: "text", value: part.value });
-      } else if ("data" in part && "mimeType" in part) {
-        // DataPart - hash the data instead of including it
-        const data = part.data;
-        const dataHash = crypto.createHash("sha256").update(data).digest("hex");
-        parts.push({
-          type: "data",
-          mimeType: part.mimeType,
-          dataHash,
-          dataLen: data.length,
-        });
-      } else if ("name" in part && "callId" in part) {
-        // ToolCallPart or ToolResultPart
-        parts.push({
-          type: "toolResult" in part ? "toolResult" : "toolCall",
-          name: part.name,
-          callId: part.callId,
-        });
-      } else {
-        parts.push({ type: "unknown" });
-      }
+  private scheduleSave(): void {
+    if (!this.memento) return;
+
+    // Debounce saves to avoid excessive writes
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
     }
-    return parts;
+    this.saveDebounceTimer = setTimeout(() => {
+      void this.saveToStorage();
+    }, 1000);
+  }
+
+  /**
+   * Persist current state to Memento.
+   */
+  private async saveToStorage(): Promise<void> {
+    if (!this.memento) return;
+
+    try {
+      const entries: PersistedConversationState["entries"] = [];
+      for (const key of this.accessOrder) {
+        const state = this.knownStates.get(key);
+        if (state) {
+          entries.push({ key, state });
+        }
+      }
+
+      const persisted: PersistedConversationState = {
+        version: STORAGE_VERSION,
+        timestamp: Date.now(),
+        entries,
+      };
+
+      await this.memento.update(STORAGE_KEY, persisted);
+      logger.debug(
+        `[ConversationState] Saved ${entries.length.toString()} entries to storage`,
+      );
+    } catch (error) {
+      logger.warn("[ConversationState] Failed to save to storage", error);
+    }
   }
 }
