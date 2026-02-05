@@ -903,7 +903,7 @@ status = "active"
 [[epochs.phases]]
 id = "01kgqrm141nzq23wyxnzfs6n6v"
 title = "Phase 1: Correction Factor Infrastructure (RFC 047)"
-status = "active"
+status = "completed"
 rfcs = ["00047"]
 
 [[epochs.phases.goals]]
@@ -939,9 +939,13 @@ completion_log = "Implemented Phase 1: lastSequenceEstimate stored in KnownConve
 [[epochs.phases]]
 id = "01kgqrm6fjqy1xb0te56ks9r8r"
 title = "Phase 2: provideTokenCount Integration (RFC 047)"
-status = "pending"
-goals = []
+status = "active"
 rfcs = ["00047"]
+
+[[epochs.phases.goals]]
+id = "apply-rolling-correction"
+label = "Apply rolling correction to first message of each turn in provideTokenCount"
+status = "pending"
 
 [[epochs.phases]]
 id = "01kgqrmcab087zhk1pfs0hvw1f"

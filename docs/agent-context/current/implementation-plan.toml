@@ -2,54 +2,34 @@
 # Implementation Plan
 
 [phase]
-id = "01kgqrm141nzq23wyxnzfs6n6v"
-title = "Phase 1: Correction Factor Infrastructure (RFC 047)"
+id = "01kgqrm6fjqy1xb0te56ks9r8r"
+title = "Phase 2: provideTokenCount Integration (RFC 047)"
 rfcs = ["00047"]
 
 [plan]
 
 [[plan.goals]]
-id = "capture-sequence-estimate"
-
-[[plan.goals]]
-id = "store-last-sequence-estimate"
-
-[[plan.goals]]
-id = "update-record-actual"
-
-[[plan.goals]]
-id = "provider-capture"
-
-[[plan.goals]]
-id = "correction-factor-infrastructure"
+id = "apply-rolling-correction"
 
 [[plan.goals.tasks]]
-id = "store-field"
-title = "Add lastSequenceEstimate field to KnownConversationState"
-status = "completed"
-completed_at = "2026-02-05T21:01:12.567763412+00:00"
-completion_log = "Added lastSequenceEstimate to KnownConversationState and stored it during recordActual."
+id = "get-adjustment"
+title = "Add getAdjustment() method to HybridTokenEstimator"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "update-signature"
-title = "Update recordActual() to accept sequenceEstimate parameter"
-status = "completed"
-completed_at = "2026-02-05T21:01:12.944392957+00:00"
-completion_log = "Extended recordActual signatures to accept sequenceEstimate and passed through to conversation tracker."
+id = "first-message-detection"
+title = "Detect first message in turn via wouldStartNewSequence() in estimateMessage()"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "capture-in-provider"
-title = "Capture SequenceTracker.totalEstimate before API call in provider"
-status = "completed"
-completed_at = "2026-02-05T21:01:13.464313322+00:00"
-completion_log = "Captured sequence estimate before API call in provider chat flow."
+id = "apply-adjustment"
+title = "Apply adjustment to first message estimate and return corrected value"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "wire-to-record"
-title = "Pass captured sequenceEstimate to recordActual() after API response"
-status = "completed"
-completed_at = "2026-02-05T21:01:14.076234418+00:00"
-completion_log = "Wired captured sequenceEstimate through recordUsage into tokenEstimator.recordActual."
+id = "pass-context"
+title = "Pass modelFamily and conversationId to estimateMessage() from provideTokenCount()"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
