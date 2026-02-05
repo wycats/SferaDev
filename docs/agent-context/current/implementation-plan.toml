@@ -2,42 +2,29 @@
 # Implementation Plan
 
 [phase]
-id = "01kgqrm6fjqy1xb0te56ks9r8r"
-title = "Phase 2: provideTokenCount Integration (RFC 047)"
+id = "01kgqrmcab087zhk1pfs0hvw1f"
+title = "Phase 3: Summarization Detection (RFC 047)"
 rfcs = ["00047"]
 
 [plan]
 
 [[plan.goals]]
-id = "apply-rolling-correction"
+id = "testing-validation"
 
 [[plan.goals.tasks]]
-id = "get-adjustment"
-title = "Add getAdjustment() method to HybridTokenEstimator"
-status = "completed"
-completed_at = "2026-02-05T21:27:20.544375744+00:00"
-completion_log = "Added `getAdjustment()` to `HybridTokenEstimator` for rolling correction."
+id = "telescoping-integration-test"
+title = "Integration test: multi-turn telescoping property verification"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "first-message-detection"
-title = "Detect first message in turn via wouldStartNewSequence() in estimateMessage()"
-status = "completed"
-completed_at = "2026-02-05T21:27:20.945224343+00:00"
-completion_log = "Updated `estimateMessage()` to detect first message via `wouldStartNewSequence()` before any `onCall()`."
+id = "edge-case-tests"
+title = "Edge case tests: cached actuals, multi-conversation, reset"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "apply-adjustment"
-title = "Apply adjustment to first message estimate and return corrected value"
-status = "completed"
-completed_at = "2026-02-05T21:27:21.317565012+00:00"
-completion_log = "Applied rolling correction adjustment to first message estimates and return corrected value."
-
-[[plan.goals.tasks]]
-id = "pass-context"
-title = "Pass modelFamily and conversationId to estimateMessage() from provideTokenCount()"
-status = "completed"
-completed_at = "2026-02-05T21:27:21.669675857+00:00"
-completion_log = "Passed explicit `undefined` conversationId to `estimateMessage()` from `provideTokenCount()`."
+id = "logging-validation"
+title = "Validate adjustment logging in production scenarios"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
