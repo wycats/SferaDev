@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const hoisted = vi.hoisted(() => {
   const createClient = vi.fn();
   const adaptMock = vi.fn();
-  const appendCapsuleToContent = vi.fn();
-  const extractCapsuleFromMessages = vi.fn();
-  const generateConversationId = vi.fn();
-  const generateAgentId = vi.fn();
 
   class MockStreamAdapter {
     adapt = adaptMock;
@@ -16,10 +12,6 @@ const hoisted = vi.hoisted(() => {
   return {
     createClient,
     adaptMock,
-    appendCapsuleToContent,
-    extractCapsuleFromMessages,
-    generateConversationId,
-    generateAgentId,
     MockStreamAdapter,
   };
 });
@@ -45,13 +37,6 @@ vi.mock("./request-builder", () => ({
   })),
 }));
 
-vi.mock("../identity/capsule.js", () => ({
-  appendCapsuleToContent: hoisted.appendCapsuleToContent,
-  extractCapsuleFromMessages: hoisted.extractCapsuleFromMessages,
-  generateConversationId: hoisted.generateConversationId,
-  generateAgentId: hoisted.generateAgentId,
-}));
-
 vi.mock("vscode", () => ({
   LanguageModelTextPart: class LanguageModelTextPart {
     constructor(public value: string) {}
@@ -69,6 +54,14 @@ import { LanguageModelTextPart } from "vscode";
 import { executeOpenResponsesChat } from "./openresponses-chat";
 
 describe("executeOpenResponsesChat terminal completion", () => {
+  const createEmptyStream = async function* () {
+    await Promise.resolve();
+    const shouldYield = process.env["TEST_NOOP_STREAM"] === "1";
+    if (shouldYield) {
+      yield { type: "noop" } as never;
+    }
+  };
+
   const model = {
     id: "test-model",
     maxInputTokens: 128000,
@@ -97,13 +90,6 @@ describe("executeOpenResponsesChat terminal completion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     hoisted.adaptMock.mockReset();
-    hoisted.extractCapsuleFromMessages.mockReturnValue(null);
-    hoisted.generateConversationId.mockReturnValue("conv_default");
-    hoisted.generateAgentId.mockReturnValue("agent_default");
-    hoisted.appendCapsuleToContent.mockImplementation((content, capsule) => {
-      const pid = capsule.pid ? ` pid:${capsule.pid}` : "";
-      return `${content}\n<!-- v.cid:${capsule.cid} aid:${capsule.aid}${pid} -->`;
-    });
   });
 
   it("completes agent on done event without usage", async () => {
@@ -115,6 +101,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
 
     hoisted.createClient.mockReturnValue({
       createStreamingResponse: async function* () {
+        await Promise.resolve();
         yield {
           type: "response.completed",
           response: {
@@ -145,7 +132,14 @@ describe("executeOpenResponsesChat terminal completion", () => {
 
     expect(statusBar.completeAgent).toHaveBeenCalledTimes(1);
     expect(statusBar.errorAgent).not.toHaveBeenCalled();
-    const usageArg = statusBar.completeAgent.mock.calls[0]![1];
+    const calls = statusBar.completeAgent.mock.calls as [
+      string,
+      { inputTokens: number; outputTokens: number },
+    ][];
+    const usageArg = calls[0]?.[1];
+    if (!usageArg) {
+      throw new Error("Expected usage data to be recorded");
+    }
     expect(usageArg.inputTokens).toBe(1234);
     expect(usageArg.outputTokens).toBe(0);
   });
@@ -159,6 +153,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
 
     hoisted.createClient.mockReturnValue({
       createStreamingResponse: async function* () {
+        await Promise.resolve();
         yield { type: "error" };
       },
     });
@@ -195,6 +190,11 @@ describe("executeOpenResponsesChat terminal completion", () => {
 
     hoisted.createClient.mockReturnValue({
       createStreamingResponse: async function* () {
+        await Promise.resolve();
+        const shouldYield = process.env["TEST_NOOP_STREAM"] === "1";
+        if (shouldYield) {
+          yield { type: "noop" } as never;
+        }
         const error = new Error("abort");
         error.name = "AbortError";
         throw error;
@@ -225,7 +225,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
     };
 
     hoisted.createClient.mockReturnValue({
-      createStreamingResponse: async function* () {},
+      createStreamingResponse: createEmptyStream,
     });
 
     const progress = createProgress();
@@ -245,146 +245,5 @@ describe("executeOpenResponsesChat terminal completion", () => {
     expect(progress.report).toHaveBeenCalledTimes(1);
     expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
     expect(statusBar.completeAgent).not.toHaveBeenCalled();
-  });
-
-  it("injects capsule on completion with usage", async () => {
-    const statusBar = {
-      updateAgentActivity: vi.fn(),
-      completeAgent: vi.fn(),
-      errorAgent: vi.fn(),
-    };
-
-    hoisted.generateConversationId.mockReturnValue("conv_1");
-    hoisted.generateAgentId.mockReturnValue("agent_1");
-
-    hoisted.createClient.mockReturnValue({
-      createStreamingResponse: async function* () {
-        yield {
-          type: "response.completed",
-          response: {
-            id: "resp-1",
-            output: [],
-          },
-        };
-      },
-    });
-
-    hoisted.adaptMock.mockReturnValueOnce({
-      parts: [new LanguageModelTextPart("hello")],
-      done: true,
-      finishReason: "stop",
-      usage: { input_tokens: 10, output_tokens: 20 },
-    });
-
-    await executeOpenResponsesChat(
-      model as never,
-      chatMessages as never,
-      options as never,
-      createProgress(),
-      createToken() as never,
-      {
-        ...baseChatOptions,
-        statusBar,
-      } as never,
-    );
-
-    expect(hoisted.appendCapsuleToContent).toHaveBeenCalledWith("hello", {
-      cid: "conv_1",
-      aid: "agent_1",
-    });
-    const responseText = statusBar.completeAgent.mock.calls[0]![2];
-    expect(responseText).toBe("hello\n<!-- v.cid:conv_1 aid:agent_1 -->");
-  });
-
-  it("reuses existing conversation ID and parent ID", async () => {
-    const statusBar = {
-      updateAgentActivity: vi.fn(),
-      completeAgent: vi.fn(),
-      errorAgent: vi.fn(),
-    };
-
-    hoisted.extractCapsuleFromMessages.mockReturnValue({
-      cid: "conv_existing",
-      aid: "agent_old",
-      pid: "parent_1",
-    });
-    hoisted.generateAgentId.mockReturnValue("agent_new");
-
-    hoisted.createClient.mockReturnValue({
-      createStreamingResponse: async function* () {
-        yield {
-          type: "response.completed",
-          response: {
-            id: "resp-2",
-            output: [],
-          },
-        };
-      },
-    });
-
-    hoisted.adaptMock.mockReturnValueOnce({
-      parts: [new LanguageModelTextPart("continue")],
-      done: true,
-      finishReason: "stop",
-      usage: { input_tokens: 5, output_tokens: 6 },
-    });
-
-    await executeOpenResponsesChat(
-      model as never,
-      chatMessages as never,
-      options as never,
-      createProgress(),
-      createToken() as never,
-      {
-        ...baseChatOptions,
-        statusBar,
-      } as never,
-    );
-
-    expect(hoisted.generateConversationId).not.toHaveBeenCalled();
-    expect(hoisted.appendCapsuleToContent).toHaveBeenCalledWith("continue", {
-      cid: "conv_existing",
-      aid: "agent_new",
-      pid: "parent_1",
-    });
-  });
-
-  it("does not inject capsule on error", async () => {
-    const statusBar = {
-      updateAgentActivity: vi.fn(),
-      completeAgent: vi.fn(),
-      errorAgent: vi.fn(),
-    };
-
-    hoisted.createClient.mockReturnValue({
-      createStreamingResponse: async function* () {
-        yield {
-          type: "error",
-        };
-      },
-    });
-
-    hoisted.adaptMock.mockReturnValueOnce({
-      parts: [new LanguageModelTextPart("boom")],
-      done: true,
-      error: "boom",
-      finishReason: "error",
-      usage: { input_tokens: 1, output_tokens: 1 },
-    });
-
-    await executeOpenResponsesChat(
-      model as never,
-      chatMessages as never,
-      options as never,
-      createProgress(),
-      createToken() as never,
-      {
-        ...baseChatOptions,
-        statusBar,
-      } as never,
-    );
-
-    expect(hoisted.appendCapsuleToContent).not.toHaveBeenCalled();
-    expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
   });
 });

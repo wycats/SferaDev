@@ -57,37 +57,63 @@ Capsule is appended to the **end** of every assistant message content, after the
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 1. OUTBOUND: User sends message                             │
-│    - Scan assistant messages for existing capsule           │
-│    - Extract cid/aid/pid if found                           │
-│    - Use for agent correlation                              │
+│ TURN 1: Fresh conversation                                  │
+│   VS Code → [user message] → OpenResponses (VERBATIM)       │
+│   OpenResponses → [assistant text, no capsule yet]          │
+│   We inject capsule → [text + capsule] → VS Code            │
 ├─────────────────────────────────────────────────────────────┤
-│ 2. INBOUND: Assistant response streaming                    │
-│    - Monitor stream for hallucinated capsule pattern        │
-│    - If detected: CANCEL stream immediately                 │
-│    - Append correct capsule after stream completes          │
-├─────────────────────────────────────────────────────────────┤
-│ 3. COMPLETION: Response finalized                           │
-│    - Generate new cid if none found in history              │
-│    - Generate aid for this response                         │
-│    - Append capsule to response content                     │
+│ TURN 2+: Continuing conversation                            │
+│   VS Code → [transcript with capsules] → OpenResponses      │
+│   (VERBATIM - no sanitization, no modification)             │
+│                                                             │
+│   OpenResponses → [new assistant text, may hallucinate]     │
+│   Process stream:                                           │
+│     - Buffer tokens to detect capsule patterns              │
+│     - If capsule mid-stream → ESCAPE, continue              │
+│     - If capsule at end → REPLACE with correct ID           │
+│     - If no capsule → APPEND correct capsule                │
+│   Send processed response → VS Code                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
+**Key invariant**: Input is VERBATIM. All processing happens on OUTPUT only.
+
 ### Hallucination Defense
 
-Models may attempt to generate capsules themselves (they've seen HTML comments in training data). Defense:
+Models may emit capsule-like patterns because they see previous capsules in conversation history. Defense strategy: **buffer, detect, and handle gracefully** (never cancel).
 
-1. **Pattern detection**: Buffer last 20 chars of stream, match `<!-- v.cid:` or `<!-- v.aid:`
-2. **Immediate cancellation**: Call `cancellationTokenSource.cancel()` to stop generation
-3. **Truncation**: Remove partial hallucinated capsule from output
-4. **Correct injection**: Append the real capsule
+#### Stream Buffering
+
+Buffer incoming tokens to detect the capsule pattern `<!-- v.(cid|aid|pid):`. When pattern detected:
+
+1. **Mid-stream** (more tokens follow): ESCAPE the pattern by replacing `.` with `·` (middle dot), continue streaming
+2. **End of stream** (no more tokens): REPLACE with correct capsule ID
+
+#### Why Not Cancel?
+
+- Mid-message capsule = model is quoting/referencing (legitimate)
+- End-of-message capsule = model hallucinated where real capsule goes (just fix it)
+- Neither case requires stopping the stream
+
+#### CapsuleGuard Interface
 
 ```typescript
-const CAPSULE_PATTERN = /<!-- v\.(cid|aid|pid):/;
+class CapsuleGuard {
+  private buffer = "";
+  private readonly BUFFER_SIZE = 30;
+  private readonly PATTERN = /<!-- v\.(cid|aid|pid):/;
 
-function detectHallucinatedCapsule(buffer: string): boolean {
-  return CAPSULE_PATTERN.test(buffer);
+  /**
+   * Process a text delta. Returns text to emit immediately.
+   * May hold back text in buffer if capsule pattern is pending.
+   */
+  processTextDelta(text: string): { emit: string; pending: string };
+
+  /**
+   * Finalize stream. Returns any buffered text with capsule
+   * replaced (if hallucinated) or appended (if missing).
+   */
+  finalize(correctCapsule: Capsule): string;
 }
 ```
 
@@ -109,15 +135,13 @@ function generateAgentId(requestId: string): string {
 
 ### Files to Modify
 
-| File                                 | Change                                       |
-| ------------------------------------ | -------------------------------------------- |
-| `src/provider/openresponses-chat.ts` | Inject capsule after stream completes        |
-| `src/provider/stream-adapter.ts`     | Detect hallucinated capsules, trigger cancel |
-| `src/provider/request-builder.ts`    | Scan incoming messages for existing capsules |
-| `src/status-bar/identity.ts`         | Capsule parsing/generation utilities         |
-| `src/status-bar/types.ts`            | Add `conversationId` to agent tracking       |
+| File                                 | Change                               |
+| ------------------------------------ | ------------------------------------ |
+| `src/provider/openresponses-chat.ts` | Stream processing with CapsuleGuard  |
+| `src/identity/capsule-guard.ts`      | Buffer, detect, replace/escape logic |
+| `src/identity/capsule.ts`            | Capsule parsing/formatting utilities |
 
-### New Module: `src/capsule.ts`
+### New Module: `src/identity/capsule.ts`
 
 ```typescript
 export interface Capsule {
@@ -134,26 +158,25 @@ export function extractCapsuleFromMessages(
 export function appendCapsule(content: string, capsule: Capsule): string;
 ```
 
-### Stream Interception
+### Stream Processing
 
 ```typescript
-// In StreamAdapter or openresponses-chat.ts
-class CapsuleGuard {
-  private buffer = "";
-  private readonly maxBuffer = 30;
+// In openresponses-chat.ts
+const guard = new CapsuleGuard();
 
-  onChunk(text: string, cancel: () => void): string {
-    this.buffer = (this.buffer + text).slice(-this.maxBuffer);
-
-    if (detectHallucinatedCapsule(this.buffer)) {
-      cancel();
-      // Return text up to the hallucination start
-      return truncateAtCapsuleStart(text);
+for await (const event of stream) {
+  if (event.type === "response.output_text.delta") {
+    const { emit } = guard.processTextDelta(event.delta);
+    if (emit) {
+      progress.report(new LanguageModelTextPart(emit));
+      accumulatedText += emit;
     }
-
-    return text;
   }
 }
+
+// After stream ends
+const finalText = guard.finalize(capsule);
+// finalText has correct capsule: replaced if hallucinated, appended if missing
 ```
 
 ## Alternatives Considered
@@ -180,12 +203,14 @@ However, `metadata` is currently OpenAI-only; Anthropic/Gemini/others silently d
 
 ## Risks
 
-| Risk                                  | Mitigation                                             |
-| ------------------------------------- | ------------------------------------------------------ |
-| Model references capsule in response  | Unlikely given placement at end; monitor in production |
-| HTML comment renders in some contexts | Use obscure prefix `v.cid` unlikely to conflict        |
-| Token overhead                        | ~30 tokens/response; acceptable for reliability        |
-| Partial capsule in truncated context  | Parser handles incomplete capsules gracefully          |
+| Risk                                  | Mitigation                                                         |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| Model hallucinates capsule at end     | Replace with correct ID (no cancellation needed)                   |
+| Model quotes capsule mid-message      | Escape pattern, continue streaming                                 |
+| HTML comment renders in some contexts | Use obscure prefix `v.cid` unlikely to conflict                    |
+| Token overhead                        | ~30 tokens/response; acceptable for reliability                    |
+| Partial capsule in truncated context  | Parser handles incomplete capsules gracefully                      |
+| Escaped capsule visible to user       | Intentional; visible mutation signals it's a quote, aids debugging |
 
 ## Success Criteria
 
@@ -202,7 +227,7 @@ However, `metadata` is currently OpenAI-only; Anthropic/Gemini/others silently d
 
 ### 2. Checksum/nonce for hallucination defense
 
-**Decision**: Not needed. Stream cancellation on pattern detection (`<!-- v.cid:`) is sufficient. The model never completes the hallucination, so validating correctness is moot.
+**Decision**: Not needed. Buffer/escape/replace via CapsuleGuard handles both mid-stream quotes and end-of-message hallucinations without stopping the stream.
 
 ### 3. Legacy conversations without capsules
 

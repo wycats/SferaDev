@@ -39,6 +39,7 @@ import {
   computeAgentTypeHash,
   computeToolSetHash,
   hashUserMessage,
+  extractIdentity,
 } from "./identity";
 import type { TokenStatusBar } from "./status-bar";
 import { HybridTokenEstimator } from "./tokens/hybrid-estimator";
@@ -321,13 +322,19 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
             .substring(0, 16)
         : undefined;
 
+      // Derive conversation identity without capsule extraction
+      const { conversationId } = extractIdentity(chatMessages, {
+        ...(systemPromptHash !== undefined ? { systemPromptHash } : {}),
+        modelId: model.id,
+      });
+
       // Pre-flight check: estimate total tokens and validate against model limit
       // Now includes tool schemas (can be 50k+ tokens)
       const estimatedTokens = this.estimateTotalInputTokens(
         model,
         chatMessages,
         token,
-        systemPromptHash,
+        conversationId,
         options.tools ? { tools: options.tools } : {},
       );
       const maxInputTokens = model.maxInputTokens;
@@ -438,6 +445,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
 
       // Execute chat using OpenResponses API
       logger.debug(`[OpenResponses] Executing chat request for ${model.id}`);
+
       const result = await executeOpenResponsesChat(
         model,
         chatMessages,
@@ -456,7 +464,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
               model,
               chatMessages,
               actualInputTokens,
-              systemPromptHash,
+              conversationId,
             );
           },
         },

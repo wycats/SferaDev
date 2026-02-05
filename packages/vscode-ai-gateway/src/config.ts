@@ -115,9 +115,9 @@ export class ConfigService implements vscode.Disposable {
     return true;
   }
 
-  /** No file logging by default */
+  /** Directory for file logging (relative to workspace or absolute) */
   get logFileDirectory(): string {
-    return "";
+    return this.config.get("logging.fileDirectory", "");
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

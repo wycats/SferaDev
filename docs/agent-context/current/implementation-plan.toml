@@ -3,10 +3,554 @@
 
 [phase]
 id = "01kgkqpde1s9zfqfe5s8x01zwz"
-title = "Transcript Capsule Implementation"
-rfcs = ["041"]
+title = "Transcript Digest Correlation"
+rfcs = ["041", "042"]
 
 [plan]
+
+[[plan.goals]]
+id = "capsule-guard"
+
+[[plan.goals.tasks]]
+id = "capsule-guard-impl"
+title = "Replace CapsuleGuard with RFC 041 implementation"
+status = "completed"
+completed_at = "2026-02-04T18:45:52.101737940+00:00"
+completion_log = "Replaced capsule-guard.ts with RFC 041 CapsuleGuard implementation and new API surface."
+
+[[plan.goals]]
+id = "cid-token-estimation"
+
+[[plan.goals.tasks]]
+id = "task-1"
+title = "Add conversationId to OpenResponsesChatOptions interface"
+status = "completed"
+completed_at = "2026-02-04T19:50:36.044290340+00:00"
+completion_log = "Added conversationId: string as required field to OpenResponsesChatOptions interface"
+
+[[plan.goals.tasks]]
+id = "task-2"
+title = "Destructure conversationId and existingCapsule from options"
+status = "completed"
+completed_at = "2026-02-04T19:50:39.489015441+00:00"
+completion_log = "Destructured conversationId and existingCapsule from chatOptions in executeOpenResponsesChat"
+
+[[plan.goals.tasks]]
+id = "task-3"
+title = "Remove internal extractCapsuleFromMessages call"
+status = "completed"
+completed_at = "2026-02-04T19:50:42.548062198+00:00"
+completion_log = "Removed internal extractCapsuleFromMessages call - capsule now passed via options"
+
+[[plan.goals.tasks]]
+id = "task-4"
+title = "Use passed conversationId instead of fallback"
+status = "completed"
+completed_at = "2026-02-04T19:50:45.492261663+00:00"
+completion_log = "Removed generateConversationId fallback - now uses passed conversationId directly for capsule.cid"
+
+[[plan.goals.tasks]]
+id = "task-5"
+title = "Remove generateConversationId import"
+status = "completed"
+completed_at = "2026-02-04T19:50:48.007179908+00:00"
+completion_log = "Removed generateConversationId import from capsule.ts"
+
+[[plan.goals]]
+id = "cid-provider"
+
+[[plan.goals.tasks]]
+id = "task-1"
+title = "Import extractCapsuleFromMessages and generateConversationId"
+status = "completed"
+completed_at = "2026-02-04T19:53:27.164011375+00:00"
+completion_log = "Imported extractCapsuleFromMessages and generateConversationId from ./identity/capsule"
+
+[[plan.goals.tasks]]
+id = "task-2"
+title = "Extract capsule from messages and derive conversationId early in provideLanguageModelChatResponse"
+status = "completed"
+completed_at = "2026-02-04T19:53:30.198708020+00:00"
+completion_log = "Extract capsule and derive conversationId early in provideLanguageModelChatResponse"
+
+[[plan.goals.tasks]]
+id = "task-3"
+title = "Pass conversationId to estimateTotalInputTokens instead of systemPromptHash"
+status = "completed"
+completed_at = "2026-02-04T19:53:33.515478275+00:00"
+completion_log = "Pass conversationId to estimateTotalInputTokens instead of systemPromptHash"
+
+[[plan.goals.tasks]]
+id = "task-4"
+title = "Pass conversationId to recordUsage instead of systemPromptHash"
+status = "completed"
+completed_at = "2026-02-04T19:53:35.884642524+00:00"
+completion_log = "Pass conversationId to recordUsage instead of systemPromptHash"
+
+[[plan.goals.tasks]]
+id = "task-5"
+title = "Pass conversationId and existingCapsule to executeOpenResponsesChat"
+status = "completed"
+completed_at = "2026-02-04T19:53:38.860108051+00:00"
+completion_log = "Pass conversationId and existingCapsule to executeOpenResponsesChat - fixed TypeScript error"
+
+[[plan.goals]]
+id = "verify-capsule-cid"
+
+[[plan.goals.tasks]]
+id = "reload-extension"
+title = "Reload VS Code and verify extension loads"
+status = "completed"
+completed_at = "2026-02-04T22:06:16.756820362+00:00"
+completion_log = "Superseded: HTML comment approach invalidated by VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "multi-turn-test"
+title = "Test multi-turn conversation preserves cid across turns"
+status = "completed"
+completed_at = "2026-02-04T22:06:19.554442892+00:00"
+completion_log = "Superseded: HTML comment approach invalidated by VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "token-estimation-stable"
+title = "Verify token estimates remain stable across turns (no cross-conversation pollution)"
+status = "completed"
+completed_at = "2026-02-04T22:06:23.312636062+00:00"
+completion_log = "Superseded: HTML comment approach invalidated by VS Code sanitization"
+
+[[plan.goals]]
+id = "cid-status-bar"
+
+[[plan.goals.tasks]]
+id = "sb-add-cid-to-entry"
+title = "Add conversationId to AgentEntry interface"
+status = "completed"
+completed_at = "2026-02-04T22:06:26.373991998+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "sb-pass-cid-to-start"
+title = "Pass conversationId to startAgent()"
+status = "completed"
+completed_at = "2026-02-04T22:06:29.392642796+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "sb-track-main-cid"
+title = "Track main agent conversationId"
+status = "completed"
+completed_at = "2026-02-04T22:06:32.414100789+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "sb-cid-subagent-detect"
+title = "Use cid for subagent detection when available"
+status = "completed"
+completed_at = "2026-02-04T22:06:35.466896160+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "sb-cid-resume-logic"
+title = "Use cid for agent resume matching"
+status = "completed"
+completed_at = "2026-02-04T22:06:38.345984095+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "sb-update-tests"
+title = "Update status-bar tests for cid"
+status = "completed"
+completed_at = "2026-02-04T22:06:40.767728300+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals]]
+id = "cid-agent-tree"
+
+[[plan.goals.tasks]]
+id = "at-prefer-cid-identity"
+title = "Prefer cid over computed conversationHash"
+status = "completed"
+completed_at = "2026-02-04T22:06:43.414833812+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "at-cid-in-claims"
+title = "Use cid in claim creation"
+status = "completed"
+completed_at = "2026-02-04T22:06:47.429403381+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "at-match-claims-cid"
+title = "Match claims using cid"
+status = "completed"
+completed_at = "2026-02-04T22:06:50.315528714+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "at-tree-cid-hierarchy"
+title = "Use cid for tree parent-child linking"
+status = "completed"
+completed_at = "2026-02-04T22:06:53.232715798+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "at-reconcile-cid"
+title = "Reconcile provisional links to cid"
+status = "completed"
+completed_at = "2026-02-04T22:06:55.603439716+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "at-update-tests"
+title = "Update agent-tree tests for cid"
+status = "completed"
+completed_at = "2026-02-04T22:06:58.281030532+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals]]
+id = "cid-learned-correction"
+
+[[plan.goals.tasks]]
+id = "tc-change-key-type"
+title = "Change learnedTokenTotal key to conversationId"
+status = "completed"
+completed_at = "2026-02-04T22:07:00.817035986+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "tc-track-current-cid"
+title = "Track current conversationId in provider"
+status = "completed"
+completed_at = "2026-02-04T22:07:04.082698711+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "tc-learn-by-cid"
+title = "Learn token correction keyed by cid"
+status = "completed"
+completed_at = "2026-02-04T22:07:06.619483273+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "tc-apply-by-cid"
+title = "Apply correction by cid match"
+status = "completed"
+completed_at = "2026-02-04T22:07:09.791956361+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "tc-fallback-hash"
+title = "Maintain hash fallback for legacy"
+status = "completed"
+completed_at = "2026-02-04T22:07:12.614960086+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals.tasks]]
+id = "tc-update-tests"
+title = "Update provider tests for cid keying"
+status = "completed"
+completed_at = "2026-02-04T22:07:15.896791022+00:00"
+completion_log = "Superseded: Depends on capsule extraction which doesn't survive VS Code sanitization"
+
+[[plan.goals]]
+id = "verify-metadata-api"
+
+[[plan.goals.tasks]]
+id = "verify-return-metadata"
+title = "Return test metadata from ChatRequestHandler and log it"
+status = "completed"
+completed_at = "2026-02-04T22:07:19.940811067+00:00"
+completion_log = "Superseded: ChatResult.metadata is for Chat Participants only, not LM Providers"
+
+[[plan.goals.tasks]]
+id = "verify-read-history"
+title = "Read metadata from ChatResponseTurn.result.metadata in next turn"
+status = "completed"
+completed_at = "2026-02-04T22:07:23.357458211+00:00"
+completion_log = "Superseded: ChatResult.metadata is for Chat Participants only, not LM Providers"
+
+[[plan.goals.tasks]]
+id = "verify-persistence"
+title = "Confirm metadata persists across VS Code restart"
+status = "completed"
+completed_at = "2026-02-04T22:07:32.232478395+00:00"
+completion_log = "Superseded: ChatResult.metadata is for Chat Participants only, not LM Providers"
+
+[[plan.goals]]
+id = "forensic-capture"
+
+[[plan.goals.tasks]]
+id = "fc-enable-capture"
+title = "Enable forensic capture mode in provideLanguageModelChatResponse"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "fc-log-all-params"
+title = "Log complete messages, options, progress, token parameters"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "fc-multi-scenario"
+title = "Capture across scenarios: fresh chat, mid-switch, subagent"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "fc-document-surface"
+title = "Document the full input surface in research doc"
+status = "pending"
+
+[[plan.goals]]
+id = "sanitization-testing"
+
+[[plan.goals.tasks]]
+id = "st-test-harness"
+title = "Create test harness that injects various formats into responses"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "st-test-html-comments"
+title = "Test HTML comments survival"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "st-test-zero-width"
+title = "Test zero-width characters and Unicode variation selectors"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "st-document-results"
+title = "Document sanitization results"
+status = "pending"
+
+[[plan.goals]]
+id = "name-field-persistence"
+
+[[plan.goals.tasks]]
+id = "nf-read-api-source"
+title = "Read VS Code API source to understand name field handling"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "nf-test-name-set"
+title = "Test setting name on assistant messages and verify next turn"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "nf-document-findings"
+title = "Document name field persistence findings"
+status = "pending"
+
+[[plan.goals]]
+id = "undocumented-properties"
+
+[[plan.goals.tasks]]
+id = "up-log-full-object"
+title = "Log full message object structure on each turn"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "up-compare-turns"
+title = "Compare input messages to what we sent on previous turn"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "up-document-findings"
+title = "Document any undocumented persistent properties"
+status = "pending"
+
+[[plan.goals]]
+id = "summarization-detection"
+
+[[plan.goals.tasks]]
+id = "sd-trigger-summarization"
+title = "Trigger summarization by creating long conversations"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sd-capture-patterns"
+title = "Capture message patterns before/after summarization"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sd-identify-heuristics"
+title = "Identify detection heuristics (message count, content patterns)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sd-document-patterns"
+title = "Document summarization patterns in research doc"
+status = "pending"
+
+[[plan.goals]]
+id = "openresponses-features"
+
+[[plan.goals.tasks]]
+id = "or-document-current"
+title = "Document current OpenResponses response_id and usage metadata"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "or-design-feature"
+title = "Design ideal server-side persistence feature"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "or-draft-request"
+title = "Draft feature request for OpenResponses team"
+status = "pending"
+
+[[plan.goals]]
+id = "content-hash-memento"
+
+[[plan.goals.tasks]]
+id = "ch-design-algorithm"
+title = "Design content-hash algorithm (stable across minor variations)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "ch-prototype-storage"
+title = "Prototype Memento storage schema for conversation state"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "ch-implement-lookup"
+title = "Implement correlation lookup: hash(messages) to conversationId"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "ch-test-reliability"
+title = "Test reliability across extension restarts"
+status = "pending"
+
+[[plan.goals]]
+id = "digest-normalization"
+
+[[plan.goals.tasks]]
+id = "dn-normalize-message"
+title = "Implement normalizeMessage function per algebraic spec"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "dn-normalize-part"
+title = "Implement normalizePart for text, toolCall, toolResult, data parts"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "dn-strip-additions"
+title = "Implement stripOurAdditions (capsule markers, URL annotations)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "dn-exclude-name"
+title = "Exclude name field from normalized messages"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "dn-exclude-callid"
+title = "Exclude callId from tool call/result normalization"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "dn-unit-tests"
+title = "Add unit tests for normalization (including A3 idempotence)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "dn-digest-serialization"
+title = "Define deterministic digest serialization and lastMsgHash derivation"
+status = "pending"
+
+[[plan.goals]]
+id = "prefix-index"
+
+[[plan.goals.tasks]]
+id = "pi-digest-entry"
+title = "Define DigestEntry structure (fullDigest, length, lastMsgHash, usage)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "pi-storage-schema"
+title = "Implement storage schema in Memento with LRU eviction"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "pi-index-lookup"
+title = "Implement O(1) prefix lookup using (length, lastMsgHash)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "pi-fallback-scan"
+title = "Implement fallback scan for summarization/edge cases"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "pi-integrate-provider"
+title = "Integrate prefix identification into provideLanguageModelChatResponse"
+status = "pending"
+
+[[plan.goals]]
+id = "tool-normalization"
+
+[[plan.goals.tasks]]
+id = "tn-include-result"
+title = "Include tool result content in normalized hash (currently missing)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "tn-drop-callid"
+title = "Drop callId from tool call/result hashes (currently included)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "tn-update-callers"
+title = "Update token-cache and conversation-state hash callers"
+status = "pending"
+
+[[plan.goals]]
+id = "role-handling"
+
+[[plan.goals.tasks]]
+id = "rh-add-system-role"
+title = "Add System role handling in message translation"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "rh-document-roles"
+title = "Document expected input roles from VS Code"
+status = "pending"
+
+[[plan.goals]]
+id = "algebra-verification"
+
+[[plan.goals.tasks]]
+id = "av-a1-instrument"
+title = "Instrument: compare T_N[i] with T_{N+1}[i] for non-Assistant messages"
+status = "completed"
+completed_at = "2026-02-05T01:30:30.764674965+00:00"
+completion_log = "Implemented A1-A4 instrumentation in forensic-capture.ts with computeNormalizedDigest, computeRawDigest, stripOurAdditions; created verify-a1-a4.ts analysis script"
+
+[[plan.goals.tasks]]
+id = "av-a2-instrument"
+title = "Instrument: compare streamed content with what we receive back"
+status = "completed"
+completed_at = "2026-02-05T01:30:34.827283451+00:00"
+completion_log = "Covered by av-a1-instrument: computeRawDigest captures assistant messages for round-trip verification"
+
+[[plan.goals.tasks]]
+id = "av-a3-test"
+title = "Test: normalize(transform_out(x)) = normalize(x)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "av-a4-test"
+title = "Test: callId (itemId) round-trip stability"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "av-document-results"
+title = "Document verification results in RFC 042"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

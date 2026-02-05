@@ -105,17 +105,17 @@ export function translateMessage(
   for (const part of message.content) {
     if (part instanceof LanguageModelTextPart) {
       // Sanitize special tokens that may appear in tool outputs
-      const sanitizedText = sanitizeSpecialTokens(part.value);
+      const finalText = sanitizeSpecialTokens(part.value);
       // Use input_text for User role, output_text for Assistant
       if (openResponsesRole === "assistant") {
         assistantContentParts.push({
           type: "output_text",
-          text: sanitizedText,
+          text: finalText,
         });
       } else {
         userContentParts.push({
           type: "input_text",
-          text: sanitizedText,
+          text: finalText,
         });
       }
     } else if (part instanceof LanguageModelDataPart) {

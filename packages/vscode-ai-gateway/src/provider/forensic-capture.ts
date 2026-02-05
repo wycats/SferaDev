@@ -23,6 +23,8 @@ export interface FullContentCapture {
   messages: {
     role: string;
     name?: string;
+    normalizedDigest: string;
+    rawDigest: string;
     content: {
       type: "text" | "data" | "toolCall" | "toolResult" | "unknown";
       text?: string;
@@ -32,6 +34,7 @@ export interface FullContentCapture {
       callId?: string;
       toolResult?: unknown;
       input?: unknown;
+      partDigest?: string;
     }[];
   }[];
   tools?: {
@@ -249,6 +252,139 @@ function getMessageHash(message: LanguageModelChatMessage): string {
   return hashContent(parts.join("|"));
 }
 
+type DigestPartOptions = {
+  includeCallId: boolean;
+  includeName: boolean;
+  stripAdditions: boolean;
+};
+
+function serializeToolPayload(payload: unknown): string {
+  try {
+    return safeJsonStringify(payload);
+  } catch {
+    return "[unserializable]";
+  }
+}
+
+/**
+ * Strip additions we add during output streaming:
+ * - URL annotations: ` [title](url)` markdown links
+ * - Capsule markers: removed (capsule approach abandoned)
+ *
+ * Per digest-equivalence-algebra.md Section 6:
+ * stripOurAdditions(text) = stripCapsuleMarker(stripUrlAnnotations(text))
+ */
+function stripOurAdditions(text: string): string {
+  // Strip URL annotations formatted as ` [title](url)`
+  // The annotation format from stream-adapter.ts: ` [${title}](${url})`
+  // Pattern: space followed by markdown link
+  const stripped = text.replace(/ \[[^\]]+\]\([^)]+\)/g, "");
+  return stripped;
+}
+
+function buildDigestPart(
+  part: LanguageModelChatMessage["content"][number],
+  options: DigestPartOptions,
+): Record<string, unknown> {
+  if ("value" in part && typeof part.value === "string") {
+    const text = options.stripAdditions
+      ? stripOurAdditions(part.value)
+      : part.value;
+    return { type: "text", text };
+  }
+  if ("data" in part && "mimeType" in part) {
+    const data = part.data;
+    // For normalized digest, hash the actual data bytes
+    // For raw digest, just use size (faster, sufficient for debugging)
+    const dataDigest = options.stripAdditions
+      ? hashContent(Buffer.from(data).toString("base64"))
+      : undefined;
+    return {
+      type: "data",
+      mimeType: part.mimeType,
+      ...(dataDigest !== undefined
+        ? { dataDigest }
+        : { dataSize: data.length }),
+    };
+  }
+  if ("callId" in part && "name" in part) {
+    const isResult = "toolResult" in part;
+    const base: Record<string, unknown> = {
+      type: isResult ? "toolResult" : "toolCall",
+      toolName: part.name,
+    };
+    if (options.includeCallId) {
+      base["callId"] = part.callId;
+    }
+    if (isResult) {
+      base["toolResult"] = serializeToolPayload(
+        (part as { toolResult?: unknown }).toolResult,
+      );
+    } else {
+      base["input"] = serializeToolPayload((part as { input?: unknown }).input);
+    }
+    return base;
+  }
+  return { type: "unknown" };
+}
+
+/**
+ * Compute a normalized digest for a message, excluding unstable fields.
+ * Used to verify A1-A4 assumptions.
+ *
+ * Normalization rules (from digest-equivalence-algebra.md):
+ * - EXCLUDE: name field (often empty/unreliable)
+ * - EXCLUDE: callId on tool parts (may be unstable)
+ * - Include: role, content text, tool names, tool inputs/results
+ */
+export function computeNormalizedDigest(
+  message: LanguageModelChatMessage,
+): string {
+  const payload = {
+    role:
+      ROLE_NAMES[message.role as number] ?? `Unknown(${String(message.role)})`,
+    content: message.content.map((part) =>
+      buildDigestPart(part, {
+        includeCallId: false,
+        includeName: false,
+        stripAdditions: true,
+      }),
+    ),
+  };
+  return hashContent(safeJsonStringify(payload));
+}
+
+/**
+ * Compute a raw digest for a message, including all fields.
+ */
+export function computeRawDigest(message: LanguageModelChatMessage): string {
+  const name = (message as { name?: string }).name;
+  const payload = {
+    role:
+      ROLE_NAMES[message.role as number] ?? `Unknown(${String(message.role)})`,
+    ...(name !== undefined ? { name } : {}),
+    content: message.content.map((part) =>
+      buildDigestPart(part, {
+        includeCallId: true,
+        includeName: true,
+        stripAdditions: false,
+      }),
+    ),
+  };
+  return hashContent(safeJsonStringify(payload));
+}
+
+function computePartDigest(
+  part: LanguageModelChatMessage["content"][number],
+): string {
+  const payload = buildDigestPart(part, {
+    includeCallId: true,
+    includeName: true,
+    stripAdditions: false,
+  });
+  return hashContent(safeJsonStringify(payload));
+}
+
 function hashToolSchema(tool: {
   name: string;
   description?: string;
@@ -280,13 +416,18 @@ function extractFullContent(
       const name = (msg as { name?: string }).name;
       const content = msg.content.map((part) => {
         if ("value" in part && typeof part.value === "string") {
-          return { type: "text" as const, text: part.value };
+          return {
+            type: "text" as const,
+            text: part.value,
+            partDigest: computePartDigest(part),
+          };
         } else if ("data" in part && "mimeType" in part) {
           const data = part.data;
           return {
             type: "data" as const,
             mimeType: part.mimeType,
             dataSize: data.length,
+            partDigest: computePartDigest(part),
           };
         } else if ("callId" in part && "name" in part) {
           const isResult = "toolResult" in part;
@@ -296,6 +437,7 @@ function extractFullContent(
               toolName: part.name,
               callId: part.callId,
               toolResult: (part as { toolResult?: unknown }).toolResult,
+              partDigest: computePartDigest(part),
             };
           } else {
             return {
@@ -303,16 +445,22 @@ function extractFullContent(
               toolName: part.name,
               callId: part.callId,
               input: (part as { input?: unknown }).input,
+              partDigest: computePartDigest(part),
             };
           }
         } else {
-          return { type: "unknown" as const };
+          return {
+            type: "unknown" as const,
+            partDigest: computePartDigest(part),
+          };
         }
       });
 
       // Build result object, only including name if defined
       const result: FullContentCapture["messages"][number] = {
         role: ROLE_NAMES[msg.role as number] ?? `Unknown(${String(msg.role)})`,
+        normalizedDigest: computeNormalizedDigest(msg),
+        rawDigest: computeRawDigest(msg),
         content,
       };
       if (name !== undefined) {

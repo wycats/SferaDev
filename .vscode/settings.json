@@ -23,13 +23,11 @@
     ".reference/**": true,
     ".logs/**": true
   },
-  // Enable file logging for Vercel AI Gateway when using debug/trace level
-  // Logs will be written to .logs/ directory (gitignored)
-  "vercelAiGateway.logging.fileDirectory": ".logs",
-  "vercelAiGateway.logging.level": "info",
-  "vercelAiGateway.logging.capture": ["requests", "suspicious", "events"],
+
+  "vercel.ai.logging.fileDirectory": "/tmp/ai-gateway-logs",
+  "vercel.ai.logging.level": "trace",
 
   // Forensic capture - capture full Copilot prompts for analysis
-  "vercelAiGateway.debug.forensicCapture": true,
-  "vercelAiGateway.debug.forensicCaptureFullContent": true
+  "vercel.ai.debug.forensicCapture": true,
+  "vercel.ai.debug.forensicCaptureFullContent": true
 }

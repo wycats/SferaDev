@@ -29,14 +29,6 @@ import {
 } from "vscode";
 import type { ConfigService } from "../config.js";
 import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
-import { CapsuleGuard } from "../identity/capsule-guard.js";
-import {
-  appendCapsuleToContent,
-  type Capsule,
-  extractCapsuleFromMessages,
-  generateAgentId,
-  generateConversationId,
-} from "../identity/capsule.js";
 import {
   extractTokenCountFromError,
   type ExtractedTokenInfo,
@@ -64,8 +56,6 @@ export interface OpenResponsesChatOptions {
   chatId: string;
   /** Callback to calibrate token estimation from actual usage */
   onUsage?: (actualInputTokens: number) => void;
-  /** Existing capsule extracted from conversation history */
-  existingCapsule?: Capsule | null;
 }
 
 /**
@@ -125,16 +115,6 @@ export async function executeOpenResponsesChat(
     `[OpenResponses] Estimated input tokens: ${estimatedInputTokens.toString()}`,
   );
 
-  // Extract existing capsule from conversation history (Goal 5: Outbound Scanning)
-  const existingCapsule = extractCapsuleFromMessages(chatMessages);
-  if (existingCapsule) {
-    logger.info(
-      `[Capsule] Found existing capsule in history: cid=${existingCapsule.cid}, aid=${existingCapsule.aid}${existingCapsule.pid ? `, pid=${existingCapsule.pid}` : ""}`,
-    );
-  }
-  // Note: existingCapsule will be used in Goal 6 (Injection) to maintain conversation ID
-  // across turns and for agent correlation.
-
   // Create client with trace logging
   const client = createClient({
     baseUrl: configService.openResponsesBaseUrl,
@@ -170,10 +150,6 @@ export async function executeOpenResponsesChat(
   let responseSent = false;
   let result: OpenResponsesChatResult = { success: false };
   let agentCompleted = false;
-  // Track hallucination detection state for capsule injection on abort (RFC 041)
-  let hallucinationDetected = false;
-  // Track accumulated text for capsule injection on hallucination abort
-  let hallucinationCleanText = "";
 
   const markAgentComplete = (usage?: Usage, responseText?: string) => {
     if (agentCompleted) return;
@@ -275,8 +251,6 @@ export async function executeOpenResponsesChat(
     const eventTypeCounts = new Map<string, number>();
     // Accumulate all text output for debugging suspicious requests
     let accumulatedText = "";
-    // Initialize CapsuleGuard for hallucination defense (RFC 041)
-    let guard: CapsuleGuard | undefined;
     for await (const event of client.createStreamingResponse(
       requestBody,
       abortController.signal,
@@ -318,47 +292,6 @@ export async function executeOpenResponsesChat(
 
       // Report all parts to VS Code
       for (const part of adapted.parts) {
-        // Process text parts through CapsuleGuard for hallucination defense
-        if (part instanceof LanguageModelTextPart && !hallucinationDetected) {
-          // Initialize guard lazily on first text part
-          if (!guard) {
-            guard = new CapsuleGuard();
-          }
-
-          if (guard) {
-            const { shouldCancel, cleanContent } = guard.processTextDelta(
-              part.value,
-            );
-
-            if (shouldCancel) {
-              logger.warn(
-                `[Capsule] Hallucination detected in stream, cancelling`,
-              );
-              hallucinationDetected = true;
-              // Save accumulated text + clean content for capsule injection
-              hallucinationCleanText = accumulatedText + cleanContent;
-              abortController.abort();
-
-              // Emit clean content (truncated before hallucination) if non-empty
-              if (cleanContent) {
-                const cleanPart = new LanguageModelTextPart(cleanContent);
-                accumulatedText += cleanContent;
-                textPartCount++;
-                progress.report(cleanPart);
-                responseSent = true;
-              }
-
-              // Skip emitting the full part (it contains hallucination)
-              continue;
-            }
-          }
-        }
-
-        // Skip emitting parts after hallucination detection
-        if (hallucinationDetected) {
-          continue;
-        }
-
         // Log part types to diagnose tool call handling
         if (part instanceof LanguageModelToolCallPart) {
           toolCallCount++;
@@ -470,28 +403,7 @@ export async function executeOpenResponsesChat(
         if (adapted.error) {
           markAgentError();
         } else {
-          // Goal 6: Inject capsule into completed response
-          let finalText = accumulatedText;
-          if (adapted.usage) {
-            const conversationId =
-              existingCapsule?.cid ?? generateConversationId();
-            const agentId = generateAgentId();
-            const parentId = existingCapsule?.pid;
-
-            const capsule: Capsule = {
-              cid: conversationId,
-              aid: agentId,
-              ...(parentId && { pid: parentId }),
-            };
-
-            finalText = appendCapsuleToContent(accumulatedText, capsule);
-
-            logger.info(
-              `[Capsule] Injected capsule into response: cid=${capsule.cid}, aid=${capsule.aid}${capsule.pid ? `, pid=${capsule.pid}` : ""}`,
-            );
-          }
-
-          markAgentComplete(adapted.usage, finalText);
+          markAgentComplete(adapted.usage, accumulatedText);
         }
 
         // Track usage and calibrate token estimation
@@ -531,31 +443,6 @@ export async function executeOpenResponsesChat(
       (error.name === "AbortError" || error.message.includes("abort"))
     ) {
       logger.debug(`[OpenResponses] Request was cancelled`);
-
-      // If hallucination was detected, inject capsule into truncated content
-      // RFC 041 invariant: every assistant response should carry a capsule
-      if (hallucinationDetected && hallucinationCleanText) {
-        const conversationId =
-          existingCapsule?.cid ?? generateConversationId();
-        const agentId = generateAgentId();
-        const parentId = existingCapsule?.pid;
-
-        const capsule: Capsule = {
-          cid: conversationId,
-          aid: agentId,
-          ...(parentId && { pid: parentId }),
-        };
-
-        const finalText = appendCapsuleToContent(hallucinationCleanText, capsule);
-
-        logger.info(
-          `[Capsule] Injected capsule after hallucination abort: cid=${capsule.cid}, aid=${capsule.aid}${capsule.pid ? `, pid=${capsule.pid}` : ""}`,
-        );
-
-        markAgentComplete(undefined, finalText);
-        return { success: true, finishReason: "stop" };
-      }
-
       markAgentError();
       return { success: false, error: "Cancelled" };
     }
