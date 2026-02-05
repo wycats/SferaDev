@@ -19,6 +19,37 @@ id = "update-record-actual"
 
 [[plan.goals]]
 id = "provider-capture"
+
+[[plan.goals]]
+id = "correction-factor-infrastructure"
+
+[[plan.goals.tasks]]
+id = "store-field"
+title = "Add lastSequenceEstimate field to KnownConversationState"
+status = "completed"
+completed_at = "2026-02-05T21:01:12.567763412+00:00"
+completion_log = "Added lastSequenceEstimate to KnownConversationState and stored it during recordActual."
+
+[[plan.goals.tasks]]
+id = "update-signature"
+title = "Update recordActual() to accept sequenceEstimate parameter"
+status = "completed"
+completed_at = "2026-02-05T21:01:12.944392957+00:00"
+completion_log = "Extended recordActual signatures to accept sequenceEstimate and passed through to conversation tracker."
+
+[[plan.goals.tasks]]
+id = "capture-in-provider"
+title = "Capture SequenceTracker.totalEstimate before API call in provider"
+status = "completed"
+completed_at = "2026-02-05T21:01:13.464313322+00:00"
+completion_log = "Captured sequence estimate before API call in provider chat flow."
+
+[[plan.goals.tasks]]
+id = "wire-to-record"
+title = "Pass captured sequenceEstimate to recordActual() after API response"
+status = "completed"
+completed_at = "2026-02-05T21:01:14.076234418+00:00"
+completion_log = "Wired captured sequenceEstimate through recordUsage into tokenEstimator.recordActual."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

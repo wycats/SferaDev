@@ -176,12 +176,14 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     messages: readonly LanguageModelChatMessage[],
     actualInputTokens: number,
     conversationId?: string,
+    sequenceEstimate?: number,
   ): void {
     this.tokenEstimator.recordActual(
       messages,
       model,
       actualInputTokens,
       conversationId,
+      sequenceEstimate,
     );
 
     // Update status bar with estimation state
@@ -486,6 +488,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         await this.enrichModelIfNeeded(model.id, apiKey);
       }
 
+      // Capture sequence estimate BEFORE API call for rolling correction (RFC 047)
+      const sequenceEstimate =
+        this.tokenEstimator.getCurrentSequence()?.totalEstimate;
+
       // Execute chat using OpenResponses API
       logger.debug(`[OpenResponses] Executing chat request for ${model.id}`);
 
@@ -508,6 +514,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
               chatMessages,
               actualInputTokens,
               conversationId,
+              sequenceEstimate,
             );
           },
         },

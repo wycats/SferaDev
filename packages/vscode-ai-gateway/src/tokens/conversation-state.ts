@@ -25,6 +25,8 @@ export interface KnownConversationState {
   messageHashes: string[];
   /** Actual total input tokens from API */
   actualTokens: number;
+  /** Sequence estimate before API call (for rolling correction) */
+  lastSequenceEstimate?: number;
   /** Model family this was measured for */
   modelFamily: string;
   /** When this was recorded */
@@ -95,6 +97,7 @@ export class ConversationStateTracker {
     modelFamily: string,
     actualTokens: number,
     conversationId?: string,
+    sequenceEstimate?: number,
   ): void {
     this.cleanupStale();
     const messageHashes = messages.map((m) => computeNormalizedDigest(m));
@@ -103,6 +106,9 @@ export class ConversationStateTracker {
     const state: KnownConversationState = {
       messageHashes,
       actualTokens,
+      ...(sequenceEstimate !== undefined
+        ? { lastSequenceEstimate: sequenceEstimate }
+        : {}),
       modelFamily,
       timestamp: Date.now(),
     };

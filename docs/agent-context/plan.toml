@@ -909,22 +909,32 @@ rfcs = ["00047"]
 [[epochs.phases.goals]]
 id = "capture-sequence-estimate"
 label = "Capture SequenceTracker.totalEstimate at API call time"
-status = "pending"
+status = "abandoned"
+completion_log = "Restructuring: merging into single goal"
 
 [[epochs.phases.goals]]
 id = "store-last-sequence-estimate"
 label = "Add lastSequenceEstimate field to KnownConversationState"
-status = "pending"
+status = "abandoned"
+completion_log = "Restructuring: merging into single goal"
 
 [[epochs.phases.goals]]
 id = "update-record-actual"
 label = "Update recordActual() to accept and store sequenceEstimate"
-status = "pending"
+status = "abandoned"
+completion_log = "Restructuring: merging into single goal"
 
 [[epochs.phases.goals]]
 id = "provider-capture"
 label = "Capture sequence estimate in provider before API call"
-status = "pending"
+status = "abandoned"
+completion_log = "Restructuring: merging into single goal"
+
+[[epochs.phases.goals]]
+id = "correction-factor-infrastructure"
+label = "Store sequenceEstimate alongside actualTokens for rolling correction"
+status = "completed"
+completion_log = "Implemented Phase 1: lastSequenceEstimate stored in KnownConversationState, wired through recordActual() signature chain from provider to conversation-state. All 417 tests pass."
 
 [[epochs.phases]]
 id = "01kgqrm6fjqy1xb0te56ks9r8r"

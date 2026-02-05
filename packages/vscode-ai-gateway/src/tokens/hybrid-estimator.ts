@@ -162,12 +162,14 @@ export class HybridTokenEstimator {
     model: ModelInfo,
     actualTokens: number,
     conversationId?: string,
+    sequenceEstimate?: number,
   ): void {
     this.conversationTracker.recordActual(
       messages,
       model.family,
       actualTokens,
       conversationId,
+      sequenceEstimate,
     );
     logger.info(
       `[Estimator] Recorded actual: ${actualTokens.toString()} tokens for ` +
