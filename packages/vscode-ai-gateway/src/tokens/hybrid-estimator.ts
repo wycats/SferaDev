@@ -184,7 +184,12 @@ export class HybridTokenEstimator {
   estimateMessage(
     content: string | vscode.LanguageModelChatMessage,
     model: ModelInfo,
+    conversationId?: string,
   ): number {
+    // CRITICAL: Check if this is first message BEFORE any onCall()
+    // wouldStartNewSequence() checks the same condition as onCall() without side effects
+    const isFirstInSequence = this.sequenceTracker.wouldStartNewSequence();
+
     // Try cached API actual first (ground truth)
     if (typeof content !== "string") {
       const cached = this.tokenCache.getCached(content, model.family);
@@ -205,14 +210,26 @@ export class HybridTokenEstimator {
         ? this.tokenCounter.estimateTextTokens(content, model.family)
         : this.tokenCounter.estimateMessageTokens(content, model.family);
 
+    // Apply rolling correction to first message of each turn (RFC 047)
+    let finalEstimate = estimate;
+    if (isFirstInSequence) {
+      const adjustment = this.getAdjustment(model.family, conversationId);
+      if (adjustment > 0) {
+        finalEstimate = estimate + adjustment;
+        logger.debug(
+          `[Estimator] Rolling correction: ${estimate.toString()} + ${adjustment.toString()} = ${finalEstimate.toString()}`,
+        );
+      }
+    }
+
     this.sequenceTracker.onCall({
-      tokens: estimate,
+      tokens: finalEstimate,
       confidence: "low",
       source: "tiktoken",
       margin: 0.15,
     });
 
-    return estimate;
+    return finalEstimate;
   }
 
   /**
@@ -239,6 +256,22 @@ export class HybridTokenEstimator {
     conversationId?: string,
   ): KnownConversationState | undefined {
     return this.conversationTracker.getState(modelFamily, conversationId);
+  }
+
+  /**
+   * Get the correction adjustment for the current conversation.
+   * Returns 0 if no prior state or if this is the first turn.
+   *
+   * The adjustment is: actualTokens - lastSequenceEstimate
+   * This represents the error between what VS Code saw (sum of provideTokenCount)
+   * and what the API actually reported.
+   */
+  getAdjustment(modelFamily: string, conversationId?: string): number {
+    const state = this.conversationTracker.getState(modelFamily, conversationId);
+    if (!state || state.lastSequenceEstimate === undefined) {
+      return 0;
+    }
+    return Math.max(0, state.actualTokens - state.lastSequenceEstimate);
   }
 
   /**

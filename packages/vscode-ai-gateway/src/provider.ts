@@ -659,7 +659,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     void _token;
 
     // Use tiktoken for per-message estimation
-    const estimate = this.tokenEstimator.estimateMessage(text, model);
+    const estimate = this.tokenEstimator.estimateMessage(text, model, undefined);
 
     // If we learned from a "too long" error, apply a correction multiplier
     // This ensures VS Code sees token counts that will trigger summarization

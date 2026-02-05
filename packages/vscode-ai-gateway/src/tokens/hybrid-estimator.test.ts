@@ -231,6 +231,71 @@ describe("HybridTokenEstimator", () => {
     });
   });
 
+  describe("getAdjustment", () => {
+    it("returns 0 when no prior state exists", () => {
+      expect(estimator.getAdjustment("claude")).toBe(0);
+    });
+
+    it("returns 0 when no sequenceEstimate was recorded", () => {
+      const messages = [createMessage(1, "hello")];
+      estimator.recordActual(messages, testModel, 500);
+
+      expect(estimator.getAdjustment("claude")).toBe(0);
+    });
+
+    it("returns positive difference when actual exceeds estimate", () => {
+      const messages = [createMessage(1, "hello")];
+      // sequenceEstimate=400, actualTokens=500 → adjustment=100
+      estimator.recordActual(messages, testModel, 500, undefined, 400);
+
+      expect(estimator.getAdjustment("claude")).toBe(100);
+    });
+
+    it("returns 0 when estimate exceeds actual (clamped)", () => {
+      const messages = [createMessage(1, "hello")];
+      // sequenceEstimate=600, actualTokens=500 → clamped to 0
+      estimator.recordActual(messages, testModel, 500, undefined, 600);
+
+      expect(estimator.getAdjustment("claude")).toBe(0);
+    });
+  });
+
+  describe("rolling correction in estimateMessage", () => {
+    it("applies correction to first message of a new sequence", () => {
+      const messages = [createMessage(1, "hello")];
+      // Record actual=500, sequenceEstimate=400 → adjustment=100
+      estimator.recordActual(messages, testModel, 500, undefined, 400);
+
+      // First call is first in sequence → gets correction
+      // "test msg" = 8 chars = 8 tokens (mock) + 100 adjustment = 108
+      const estimate = estimator.estimateMessage("test msg", testModel);
+      expect(estimate).toBe(108);
+    });
+
+    it("does NOT apply correction to subsequent messages in same sequence", () => {
+      const messages = [createMessage(1, "hello")];
+      estimator.recordActual(messages, testModel, 500, undefined, 400);
+
+      // First call gets correction
+      estimator.estimateMessage("first", testModel);
+
+      // Second call is NOT first in sequence → no correction
+      // "second" = 6 chars = 6 tokens (mock), no adjustment
+      const estimate = estimator.estimateMessage("second", testModel);
+      expect(estimate).toBe(6);
+    });
+
+    it("does NOT apply correction when adjustment is zero", () => {
+      const messages = [createMessage(1, "hello")];
+      // exact match: sequenceEstimate=500, actualTokens=500 → adjustment=0
+      estimator.recordActual(messages, testModel, 500, undefined, 500);
+
+      // "test msg" = 8 chars = 8 tokens (mock), no adjustment since it's 0
+      const estimate = estimator.estimateMessage("test msg", testModel);
+      expect(estimate).toBe(8);
+    });
+  });
+
   describe("reset", () => {
     it("clears sequence and conversation state", () => {
       const messages = [createMessage(1, "hello")];

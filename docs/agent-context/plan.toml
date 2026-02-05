@@ -945,7 +945,8 @@ rfcs = ["00047"]
 [[epochs.phases.goals]]
 id = "apply-rolling-correction"
 label = "Apply rolling correction to first message of each turn in provideTokenCount"
-status = "pending"
+status = "completed"
+completion_log = "Implemented rolling correction in estimateMessage(): getAdjustment() returns Math.max(0, actual - sequenceEstimate), applied to first message via wouldStartNewSequence() check before onCall(). Added 7 tests for getAdjustment() and rolling correction behavior. All 424 tests pass."
 
 [[epochs.phases]]
 id = "01kgqrmcab087zhk1pfs0hvw1f"

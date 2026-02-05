@@ -14,22 +14,30 @@ id = "apply-rolling-correction"
 [[plan.goals.tasks]]
 id = "get-adjustment"
 title = "Add getAdjustment() method to HybridTokenEstimator"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T21:27:20.544375744+00:00"
+completion_log = "Added `getAdjustment()` to `HybridTokenEstimator` for rolling correction."
 
 [[plan.goals.tasks]]
 id = "first-message-detection"
 title = "Detect first message in turn via wouldStartNewSequence() in estimateMessage()"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T21:27:20.945224343+00:00"
+completion_log = "Updated `estimateMessage()` to detect first message via `wouldStartNewSequence()` before any `onCall()`."
 
 [[plan.goals.tasks]]
 id = "apply-adjustment"
 title = "Apply adjustment to first message estimate and return corrected value"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T21:27:21.317565012+00:00"
+completion_log = "Applied rolling correction adjustment to first message estimates and return corrected value."
 
 [[plan.goals.tasks]]
 id = "pass-context"
 title = "Pass modelFamily and conversationId to estimateMessage() from provideTokenCount()"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T21:27:21.669675857+00:00"
+completion_log = "Passed explicit `undefined` conversationId to `estimateMessage()` from `provideTokenCount()`."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
