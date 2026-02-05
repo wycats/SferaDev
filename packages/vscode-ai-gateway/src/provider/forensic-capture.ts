@@ -269,10 +269,9 @@ function serializeToolPayload(payload: unknown): string {
 /**
  * Strip additions we add during output streaming:
  * - URL annotations: ` [title](url)` markdown links
- * - Capsule markers: removed (capsule approach abandoned)
  *
  * Per digest-equivalence-algebra.md Section 6:
- * stripOurAdditions(text) = stripCapsuleMarker(stripUrlAnnotations(text))
+ * stripOurAdditions(text) = stripUrlAnnotations(text)
  *
  * @visibleForTesting
  */

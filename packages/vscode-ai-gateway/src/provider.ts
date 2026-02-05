@@ -322,7 +322,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
             .substring(0, 16)
         : undefined;
 
-      // Derive conversation identity without capsule extraction
       const { conversationId } = extractIdentity(chatMessages, {
         ...(systemPromptHash !== undefined ? { systemPromptHash } : {}),
         modelId: model.id,

@@ -13,7 +13,7 @@ export interface ExtractedIdentity {
 const conversationCache = new Map<string, string>();
 
 /**
- * Derive a stable conversation identity without capsule extraction.
+ * Derive a stable conversation identity.
  * Uses the system prompt hash, model ID, and first user message hash when available.
  */
 export function extractIdentity(
