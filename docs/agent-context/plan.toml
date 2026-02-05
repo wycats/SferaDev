@@ -951,7 +951,7 @@ completion_log = "Implemented rolling correction in estimateMessage(): getAdjust
 [[epochs.phases]]
 id = "01kgqrmcab087zhk1pfs0hvw1f"
 title = "Phase 3: Summarization Detection (RFC 047)"
-status = "active"
+status = "completed"
 rfcs = ["00047"]
 
 [[epochs.phases.goals]]
@@ -963,9 +963,18 @@ completion_log = "Phase 3 complete: 11 new tests (5 integration, 4 edge case, 2 
 [[epochs.phases]]
 id = "01kgqrmhy9wagj12ksra2v180m"
 title = "Phase 4: Token Display Fixes (RFC 044)"
-status = "pending"
-goals = []
+status = "active"
 rfcs = ["00044"]
+
+[[epochs.phases.goals]]
+id = "key-alignment"
+label = "Key alignment: activate rolling correction in production (RFC 047)"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "summarization-guard"
+label = "Post-summarization invalidation: clear stale adjustment (RFC 047)"
+status = "pending"
 
 [[epochs.phases]]
 id = "01kgqrmqps27k6m4pr3gha40xg"

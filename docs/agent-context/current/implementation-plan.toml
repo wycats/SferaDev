@@ -2,28 +2,36 @@
 # Implementation Plan
 
 [phase]
-id = "01kgqrmcab087zhk1pfs0hvw1f"
-title = "Phase 3: Summarization Detection (RFC 047)"
-rfcs = ["00047"]
+id = "01kgqrmhy9wagj12ksra2v180m"
+title = "Phase 4: Token Display Fixes (RFC 044)"
+rfcs = ["00044"]
 
 [plan]
 
 [[plan.goals]]
-id = "testing-validation"
+id = "key-alignment"
 
 [[plan.goals.tasks]]
-id = "telescoping-integration-test"
-title = "Integration test: multi-turn telescoping property verification"
+id = "write-family-key"
+title = "Write model-family-only adjustment state in recordActual()"
 status = "pending"
 
 [[plan.goals.tasks]]
-id = "edge-case-tests"
-title = "Edge case tests: cached actuals, multi-conversation, reset"
+id = "test-key-alignment"
+title = "Test: getAdjustment() returns non-zero after recordActual() with conversationId"
+status = "pending"
+
+[[plan.goals]]
+id = "summarization-guard"
+
+[[plan.goals.tasks]]
+id = "detect-shrinkage"
+title = "Detect conversation shrinkage in recordActual() and clear lastSequenceEstimate"
 status = "pending"
 
 [[plan.goals.tasks]]
-id = "logging-validation"
-title = "Validate adjustment logging in production scenarios"
+id = "test-summarization-guard"
+title = "Test: adjustment clears after simulated summarization (actual drops)"
 status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 

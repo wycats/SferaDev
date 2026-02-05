@@ -468,6 +468,67 @@ The chain of evidence:
 
 5. **Robustness**: Even if the exact caller changes, our algorithm only depends on the _observable behavior_ — rapid bursts of `provideTokenCount()` calls with gaps between turns. As long as that pattern holds, the rolling correction works correctly.
 
+## Appendix: Key Alignment & Summarization Invalidation
+
+_Added 2026-02-05. Documents findings from post-Phase-3 recon audit._
+
+### Finding: Rolling Correction Is Currently Inert
+
+During Phase 2 implementation, `provideTokenCount()` passes `undefined` as `conversationId` to `estimateMessage()` (Phase 2 item 3 noted this gap: "May need to extract capsule earlier in the flow"). Meanwhile, `recordActual()` in `provideLanguageModelChatResponse()` stores state under a per-conversation key derived from the first user message hash.
+
+| Code Path | `conversationId` | State Key |
+|---|---|---|
+| `provideTokenCount()` → `getAdjustment()` | `undefined` | `"claude"` |
+| `provideLanguageModelChatResponse()` → `recordActual()` | first-user-msg hash | `"claude:<hash>"` |
+
+**Result**: `getAdjustment()` always returns 0 in production because it reads from a key that `recordActual()` never writes to.
+
+### Finding: Repeated Summarization Has a Different Root Cause
+
+The original hypothesis — that stale rolling correction causes repeated summarization — is **refuted**. The correction never fires. The repeated summarization is likely caused by the `learnedTokenTotal` 1.5x multiplier mechanism, which has its own invalidation logic but may not clear fast enough after summarization.
+
+### Fix: Key Alignment (Phase 4a)
+
+Two approaches, in order of preference:
+
+**Option A: Write model-family-only state alongside per-conversation state.**
+`recordActual()` writes to both `"claude:<hash>"` (for delta estimation) and `"claude"` (for rolling correction). `getAdjustment()` reads from `"claude"`. Simple, no changes to `provideTokenCount()`.
+
+**Option B: Pass conversationId into `provideTokenCount()`.**
+Requires extracting the conversation context earlier in the provider flow. More invasive but more precise.
+
+### Fix: Post-Summarization Invalidation (Phase 4b)
+
+Once rolling correction is active, a stale adjustment after summarization would cause the exact repeated-summarization problem originally hypothesized. The `lookup()` method already detects conversation divergence (returns `"none"` when message hashes don't form a prefix). The fix:
+
+In `getAdjustment()`, validate that the stored state is still relevant:
+- If `actualTokens` in stored state is much larger than what the current sequence estimates suggest, the conversation was likely summarized
+- Or: in `recordActual()`, detect when `newActual < previousActual` (conversation shrank) and clear `lastSequenceEstimate`
+
+### Updated Implementation Plan
+
+Phases 1–3 are complete. Remaining phases updated:
+
+#### Phase 4a: Key Alignment (RFC 047)
+
+1. **Write model-family-only adjustment state in `recordActual()`**
+   - File: `conversation-state.ts`
+   - When `conversationId` is provided, also write a model-family-only entry with just `actualTokens` and `lastSequenceEstimate`
+   - `getAdjustment()` continues to read from model-family-only key
+
+2. **Test: rolling correction activates end-to-end**
+   - Verify `getAdjustment()` returns non-zero after `recordActual()` with conversationId
+
+#### Phase 4b: Post-Summarization Invalidation (RFC 047)
+
+1. **Detect conversation shrinkage in `recordActual()`**
+   - If new `actualTokens < previousState.actualTokens`, clear `lastSequenceEstimate`
+   - This handles summarization: conversation compressed → actual drops → adjustment cleared
+
+2. **Test: adjustment clears after simulated summarization**
+   - Record actual=100k, then record actual=30k (post-summarization)
+   - Verify `getAdjustment()` returns 0
+
 ## References
 
 - [RFC 029: Delta-Based Token Estimation](../stage-3/029-hybrid-token-estimator.md)
