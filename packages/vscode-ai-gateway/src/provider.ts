@@ -118,18 +118,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
   private tokenEstimator: HybridTokenEstimator;
   private configService: ConfigService;
   private enricher: ModelEnricher;
-  // Track current request for caching API actuals and status bar
-  private currentRequestMessages: readonly LanguageModelChatMessage[] | null =
-    null;
-  /**
-   * Learned actual token total from "input too long" errors.
-   * When set, this is distributed across messages proportionally to trigger VS Code summarization.
-   * Keyed by conversation hash to avoid cross-conversation pollution.
-   */
-  private learnedTokenTotal: {
-    conversationHash: string;
-    actualTokens: number;
-  } | null = null;
   /** Cache of enriched model data for the session */
   private enrichedModels = new Map<string, EnrichedModelData>();
   private readonly modelInfoChangeEmitter = new vscode.EventEmitter<void>();
@@ -355,9 +343,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     let responseSent = false;
 
     try {
-      // Track current request for caching API actuals after response
-      this.currentRequestMessages = chatMessages;
-
       // Extract system prompt for diagnostics logging
       // NOTE: systemPromptHash is for diagnostics ONLY - not used for identity
       const systemPrompt = extractSystemPrompt(chatMessages);
@@ -548,17 +533,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
           model.id,
         );
         logger.info(`[OpenResponses] Chat request completed for ${model.id}`);
-
-        // Clear learned token total on success - summarization worked, we're back to normal
-        // This prevents infinite summarization loops where inflated counts keep triggering
-        // more summarization even after the context has been reduced.
-        if (this.learnedTokenTotal) {
-          logger.debug(
-            `Clearing learned token total after successful request ` +
-              `(was: ${this.learnedTokenTotal.actualTokens.toString()} tokens)`,
-          );
-          this.learnedTokenTotal = null;
-        }
       }
     } catch (error) {
       // Don't report abort/cancellation as an error - it's expected behavior
@@ -570,38 +544,19 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       logError("Exception during streaming", error);
       const errorMessage = extractErrorMessage(error);
 
-      // Check if this is a "too long" error we can learn from
+      // Extract token info for status bar display (if this is a "too long" error)
       const tokenInfo = extractTokenCountFromError(error);
-      if (tokenInfo && this.currentRequestMessages) {
-        // Learn the actual token count so we can report accurate counts on retry
-        const conversationHash = this.hashConversation(
-          this.currentRequestMessages,
-        );
-        this.learnedTokenTotal = {
-          conversationHash,
-          actualTokens: tokenInfo.actualTokens,
-        };
-        logger.info(
-          `Learned actual token count from error: ${tokenInfo.actualTokens.toString()} tokens. ` +
-            `Firing model info change to trigger VS Code re-evaluation.`,
-        );
-        // Fire the event so VS Code re-queries token counts
-        // This should trigger summarization before the next request
-        this.modelInfoChangeEmitter.fire();
-
+      if (tokenInfo) {
         // Show error in status bar with token info
         this.statusBar?.showError(
           `Token limit exceeded: ${tokenInfo.actualTokens.toLocaleString()} tokens ` +
             `(max: ${tokenInfo.maxTokens?.toLocaleString() ?? "unknown"})`,
         );
-        if (this.currentAgentId) {
-          this.statusBar?.errorAgent(this.currentAgentId);
-        }
       }
 
-      // Mark agent as errored in status bar (even if we didn't extract token info)
+      // Mark agent as errored in status bar
       // This ensures agents don't get stuck in 'streaming' state on any error
-      if (this.currentAgentId && !tokenInfo) {
+      if (this.currentAgentId) {
         this.statusBar?.errorAgent(this.currentAgentId);
       }
 
@@ -617,7 +572,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       }
     } finally {
       // Clear current request tracking
-      this.currentRequestMessages = null;
       this.currentAgentId = null;
       abortSubscription.dispose();
     }
@@ -636,27 +590,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       );
     }
     return false;
-  }
-
-  /**
-   * Create a hash of the conversation for identifying when learned token counts apply.
-   * Uses the first few and last messages to create a stable identifier.
-   */
-  private hashConversation(
-    messages: readonly LanguageModelChatMessage[],
-  ): string {
-    // Use first 2 and last 2 messages for a stable hash
-    // This way the hash changes if messages are added but remains stable for same conversation
-    const relevant = [...messages.slice(0, 2), ...messages.slice(-2)].filter(
-      Boolean,
-    );
-    const hashes = relevant.map((msg) =>
-      hashMessage(msg as LanguageModelChatRequestMessage),
-    );
-    return createHash("sha256")
-      .update(hashes.join(":"))
-      .digest("hex")
-      .slice(0, 16);
   }
 
   /**
@@ -682,30 +615,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       model,
       undefined,
     );
-
-    // If we learned from a "too long" error, apply a correction multiplier
-    // This ensures VS Code sees token counts that will trigger summarization
-    // Only apply if we're still in the same conversation (check hash to avoid cross-pollution)
-    if (this.learnedTokenTotal && this.currentRequestMessages) {
-      const currentHash = this.hashConversation(this.currentRequestMessages);
-      if (currentHash === this.learnedTokenTotal.conversationHash) {
-        // Apply a 1.5x multiplier to compensate for the underestimate
-        // The goal is to make the sum exceed maxInputTokens so VS Code summarizes
-        const inflated = estimate * 1.5;
-        logger.trace(
-          `Applying learned token correction: ${estimate.toString()} -> ${Math.ceil(inflated).toString()} ` +
-            `(learned actual total: ${this.learnedTokenTotal.actualTokens.toString()})`,
-        );
-        return Promise.resolve(Math.ceil(inflated));
-      } else {
-        // Different conversation - clear the stale learned total
-        logger.debug(
-          `Clearing stale learned token total (conversation hash mismatch: ` +
-            `${currentHash} !== ${this.learnedTokenTotal.conversationHash})`,
-        );
-        this.learnedTokenTotal = null;
-      }
-    }
 
     return Promise.resolve(estimate);
   }
