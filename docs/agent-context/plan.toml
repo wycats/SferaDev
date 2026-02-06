@@ -1069,7 +1069,7 @@ ulid = "01KGT5NS37SQW4MRJCXPK5NDS3"
 [[epochs.phases]]
 id = "01kgt5p8kcsy08hdnevegysp3x"
 title = "Phase 1-2: Remove 1.5x Multiplier System"
-status = "active"
+status = "completed"
 rfcs = ["00054"]
 ulid = "01KGT5P8KCSY08HDNEVEGYSP3X"
 
@@ -1112,10 +1112,39 @@ ulid = "01KGT5RHVRJY909TJW4E0PED23"
 [[epochs.phases]]
 id = "01kgt9xctfx6b9r0v4ghnx0vmm"
 title = "Remove conversationId System"
-status = "pending"
-goals = []
+status = "active"
 rfcs = ["00054"]
 ulid = "01KGT9XCTFX6B9R0V4GHNX0VMM"
+
+[[epochs.phases.goals]]
+id = "remove-extract-identity"
+label = "Remove extractIdentity() and its infrastructure"
+status = "pending"
+ulid = "01KGTCG0FTD5QNG1GM3DQJ8ACH"
+
+[[epochs.phases.goals]]
+id = "remove-provider-conversation-id"
+label = "Remove conversationId parameter from provider API"
+status = "pending"
+ulid = "01KGTCG8Q58809KC6VHKPDDNCK"
+
+[[epochs.phases.goals]]
+id = "remove-estimator-conversation-id"
+label = "Remove conversationId from HybridTokenEstimator"
+status = "pending"
+ulid = "01KGTCGGWHHXM8P2XN7XD0FMEX"
+
+[[epochs.phases.goals]]
+id = "simplify-conversation-state"
+label = "Simplify ConversationStateTracker to family-only keying"
+status = "pending"
+ulid = "01KGTCGRVCRG8T2FF0GJSVPEFV"
+
+[[epochs.phases.goals]]
+id = "update-tests"
+label = "Update tests to remove conversationId assertions"
+status = "pending"
+ulid = "01KGTCH0FR7Q987PJHZH5DRR9C"
 
 [[epochs.phases]]
 id = "01kgt9xj4dyj31zs0x8fqzf2tv"

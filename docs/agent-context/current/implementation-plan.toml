@@ -2,96 +2,119 @@
 # Implementation Plan
 
 [phase]
-id = "01kgt5p8kcsy08hdnevegysp3x"
-title = "Remove 1.5x Multiplier System"
+id = "01kgt9xctfx6b9r0v4ghnx0vmm"
+title = "Remove conversationId System"
 rfcs = ["00054"]
-
-# ============================================================================
-# PREPARE REPORT (Validated 2026-02-06)
-# ============================================================================
-#
-# ZOMBIE DEFINITION: Code that executes but is broken AND superseded by newer
-# mechanisms. We accept gaps and plan to address them if needed.
-#
-# WHAT WE'RE REMOVING:
-# - learnedTokenTotal field (L129-132)
-# - hashConversation() function (L645-660) 
-# - 1.5x multiplier logic in provideTokenCount() (L689-707)
-# - Zombie portion of error handler (L577-590)
-# - Success path clearing learnedTokenTotal (L555-560)
-#
-# WHAT WE'RE KEEPING:
-# - hashMessage() - used for chatId generation (L338)
-# - modelInfoChangeEmitter.fire() at L156, L859 - legitimate notifications
-# - extractTokenCountFromError() - used in openresponses-chat.ts AND status bar
-# - Status bar error display (L593-600) - shows user why request failed
-# - Agent error marking (L604-606)
-#
-# GAP ACKNOWLEDGED:
-# Rolling correction only updates on successful requests. On "too long" error,
-# nothing adjusts estimates. The zombie code handled this (badly). Goal 2 will
-# design proper error recovery.
-#
-# ============================================================================
 
 [plan]
 
 [[plan.goals]]
-id = "remove-zombie-multiplier"
-
-# Execution order matters - remove usages before definitions
-[[plan.goals.tasks]]
-id = "remove-1.5x-branch"
-title = "Remove 1.5x multiplier branch in provideTokenCount() (L689-707)"
-status = "completed"
-completed_at = "2026-02-06T20:49:22.776559667+00:00"
-completion_log = "Removed 24-line 1.5x multiplier branch from provideTokenCount()"
+id = "remove-extract-identity"
 
 [[plan.goals.tasks]]
-id = "remove-success-clear"
-title = "Remove success path that clears learnedTokenTotal (L555-560)"
-status = "completed"
-completed_at = "2026-02-06T20:49:32.866346755+00:00"
-completion_log = "Removed 11-line success path clearing learnedTokenTotal"
+id = "remove-import"
+title = "Remove extractIdentity import from provider.ts"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "surgical-error-handler"
-title = "Surgically remove zombie portion of error handler (L577-590), keeping status bar display"
-status = "completed"
-completed_at = "2026-02-06T20:49:33.084412088+00:00"
-completion_log = "Surgically removed zombie error handler, kept status bar display"
+id = "remove-call"
+title = "Remove extractIdentity() call and conversationId variable from provider.ts"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "remove-hash-conversation"
-title = "Remove hashConversation() function (L645-660)"
-status = "completed"
-completed_at = "2026-02-06T20:49:33.423009203+00:00"
-completion_log = "Removed 21-line hashConversation() function"
+id = "remove-exports"
+title = "Remove extractIdentity exports from identity/index.ts"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "remove-field"
-title = "Remove learnedTokenTotal field and inline type (L129-132)"
-status = "completed"
-completed_at = "2026-02-06T20:49:33.667106777+00:00"
-completion_log = "Removed learnedTokenTotal field and currentRequestMessages (only used by zombie)"
+id = "delete-file"
+title = "Delete identity/extract-identity.ts file"
+status = "pending"
 
 [[plan.goals]]
-id = "design-error-recovery"
+id = "remove-provider-conversation-id"
 
 [[plan.goals.tasks]]
-id = "document-gap"
-title = "Document the error recovery gap in RFC 00054"
-status = "completed"
-completed_at = "2026-02-06T21:00:56.160582723+00:00"
-completion_log = "Added 'The Gap' section to RFC 00054 Phase 4 documenting what was removed and the resulting behavior"
+id = "remove-record-usage-param"
+title = "Remove conversationId param from recordUsage() in provider.ts"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "propose-options"
-title = "Propose options: (1) do nothing, (2) clear correction on error, (3) feed error to rolling correction"
-status = "completed"
-completed_at = "2026-02-06T21:01:03.943792856+00:00"
-completion_log = "Documented 3 options with code examples and recommendation (Option 1: observe first, Option 3 if needed)"
+id = "remove-estimate-param"
+title = "Remove conversationId param from estimateTotalInputTokens() in provider.ts"
+status = "pending"
+
+[[plan.goals]]
+id = "remove-estimator-conversation-id"
+
+[[plan.goals.tasks]]
+id = "remove-estimate-conversation"
+title = "Remove conversationId from estimateConversation() signature and body"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "remove-record-actual"
+title = "Remove conversationId from recordActual() signature and calls"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "remove-get-adjustment"
+title = "Remove conversationId from getAdjustment() signature"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "remove-lookup"
+title = "Remove conversationId from lookupConversation() signature"
+status = "pending"
+
+[[plan.goals]]
+id = "simplify-conversation-state"
+
+[[plan.goals.tasks]]
+id = "simplify-make-key"
+title = "Simplify makeKey() to return just modelFamily"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "remove-lookup-param"
+title = "Remove conversationId from lookup() signature"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "remove-dual-write"
+title = "Remove dual-write logic from recordActual() - use family-only key"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "remove-get-state-param"
+title = "Remove conversationId from getState() signature"
+status = "pending"
+
+[[plan.goals]]
+id = "update-tests"
+
+[[plan.goals.tasks]]
+id = "delete-zombie-tests"
+title = "Delete tests that assert per-conversation behavior"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-estimator-tests"
+title = "Update hybrid-estimator tests to remove conversationId params"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-state-tests"
+title = "Update conversation-state tests to remove conversationId params"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "verify-all-pass"
+title = "Verify all 462+ tests pass"
+status = "pending"
+# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
+
 
 [verification]
-automated = ["pnpm test", "pnpm typecheck"]
-manual = ["Verify status bar still shows token info on 'too long' errors"]
+automated = ["Run scripts/verify-phase.sh"]
+manual = []
