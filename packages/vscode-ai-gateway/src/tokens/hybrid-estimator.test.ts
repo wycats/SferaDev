@@ -186,6 +186,12 @@ describe("HybridTokenEstimator", () => {
   });
 
   describe("recordActual", () => {
+    beforeEach(() => {
+      loggerHoisted.debug.mockClear();
+      loggerHoisted.warn.mockClear();
+      loggerHoisted.info.mockClear();
+    });
+
     it("stores known state for model family", () => {
       const messages = [createMessage(1, "hello"), createMessage(2, "world")];
 
@@ -205,6 +211,64 @@ describe("HybridTokenEstimator", () => {
 
       const state = estimator.getConversationState("claude");
       expect(state?.actualTokens).toBe(200);
+    });
+
+    it("logs delta caching opportunity on prefix match", () => {
+      const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
+      const messages2 = [...messages1, createMessage(1, "new message")];
+
+      estimator.recordActual(messages1, testModel, 100);
+      loggerHoisted.debug.mockClear();
+
+      estimator.recordActual(messages2, testModel, 150);
+
+      expect(loggerHoisted.debug).toHaveBeenCalledWith(
+        "[Estimator] Delta caching opportunity: 50 tokens / 1 messages = 50 per message",
+      );
+    });
+
+    it("logs warning on negative delta", () => {
+      const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
+      const messages2 = [...messages1, createMessage(1, "new message")];
+
+      estimator.recordActual(messages1, testModel, 100);
+      loggerHoisted.warn.mockClear();
+
+      estimator.recordActual(messages2, testModel, 90);
+
+      expect(loggerHoisted.warn).toHaveBeenCalledWith(
+        "[Estimator] Negative delta detected: -10 tokens (actual=90, known=100)",
+      );
+    });
+
+    it("skips delta computation on first turn", () => {
+      const messages = [createMessage(1, "hello")];
+
+      estimator.recordActual(messages, testModel, 100);
+
+      expect(loggerHoisted.debug).not.toHaveBeenCalledWith(
+        expect.stringContaining("Delta caching opportunity"),
+      );
+      expect(loggerHoisted.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining("Negative delta detected"),
+      );
+    });
+
+    it("skips delta computation on exact match", () => {
+      const messages = [createMessage(1, "hello")];
+
+      estimator.recordActual(messages, testModel, 100);
+      loggerHoisted.debug.mockClear();
+      loggerHoisted.warn.mockClear();
+
+      estimator.recordActual(messages, testModel, 100);
+
+      expect(loggerHoisted.debug).not.toHaveBeenCalledWith(
+        expect.stringContaining("Delta caching opportunity"),
+      );
+      expect(loggerHoisted.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining("Negative delta detected"),
+      );
     });
   });
 

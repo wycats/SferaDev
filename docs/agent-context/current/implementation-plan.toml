@@ -51,17 +51,23 @@ id = "response-id-plumbing"
 [[plan.goals.tasks]]
 id = "lookup-before-record::add-lookup-call"
 title = "Call ConversationStateTracker.lookup() before recordActual()"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:08:53.213191086+00:00"
+completion_log = "Added ConversationStateTracker.lookup() call before recordActual() in hybrid-estimator.ts"
 
 [[plan.goals.tasks]]
 id = "lookup-before-record::extract-prefix-info"
 title = "Extract knownTokens and newMessageIndices from lookup result"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:08:53.632194340+00:00"
+completion_log = 'Extracts knownTokens and newMessageIndices from lookup result when type === "prefix"'
 
 [[plan.goals.tasks]]
 id = "lookup-before-record::compute-delta"
 title = "Compute delta = actualTokens - knownTokens when prefix match"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:08:54.054819603+00:00"
+completion_log = "Computes delta = actualTokens - knownTokens, logs debug for positive delta, warns for negative delta. 4 new tests added."
 
 [[plan.goals]]
 id = "response-id-cache"

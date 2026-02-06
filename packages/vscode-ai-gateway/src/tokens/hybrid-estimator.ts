@@ -165,6 +165,33 @@ export class HybridTokenEstimator {
     sequenceEstimate?: number,
     summarizationDetected?: boolean,
   ): void {
+    const lookup = this.conversationTracker.lookup(
+      messages,
+      model.family,
+      conversationId,
+    );
+
+    if (
+      lookup.type === "prefix" &&
+      lookup.knownTokens !== undefined &&
+      lookup.newMessageIndices !== undefined
+    ) {
+      const delta = actualTokens - lookup.knownTokens;
+      const newMessageCount = lookup.newMessageIndices.length;
+
+      if (delta > 0 && newMessageCount > 0) {
+        const perMessageTokens = Math.round(delta / newMessageCount);
+        logger.debug(
+          `[Estimator] Delta caching opportunity: ${delta.toString()} tokens / ${newMessageCount.toString()} messages = ${perMessageTokens.toString()} per message`,
+        );
+        // Phase 2: Add tokenCache.cacheActual() calls here
+      } else if (delta < 0) {
+        logger.warn(
+          `[Estimator] Negative delta detected: ${delta.toString()} tokens (actual=${actualTokens.toString()}, known=${lookup.knownTokens.toString()})`,
+        );
+      }
+    }
+
     this.conversationTracker.recordActual(
       messages,
       model.family,
