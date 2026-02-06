@@ -132,6 +132,55 @@ pnpm analyze:logs -- --narrative
 
 - Forensic capture: enable `vercel.ai.debug.forensicCapture` (and optionally `vercel.ai.debug.forensicCaptureFullContent`).
 
+### Forensic Debugging Workflow
+
+When investigating token estimation bugs or unexpected behavior, use the logging infrastructure:
+
+#### 1. Check Tree Diagnostics
+
+```bash
+tail -100 .logs/tree-diagnostics.log
+```
+
+Shows structured events (`AGENT_STARTED`, `AGENT_RESUMED`, `AGENT_COMPLETED`) with full token state including `estimatedInputTokens` and `inputTokens` (actual from API).
+
+#### 2. Trace the Code Path
+
+```bash
+grep -rn "estimatedInputTokens" packages/vscode-ai-gateway/src/
+```
+
+Or use a recon agent to trace the data flow through the estimation pipeline.
+
+#### 3. Inspect Forensic Capture
+
+Examine actual API request/response data:
+
+```bash
+# Request structure
+cat .logs/last-suspicious-request.json | jq '.request | keys'
+
+# Tool schemas
+cat .logs/last-suspicious-request.json | jq '.request.tools | length'
+cat .logs/last-suspicious-request.json | jq '.request.tools' | wc -c
+
+# System prompt / instructions
+cat .logs/last-suspicious-request.json | jq '.request.instructions'
+
+# Actual API token usage
+cat .logs/last-suspicious-request.json | jq '.context.usage'
+```
+
+#### 4. Log File Reference
+
+| File | Purpose |
+|------|---------|
+| `tree-diagnostics.log` | Agent tree state changes with full token data |
+| `current.log` | Current session's detailed logs |
+| `last-suspicious-request.json` | Most recent API request that triggered logging |
+| `sessions.jsonl` | Historical session data |
+| `errors.jsonl` | Error events |
+
 ## OpenResponses Client
 
 - Internal package only (private, not published).
