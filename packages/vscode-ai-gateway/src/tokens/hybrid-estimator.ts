@@ -163,6 +163,7 @@ export class HybridTokenEstimator {
     actualTokens: number,
     conversationId?: string,
     sequenceEstimate?: number,
+    summarizationDetected?: boolean,
   ): void {
     this.conversationTracker.recordActual(
       messages,
@@ -170,6 +171,7 @@ export class HybridTokenEstimator {
       actualTokens,
       conversationId,
       sequenceEstimate,
+      summarizationDetected,
     );
     logger.info(
       `[Estimator] Recorded actual: ${actualTokens.toString()} tokens for ` +
@@ -267,7 +269,10 @@ export class HybridTokenEstimator {
    * and what the API actually reported.
    */
   getAdjustment(modelFamily: string, conversationId?: string): number {
-    const state = this.conversationTracker.getState(modelFamily, conversationId);
+    const state = this.conversationTracker.getState(
+      modelFamily,
+      conversationId,
+    );
     if (!state || state.lastSequenceEstimate === undefined) {
       return 0;
     }

@@ -14,25 +14,33 @@ id = "key-alignment"
 [[plan.goals.tasks]]
 id = "write-family-key"
 title = "Write model-family-only adjustment state in recordActual()"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T22:22:12.190612193+00:00"
+completion_log = "Dual-write in recordActual(): writes to both per-conversation and model-family-only key. Eviction guard on first insertion preserves maxEntries invariant. All 438 tests pass."
 
 [[plan.goals.tasks]]
 id = "test-key-alignment"
 title = "Test: getAdjustment() returns non-zero after recordActual() with conversationId"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-05T22:22:17.307408845+00:00"
+completion_log = "2 new integration tests in hybrid-estimator.test.ts (key alignment + last-write-wins), 1 new edge-case test for LRU cap with new model family, 4 existing tests updated for dual-write. All 438 tests pass."
 
 [[plan.goals]]
 id = "summarization-guard"
 
 [[plan.goals.tasks]]
 id = "detect-shrinkage"
-title = "Detect conversation shrinkage in recordActual() and clear lastSequenceEstimate"
-status = "pending"
+title = "Detect <conversation-summary> tag in messages and clear stale family-key adjustment"
+status = "completed"
+completed_at = "2026-02-05T23:59:36.480389250+00:00"
+completion_log = "Added hasSummarizationTag() scanning for <conversation-summary> tag. Handles both LanguageModelTextPart and serialized formats. Wired provider → estimator → state. Clears lastSequenceEstimate from family-key on detection."
 
 [[plan.goals.tasks]]
 id = "test-summarization-guard"
-title = "Test: adjustment clears after simulated summarization (actual drops)"
-status = "pending"
+title = "Test: adjustment clears when <conversation-summary> detected, re-establishes on next turn"
+status = "completed"
+completed_at = "2026-02-05T23:59:43.926727714+00:00"
+completion_log = "11 new tests: 6 for hasSummarizationTag, 3 for guard behavior, 2 integration. All 449 tests pass."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

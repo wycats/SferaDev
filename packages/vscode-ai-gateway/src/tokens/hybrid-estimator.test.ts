@@ -271,6 +271,74 @@ describe("HybridTokenEstimator", () => {
 
       expect(estimator.getAdjustment("claude")).toBe(0);
     });
+
+    it("returns adjustment when recordActual used conversationId (key alignment)", () => {
+      const messages = [createMessage(1, "hello")];
+      // Record with conversationId (simulates provideLanguageModelChatResponse path)
+      estimator.recordActual(messages, testModel, 500, "conv-123", 400);
+
+      // getAdjustment with undefined conversationId (simulates provideTokenCount path)
+      // Should find the adjustment because recordActual wrote to model-family-only key
+      expect(estimator.getAdjustment("claude")).toBe(100);
+    });
+
+    it("latest conversationId wins for model-family-only adjustment", () => {
+      const messages = [createMessage(1, "hello")];
+      // Conversation A: adjustment = 100
+      estimator.recordActual(messages, testModel, 500, "conv-a", 400);
+      // Conversation B: adjustment = 50
+      estimator.recordActual(messages, testModel, 250, "conv-b", 200);
+
+      // Model-family-only key should reflect the latest write (conv-b)
+      expect(estimator.getAdjustment("claude")).toBe(50);
+      // Per-conversation adjustments are still independent
+      expect(estimator.getAdjustment("claude", "conv-a")).toBe(100);
+      expect(estimator.getAdjustment("claude", "conv-b")).toBe(50);
+    });
+
+    it("clears family-key adjustment when summarization detected", () => {
+      const messages = [createMessage(1, "hello")];
+      // Establish adjustment: actual=500, estimate=400 → adjustment=100
+      estimator.recordActual(messages, testModel, 500, "conv-1", 400);
+      expect(estimator.getAdjustment("claude")).toBe(100);
+
+      // Summarization detected — should clear family-key adjustment
+      const summaryMessages = [
+        createMessage(
+          1,
+          "<conversation-summary>\nSummary of conversation\n</conversation-summary>",
+        ),
+      ];
+      estimator.recordActual(
+        summaryMessages,
+        testModel,
+        30000,
+        "conv-1",
+        25000,
+        true,
+      );
+
+      // Family-key adjustment should be 0 (cleared)
+      expect(estimator.getAdjustment("claude")).toBe(0);
+      // Per-conversation adjustment still works
+      expect(estimator.getAdjustment("claude", "conv-1")).toBe(5000);
+    });
+
+    it("re-establishes adjustment after summarization on next normal turn", () => {
+      const messages = [createMessage(1, "hello")];
+
+      // Turn 1: establish adjustment
+      estimator.recordActual(messages, testModel, 500, "conv-1", 400);
+      expect(estimator.getAdjustment("claude")).toBe(100);
+
+      // Turn 2: summarization — clears
+      estimator.recordActual(messages, testModel, 200, "conv-1", 150, true);
+      expect(estimator.getAdjustment("claude")).toBe(0);
+
+      // Turn 3: normal — re-establishes
+      estimator.recordActual(messages, testModel, 250, "conv-1", 200);
+      expect(estimator.getAdjustment("claude")).toBe(50);
+    });
   });
 
   describe("rolling correction in estimateMessage", () => {
@@ -348,14 +416,14 @@ describe("HybridTokenEstimator", () => {
 
     it("two-turn: sum equals previousActual + tiktoken(new)", () => {
       // Turn 1: 3 messages via estimateMessage (simulating provideTokenCount)
-      const msg1 = createMessage(1, "hello");        // 5 tokens
-      const msg2 = createMessage(2, "world");         // 5 tokens
-      const msg3 = createMessage(1, "how are you");   // 11 tokens
+      const msg1 = createMessage(1, "hello"); // 5 tokens
+      const msg2 = createMessage(2, "world"); // 5 tokens
+      const msg3 = createMessage(1, "how are you"); // 11 tokens
 
       const est1 = estimator.estimateMessage(msg1, testModel); // 5
       const est2 = estimator.estimateMessage(msg2, testModel); // 5
       const est3 = estimator.estimateMessage(msg3, testModel); // 11
-      const turn1Estimate = est1 + est2 + est3;                // 21
+      const turn1Estimate = est1 + est2 + est3; // 21
       expect(turn1Estimate).toBe(21);
 
       // Capture sequence total (what VS Code saw)
@@ -376,7 +444,7 @@ describe("HybridTokenEstimator", () => {
       vi.advanceTimersByTime(501);
 
       // Turn 2: same 3 messages + 1 new message
-      const msg4 = createMessage(1, "new stuff");  // 9 tokens
+      const msg4 = createMessage(1, "new stuff"); // 9 tokens
 
       const t2est1 = estimator.estimateMessage(msg1, testModel); // 5 + 59 adjustment = 64
       const t2est2 = estimator.estimateMessage(msg2, testModel); // 5
@@ -414,7 +482,13 @@ describe("HybridTokenEstimator", () => {
       expect(seq1).toBe(6);
 
       const turn1Actual = 50;
-      estimator.recordActual([msg1, msg2], testModel, turn1Actual, undefined, seq1);
+      estimator.recordActual(
+        [msg1, msg2],
+        testModel,
+        turn1Actual,
+        undefined,
+        seq1,
+      );
 
       // Turn 2: telescoping holds (turn 1→2)
       vi.advanceTimersByTime(501);
@@ -468,9 +542,9 @@ describe("HybridTokenEstimator", () => {
       //   which equals: previousActual + tiktoken(newMessages)
 
       const messages = [
-        createMessage(1, "alpha"),   // 5
-        createMessage(2, "beta"),    // 4
-        createMessage(1, "gamma"),   // 5
+        createMessage(1, "alpha"), // 5
+        createMessage(2, "beta"), // 4
+        createMessage(1, "gamma"), // 5
       ];
       const tiktokenAll = 5 + 4 + 5; // 14
 
@@ -498,7 +572,7 @@ describe("HybridTokenEstimator", () => {
 
       // Verify both forms of the identity
       expect(turn2Sum).toBe(tiktokenAll + tiktokenNew + adjustment); // 14 + 5 + 86 = 105
-      expect(turn2Sum).toBe(actual + tiktokenNew);                   // 100 + 5 = 105
+      expect(turn2Sum).toBe(actual + tiktokenNew); // 100 + 5 = 105
     });
 
     it("no correction on first turn (no prior data)", () => {
@@ -630,8 +704,8 @@ describe("HybridTokenEstimator", () => {
       vi.advanceTimersByTime(501);
 
       // Turn 2: same messages + 2 new
-      const newMsg1 = createMessage(1, "new one");   // 7 tokens
-      const newMsg2 = createMessage(2, "new two");   // 7 tokens
+      const newMsg1 = createMessage(1, "new one"); // 7 tokens
+      const newMsg2 = createMessage(2, "new two"); // 7 tokens
       const allMessages = [...messages, newMsg1, newMsg2];
 
       let turn2Sum = 0;

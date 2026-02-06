@@ -139,16 +139,17 @@ Since we are the `LanguageModelChatProvider`, we are the **last stop** before th
 
 The `vscode-copilot-chat` extension has a sophisticated `PromptRegistry` system that selects different system prompts per model family. Each resolver implements `IAgentPrompt` with `resolveSystemPrompt()` and `resolveReminderInstructions()`:
 
-| Resolver                     | `familyPrefixes`                        | System Prompt Class                                                  |
-| ---------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
-| `DefaultOpenAIPromptResolver`| `['gpt', 'o4-mini', 'o3-mini', 'OpenAI']` | `DefaultAgentPrompt`                                              |
-| `Gpt52PromptResolver`        | (matches GPT-5.2 family)                | `HiddenModelBPrompt` — includes Codex-specific instructions          |
-| `AnthropicPromptResolver`    | `['claude', 'Anthropic']`               | `DefaultAnthropicAgentPrompt`                                        |
-| `GeminiPromptResolver`       | `['gemini']`                            | `DefaultGeminiAgentPrompt` / `HiddenModelFGeminiAgentPrompt`         |
-| `ZaiPromptResolver`          | `[]` (matches GLM 4.6/4.7 by name)     | `DefaultZaiAgentPrompt`                                              |
-| `VSCModelPromptResolverA/B`  | `['vscModelA']` / `['vscModelB']`       | `VSCModelPromptA` / `VSCModelPromptB`                                |
+| Resolver                      | `familyPrefixes`                          | System Prompt Class                                          |
+| ----------------------------- | ----------------------------------------- | ------------------------------------------------------------ |
+| `DefaultOpenAIPromptResolver` | `['gpt', 'o4-mini', 'o3-mini', 'OpenAI']` | `DefaultAgentPrompt`                                         |
+| `Gpt52PromptResolver`         | (matches GPT-5.2 family)                  | `HiddenModelBPrompt` — includes Codex-specific instructions  |
+| `AnthropicPromptResolver`     | `['claude', 'Anthropic']`                 | `DefaultAnthropicAgentPrompt`                                |
+| `GeminiPromptResolver`        | `['gemini']`                              | `DefaultGeminiAgentPrompt` / `HiddenModelFGeminiAgentPrompt` |
+| `ZaiPromptResolver`           | `[]` (matches GLM 4.6/4.7 by name)        | `DefaultZaiAgentPrompt`                                      |
+| `VSCModelPromptResolverA/B`   | `['vscModelA']` / `['vscModelB']`         | `VSCModelPromptA` / `VSCModelPromptB`                        |
 
 **Key insight**: The GPT-5.2 prompt (`HiddenModelBPrompt`) already includes Codex-aligned instructions:
+
 - "Do not waste tokens by re-reading files after calling `apply_patch`"
 - "Use `git log` and `git blame` or appropriate tools to search the history"
 - "Keep changes consistent with the style of the existing codebase. Changes should be minimal and focused"
@@ -277,22 +278,27 @@ The `vscode-copilot-chat` extension has an extensive conversation summarization 
 4. **`AgentIntentInvocation.buildPrompt()`** — Triggers summarization when token usage exceeds a threshold during prompt building.
 
 5. **Responses API truncation** — `agentIntent.ts` has:
+
    ```typescript
-   const useTruncation = this.endpoint.apiType === 'responses' 
-     && this.configurationService.getConfig(ConfigKey.Advanced.UseResponsesApiTruncation);
+   const useTruncation =
+     this.endpoint.apiType === "responses" &&
+     this.configurationService.getConfig(
+       ConfigKey.Advanced.UseResponsesApiTruncation,
+     );
    ```
+
    This suggests the Responses API's built-in truncation is already being used as an alternative to compaction.
 
 6. **Anthropic context editing** — For Claude models, `src/platform/networking/common/anthropic.ts` has full `ContextManagement` types with triggers, keeps, and edits (`clear_tool_uses`, `clear_thinking`). This is Anthropic's equivalent of compaction.
 
 #### What this means
 
-| Compaction approach | Status | Who handles it |
-| --- | --- | --- |
-| OpenAI `/responses/compact` | ❌ Not available in OpenResponses | Would need upstream work |
-| Copilot Chat LLM-based summarization | ✅ Already working | Copilot Chat extension |
-| Responses API `truncation` parameter | ✅ Available (behind config flag) | Copilot Chat + backend |
-| Anthropic context editing | ✅ Available for Claude models | Copilot Chat extension |
+| Compaction approach                  | Status                            | Who handles it           |
+| ------------------------------------ | --------------------------------- | ------------------------ |
+| OpenAI `/responses/compact`          | ❌ Not available in OpenResponses | Would need upstream work |
+| Copilot Chat LLM-based summarization | ✅ Already working                | Copilot Chat extension   |
+| Responses API `truncation` parameter | ✅ Available (behind config flag) | Copilot Chat + backend   |
+| Anthropic context editing            | ✅ Available for Claude models    | Copilot Chat extension   |
 
 **The compaction gap is much smaller than initially assessed.** Copilot Chat already handles context window management through its own summarization system. The missing `/responses/compact` endpoint is primarily a concern for:
 
@@ -314,16 +320,16 @@ This is now a **nice-to-have optimization** rather than a **blocking gap**.
 
 ## Gap Analysis Summary
 
-| Codex Recommendation                 | Current State                                | Effort                              | Impact                                                         |
-| ------------------------------------ | -------------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
-| Declare `editTools: ['apply-patch']` | Not declared in `models.ts` capabilities     | Trivial (1 line)                    | **High** (controls tool selection via EditToolLearningService) |
-| Use `apply_patch` tool format        | VS Code provides its own edit tools          | N/A (VS Code-controlled)            | N/A                                                            |
-| Custom system prompt                 | **Not recommended** — already model-specific | N/A                                 | **Negative** (would override tuned prompts)                    |
-| System prompt augmentation           | Possible but should be minimal               | Low                                 | Low-Medium                                                     |
-| Parallel tool calling                | Already supported by tool schema passthrough | None needed                         | N/A                                                            |
-| Compaction                           | **Already handled** by Copilot Chat summarization | None needed (optimization only) | Low (already mitigated)                                        |
-| Model-specific behavior              | **Already handled** by Copilot Chat PromptRegistry | None needed                   | N/A                                                            |
-| Model family string (`family`)       | Must match Copilot Chat's expectations       | Low (verify alignment)              | **High** (drives all model-specific behavior)                  |
+| Codex Recommendation                 | Current State                                      | Effort                          | Impact                                                         |
+| ------------------------------------ | -------------------------------------------------- | ------------------------------- | -------------------------------------------------------------- |
+| Declare `editTools: ['apply-patch']` | Not declared in `models.ts` capabilities           | Trivial (1 line)                | **High** (controls tool selection via EditToolLearningService) |
+| Use `apply_patch` tool format        | VS Code provides its own edit tools                | N/A (VS Code-controlled)        | N/A                                                            |
+| Custom system prompt                 | **Not recommended** — already model-specific       | N/A                             | **Negative** (would override tuned prompts)                    |
+| System prompt augmentation           | Possible but should be minimal                     | Low                             | Low-Medium                                                     |
+| Parallel tool calling                | Already supported by tool schema passthrough       | None needed                     | N/A                                                            |
+| Compaction                           | **Already handled** by Copilot Chat summarization  | None needed (optimization only) | Low (already mitigated)                                        |
+| Model-specific behavior              | **Already handled** by Copilot Chat PromptRegistry | None needed                     | N/A                                                            |
+| Model family string (`family`)       | Must match Copilot Chat's expectations             | Low (verify alignment)          | **High** (drives all model-specific behavior)                  |
 
 ---
 
@@ -338,6 +344,7 @@ This is now a **nice-to-have optimization** rather than a **blocking gap**.
 - `modelCanUseApplyPatchExclusively()` — checks `isGpt5PlusFamily()` → disables EditFile, only provides apply_patch
 
 **If our gateway sets `family` correctly (e.g., `'gpt-5-codex'` for Codex models), Copilot Chat will automatically:**
+
 - Select the right system prompt (GPT-5.2 / Codex-specific)
 - Enable `apply_patch` as the exclusive edit tool
 - Use simplified patch instructions
@@ -374,11 +381,11 @@ This means the `editTools` declaration is a **belt-and-suspenders** measure — 
 
 The initial analysis searched only `microsoft/vscode` (VS Code core) and missed critical logic in `microsoft/vscode-copilot-chat` (the Copilot Chat extension). This led to several incorrect conclusions that were corrected:
 
-| Initial Finding | Corrected Finding | Source |
-| --- | --- | --- |
-| `editTools` is UI-only | `editTools` controls tool selection via `EditToolLearningService` | `editToolLearningService.ts`, `agentIntent.ts` |
-| System prompt is generic | System prompt is model-specific via `PromptRegistry` | `agentPrompt.ts`, `gpt52Prompt.tsx`, etc. |
-| No compaction exists | Copilot Chat has built-in LLM summarization + Responses API truncation | `summarizedConversationHistory.tsx`, `agentIntent.ts` |
-| We need to add model-specific behavior | Copilot Chat already has per-model prompts, tool selection, and capabilities | `chatModelCapabilities.ts` |
+| Initial Finding                        | Corrected Finding                                                            | Source                                                |
+| -------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `editTools` is UI-only                 | `editTools` controls tool selection via `EditToolLearningService`            | `editToolLearningService.ts`, `agentIntent.ts`        |
+| System prompt is generic               | System prompt is model-specific via `PromptRegistry`                         | `agentPrompt.ts`, `gpt52Prompt.tsx`, etc.             |
+| No compaction exists                   | Copilot Chat has built-in LLM summarization + Responses API truncation       | `summarizedConversationHistory.tsx`, `agentIntent.ts` |
+| We need to add model-specific behavior | Copilot Chat already has per-model prompts, tool selection, and capabilities | `chatModelCapabilities.ts`                            |
 
 **Lesson**: When researching VS Code extension capabilities, always search both `microsoft/vscode` AND `microsoft/vscode-copilot-chat`. The Copilot Chat extension contains the majority of the AI-specific logic.

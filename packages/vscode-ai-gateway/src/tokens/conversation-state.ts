@@ -17,6 +17,53 @@ import type * as vscode from "vscode";
 import { logger } from "../logger";
 import { computeNormalizedDigest } from "../provider/forensic-capture";
 
+const CONVERSATION_SUMMARY_TAG = /<conversation-summary>/i;
+
+/**
+ * Extract text from a message content part.
+ * Handles both LanguageModelTextPart instances ({value: string})
+ * and serialized text parts ({type: "text", text: string}).
+ */
+function extractPartText(part: unknown): string | undefined {
+  if (typeof part !== "object" || part === null) return undefined;
+  // LanguageModelTextPart: has .value
+  if ("value" in part && typeof (part as { value: unknown }).value === "string") {
+    return (part as { value: string }).value;
+  }
+  // Serialized text part: has .type === "text" and .text
+  if (
+    "type" in part &&
+    (part as { type: unknown }).type === "text" &&
+    "text" in part &&
+    typeof (part as { text: unknown }).text === "string"
+  ) {
+    return (part as { text: string }).text;
+  }
+  return undefined;
+}
+
+/**
+ * Detect whether a messages array contains a Copilot summarization tag.
+ * After summarization, Copilot inserts a `<conversation-summary>` user message
+ * that persists at the start of the array on all subsequent turns.
+ */
+export function hasSummarizationTag(
+  messages: readonly vscode.LanguageModelChatMessage[],
+): boolean {
+  // LanguageModelChatMessageRole.User = 1
+  const USER_ROLE = 1;
+  for (const msg of messages) {
+    if (msg.role !== USER_ROLE) continue;
+    for (const part of msg.content) {
+      const text = extractPartText(part);
+      if (text !== undefined && CONVERSATION_SUMMARY_TAG.test(text)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /**
  * A known conversation state from an API response.
  */
@@ -98,6 +145,7 @@ export class ConversationStateTracker {
     actualTokens: number,
     conversationId?: string,
     sequenceEstimate?: number,
+    summarizationDetected?: boolean,
   ): void {
     this.cleanupStale();
     const messageHashes = messages.map((m) => computeNormalizedDigest(m));
@@ -116,7 +164,41 @@ export class ConversationStateTracker {
     this.touchKey(key);
     this.evictIfNeeded(key);
     this.knownStates.set(key, state);
+
+    // Also write model-family-only entry for rolling correction (RFC 047 Phase 4a).
+    // provideTokenCount() doesn't have access to conversationId, so getAdjustment()
+    // reads from the model-family-only key. This ensures it finds the latest state.
+    if (conversationId) {
+      const familyKey = modelFamily;
+      this.touchKey(familyKey);
+      // Evict only when the family key is a new insertion (not an overwrite),
+      // to maintain the maxEntries invariant.
+      if (!this.knownStates.has(familyKey)) {
+        this.evictIfNeeded(familyKey);
+      }
+
+      // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
+      // from the family-key state. This clears the rolling correction so getAdjustment()
+      // returns 0 until a new estimate-vs-actual pair is established post-summarization.
+      const familyState: KnownConversationState = summarizationDetected
+        ? {
+            messageHashes,
+            actualTokens,
+            modelFamily,
+            timestamp: Date.now(),
+          }
+        : state;
+      this.knownStates.set(familyKey, familyState);
+    }
+
     this.scheduleSave();
+
+    if (summarizationDetected) {
+      logger.info(
+        `[ConversationState] Summarization guard: cleared rolling correction ` +
+          `for family key "${modelFamily}"`,
+      );
+    }
 
     logger.debug(
       `[ConversationState] Recorded: ${messageHashes.length.toString()} messages, ` +

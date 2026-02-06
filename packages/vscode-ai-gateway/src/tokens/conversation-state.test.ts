@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LanguageModelChatMessage, Memento } from "vscode";
-import { ConversationStateTracker } from "./conversation-state";
+import {
+  ConversationStateTracker,
+  hasSummarizationTag,
+} from "./conversation-state";
 
 // Mock vscode module
 const vscodeHoisted = vi.hoisted(() => {
@@ -273,7 +276,12 @@ describe("ConversationStateTracker", () => {
 
   describe("memory leak protections", () => {
     it("evicts least recently used entries when max size is reached", () => {
-      for (let i = 0; i < 100; i += 1) {
+      // Each recordActual with conversationId writes 2 entries:
+      // per-conversation key + model-family-only key (RFC 047 Phase 4a).
+      // The family key is always the same ("claude"), so after 100 iterations
+      // we have 100 per-conversation entries + 1 family entry = 101 entries.
+      // Use 99 iterations to stay under the 100 limit, then verify eviction.
+      for (let i = 0; i < 99; i += 1) {
         tracker.recordActual(
           [createMessage(1, `msg-${i.toString()}`)],
           "claude",
@@ -282,21 +290,23 @@ describe("ConversationStateTracker", () => {
         );
       }
 
+      // 99 per-conv + 1 family = 100 entries (at limit)
       expect(tracker.getState("claude", "conv-0")).toBeDefined();
 
       tracker.recordActual(
-        [createMessage(1, "msg-100")],
+        [createMessage(1, "msg-99")],
         "claude",
-        100,
-        "conv-100",
+        99,
+        "conv-99",
       );
 
+      // conv-0 should be evicted (oldest per-conversation entry)
       expect(tracker.getState("claude", "conv-0")).toBeUndefined();
-      expect(tracker.getState("claude", "conv-100")).toBeDefined();
+      expect(tracker.getState("claude", "conv-99")).toBeDefined();
     });
 
     it("preserves recently used entries in LRU eviction", () => {
-      for (let i = 0; i < 100; i += 1) {
+      for (let i = 0; i < 99; i += 1) {
         tracker.recordActual(
           [createMessage(1, `msg-${i.toString()}`)],
           "claude",
@@ -305,6 +315,7 @@ describe("ConversationStateTracker", () => {
         );
       }
 
+      // Touch conv-0 to make it recently used
       const lookup = tracker.lookup(
         [createMessage(1, "msg-0")],
         "claude",
@@ -313,14 +324,42 @@ describe("ConversationStateTracker", () => {
       expect(lookup.type).toBe("exact");
 
       tracker.recordActual(
-        [createMessage(1, "msg-100")],
+        [createMessage(1, "msg-99")],
         "claude",
-        100,
-        "conv-100",
+        99,
+        "conv-99",
       );
 
+      // conv-0 was recently touched, so conv-1 should be evicted instead
       expect(tracker.getState("claude", "conv-0")).toBeDefined();
       expect(tracker.getState("claude", "conv-1")).toBeUndefined();
+    });
+
+    it("does not exceed maxEntries when new model family is introduced at capacity", () => {
+      // Fill to capacity: 99 per-conv + 1 family = 100 entries
+      for (let i = 0; i < 99; i += 1) {
+        tracker.recordActual(
+          [createMessage(1, `msg-${i.toString()}`)],
+          "claude",
+          i,
+          `conv-${i.toString()}`,
+        );
+      }
+      expect(tracker.size()).toBe(100);
+
+      // Introduce a new model family — should evict to stay at 100
+      tracker.recordActual(
+        [createMessage(1, "gpt-msg")],
+        "gpt-4",
+        999,
+        "conv-gpt",
+      );
+
+      // 2 new entries (per-conv + family for gpt-4), so 2 old entries evicted
+      expect(tracker.size()).toBeLessThanOrEqual(100);
+      expect(tracker.getState("gpt-4", "conv-gpt")).toBeDefined();
+      // Family-only key for gpt-4 should also exist
+      expect(tracker.getState("gpt-4", undefined)).toBeDefined();
     });
 
     it("cleans up stale entries based on TTL", () => {
@@ -359,8 +398,11 @@ describe("ConversationStateTracker", () => {
         entries: Array<{ key: string }>;
       };
       expect(stored.version).toBe(1);
-      expect(stored.entries).toHaveLength(1);
-      expect(stored.entries[0]?.key).toBe("claude:conv-1");
+      // 2 entries: per-conversation key + model-family-only key (RFC 047 dual-write)
+      expect(stored.entries).toHaveLength(2);
+      const keys = stored.entries.map((e) => e.key);
+      expect(keys).toContain("claude:conv-1");
+      expect(keys).toContain("claude");
 
       vi.useRealTimers();
     });
@@ -403,7 +445,8 @@ describe("ConversationStateTracker", () => {
       // Second "session" - load data (simulates restart)
       const tracker2 = new ConversationStateTracker(memento);
 
-      expect(tracker2.size()).toBe(2);
+      // 4 entries: 2 per-conversation + 2 model-family-only (RFC 047 dual-write)
+      expect(tracker2.size()).toBe(4);
       expect(tracker2.lookup(msg1, "claude", "conv-a").type).toBe("exact");
       expect(tracker2.lookup(msg2, "gpt-4", "conv-b").type).toBe("exact");
       expect(tracker2.lookup(msg1, "claude", "conv-a").knownTokens).toBe(100);
@@ -460,5 +503,116 @@ describe("ConversationStateTracker", () => {
       expect(result.type).toBe("exact");
       expect(result.knownTokens).toBe(100);
     });
+  });
+});
+
+describe("hasSummarizationTag", () => {
+  it("detects <conversation-summary> in a user message", () => {
+    const messages = [
+      createMessage(
+        1,
+        "<conversation-summary>\nThe user asked about token estimation.\n</conversation-summary>",
+      ),
+      createMessage(2, "Sure, I can help with that."),
+      createMessage(1, "What about rolling correction?"),
+    ];
+    expect(hasSummarizationTag(messages)).toBe(true);
+  });
+
+  it("returns false for normal messages without summary tag", () => {
+    const messages = [
+      createMessage(1, "Hello, how are you?"),
+      createMessage(2, "I'm doing well, thanks!"),
+    ];
+    expect(hasSummarizationTag(messages)).toBe(false);
+  });
+
+  it("ignores <conversation-summary> in assistant messages", () => {
+    const messages = [
+      createMessage(
+        2,
+        "Here is a <conversation-summary> tag example.",
+      ),
+    ];
+    expect(hasSummarizationTag(messages)).toBe(false);
+  });
+
+  it("is case-insensitive", () => {
+    const messages = [
+      createMessage(1, "<Conversation-Summary>\nSummary text\n</Conversation-Summary>"),
+    ];
+    expect(hasSummarizationTag(messages)).toBe(true);
+  });
+
+  it("returns false for empty messages array", () => {
+    expect(hasSummarizationTag([])).toBe(false);
+  });
+
+  it("detects tag in serialized text parts ({type, text} format)", () => {
+    const messages = [
+      {
+        role: 1,
+        content: [
+          { type: "text", text: "<conversation-summary>\nSummary\n</conversation-summary>" },
+        ],
+      },
+    ] as unknown as LanguageModelChatMessage[];
+    expect(hasSummarizationTag(messages)).toBe(true);
+  });
+});
+
+describe("summarization guard (RFC 047 Phase 4b)", () => {
+  let tracker: ConversationStateTracker;
+
+  beforeEach(() => {
+    tracker = new ConversationStateTracker();
+  });
+
+  it("clears lastSequenceEstimate from family key when summarization detected", () => {
+    const messages = [createMessage(1, "hello")];
+
+    // Record with sequence estimate — creates family-key with lastSequenceEstimate
+    tracker.recordActual(messages, "claude", 100000, "conv-1", 50000);
+    const stateBefore = tracker.getState("claude", undefined);
+    expect(stateBefore?.lastSequenceEstimate).toBe(50000);
+
+    // Record with summarization detected — should clear lastSequenceEstimate on family key
+    const summaryMessages = [
+      createMessage(1, "<conversation-summary>\nSummary\n</conversation-summary>"),
+    ];
+    tracker.recordActual(summaryMessages, "claude", 30000, "conv-1", 25000, true);
+
+    // Family key should NOT have lastSequenceEstimate
+    const stateAfter = tracker.getState("claude", undefined);
+    expect(stateAfter?.lastSequenceEstimate).toBeUndefined();
+    expect(stateAfter?.actualTokens).toBe(30000);
+
+    // Per-conversation key should still have it (not affected by guard)
+    const convState = tracker.getState("claude", "conv-1");
+    expect(convState?.lastSequenceEstimate).toBe(25000);
+  });
+
+  it("preserves lastSequenceEstimate when no summarization detected", () => {
+    const messages = [createMessage(1, "hello")];
+
+    tracker.recordActual(messages, "claude", 100000, "conv-1", 50000);
+    const state = tracker.getState("claude", undefined);
+    expect(state?.lastSequenceEstimate).toBe(50000);
+  });
+
+  it("re-establishes adjustment after summarization on next non-summarized turn", () => {
+    const messages = [createMessage(1, "hello")];
+
+    // Turn 1: normal — establishes adjustment
+    tracker.recordActual(messages, "claude", 100000, "conv-1", 50000);
+    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(50000);
+
+    // Turn 2: summarization detected — clears adjustment
+    tracker.recordActual(messages, "claude", 30000, "conv-1", 25000, true);
+    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBeUndefined();
+
+    // Turn 3: normal again — re-establishes adjustment
+    tracker.recordActual(messages, "claude", 35000, "conv-1", 30000, false);
+    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(30000);
   });
 });

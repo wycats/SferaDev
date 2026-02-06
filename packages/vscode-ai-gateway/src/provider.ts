@@ -82,6 +82,7 @@ import {
   extractIdentity,
 } from "./identity";
 import type { TokenStatusBar } from "./status-bar";
+import { hasSummarizationTag } from "./tokens/conversation-state";
 import { HybridTokenEstimator } from "./tokens/hybrid-estimator";
 
 function hashMessage(msg: LanguageModelChatRequestMessage): string {
@@ -177,6 +178,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     actualInputTokens: number,
     conversationId?: string,
     sequenceEstimate?: number,
+    summarizationDetected?: boolean,
   ): void {
     this.tokenEstimator.recordActual(
       messages,
@@ -184,6 +186,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       actualInputTokens,
       conversationId,
       sequenceEstimate,
+      summarizationDetected,
     );
 
     // Update status bar with estimation state
@@ -492,6 +495,14 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       const sequenceEstimate =
         this.tokenEstimator.getCurrentSequence()?.totalEstimate;
 
+      // Detect summarization tag for rolling correction invalidation (RFC 047 Phase 4b)
+      const summarizationDetected = hasSummarizationTag(chatMessages);
+      if (summarizationDetected) {
+        logger.info(
+          `[TokenState] Summarization detected: <conversation-summary> tag found in messages`,
+        );
+      }
+
       // Execute chat using OpenResponses API
       logger.debug(`[OpenResponses] Executing chat request for ${model.id}`);
 
@@ -515,6 +526,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
               actualInputTokens,
               conversationId,
               sequenceEstimate,
+              summarizationDetected,
             );
           },
         },
@@ -659,7 +671,11 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     void _token;
 
     // Use tiktoken for per-message estimation
-    const estimate = this.tokenEstimator.estimateMessage(text, model, undefined);
+    const estimate = this.tokenEstimator.estimateMessage(
+      text,
+      model,
+      undefined,
+    );
 
     // If we learned from a "too long" error, apply a correction multiplier
     // This ensures VS Code sees token counts that will trigger summarization

@@ -161,7 +161,7 @@ describe("CallSequenceTracker", () => {
 
       // KEY TEST: What does getCurrentSequence() return BEFORE the next onCall()?
       const sequenceBeforeCall = tracker.getCurrentSequence();
-      
+
       // H5 claim: currentSequence should be null
       // Actual behavior: currentSequence is still the OLD sequence
       expect(sequenceBeforeCall).not.toBeNull(); // REFUTES H5
@@ -171,7 +171,7 @@ describe("CallSequenceTracker", () => {
       // Now call onCall() - THIS is when the new sequence is created
       tracker.onCall(makeEstimate(50));
       const turn2Sequence = tracker.getCurrentSequence();
-      
+
       expect(turn2Sequence).not.toBe(turn1Sequence); // New sequence
       expect(turn2Sequence?.totalEstimate).toBe(50); // Fresh total
       expect(turn2Sequence?.calls).toHaveLength(1); // Only the new call
@@ -179,7 +179,7 @@ describe("CallSequenceTracker", () => {
 
     it("cannot detect first-message-in-turn by checking currentSequence === null", () => {
       // This test documents WHY the RFC 045 algorithm is wrong
-      
+
       tracker.onCall(makeEstimate(100));
       vi.advanceTimersByTime(600); // Gap
 
@@ -196,16 +196,16 @@ describe("CallSequenceTracker", () => {
 
     it("CAN detect first-message by comparing sequence identity after onCall()", () => {
       // Alternative approach: check if onCall() created a NEW sequence
-      
+
       tracker.onCall(makeEstimate(100));
       // First sequence established (not used directly, but needed to set up state)
-      
+
       vi.advanceTimersByTime(600); // Gap
-      
+
       const seqBeforeCall = tracker.getCurrentSequence();
       tracker.onCall(makeEstimate(50));
       const seqAfterCall = tracker.getCurrentSequence();
-      
+
       // We can detect "first in new sequence" by comparing before/after
       const isFirstInNewSequence = seqAfterCall !== seqBeforeCall;
       expect(isFirstInNewSequence).toBe(true);
@@ -244,26 +244,26 @@ describe("CallSequenceTracker", () => {
 
     it("enables correct first-message detection pattern", () => {
       // This test demonstrates the CORRECT pattern for RFC 045
-      
+
       // Turn 1
       tracker.onCall(makeEstimate(100));
       tracker.onCall(makeEstimate(200));
-      
+
       vi.advanceTimersByTime(600); // Gap
-      
+
       // Turn 2 - BEFORE calling onCall, check if this would be first
       const isFirstInTurn2 = tracker.wouldStartNewSequence();
       expect(isFirstInTurn2).toBe(true);
-      
+
       // Now we can apply adjustment and call onCall
       const adjustment = 25000; // from getAdjustment()
       const estimate = 500 + (isFirstInTurn2 ? adjustment : 0);
       tracker.onCall(makeEstimate(estimate));
-      
+
       // Subsequent calls in same turn
       expect(tracker.wouldStartNewSequence()).toBe(false);
       tracker.onCall(makeEstimate(500));
-      
+
       // Verify total includes adjustment
       expect(tracker.getCurrentSequence()?.totalEstimate).toBe(25500 + 500);
     });
