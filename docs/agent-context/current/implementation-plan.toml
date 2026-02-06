@@ -43,27 +43,37 @@ id = "remove-zombie-multiplier"
 [[plan.goals.tasks]]
 id = "remove-1.5x-branch"
 title = "Remove 1.5x multiplier branch in provideTokenCount() (L689-707)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T20:49:22.776559667+00:00"
+completion_log = "Removed 24-line 1.5x multiplier branch from provideTokenCount()"
 
 [[plan.goals.tasks]]
 id = "remove-success-clear"
 title = "Remove success path that clears learnedTokenTotal (L555-560)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T20:49:32.866346755+00:00"
+completion_log = "Removed 11-line success path clearing learnedTokenTotal"
 
 [[plan.goals.tasks]]
 id = "surgical-error-handler"
 title = "Surgically remove zombie portion of error handler (L577-590), keeping status bar display"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T20:49:33.084412088+00:00"
+completion_log = "Surgically removed zombie error handler, kept status bar display"
 
 [[plan.goals.tasks]]
 id = "remove-hash-conversation"
 title = "Remove hashConversation() function (L645-660)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T20:49:33.423009203+00:00"
+completion_log = "Removed 21-line hashConversation() function"
 
 [[plan.goals.tasks]]
 id = "remove-field"
 title = "Remove learnedTokenTotal field and inline type (L129-132)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T20:49:33.667106777+00:00"
+completion_log = "Removed learnedTokenTotal field and currentRequestMessages (only used by zombie)"
 
 [[plan.goals]]
 id = "design-error-recovery"
