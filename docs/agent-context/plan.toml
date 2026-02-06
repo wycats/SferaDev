@@ -1059,3 +1059,52 @@ id = "edge-case-hardening"
 label = "Edge Case Hardening (S4, S6, M1)"
 status = "completed"
 completion_log = "Fixed S4 (tool hash collision), S6 (callId dedupe), M1 (serialized parts). All 462 tests pass."
+
+[[epochs]]
+id = "01kgt5ns37sqw4mrjcxpk5nds3"
+title = "Zombie Identity GC (RFC 00054)"
+status = "active"
+ulid = "01KGT5NS37SQW4MRJCXPK5NDS3"
+
+[[epochs.phases]]
+id = "01kgt5p8kcsy08hdnevegysp3x"
+title = "Phase 1-2: Remove 1.5x Multiplier System"
+status = "active"
+rfcs = ["00054"]
+ulid = "01KGT5P8KCSY08HDNEVEGYSP3X"
+
+[[epochs.phases.goals]]
+id = "remove-dead-code"
+label = "Remove dead code (actualTokens logging)"
+status = "pending"
+ulid = "01KGT5Q7J54A9733ST1KRQ4MG0"
+
+[[epochs.phases.goals]]
+id = "remove-learned-token-total"
+label = "Remove learnedTokenTotal field and type"
+status = "pending"
+ulid = "01KGT5QFA9TTBKKN8MNMVXQTWJ"
+
+[[epochs.phases.goals]]
+id = "remove-hash-conversation"
+label = "Remove hashConversation() and simpleHash() zombie paths"
+status = "pending"
+ulid = "01KGT5QP9B9KG9KFMTF00328AC"
+
+[[epochs.phases.goals]]
+id = "remove-error-path"
+label = "Remove error parsing that sets learnedTokenTotal"
+status = "pending"
+ulid = "01KGT5QYXPMN0J2A14MBS0GMHT"
+
+[[epochs.phases.goals]]
+id = "remove-multiplier-logic"
+label = "Remove 1.5x multiplier logic in provideTokenCount()"
+status = "pending"
+ulid = "01KGT5R94T891D9JS87Z7P0QKZ"
+
+[[epochs.phases.goals]]
+id = "remove-emitter-fire"
+label = "Remove modelInfoChangeEmitter.fire() from error path"
+status = "pending"
+ulid = "01KGT5RHVRJY909TJW4E0PED23"
