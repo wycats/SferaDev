@@ -92,22 +92,30 @@ id = "delta-computation"
 [[plan.goals.tasks]]
 id = "edge-cases::first-turn"
 title = "Handle first turn (no previous state) - skip delta caching"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:32:54.873112445+00:00"
+completion_log = 'Already implemented in Phase 1. lookup() returns "none" for first turn, delta caching is skipped. Test: "skips delta computation on first turn"'
 
 [[plan.goals.tasks]]
 id = "edge-cases::summarization"
 title = "Handle summarization (message count drops) - lookup returns none"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:32:55.312049689+00:00"
+completion_log = 'Already implemented. lookup() returns "none" when messages are shorter than known state. Test: "returns none when messages are shorter than known state"'
 
 [[plan.goals.tasks]]
 id = "edge-cases::negative-delta"
 title = "Handle negative delta (shouldn't happen) - log warning, skip caching"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:32:55.726733854+00:00"
+completion_log = 'Already implemented in Phase 1. Logs warning and skips caching. Test: "logs warning on negative delta"'
 
 [[plan.goals.tasks]]
 id = "edge-cases::integration-test"
 title = "End-to-end test of content-hash delta caching flow"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:33:03.501955612+00:00"
+completion_log = "End-to-end flow verified. Tests cover: delta caching on prefix match, cached retrieval via estimateMessage(), invalid index handling. 457 tests pass."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
