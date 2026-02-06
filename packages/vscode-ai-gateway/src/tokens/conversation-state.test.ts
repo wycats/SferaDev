@@ -105,41 +105,12 @@ describe("ConversationStateTracker", () => {
     });
   });
 
-  describe("conversation isolation", () => {
-    it("tracks different conversations separately for same model", () => {
-      const messages1 = [createMessage(1, "hello")];
-      const messages2 = [createMessage(1, "hi")];
+  // NOTE: "conversation isolation" describe block deleted - zombie tests (RFC 00054)
+  // Per-conversation keying removed in favor of family-only keying.
+  // The "falls back to model-only key" test is now the default behavior.
 
-      tracker.recordActual(messages1, "claude", 100, "conv-a");
-      tracker.recordActual(messages2, "claude", 200, "conv-b");
-
-      expect(tracker.getState("claude", "conv-a")?.actualTokens).toBe(100);
-      expect(tracker.getState("claude", "conv-b")?.actualTokens).toBe(200);
-    });
-
-    it("subagent does not overwrite main agent state", () => {
-      const mainMessages = [
-        createMessage(1, "main"),
-        createMessage(2, "response"),
-      ];
-      const subMessages = [
-        createMessage(1, "subagent"),
-        createMessage(2, "response"),
-      ];
-
-      tracker.recordActual(mainMessages, "claude", 300, "main");
-      tracker.recordActual(subMessages, "claude", 150, "sub");
-
-      const mainLookup = tracker.lookup(mainMessages, "claude", "main");
-      const subLookup = tracker.lookup(subMessages, "claude", "sub");
-
-      expect(mainLookup.type).toBe("exact");
-      expect(subLookup.type).toBe("exact");
-      expect(mainLookup.knownTokens).toBe(300);
-      expect(subLookup.knownTokens).toBe(150);
-    });
-
-    it("falls back to model-only key when conversationId is undefined", () => {
+  describe("model-family keying", () => {
+    it("uses model-family as key", () => {
       const messages = [createMessage(1, "hello")];
 
       tracker.recordActual(messages, "claude", 100);
@@ -276,73 +247,66 @@ describe("ConversationStateTracker", () => {
 
   describe("memory leak protections", () => {
     it("evicts least recently used entries when max size is reached", () => {
-      // Each recordActual with conversationId writes 2 entries:
-      // per-conversation key + model-family-only key (RFC 047 Phase 4a).
-      // The family key is always the same ("claude"), so after 100 iterations
-      // we have 100 per-conversation entries + 1 family entry = 101 entries.
-      // Use 99 iterations to stay under the 100 limit, then verify eviction.
-      for (let i = 0; i < 99; i += 1) {
+      // With family-only keying, each unique modelFamily gets one entry
+      // Fill to capacity with different model families
+      for (let i = 0; i < 100; i += 1) {
         tracker.recordActual(
           [createMessage(1, `msg-${i.toString()}`)],
-          "claude",
+          `model-${i.toString()}`,
           i,
-          `conv-${i.toString()}`,
         );
       }
 
-      // 99 per-conv + 1 family = 100 entries (at limit)
-      expect(tracker.getState("claude", "conv-0")).toBeDefined();
+      expect(tracker.size()).toBe(100);
+      expect(tracker.getState("model-0")).toBeDefined();
 
+      // Add one more family - should evict oldest
       tracker.recordActual(
-        [createMessage(1, "msg-99")],
-        "claude",
-        99,
-        "conv-99",
+        [createMessage(1, "msg-100")],
+        "model-100",
+        100,
       );
 
-      // conv-0 should be evicted (oldest per-conversation entry)
-      expect(tracker.getState("claude", "conv-0")).toBeUndefined();
-      expect(tracker.getState("claude", "conv-99")).toBeDefined();
+      // model-0 should be evicted (oldest)
+      expect(tracker.getState("model-0")).toBeUndefined();
+      expect(tracker.getState("model-100")).toBeDefined();
     });
 
     it("preserves recently used entries in LRU eviction", () => {
-      for (let i = 0; i < 99; i += 1) {
+      for (let i = 0; i < 100; i += 1) {
         tracker.recordActual(
           [createMessage(1, `msg-${i.toString()}`)],
-          "claude",
+          `model-${i.toString()}`,
           i,
-          `conv-${i.toString()}`,
         );
       }
 
-      // Touch conv-0 to make it recently used
+      // Touch model-0 to make it recently used
       const lookup = tracker.lookup(
         [createMessage(1, "msg-0")],
-        "claude",
-        "conv-0",
+        "model-0",
       );
       expect(lookup.type).toBe("exact");
 
+      // Add new entry
       tracker.recordActual(
-        [createMessage(1, "msg-99")],
-        "claude",
-        99,
-        "conv-99",
+        [createMessage(1, "msg-100")],
+        "model-100",
+        100,
       );
 
-      // conv-0 was recently touched, so conv-1 should be evicted instead
-      expect(tracker.getState("claude", "conv-0")).toBeDefined();
-      expect(tracker.getState("claude", "conv-1")).toBeUndefined();
+      // model-0 was recently touched, so model-1 should be evicted instead
+      expect(tracker.getState("model-0")).toBeDefined();
+      expect(tracker.getState("model-1")).toBeUndefined();
     });
 
     it("does not exceed maxEntries when new model family is introduced at capacity", () => {
-      // Fill to capacity: 99 per-conv + 1 family = 100 entries
-      for (let i = 0; i < 99; i += 1) {
+      // Fill to capacity with different model families
+      for (let i = 0; i < 100; i += 1) {
         tracker.recordActual(
           [createMessage(1, `msg-${i.toString()}`)],
-          "claude",
+          `model-${i.toString()}`,
           i,
-          `conv-${i.toString()}`,
         );
       }
       expect(tracker.size()).toBe(100);
@@ -352,28 +316,24 @@ describe("ConversationStateTracker", () => {
         [createMessage(1, "gpt-msg")],
         "gpt-4",
         999,
-        "conv-gpt",
       );
 
-      // 2 new entries (per-conv + family for gpt-4), so 2 old entries evicted
       expect(tracker.size()).toBeLessThanOrEqual(100);
-      expect(tracker.getState("gpt-4", "conv-gpt")).toBeDefined();
-      // Family-only key for gpt-4 should also exist
-      expect(tracker.getState("gpt-4", undefined)).toBeDefined();
+      expect(tracker.getState("gpt-4")).toBeDefined();
     });
 
     it("cleans up stale entries based on TTL", () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-02-03T00:00:00.000Z"));
 
-      tracker.recordActual([createMessage(1, "old")], "claude", 1, "conv-old");
+      tracker.recordActual([createMessage(1, "old")], "claude-old", 1);
 
       vi.setSystemTime(new Date("2026-02-03T01:01:00.000Z"));
 
-      tracker.recordActual([createMessage(1, "new")], "claude", 2, "conv-new");
+      tracker.recordActual([createMessage(1, "new")], "claude-new", 2);
 
-      expect(tracker.getState("claude", "conv-old")).toBeUndefined();
-      expect(tracker.getState("claude", "conv-new")).toBeDefined();
+      expect(tracker.getState("claude-old")).toBeUndefined();
+      expect(tracker.getState("claude-new")).toBeDefined();
 
       vi.useRealTimers();
     });
@@ -386,7 +346,7 @@ describe("ConversationStateTracker", () => {
       const trackerWithPersistence = new ConversationStateTracker(memento);
 
       const messages = [createMessage(1, "hello"), createMessage(2, "world")];
-      trackerWithPersistence.recordActual(messages, "claude", 500, "conv-1");
+      trackerWithPersistence.recordActual(messages, "claude", 500);
 
       // Wait for debounced save
       await vi.advanceTimersByTimeAsync(1100);
@@ -398,10 +358,9 @@ describe("ConversationStateTracker", () => {
         entries: Array<{ key: string }>;
       };
       expect(stored.version).toBe(1);
-      // 2 entries: per-conversation key + model-family-only key (RFC 047 dual-write)
-      expect(stored.entries).toHaveLength(2);
+      // Family-only keying: 1 entry per model family (RFC 00054)
+      expect(stored.entries).toHaveLength(1);
       const keys = stored.entries.map((e) => e.key);
-      expect(keys).toContain("claude:conv-1");
       expect(keys).toContain("claude");
 
       vi.useRealTimers();
@@ -413,7 +372,7 @@ describe("ConversationStateTracker", () => {
       const tracker1 = new ConversationStateTracker(memento);
 
       const messages = [createMessage(1, "hello"), createMessage(2, "world")];
-      tracker1.recordActual(messages, "claude", 500, "conv-1");
+      tracker1.recordActual(messages, "claude", 500);
 
       // Wait for debounced save
       await vi.advanceTimersByTimeAsync(1100);
@@ -421,7 +380,7 @@ describe("ConversationStateTracker", () => {
       // Create new tracker with same memento - should load state
       const tracker2 = new ConversationStateTracker(memento);
 
-      const result = tracker2.lookup(messages, "claude", "conv-1");
+      const result = tracker2.lookup(messages, "claude");
       expect(result.type).toBe("exact");
       expect(result.knownTokens).toBe(500);
 
@@ -437,20 +396,20 @@ describe("ConversationStateTracker", () => {
       const msg1 = [createMessage(1, "hello")];
       const msg2 = [createMessage(1, "hi there")];
 
-      tracker1.recordActual(msg1, "claude", 100, "conv-a");
-      tracker1.recordActual(msg2, "gpt-4", 200, "conv-b");
+      tracker1.recordActual(msg1, "claude", 100);
+      tracker1.recordActual(msg2, "gpt-4", 200);
 
       await vi.advanceTimersByTimeAsync(1100);
 
       // Second "session" - load data (simulates restart)
       const tracker2 = new ConversationStateTracker(memento);
 
-      // 4 entries: 2 per-conversation + 2 model-family-only (RFC 047 dual-write)
-      expect(tracker2.size()).toBe(4);
-      expect(tracker2.lookup(msg1, "claude", "conv-a").type).toBe("exact");
-      expect(tracker2.lookup(msg2, "gpt-4", "conv-b").type).toBe("exact");
-      expect(tracker2.lookup(msg1, "claude", "conv-a").knownTokens).toBe(100);
-      expect(tracker2.lookup(msg2, "gpt-4", "conv-b").knownTokens).toBe(200);
+      // Family-only keying: 1 entry per model family (RFC 00054)
+      expect(tracker2.size()).toBe(2);
+      expect(tracker2.lookup(msg1, "claude").type).toBe("exact");
+      expect(tracker2.lookup(msg2, "gpt-4").type).toBe("exact");
+      expect(tracker2.lookup(msg1, "claude").knownTokens).toBe(100);
+      expect(tracker2.lookup(msg2, "gpt-4").knownTokens).toBe(200);
 
       vi.useRealTimers();
     });
@@ -575,7 +534,7 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
     const messages = [createMessage(1, "hello")];
 
     // Record with sequence estimate — creates family-key with lastSequenceEstimate
-    tracker.recordActual(messages, "claude", 100000, "conv-1", 50000);
+    tracker.recordActual(messages, "claude", 100000, undefined, 50000);
     const stateBefore = tracker.getState("claude", undefined);
     expect(stateBefore?.lastSequenceEstimate).toBe(50000);
 
@@ -583,14 +542,14 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
     const summaryMessages = [
       createMessage(
         1,
-        "<conversation-summary>\nSummary\n</conversation-summary>",
+        "<conversation-summary>\\nSummary\\n</conversation-summary>",
       ),
     ];
     tracker.recordActual(
       summaryMessages,
       "claude",
       30000,
-      "conv-1",
+      undefined,
       25000,
       true,
     );
@@ -599,10 +558,6 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
     const stateAfter = tracker.getState("claude", undefined);
     expect(stateAfter?.lastSequenceEstimate).toBeUndefined();
     expect(stateAfter?.actualTokens).toBe(30000);
-
-    // Per-conversation key should still have it (not affected by guard)
-    const convState = tracker.getState("claude", "conv-1");
-    expect(convState?.lastSequenceEstimate).toBe(25000);
   });
 
   it("preserves lastSequenceEstimate when no summarization detected", () => {

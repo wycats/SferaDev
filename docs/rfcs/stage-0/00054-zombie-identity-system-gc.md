@@ -3,8 +3,8 @@ title: Zombie Identity System GC
 stage: 0
 feature: Unknown
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00054: Zombie Identity System GC
@@ -14,7 +14,7 @@ exo:
 ## Dependencies
 
 > ⚠️ **BLOCKED**: Phase 3 of this RFC depends on RFC 00051 (Model Family String Mapping).
-> 
+>
 > Phases 1-2 can proceed independently. Phase 3 requires RFC 00051's family parsing fix to land first.
 
 ## Problem Statement
@@ -36,36 +36,39 @@ The legacy systems are "zombie code" - they still execute but have been supersed
 
 ### Zombie 1: `learnedTokenTotal` + 1.5x Multiplier
 
-| Attribute | Value |
-|-----------|-------|
-| Files | `provider.ts` |
-| State | `{ conversationHash, actualTokens }` |
-| Introduced | RFC 009 (Reactive Error Learning) |
+| Attribute     | Value                                              |
+| ------------- | -------------------------------------------------- |
+| Files         | `provider.ts`                                      |
+| State         | `{ conversationHash, actualTokens }`               |
+| Introduced    | RFC 009 (Reactive Error Learning)                  |
 | Superseded by | Rolling correction (RFC 047), TokenCache (RFC 052) |
-| Tests | None |
+| Tests         | None                                               |
 
 **Code locations:**
+
 - Declaration: `learnedTokenTotal` field in `GatewayLanguageModelProvider`
 - Set: Error parsing path ("too long" detection)
 - Read: `provideTokenCount()` applies 1.5x if hash matches
 - Clear: On successful request completion
 
 **Why remove:**
+
 - `actualTokens` is dead code (logged only)
 - Lossy hash causes ping-pong
 - No tests = no safety net, but also no breakage on removal
 
 ### Zombie 2: `hashConversation()` + `simpleHash()`
 
-| Attribute | Value |
-|-----------|-------|
-| Files | `provider.ts` |
-| Algorithm | First 2 + last 2 messages, truncated hash via `simpleHash()` |
-| Introduced | RFC 009 era |
-| Superseded by | `computeNormalizedDigest()` (RFC 052) |
-| Tests | None direct |
+| Attribute     | Value                                                        |
+| ------------- | ------------------------------------------------------------ |
+| Files         | `provider.ts`                                                |
+| Algorithm     | First 2 + last 2 messages, truncated hash via `simpleHash()` |
+| Introduced    | RFC 009 era                                                  |
+| Superseded by | `computeNormalizedDigest()` (RFC 052)                        |
+| Tests         | None direct                                                  |
 
 **Why remove:**
+
 - Only used by `learnedTokenTotal` path
 - Lossy: stable across summarization if only middle messages change
 - Incompatible with normalized digest system
@@ -74,15 +77,16 @@ The legacy systems are "zombie code" - they still execute but have been supersed
 
 ### Zombie 3: `conversationId` / `conversationIdentity` in Provider
 
-| Attribute | Value |
-|-----------|-------|
-| Files | `provider.ts`, `hybrid-estimator.ts` |
-| Algorithm | `modelId:hash(firstUserMessage)` - computed in provider, passed to estimator |
-| Introduced | Unknown (pre-RFC) |
-| Superseded by | Digest-based message matching (RFC 052) |
-| Tests | Yes, in `hybrid-estimator.test.ts` |
+| Attribute     | Value                                                                        |
+| ------------- | ---------------------------------------------------------------------------- |
+| Files         | `provider.ts`, `hybrid-estimator.ts`                                         |
+| Algorithm     | `modelId:hash(firstUserMessage)` - computed in provider, passed to estimator |
+| Introduced    | Unknown (pre-RFC)                                                            |
+| Superseded by | Digest-based message matching (RFC 052)                                      |
+| Tests         | Yes, in `hybrid-estimator.test.ts`                                           |
 
 **Why remove:**
+
 - Weak identity: collides across conversations with same first message
 - Model-family fallback defeats its purpose (reintroduces cross-conversation contamination)
 - Incompatible with digest-based system already in TokenCache
@@ -113,6 +117,7 @@ parseModelIdentity() → model.family
 ```
 
 **RFC 00051 dependency:**
+
 - If `family` derivation is broken (e.g., `claude-sonnet-4.5` → `claude-sonnet`), then:
   - Rolling correction state leaks between models
   - Cache keys collide between distinct models
@@ -121,14 +126,14 @@ parseModelIdentity() → model.family
 
 ## Non-Zombie Systems (Keep)
 
-| System | Location | Purpose | Uses `family`? |
-|--------|----------|---------|----------------|
-| `computeNormalizedDigest()` | `digest.ts` | Per-message identity for cache/delta | No |
-| `getConversationIdentity()` | `status-bar.ts` | UI agent tracking | No |
-| `computeAgentTypeHash()` | `hash-utils.ts` | Parent-child linking | No |
-| TokenCache | `cache.ts` | Per-message token caching | No (uses digest) |
-| Rolling correction | `hybrid-estimator.ts` | Systematic estimate adjustment | **Yes** (keyed by family) |
-| `resolveEncodingName()` | `counter.ts` | Tokenizer selection | **Yes** (fragile heuristic) |
+| System                      | Location              | Purpose                              | Uses `family`?              |
+| --------------------------- | --------------------- | ------------------------------------ | --------------------------- |
+| `computeNormalizedDigest()` | `digest.ts`           | Per-message identity for cache/delta | No                          |
+| `getConversationIdentity()` | `status-bar.ts`       | UI agent tracking                    | No                          |
+| `computeAgentTypeHash()`    | `hash-utils.ts`       | Parent-child linking                 | No                          |
+| TokenCache                  | `cache.ts`            | Per-message token caching            | No (uses digest)            |
+| Rolling correction          | `hybrid-estimator.ts` | Systematic estimate adjustment       | **Yes** (keyed by family)   |
+| `resolveEncodingName()`     | `counter.ts`          | Tokenizer selection                  | **Yes** (fragile heuristic) |
 
 **Note:** Rolling correction and tokenizer selection both depend on `family`. RFC 00051 identifies that `family` derivation is fragile. These systems benefit from RFC 00051's fix even though they aren't zombies.
 
@@ -154,6 +159,7 @@ parseModelIdentity() → model.family
 **Does NOT depend on:** RFC 00051 (this path uses its own lossy hash, not `family`)
 
 Remove:
+
 - `learnedTokenTotal` field and type
 - `hashConversation()` function
 - `simpleHash()` if only used by zombie paths (audit first)
@@ -163,7 +169,8 @@ Remove:
 
 **Risk:** Loss of post-error recovery behavior
 
-**Mitigation:** 
+**Mitigation:**
+
 - Rolling correction already handles systematic underestimation
 - TokenCache provides actual token counts for known messages
 - If needed, add explicit "too long" handling that clears correction state instead of inflating
@@ -177,14 +184,16 @@ Remove:
 **Scope:** Replace `conversationId` with digest-based keying
 
 > ⚠️ **BLOCKED on RFC 00051**
-> 
+>
 > This phase increases reliance on `model.family` for keying. If `family` derivation is broken, this phase amplifies cross-model contamination. RFC 00051 must land first.
 
-**Depends on:** 
+**Depends on:**
+
 - Phase 2 (or can proceed independently)
 - **RFC 00051** (family parsing fix)
 
 Changes:
+
 - Remove `conversationIdentity` computation from `GatewayLanguageModelProvider`
 - Remove `conversationId` parameter from `estimateConversation()` and `recordActualTokens()`
 - Key `knownStates` by model family only (current fallback behavior)
@@ -193,6 +202,7 @@ Changes:
 **Risk:** Medium - has tests, changes state management
 
 **Mitigation:**
+
 - Model-family keying is already the fallback and works
 - Digest-based matching in TokenCache handles per-message precision
 - Update tests to validate new keying strategy
@@ -213,6 +223,7 @@ After removing the zombie 1.5x multiplier system:
 - Next request will use the same (too low) estimates → potential for repeated errors
 
 **What the zombie code did (badly):**
+
 - Stored `actualTokens` from error with a lossy conversation hash
 - Applied 1.5x multiplier to ALL `provideTokenCount()` calls if hash matched
 - Problems: lossy hash caused ping-pong, 1.5x was arbitrary, cross-conversation pollution
@@ -222,6 +233,7 @@ After removing the zombie 1.5x multiplier system:
 **Option 1: Do Nothing (Observe)**
 
 Rationale: VS Code may handle this itself. When a request fails with "too long", VS Code might:
+
 - Automatically trigger summarization
 - Retry with fewer messages
 - Show user a prompt to reduce context
@@ -240,11 +252,13 @@ if (tokenInfo) {
 Rationale: If we hit a token limit, our estimates were too low. Clearing the rolling correction resets to baseline tiktoken estimates, which are typically conservative (higher than actual).
 
 Pros:
+
 - Simple to implement
 - No new state to track
 - Conservative approach (higher estimates = safer)
 
 Cons:
+
 - Loses accumulated correction data
 - May over-correct (estimates too high after reset)
 
@@ -259,7 +273,7 @@ if (tokenInfo && chatMessages) {
     tokenInfo.actualTokens,
     conversationId,
     sequenceEstimate,
-    false,  // not summarization
+    false, // not summarization
   );
 }
 ```
@@ -267,11 +281,13 @@ if (tokenInfo && chatMessages) {
 Rationale: The error response tells us the actual token count. We can use this to update rolling correction just like a successful response.
 
 Pros:
+
 - Uses existing infrastructure
 - Correction is proportional to actual error
 - No new mechanisms needed
 
 Cons:
+
 - Requires access to `chatMessages` in error handler
 - May need to re-add message tracking (removed with zombie code)
 - Error token counts may be less reliable than success counts
@@ -281,6 +297,7 @@ Cons:
 **Start with Option 1 (Do Nothing)** and observe behavior in production.
 
 Rationale:
+
 1. We don't know if this is actually a problem in practice
 2. VS Code may already handle "too long" errors gracefully
 3. Adding complexity without evidence of need violates YAGNI
@@ -318,41 +335,46 @@ Rationale:
 The `family` string flows through the replacement code:
 
 1. **Rolling correction** uses `model.family` for keying `knownStates`
-2. **Token counter** uses `family` for cache keys  
+2. **Token counter** uses `family` for cache keys
 3. **Tokenizer selection** uses fragile `family.includes("gpt-4o")` pattern
 
 RFC 00051 identifies that `parseModelIdentity()` has a **parsing bug**:
+
 - `claude-sonnet-4.5` is parsed as family `claude-sonnet` + version `4.5`
 - This causes `claude-sonnet-4` and `claude-sonnet-4.5` to share the same family key
 - Rolling correction state would leak between distinct models
 
 If we remove `conversationId` (Phase 3) before fixing family:
-- We'd be *increasing* reliance on a broken system
+
+- We'd be _increasing_ reliance on a broken system
 - Models could cross-contaminate rolling correction state
 - The cure would be worse than the disease
 
 ### Execution Order
 
-| Step | RFC | Phase | Description | Depends On | Risk |
-|------|-----|-------|-------------|------------|------|
-| 1 | 053 | 1 | Remove `actualTokens` dead code | Nothing | None |
-| 2 | 053 | 2 | Remove 1.5x multiplier system | Step 1 (or combine) | Low |
-| 3 | **00051** | - | Fix `claude-sonnet-4.5` parsing | Nothing | Low |
-| 4 | 053 | 3 | Remove `conversationId`, use family-only | **Step 3** | Medium |
-| 5 | 053 | 4 | Error recovery redesign (optional) | Step 4 | Optional |
+| Step | RFC       | Phase | Description                              | Depends On          | Risk     |
+| ---- | --------- | ----- | ---------------------------------------- | ------------------- | -------- |
+| 1    | 053       | 1     | Remove `actualTokens` dead code          | Nothing             | None     |
+| 2    | 053       | 2     | Remove 1.5x multiplier system            | Step 1 (or combine) | Low      |
+| 3    | **00051** | -     | Fix `claude-sonnet-4.5` parsing          | Nothing             | Low      |
+| 4    | 053       | 3     | Remove `conversationId`, use family-only | **Step 3**          | Medium   |
+| 5    | 053       | 4     | Error recovery redesign (optional)       | Step 4              | Optional |
 
 ### Checkpoints
 
 After **Step 2**:
+
 - [ ] Summarization ping-pong eliminated
 - [ ] All tests pass
 - [ ] `learnedTokenTotal`, `hashConversation()` removed
 
 After **Step 3** (RFC 00051):
+
 - [ ] `claude-sonnet-4.5` parses as family `claude-sonnet-4.5` (not `claude-sonnet`)
 - [ ] No model family collisions
 
 After **Step 4**:
+
 - [ ] `conversationId` removed from provider and estimator
 - [ ] `knownStates` keyed by family only
 - [ ] Tests updated
@@ -390,6 +412,7 @@ After **Step 4**:
 ### Shared Code Paths
 
 Both RFCs touch:
+
 - `provider.ts` - conversation identity, family derivation
 - `hybrid-estimator.ts` - rolling correction keying
 - `tokens/counter.ts` - cache keying, tokenizer selection
@@ -412,5 +435,6 @@ RFC 00051 identifies:
 ### Minimum Viable Fix
 
 If gateway changes are slow, RFC 00051's minimum fix is:
+
 - Update `VERSION_PATTERN` regex to not match single-digit semver at end of model names
 - This unblocks Phase 3 without waiting for gateway changes

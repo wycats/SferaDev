@@ -131,9 +131,7 @@ export class ConversationStateTracker {
     }
   }
 
-  private computeKey(modelFamily: string, conversationId?: string): string {
-    return conversationId ? `${modelFamily}:${conversationId}` : modelFamily;
-  }
+  // NOTE: computeKey() removed - family-only keying (RFC 00054)
 
   /**
    * Record actual token count from an API response.
@@ -146,53 +144,40 @@ export class ConversationStateTracker {
     messages: readonly vscode.LanguageModelChatMessage[],
     modelFamily: string,
     actualTokens: number,
-    conversationId?: string,
+    _conversationId?: string, // deprecated, ignored (RFC 00054)
     sequenceEstimate?: number,
     summarizationDetected?: boolean,
   ): void {
+    void _conversationId;
     this.cleanupStale();
     const messageHashes = messages.map((m) => computeNormalizedDigest(m));
-    const key = this.computeKey(modelFamily, conversationId);
+    const key = modelFamily; // Family-only keying (RFC 00054)
 
-    const state: KnownConversationState = {
-      messageHashes,
-      actualTokens,
-      ...(sequenceEstimate !== undefined
-        ? { lastSequenceEstimate: sequenceEstimate }
-        : {}),
-      modelFamily,
-      timestamp: Date.now(),
-    };
+    // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
+    // from the state. This clears the rolling correction so getAdjustment()
+    // returns 0 until a new estimate-vs-actual pair is established post-summarization.
+    const state: KnownConversationState = summarizationDetected
+      ? {
+          messageHashes,
+          actualTokens,
+          modelFamily,
+          timestamp: Date.now(),
+        }
+      : {
+          messageHashes,
+          actualTokens,
+          ...(sequenceEstimate !== undefined
+            ? { lastSequenceEstimate: sequenceEstimate }
+            : {}),
+          modelFamily,
+          timestamp: Date.now(),
+        };
 
     this.touchKey(key);
     this.evictIfNeeded(key);
     this.knownStates.set(key, state);
 
-    // Also write model-family-only entry for rolling correction (RFC 047 Phase 4a).
-    // provideTokenCount() doesn't have access to conversationId, so getAdjustment()
-    // reads from the model-family-only key. This ensures it finds the latest state.
-    if (conversationId) {
-      const familyKey = modelFamily;
-      this.touchKey(familyKey);
-      // Evict only when the family key is a new insertion (not an overwrite),
-      // to maintain the maxEntries invariant.
-      if (!this.knownStates.has(familyKey)) {
-        this.evictIfNeeded(familyKey);
-      }
-
-      // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
-      // from the family-key state. This clears the rolling correction so getAdjustment()
-      // returns 0 until a new estimate-vs-actual pair is established post-summarization.
-      const familyState: KnownConversationState = summarizationDetected
-        ? {
-            messageHashes,
-            actualTokens,
-            modelFamily,
-            timestamp: Date.now(),
-          }
-        : state;
-      this.knownStates.set(familyKey, familyState);
-    }
+    // NOTE: Dual-write logic removed (RFC 00054) - family-only keying now
 
     this.scheduleSave();
 
@@ -220,10 +205,11 @@ export class ConversationStateTracker {
   lookup(
     messages: readonly vscode.LanguageModelChatMessage[],
     modelFamily: string,
-    conversationId?: string,
+    _conversationId?: string, // deprecated, ignored (RFC 00054)
   ): ConversationLookupResult {
+    void _conversationId;
     this.cleanupStale();
-    const key = this.computeKey(modelFamily, conversationId);
+    const key = modelFamily; // Family-only keying (RFC 00054)
     const state = this.knownStates.get(key);
     if (!state) {
       return { type: "none" };
@@ -282,10 +268,10 @@ export class ConversationStateTracker {
    */
   getState(
     modelFamily: string,
-    conversationId?: string,
+    _conversationId?: string, // deprecated, ignored (RFC 00054)
   ): KnownConversationState | undefined {
-    const key = this.computeKey(modelFamily, conversationId);
-    return this.knownStates.get(key);
+    void _conversationId;
+    return this.knownStates.get(modelFamily);
   }
 
   /**

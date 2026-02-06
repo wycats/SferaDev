@@ -465,10 +465,7 @@ export class StreamAdapter {
             this.emittedCallIds.add(callId);
           }
           functionCallsEmitted++;
-        } else if (
-          this.emittedToolCalls.has(itemId) ||
-          callIdAlreadyEmitted
-        ) {
+        } else if (this.emittedToolCalls.has(itemId) || callIdAlreadyEmitted) {
           functionCallsSkippedDuplicate++;
           logger.debug(
             `[OpenResponses] Skipping duplicate tool call: ${name} (itemId: ${itemId}, callId: ${callId})`,
@@ -1078,7 +1075,10 @@ export class StreamAdapter {
       const callIdAlreadyEmitted = hasCallId
         ? this.emittedCallIds.has(foundState.callId)
         : false;
-      if (this.emittedToolCalls.has(foundState.itemId) || callIdAlreadyEmitted) {
+      if (
+        this.emittedToolCalls.has(foundState.itemId) ||
+        callIdAlreadyEmitted
+      ) {
         logger.debug(
           `[OpenResponses] Skipping duplicate function_call_arguments.done: ${foundState.name} (itemId: ${foundState.itemId}, callId: ${foundState.callId})`,
         );

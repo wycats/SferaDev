@@ -404,24 +404,13 @@ describe("HybridTokenEstimator", () => {
       expect(estimator.getAdjustment("claude")).toBe(100);
     });
 
-    it("latest conversationId wins for model-family-only adjustment", () => {
-      const messages = [createMessage(1, "hello")];
-      // Conversation A: adjustment = 100
-      estimator.recordActual(messages, testModel, 500, "conv-a", 400);
-      // Conversation B: adjustment = 50
-      estimator.recordActual(messages, testModel, 250, "conv-b", 200);
-
-      // Model-family-only key should reflect the latest write (conv-b)
-      expect(estimator.getAdjustment("claude")).toBe(50);
-      // Per-conversation adjustments are still independent
-      expect(estimator.getAdjustment("claude", "conv-a")).toBe(100);
-      expect(estimator.getAdjustment("claude", "conv-b")).toBe(50);
-    });
+    // NOTE: "latest conversationId wins" test deleted - zombie test (RFC 00054)
+    // Per-conversation keying removed in favor of family-only keying
 
     it("clears family-key adjustment when summarization detected", () => {
       const messages = [createMessage(1, "hello")];
       // Establish adjustment: actual=500, estimate=400 → adjustment=100
-      estimator.recordActual(messages, testModel, 500, "conv-1", 400);
+      estimator.recordActual(messages, testModel, 500, undefined, 400);
       expect(estimator.getAdjustment("claude")).toBe(100);
 
       // Summarization detected — should clear family-key adjustment
@@ -435,30 +424,28 @@ describe("HybridTokenEstimator", () => {
         summaryMessages,
         testModel,
         30000,
-        "conv-1",
+        undefined,
         25000,
         true,
       );
 
       // Family-key adjustment should be 0 (cleared)
       expect(estimator.getAdjustment("claude")).toBe(0);
-      // Per-conversation adjustment still works
-      expect(estimator.getAdjustment("claude", "conv-1")).toBe(5000);
     });
 
     it("re-establishes adjustment after summarization on next normal turn", () => {
       const messages = [createMessage(1, "hello")];
 
       // Turn 1: establish adjustment
-      estimator.recordActual(messages, testModel, 500, "conv-1", 400);
+      estimator.recordActual(messages, testModel, 500, undefined, 400);
       expect(estimator.getAdjustment("claude")).toBe(100);
 
       // Turn 2: summarization — clears
-      estimator.recordActual(messages, testModel, 200, "conv-1", 150, true);
+      estimator.recordActual(messages, testModel, 200, undefined, 150, true);
       expect(estimator.getAdjustment("claude")).toBe(0);
 
       // Turn 3: normal — re-establishes
-      estimator.recordActual(messages, testModel, 250, "conv-1", 200);
+      estimator.recordActual(messages, testModel, 250, undefined, 200);
       expect(estimator.getAdjustment("claude")).toBe(50);
     });
   });
@@ -765,27 +752,8 @@ describe("HybridTokenEstimator", () => {
       expect(est2).toBe(5); // plain tiktoken
     });
 
-    it("multiple conversations get independent corrections", () => {
-      const msg = createMessage(1, "shared"); // 6 tokens
-
-      // Conversation A: estimate=6, actual=100 → adjustment=94
-      estimator.estimateMessage(msg, testModel, "conv-a");
-      const seqA = estimator.getCurrentSequence()?.totalEstimate;
-      estimator.recordActual([msg], testModel, 100, "conv-a", seqA);
-
-      vi.advanceTimersByTime(501);
-
-      // Conversation B: estimate=6, actual=20 → adjustment=14
-      estimator.estimateMessage(msg, testModel, "conv-b");
-      const seqB = estimator.getCurrentSequence()?.totalEstimate;
-      estimator.recordActual([msg], testModel, 20, "conv-b", seqB);
-
-      vi.advanceTimersByTime(501);
-
-      // Verify independent adjustments
-      expect(estimator.getAdjustment("claude", "conv-a")).toBe(94);
-      expect(estimator.getAdjustment("claude", "conv-b")).toBe(14);
-    });
+    // NOTE: "multiple conversations get independent corrections" test deleted
+    // Per-conversation keying removed in favor of family-only keying (RFC 00054)
 
     it("reset clears all corrections", () => {
       const msg = createMessage(1, "hello"); // 5 tokens

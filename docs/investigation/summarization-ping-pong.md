@@ -8,13 +8,13 @@ VS Code's chat conversation gets summarized, then after just one turn, it gets s
 
 ### The Three Identity Systems
 
-| Era | Mechanism | Location | Hash Method | Introduced | Status |
-|-----|-----------|----------|-------------|------------|--------|
-| Legacy | `learnedTokenTotal` + 1.5x | provider.ts | First 2 + last 2 messages | RFC 009 | 🧟 ZOMBIE |
-| Legacy | `conversationId` | hybrid-estimator.ts | Model + first user message | Unknown | 🧟 ZOMBIE |
-| Current | `computeNormalizedDigest` | digest.ts | Full message, normalized | RFC 049 | ✅ ACTIVE |
-| Current | `conversationIdentity` | status-bar.ts | First user + first assistant | RFC 033 | ✅ ACTIVE |
-| Current | TokenCache | cache.ts | Uses normalized digest | RFC 052 | ✅ ACTIVE |
+| Era     | Mechanism                  | Location            | Hash Method                  | Introduced | Status    |
+| ------- | -------------------------- | ------------------- | ---------------------------- | ---------- | --------- |
+| Legacy  | `learnedTokenTotal` + 1.5x | provider.ts         | First 2 + last 2 messages    | RFC 009    | 🧟 ZOMBIE |
+| Legacy  | `conversationId`           | hybrid-estimator.ts | Model + first user message   | Unknown    | 🧟 ZOMBIE |
+| Current | `computeNormalizedDigest`  | digest.ts           | Full message, normalized     | RFC 049    | ✅ ACTIVE |
+| Current | `conversationIdentity`     | status-bar.ts       | First user + first assistant | RFC 033    | ✅ ACTIVE |
+| Current | TokenCache                 | cache.ts            | Uses normalized digest       | RFC 052    | ✅ ACTIVE |
 
 ### Why This Causes Ping-Pong
 
@@ -52,6 +52,7 @@ The 1.5x multiplier stays active, inflates token counts, and triggers another su
 ### Zombie 1: `learnedTokenTotal` + 1.5x Multiplier
 
 **Locations:**
+
 - Declaration: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - `learnedTokenTotal` field
 - Set on error: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - "too long" error parsing
 - Cleared on success: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - `if (result.success)`
@@ -59,6 +60,7 @@ The 1.5x multiplier stays active, inflates token counts, and triggers another su
 - Depends on: `hashConversation()`, `hashChatMessage()`
 
 **What It Does:**
+
 - State: `{ conversationHash, actualTokens }`
 - Hashing: First 2 + last 2 messages, truncated hash
 - Write trigger: "prompt too long" API error
@@ -66,20 +68,24 @@ The 1.5x multiplier stays active, inflates token counts, and triggers another su
 - Note: `actualTokens` is only logged, never used in calculations
 
 **Original Purpose:**
+
 - RFC 009: Reactive error learning to force VS Code summarization after API error
 - RFC 047: Kept as "fallback" even with rolling correction
 
 **Why It's Zombie:**
+
 - Superseded by: rolling correction + delta estimation + TokenCache
 - Uses lossy hash incompatible with normalized digest system
 - `actualTokens` field is dead code (logged only)
 - Lossy hash doesn't detect summarization → causes ping-pong
 
 **Entanglements:**
+
 - Depends on `hashConversation()`, `hashChatMessage()`, error parsing
 - **No tests exercise this path**
 
 **Replacement Strategy:**
+
 - Remove entirely
 - If error recovery needed: use rolling correction mechanism with modern digest-based state
 
@@ -88,31 +94,38 @@ The 1.5x multiplier stays active, inflates token counts, and triggers another su
 ### Zombie 2: `hashConversation()` (Lossy Hash)
 
 **Locations:**
+
 - Definition: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - `hashConversation()`
 - Used by: `learnedTokenTotal` setting and matching
 - Uses: `hashChatMessage()` for per-message hashing
 
 **What It Does:**
+
 ```typescript
 const relevant = [...messages.slice(0, 2), ...messages.slice(-2)];
 ```
+
 - Takes first 2 + last 2 messages only
 - Produces truncated hash for "conversation identity"
 
 **Original Purpose:**
+
 - Provide stable identifier for reactive error learning (RFC 009 era)
 
 **Why It's Zombie:**
+
 - Only used by `learnedTokenTotal` path
 - Incompatible with modern digest system
 - Lossy: stable across summarization if only middle messages change
 - **This is the direct cause of ping-pong**
 
 **Entanglements:**
+
 - Only tied to `learnedTokenTotal` path
 - **No direct tests**
 
 **Replacement Strategy:**
+
 - Remove along with `learnedTokenTotal`
 - If conversation hash needed: use digest-based identity from `computeNormalizedDigest()`
 
@@ -121,31 +134,37 @@ const relevant = [...messages.slice(0, 2), ...messages.slice(-2)];
 ### Zombie 3: `conversationId` in HybridTokenEstimator
 
 **Locations:**
+
 - Identity generation: [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts) - `getConversationId()`
 - Provider passes identity: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - `conversationIdentity`
 - Estimator uses for lookup: [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts) - `knownStates.get()`
 - Fallback comment: [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts) - "provideTokenCount() doesn't have access to conversationId"
 
 **What It Does:**
+
 - State: in-memory map keyed by `modelId:firstUserHash` → generates `conversationId`
 - Falls back to model-family-only keys when `conversationId` unavailable
 - Used to scope rolling correction and conversation state
 
 **Original Purpose:**
+
 - RFC 047: Avoid cross-conversation contamination for rolling correction
 
 **Why It's Zombie:**
+
 - Weak identity: only first user message, ignores edits/summarization/branching
 - Collisions: two conversations with same first user prompt share ID
 - Incompatible with digest-based message matching already in TokenCache
 - Model-family fallback reintroduces cross-conversation contamination
 
 **Entanglements:**
+
 - `knownStates` keying and tests assume this scheme
 - LRU size accounting depends on per-conversation entries
 - Tests in [hybrid-estimator.test.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.test.ts)
 
 **Replacement Strategy:**
+
 - Remove `conversationId` plumbing
 - Key `knownStates` by model family + normalized message digests
 - Update tests to validate digest-based matching
@@ -154,27 +173,27 @@ const relevant = [...messages.slice(0, 2), ...messages.slice(-2)];
 
 ## Non-Zombie Identity Systems (Keep)
 
-| System | Location | Purpose | Status |
-|--------|----------|---------|--------|
-| `computeNormalizedDigest()` | digest.ts | Per-message identity for cache/delta | ✅ CURRENT |
-| `computeConversationIdentity()` | status-bar.ts | UI agent tracking | ✅ CURRENT |
-| `computeAgentTypeHash()` | hash-utils.ts | Parent-child linking | ✅ CURRENT |
-| `computeChatHash()` | provider.ts | Logging only | ✅ DIAGNOSTIC |
+| System                          | Location      | Purpose                              | Status        |
+| ------------------------------- | ------------- | ------------------------------------ | ------------- |
+| `computeNormalizedDigest()`     | digest.ts     | Per-message identity for cache/delta | ✅ CURRENT    |
+| `computeConversationIdentity()` | status-bar.ts | UI agent tracking                    | ✅ CURRENT    |
+| `computeAgentTypeHash()`        | hash-utils.ts | Parent-child linking                 | ✅ CURRENT    |
+| `computeChatHash()`             | provider.ts   | Logging only                         | ✅ DIAGNOSTIC |
 
 ---
 
 ## Duplication/Conflict Summary
 
-| Conflict | Old System | New System | Risk |
-|----------|------------|------------|------|
-| Conversation identity | `hashConversation()` (lossy) | `computeNormalizedDigest()` | Ping-pong |
-| Per-conversation keying | `conversationId` (first user) | Digest-based matching | Collisions |
-| Error correction | 1.5x multiplier | Rolling correction | Competing paths |
+| Conflict                | Old System                    | New System                  | Risk            |
+| ----------------------- | ----------------------------- | --------------------------- | --------------- |
+| Conversation identity   | `hashConversation()` (lossy)  | `computeNormalizedDigest()` | Ping-pong       |
+| Per-conversation keying | `conversationId` (first user) | Digest-based matching       | Collisions      |
+| Error correction        | 1.5x multiplier               | Rolling correction          | Competing paths |
 
 ### Conflict Points
 
 1. **Summarization vs lossy hash**: Hash doesn't change if only middle messages change
-2. **Multiple incompatible identities**: 
+2. **Multiple incompatible identities**:
    - `hashConversation()` includes name + content shapes
    - `computeNormalizedDigest()` strips call IDs, names, URLs
    - `conversationIdentity` uses first user + first assistant only
@@ -189,18 +208,20 @@ These MUST be true for correct summarization behavior:
 **Statement**: After successful summarization, `learnedTokenTotal` MUST be cleared before the next `provideTokenCount()` call sequence.
 
 **Logical Chain**:
+
 - `learnedTokenTotal` inflates per-message token estimates by 1.5x inside `provideTokenCount()`
-- If it persists after summarization, the *next* per-message sequence can still look "too large," triggering another summarization ("ping-pong")
-- Therefore it must be cleared *before* the next `provideTokenCount()` sequence that follows summarization
+- If it persists after summarization, the _next_ per-message sequence can still look "too large," triggering another summarization ("ping-pong")
+- Therefore it must be cleared _before_ the next `provideTokenCount()` sequence that follows summarization
 
 **Status**: ⚠️ PARTIALLY ENFORCED
 
 **Evidence**:
+
 - Setting: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - on "too long" error
 - Multiplier: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - `if (currentHash === this.learnedTokenTotal.conversationHash)`
 - Clearing: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - only on successful request completion
 
-**Gap**: No explicit clearing tied to summarization detection *before* the next `provideTokenCount()` sequence. If VS Code re-queries token counts immediately after `modelInfoChangeEmitter.fire()`, the 1.5x multiplier can still apply.
+**Gap**: No explicit clearing tied to summarization detection _before_ the next `provideTokenCount()` sequence. If VS Code re-queries token counts immediately after `modelInfoChangeEmitter.fire()`, the 1.5x multiplier can still apply.
 
 ---
 
@@ -209,12 +230,14 @@ These MUST be true for correct summarization behavior:
 **Statement**: The sum of `provideTokenCount()` returns for a summarized conversation MUST be less than `maxInputTokens`.
 
 **Logical Chain**:
+
 - Summarization is intended to reduce the context below the model limit
 - If summed per-message estimates still exceed `maxInputTokens`, VS Code can immediately summarize again
 
 **Status**: ❌ NOT ENFORCED
 
 **Evidence**:
+
 - `provideTokenCount()` applies a 1.5x multiplier without any cap
 - No code guarantees post-summarization totals stay below `maxInputTokens`
 
@@ -227,12 +250,14 @@ These MUST be true for correct summarization behavior:
 **Statement**: `hasSummarizationTag()` MUST return `true` when `<conversation-summary>` is present in messages.
 
 **Logical Chain**:
+
 - `hasSummarizationTag()` gates the summarization guard that clears rolling correction
 - If it misses the tag, stale correction persists and can distort counts post-summarization
 
 **Status**: ✅ ENFORCED (with tests)
 
 **Evidence**:
+
 - Tag detection: [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts) - checks user text parts
 - Tests: [status-bar.test.ts](apps/vscode-ai-gateway/src/status-bar.test.ts)
 
@@ -245,12 +270,14 @@ These MUST be true for correct summarization behavior:
 **Statement**: Conversation hash MUST change after summarization (first user message changes to summary).
 
 **Logical Chain**:
+
 - `learnedTokenTotal` is scoped by a conversation hash
 - If the hash does not change after summarization, the 1.5x multiplier can persist into the summarized conversation
 
 **Status**: ⚠️ PARTIALLY ENFORCED
 
 **Evidence**:
+
 - Hash uses first two and last two messages: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - `hashConversation()`
 - Conversation identity derived from first user message hash: [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts)
 
@@ -263,17 +290,19 @@ These MUST be true for correct summarization behavior:
 **Statement**: Rolling correction adjustment MUST be cleared when summarization is detected.
 
 **Logical Chain**:
+
 - Rolling correction is applied to the first message of each `provideTokenCount()` sequence
 - If it survives summarization, the next sequence can be inflated and re-trigger summarization
 
 **Status**: ⚠️ PARTIALLY ENFORCED
 
 **Evidence**:
+
 - Detection: [provider.ts](apps/vscode-ai-gateway/src/provider.ts) - `hasSummarizationTag(chatMessages)`
 - Guard clears state: [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts) - writes fresh `familyState`
 - Tests: [hybrid-estimator.test.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.test.ts)
 
-**Gap**: The guard runs only when `recordActualTokens()` is called (after a successful request with usage data). The *next* `provideTokenCount()` sequence can still see stale adjustment before the post-summary request completes.
+**Gap**: The guard runs only when `recordActualTokens()` is called (after a successful request with usage data). The _next_ `provideTokenCount()` sequence can still see stale adjustment before the post-summary request completes.
 
 ## Architecture Map
 
@@ -352,39 +381,40 @@ if (result.success) {
 
 ### Key Files
 
-| File | Role |
-|------|------|
-| [provider.ts](apps/vscode-ai-gateway/src/provider.ts) | Main provider, `learnedTokenTotal` state, `provideTokenCount()` |
-| [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts) | `hasSummarizationTag()`, conversation tracking |
-| [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts) | Delta estimation, rolling correction |
-| [turn-detector.ts](apps/vscode-ai-gateway/src/tokens/turn-detector.ts) | Turn boundary detection (500ms gap) |
+| File                                                                         | Role                                                            |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [provider.ts](apps/vscode-ai-gateway/src/provider.ts)                        | Main provider, `learnedTokenTotal` state, `provideTokenCount()` |
+| [status-bar.ts](apps/vscode-ai-gateway/src/status-bar.ts)                    | `hasSummarizationTag()`, conversation tracking                  |
+| [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts) | Delta estimation, rolling correction                            |
+| [turn-detector.ts](apps/vscode-ai-gateway/src/tokens/turn-detector.ts)       | Turn boundary detection (500ms gap)                             |
 
 ## Hypothesis Registry
 
 **Workflow Note**: When a hypothesis is REFUTED or CONFIRMED, it MUST include:
+
 1. Complete chain of evidence (file:line references)
 2. Verification by a fresh recon or review agent
 3. The specific prediction that was tested and the observed result
 
-| ID | Hypothesis | Prediction | Status | Evidence |
-|----|------------|------------|--------|----------|
-| H1 | `learnedTokenTotal` not cleared fast enough after summarization | If true, we'd see 1.5x multiplier applied to post-summarization messages | UNTESTED | RFC 047 suggests this is likely |
-| H2 | Conversation hash doesn't change after summarization | If true, `learnedTokenTotal` would persist across summarization boundary | UNTESTED | Need to verify hash computation includes summary message |
-| H3 | Rolling correction applies stale adjustment post-summarization | If true, we'd see non-zero adjustment after `<conversation-summary>` appears | REOPENED | See H3 Review below - "key mismatch" claim is incorrect |
-| H4 | `maxInputTokens` mismatch (128k vs 200k) causes premature summarization | If true, we'd see summarization at ~100k when model can handle 200k | PARTIAL | RFC 044 documents this, but it causes early summarization, not ping-pong |
-| H5 | Summarization request itself triggers another summarization | If true, we'd see summarization during the summarization LLM call | UNTESTED | Copilot uses same model for summarization |
-| H6 | `modelInfoChangeEmitter.fire()` triggers immediate re-evaluation before clearing | If true, VS Code queries tokens before `learnedTokenTotal` is cleared | UNTESTED | Race condition between fire() and success handling |
+| ID  | Hypothesis                                                                       | Prediction                                                                   | Status   | Evidence                                                                 |
+| --- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| H1  | `learnedTokenTotal` not cleared fast enough after summarization                  | If true, we'd see 1.5x multiplier applied to post-summarization messages     | UNTESTED | RFC 047 suggests this is likely                                          |
+| H2  | Conversation hash doesn't change after summarization                             | If true, `learnedTokenTotal` would persist across summarization boundary     | UNTESTED | Need to verify hash computation includes summary message                 |
+| H3  | Rolling correction applies stale adjustment post-summarization                   | If true, we'd see non-zero adjustment after `<conversation-summary>` appears | REOPENED | See H3 Review below - "key mismatch" claim is incorrect                  |
+| H4  | `maxInputTokens` mismatch (128k vs 200k) causes premature summarization          | If true, we'd see summarization at ~100k when model can handle 200k          | PARTIAL  | RFC 044 documents this, but it causes early summarization, not ping-pong |
+| H5  | Summarization request itself triggers another summarization                      | If true, we'd see summarization during the summarization LLM call            | UNTESTED | Copilot uses same model for summarization                                |
+| H6  | `modelInfoChangeEmitter.fire()` triggers immediate re-evaluation before clearing | If true, VS Code queries tokens before `learnedTokenTotal` is cleared        | UNTESTED | Race condition between fire() and success handling                       |
 
 ## Open Questions
 
-| Priority | Question |
-|----------|----------|
-| HIGH | Does `hashConversation()` include the `<conversation-summary>` message? If not, hash may not change after summarization. |
-| HIGH | What is the exact timing between `modelInfoChangeEmitter.fire()` and success clearing? |
-| HIGH | Does Copilot's summarization request go through our `provideLanguageModelResponse()`? |
-| MED | Is there logging that shows the sequence: summarize → one turn → summarize again? |
-| MED | What does the conversation hash look like before/after summarization? |
-| LOW | Does the 1.5x multiplier need to be conversation-hash-scoped, or should it be cleared on ANY summarization detection? |
+| Priority | Question                                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| HIGH     | Does `hashConversation()` include the `<conversation-summary>` message? If not, hash may not change after summarization. |
+| HIGH     | What is the exact timing between `modelInfoChangeEmitter.fire()` and success clearing?                                   |
+| HIGH     | Does Copilot's summarization request go through our `provideLanguageModelResponse()`?                                    |
+| MED      | Is there logging that shows the sequence: summarize → one turn → summarize again?                                        |
+| MED      | What does the conversation hash look like before/after summarization?                                                    |
+| LOW      | Does the 1.5x multiplier need to be conversation-hash-scoped, or should it be cleared on ANY summarization detection?    |
 
 ## Session Log
 
@@ -496,6 +526,7 @@ if (result.success) {
 
 2. **`estimateConversation()` applies `getAdjustment()` to the first message in a sequence**
    - Location: [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts)
+
    ```typescript
    const adjustment = isFirstInSequence
      ? this.getAdjustment(model.family, conversationId)
@@ -509,6 +540,7 @@ if (result.success) {
 
 4. **`recordActualTokens()` writes a model-family key specifically for this path**
    - Location: [hybrid-estimator.ts](apps/vscode-ai-gateway/src/tokens/hybrid-estimator.ts)
+
    ```typescript
    // provideTokenCount() doesn't have access to conversationId, so getAdjustment()
    // reads from the model-family-only key.
@@ -523,5 +555,5 @@ if (result.success) {
 
 - The "key mismatch" claim from RFC 047 is **not supported** by current code
 - Rolling correction is ACTIVE, not inert
-- The guard clears it *after* a successful post-summary request, but stale adjustment can still apply to the immediately following `provideTokenCount()` sequence
+- The guard clears it _after_ a successful post-summary request, but stale adjustment can still apply to the immediately following `provideTokenCount()` sequence
 - **H3 remains a valid hypothesis** - needs empirical verification

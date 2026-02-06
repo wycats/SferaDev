@@ -84,12 +84,11 @@ export class HybridTokenEstimator {
   estimateConversation(
     messages: readonly vscode.LanguageModelChatMessage[],
     model: ModelInfo,
-    conversationId?: string,
   ): ConversationEstimate {
     const lookup = this.conversationTracker.lookup(
       messages,
       model.family,
-      conversationId,
+      undefined, // conversationId removed (RFC 00054)
     );
 
     if (lookup.type === "exact" && lookup.knownTokens !== undefined) {
@@ -161,14 +160,14 @@ export class HybridTokenEstimator {
     messages: readonly vscode.LanguageModelChatMessage[],
     model: ModelInfo,
     actualTokens: number,
-    conversationId?: string,
+    _conversationId?: string, // deprecated, ignored (RFC 00054)
     sequenceEstimate?: number,
     summarizationDetected?: boolean,
   ): void {
     const lookup = this.conversationTracker.lookup(
       messages,
       model.family,
-      conversationId,
+      undefined, // conversationId removed (RFC 00054)
     );
 
     if (
@@ -209,7 +208,7 @@ export class HybridTokenEstimator {
       messages,
       model.family,
       actualTokens,
-      conversationId,
+      undefined, // conversationId removed (RFC 00054)
       sequenceEstimate,
       summarizationDetected,
     );
@@ -226,13 +225,12 @@ export class HybridTokenEstimator {
   estimateMessage(
     content: string | vscode.LanguageModelChatMessage,
     model: ModelInfo,
-    conversationId?: string,
   ): number {
     // CRITICAL: Check if this is first message BEFORE any onCall()
     // wouldStartNewSequence() checks the same condition as onCall() without side effects
     const isFirstInSequence = this.sequenceTracker.wouldStartNewSequence();
     const adjustment = isFirstInSequence
-      ? this.getAdjustment(model.family, conversationId)
+      ? this.getAdjustment(model.family)
       : 0;
 
     // Try cached API actual first (ground truth)
@@ -322,9 +320,8 @@ export class HybridTokenEstimator {
    */
   getConversationState(
     modelFamily: string,
-    conversationId?: string,
   ): KnownConversationState | undefined {
-    return this.conversationTracker.getState(modelFamily, conversationId);
+    return this.conversationTracker.getState(modelFamily, undefined);
   }
 
   /**
@@ -335,10 +332,10 @@ export class HybridTokenEstimator {
    * This represents the error between what VS Code saw (sum of provideTokenCount)
    * and what the API actually reported.
    */
-  getAdjustment(modelFamily: string, conversationId?: string): number {
+  getAdjustment(modelFamily: string): number {
     const state = this.conversationTracker.getState(
       modelFamily,
-      conversationId,
+      undefined, // conversationId removed (RFC 00054)
     );
     if (!state || state.lastSequenceEstimate === undefined) {
       return 0;
@@ -352,12 +349,11 @@ export class HybridTokenEstimator {
   lookupConversation(
     messages: readonly vscode.LanguageModelChatMessage[],
     modelFamily: string,
-    conversationId?: string,
   ): ConversationLookupResult {
     return this.conversationTracker.lookup(
       messages,
       modelFamily,
-      conversationId,
+      undefined, // conversationId removed (RFC 00054)
     );
   }
 

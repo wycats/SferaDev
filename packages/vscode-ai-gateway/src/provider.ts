@@ -79,7 +79,6 @@ import {
   computeAgentTypeHash,
   computeToolSetHash,
   hashUserMessage,
-  extractIdentity,
 } from "./identity";
 import type { TokenStatusBar } from "./status-bar";
 import { hasSummarizationTag } from "./tokens/conversation-state";
@@ -164,7 +163,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     model: LanguageModelChatInformation,
     messages: readonly LanguageModelChatMessage[],
     actualInputTokens: number,
-    conversationId?: string,
     sequenceEstimate?: number,
     summarizationDetected?: boolean,
   ): void {
@@ -172,7 +170,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       messages,
       model,
       actualInputTokens,
-      conversationId,
+      undefined, // conversationId removed (RFC 00054)
       sequenceEstimate,
       summarizationDetected,
     );
@@ -180,7 +178,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     // Update status bar with estimation state
     const state = this.tokenEstimator.getConversationState(
       model.family,
-      conversationId,
     );
     if (state && this.statusBar) {
       logger.info(
@@ -353,17 +350,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
             .substring(0, 16)
         : undefined;
 
-      const { conversationId } = extractIdentity(chatMessages, {
-        modelId: model.id,
-      });
-
       // Pre-flight check: estimate total tokens and validate against model limit
       // Now includes tool schemas (can be 50k+ tokens)
       const tokenEstimate = this.estimateTotalInputTokens(
         model,
         chatMessages,
         token,
-        conversationId,
         options.tools ? { tools: options.tools } : {},
       );
       const estimatedTokens = tokenEstimate.total;
@@ -509,7 +501,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
               model,
               chatMessages,
               actualInputTokens,
-              conversationId,
               sequenceEstimate,
               summarizationDetected,
             );
@@ -613,7 +604,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     const estimate = this.tokenEstimator.estimateMessage(
       text,
       model,
-      undefined,
     );
 
     return Promise.resolve(estimate);
@@ -638,7 +628,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     model: LanguageModelChatInformation,
     messages: readonly LanguageModelChatMessage[],
     _token: CancellationToken,
-    conversationId?: string,
     options?: {
       tools?: readonly {
         name: string;
@@ -654,7 +643,6 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     const estimate = this.tokenEstimator.estimateConversation(
       messages,
       model,
-      conversationId,
     );
 
     let total = estimate.tokens;
