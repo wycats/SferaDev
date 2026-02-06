@@ -116,6 +116,44 @@ title = "End-to-end test of content-hash delta caching flow"
 status = "completed"
 completed_at = "2026-02-06T05:33:03.501955612+00:00"
 completion_log = "End-to-end flow verified. Tests cover: delta caching on prefix match, cached retrieval via estimateMessage(), invalid index handling. 457 tests pass."
+
+[[plan.goals]]
+id = "token-cache-persistence"
+
+[[plan.goals.tasks]]
+id = "persistence::add-memento-param"
+title = "Add optional vscode.Memento parameter to TokenCache constructor"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "persistence::storage-interface"
+title = "Define PersistedTokenCache interface and STORAGE_KEY constant"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "persistence::load-on-init"
+title = "Implement loadFromStorage() with 24h TTL filtering"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "persistence::debounced-save"
+title = "Implement scheduleSave() with 1s debounce"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "persistence::lru-eviction"
+title = "Add LRU tracking and eviction (2000 entry limit)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "persistence::wire-estimator"
+title = "Pass context.globalState to TokenCache in HybridTokenEstimator"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "persistence::tests"
+title = "Add persistence tests (round-trip, TTL filtering, LRU eviction)"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

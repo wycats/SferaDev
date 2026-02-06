@@ -1017,3 +1017,8 @@ status = "pending"
 id = "structured-logging"
 label = "Structured Logging for Rolling Correction & Summarization"
 status = "pending"
+
+[[epochs.phases.goals]]
+id = "token-cache-persistence"
+label = "TokenCache Persistence (RFC 052 Phase 4)"
+status = "pending"
