@@ -1112,7 +1112,7 @@ ulid = "01KGT5RHVRJY909TJW4E0PED23"
 [[epochs.phases]]
 id = "01kgt9xctfx6b9r0v4ghnx0vmm"
 title = "Remove conversationId System"
-status = "active"
+status = "completed"
 rfcs = ["00054"]
 ulid = "01KGT9XCTFX6B9R0V4GHNX0VMM"
 
@@ -1149,7 +1149,7 @@ ulid = "01KGTCH0FR7Q987PJHZH5DRR9C"
 [[epochs.phases]]
 id = "01kgt9xj4dyj31zs0x8fqzf2tv"
 title = "Error Recovery Redesign"
-status = "pending"
+status = "active"
 goals = []
 rfcs = ["00054"]
 ulid = "01KGT9XJ4DYJ31ZS0X8FQZF2TV"

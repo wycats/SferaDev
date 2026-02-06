@@ -144,11 +144,9 @@ export class ConversationStateTracker {
     messages: readonly vscode.LanguageModelChatMessage[],
     modelFamily: string,
     actualTokens: number,
-    _conversationId?: string, // deprecated, ignored (RFC 00054)
     sequenceEstimate?: number,
     summarizationDetected?: boolean,
   ): void {
-    void _conversationId;
     this.cleanupStale();
     const messageHashes = messages.map((m) => computeNormalizedDigest(m));
     const key = modelFamily; // Family-only keying (RFC 00054)
@@ -205,9 +203,7 @@ export class ConversationStateTracker {
   lookup(
     messages: readonly vscode.LanguageModelChatMessage[],
     modelFamily: string,
-    _conversationId?: string, // deprecated, ignored (RFC 00054)
   ): ConversationLookupResult {
-    void _conversationId;
     this.cleanupStale();
     const key = modelFamily; // Family-only keying (RFC 00054)
     const state = this.knownStates.get(key);
@@ -268,9 +264,7 @@ export class ConversationStateTracker {
    */
   getState(
     modelFamily: string,
-    _conversationId?: string, // deprecated, ignored (RFC 00054)
   ): KnownConversationState | undefined {
-    void _conversationId;
     return this.knownStates.get(modelFamily);
   }
 

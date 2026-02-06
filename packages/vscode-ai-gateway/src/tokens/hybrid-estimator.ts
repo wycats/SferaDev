@@ -88,7 +88,6 @@ export class HybridTokenEstimator {
     const lookup = this.conversationTracker.lookup(
       messages,
       model.family,
-      undefined, // conversationId removed (RFC 00054)
     );
 
     if (lookup.type === "exact" && lookup.knownTokens !== undefined) {
@@ -160,14 +159,12 @@ export class HybridTokenEstimator {
     messages: readonly vscode.LanguageModelChatMessage[],
     model: ModelInfo,
     actualTokens: number,
-    _conversationId?: string, // deprecated, ignored (RFC 00054)
     sequenceEstimate?: number,
     summarizationDetected?: boolean,
   ): void {
     const lookup = this.conversationTracker.lookup(
       messages,
       model.family,
-      undefined, // conversationId removed (RFC 00054)
     );
 
     if (
@@ -208,7 +205,6 @@ export class HybridTokenEstimator {
       messages,
       model.family,
       actualTokens,
-      undefined, // conversationId removed (RFC 00054)
       sequenceEstimate,
       summarizationDetected,
     );
@@ -229,9 +225,7 @@ export class HybridTokenEstimator {
     // CRITICAL: Check if this is first message BEFORE any onCall()
     // wouldStartNewSequence() checks the same condition as onCall() without side effects
     const isFirstInSequence = this.sequenceTracker.wouldStartNewSequence();
-    const adjustment = isFirstInSequence
-      ? this.getAdjustment(model.family)
-      : 0;
+    const adjustment = isFirstInSequence ? this.getAdjustment(model.family) : 0;
 
     // Try cached API actual first (ground truth)
     if (typeof content !== "string") {
@@ -321,7 +315,7 @@ export class HybridTokenEstimator {
   getConversationState(
     modelFamily: string,
   ): KnownConversationState | undefined {
-    return this.conversationTracker.getState(modelFamily, undefined);
+    return this.conversationTracker.getState(modelFamily);
   }
 
   /**
@@ -335,7 +329,6 @@ export class HybridTokenEstimator {
   getAdjustment(modelFamily: string): number {
     const state = this.conversationTracker.getState(
       modelFamily,
-      undefined, // conversationId removed (RFC 00054)
     );
     if (!state || state.lastSequenceEstimate === undefined) {
       return 0;
@@ -353,7 +346,6 @@ export class HybridTokenEstimator {
     return this.conversationTracker.lookup(
       messages,
       modelFamily,
-      undefined, // conversationId removed (RFC 00054)
     );
   }
 

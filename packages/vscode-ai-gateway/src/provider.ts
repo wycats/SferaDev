@@ -170,15 +170,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
       messages,
       model,
       actualInputTokens,
-      undefined, // conversationId removed (RFC 00054)
       sequenceEstimate,
       summarizationDetected,
     );
 
     // Update status bar with estimation state
-    const state = this.tokenEstimator.getConversationState(
-      model.family,
-    );
+    const state = this.tokenEstimator.getConversationState(model.family);
     if (state && this.statusBar) {
       logger.info(
         `[TokenState] ${model.family}: ${state.actualTokens.toString()} tokens ` +
@@ -601,10 +598,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     void _token;
 
     // Use tiktoken for per-message estimation
-    const estimate = this.tokenEstimator.estimateMessage(
-      text,
-      model,
-    );
+    const estimate = this.tokenEstimator.estimateMessage(text, model);
 
     return Promise.resolve(estimate);
   }
@@ -640,10 +634,7 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
     void _token;
 
     // Use conversation-level delta estimation
-    const estimate = this.tokenEstimator.estimateConversation(
-      messages,
-      model,
-    );
+    const estimate = this.tokenEstimator.estimateConversation(messages, model);
 
     let total = estimate.tokens;
     const sourceLabel =

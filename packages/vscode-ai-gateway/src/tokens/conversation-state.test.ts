@@ -261,11 +261,7 @@ describe("ConversationStateTracker", () => {
       expect(tracker.getState("model-0")).toBeDefined();
 
       // Add one more family - should evict oldest
-      tracker.recordActual(
-        [createMessage(1, "msg-100")],
-        "model-100",
-        100,
-      );
+      tracker.recordActual([createMessage(1, "msg-100")], "model-100", 100);
 
       // model-0 should be evicted (oldest)
       expect(tracker.getState("model-0")).toBeUndefined();
@@ -282,18 +278,11 @@ describe("ConversationStateTracker", () => {
       }
 
       // Touch model-0 to make it recently used
-      const lookup = tracker.lookup(
-        [createMessage(1, "msg-0")],
-        "model-0",
-      );
+      const lookup = tracker.lookup([createMessage(1, "msg-0")], "model-0");
       expect(lookup.type).toBe("exact");
 
       // Add new entry
-      tracker.recordActual(
-        [createMessage(1, "msg-100")],
-        "model-100",
-        100,
-      );
+      tracker.recordActual([createMessage(1, "msg-100")], "model-100", 100);
 
       // model-0 was recently touched, so model-1 should be evicted instead
       expect(tracker.getState("model-0")).toBeDefined();
@@ -312,11 +301,7 @@ describe("ConversationStateTracker", () => {
       expect(tracker.size()).toBe(100);
 
       // Introduce a new model family — should evict to stay at 100
-      tracker.recordActual(
-        [createMessage(1, "gpt-msg")],
-        "gpt-4",
-        999,
-      );
+      tracker.recordActual([createMessage(1, "gpt-msg")], "gpt-4", 999);
 
       expect(tracker.size()).toBeLessThanOrEqual(100);
       expect(tracker.getState("gpt-4")).toBeDefined();
@@ -421,7 +406,7 @@ describe("ConversationStateTracker", () => {
       const memento = createMockMemento();
       const tracker1 = new ConversationStateTracker(memento);
 
-      tracker1.recordActual([createMessage(1, "old")], "claude", 100, "old");
+      tracker1.recordActual([createMessage(1, "old")], "claude", 100);
       await vi.advanceTimersByTimeAsync(1100);
 
       // Advance time past TTL (1 hour)
@@ -534,8 +519,8 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
     const messages = [createMessage(1, "hello")];
 
     // Record with sequence estimate — creates family-key with lastSequenceEstimate
-    tracker.recordActual(messages, "claude", 100000, undefined, 50000);
-    const stateBefore = tracker.getState("claude", undefined);
+    tracker.recordActual(messages, "claude", 100000, 50000);
+    const stateBefore = tracker.getState("claude");
     expect(stateBefore?.lastSequenceEstimate).toBe(50000);
 
     // Record with summarization detected — should clear lastSequenceEstimate on family key
@@ -549,13 +534,12 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
       summaryMessages,
       "claude",
       30000,
-      undefined,
       25000,
       true,
     );
 
     // Family key should NOT have lastSequenceEstimate
-    const stateAfter = tracker.getState("claude", undefined);
+    const stateAfter = tracker.getState("claude");
     expect(stateAfter?.lastSequenceEstimate).toBeUndefined();
     expect(stateAfter?.actualTokens).toBe(30000);
   });
@@ -563,8 +547,8 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
   it("preserves lastSequenceEstimate when no summarization detected", () => {
     const messages = [createMessage(1, "hello")];
 
-    tracker.recordActual(messages, "claude", 100000, "conv-1", 50000);
-    const state = tracker.getState("claude", undefined);
+    tracker.recordActual(messages, "claude", 100000, 50000);
+    const state = tracker.getState("claude");
     expect(state?.lastSequenceEstimate).toBe(50000);
   });
 
@@ -572,20 +556,20 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
     const messages = [createMessage(1, "hello")];
 
     // Turn 1: normal — establishes adjustment
-    tracker.recordActual(messages, "claude", 100000, "conv-1", 50000);
-    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(
+    tracker.recordActual(messages, "claude", 100000, 50000);
+    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(
       50000,
     );
 
     // Turn 2: summarization detected — clears adjustment
-    tracker.recordActual(messages, "claude", 30000, "conv-1", 25000, true);
+    tracker.recordActual(messages, "claude", 30000, 25000, true);
     expect(
-      tracker.getState("claude", undefined)?.lastSequenceEstimate,
+      tracker.getState("claude")?.lastSequenceEstimate,
     ).toBeUndefined();
 
     // Turn 3: normal again — re-establishes adjustment
-    tracker.recordActual(messages, "claude", 35000, "conv-1", 30000, false);
-    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(
+    tracker.recordActual(messages, "claude", 35000, 30000, false);
+    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(
       30000,
     );
   });

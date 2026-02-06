@@ -381,7 +381,7 @@ describe("HybridTokenEstimator", () => {
     it("returns positive difference when actual exceeds estimate", () => {
       const messages = [createMessage(1, "hello")];
       // sequenceEstimate=400, actualTokens=500 → adjustment=100
-      estimator.recordActual(messages, testModel, 500, undefined, 400);
+      estimator.recordActual(messages, testModel, 500, 400);
 
       expect(estimator.getAdjustment("claude")).toBe(100);
     });
@@ -389,19 +389,9 @@ describe("HybridTokenEstimator", () => {
     it("returns 0 when estimate exceeds actual (clamped)", () => {
       const messages = [createMessage(1, "hello")];
       // sequenceEstimate=600, actualTokens=500 → clamped to 0
-      estimator.recordActual(messages, testModel, 500, undefined, 600);
+      estimator.recordActual(messages, testModel, 500, 600);
 
       expect(estimator.getAdjustment("claude")).toBe(0);
-    });
-
-    it("returns adjustment when recordActual used conversationId (key alignment)", () => {
-      const messages = [createMessage(1, "hello")];
-      // Record with conversationId (simulates provideLanguageModelChatResponse path)
-      estimator.recordActual(messages, testModel, 500, "conv-123", 400);
-
-      // getAdjustment with undefined conversationId (simulates provideTokenCount path)
-      // Should find the adjustment because recordActual wrote to model-family-only key
-      expect(estimator.getAdjustment("claude")).toBe(100);
     });
 
     // NOTE: "latest conversationId wins" test deleted - zombie test (RFC 00054)
@@ -410,7 +400,7 @@ describe("HybridTokenEstimator", () => {
     it("clears family-key adjustment when summarization detected", () => {
       const messages = [createMessage(1, "hello")];
       // Establish adjustment: actual=500, estimate=400 → adjustment=100
-      estimator.recordActual(messages, testModel, 500, undefined, 400);
+      estimator.recordActual(messages, testModel, 500, 400);
       expect(estimator.getAdjustment("claude")).toBe(100);
 
       // Summarization detected — should clear family-key adjustment
@@ -424,7 +414,6 @@ describe("HybridTokenEstimator", () => {
         summaryMessages,
         testModel,
         30000,
-        undefined,
         25000,
         true,
       );
@@ -437,15 +426,15 @@ describe("HybridTokenEstimator", () => {
       const messages = [createMessage(1, "hello")];
 
       // Turn 1: establish adjustment
-      estimator.recordActual(messages, testModel, 500, undefined, 400);
+      estimator.recordActual(messages, testModel, 500, 400);
       expect(estimator.getAdjustment("claude")).toBe(100);
 
       // Turn 2: summarization — clears
-      estimator.recordActual(messages, testModel, 200, undefined, 150, true);
+      estimator.recordActual(messages, testModel, 200, 150, true);
       expect(estimator.getAdjustment("claude")).toBe(0);
 
       // Turn 3: normal — re-establishes
-      estimator.recordActual(messages, testModel, 250, undefined, 200);
+      estimator.recordActual(messages, testModel, 250, 200);
       expect(estimator.getAdjustment("claude")).toBe(50);
     });
   });
@@ -454,7 +443,7 @@ describe("HybridTokenEstimator", () => {
     it("applies correction to first message of a new sequence", () => {
       const messages = [createMessage(1, "hello")];
       // Record actual=500, sequenceEstimate=400 → adjustment=100
-      estimator.recordActual(messages, testModel, 500, undefined, 400);
+      estimator.recordActual(messages, testModel, 500, 400);
 
       // First call is first in sequence → gets correction
       // "test msg" = 8 chars = 8 tokens (mock) + 100 adjustment = 108
@@ -464,7 +453,7 @@ describe("HybridTokenEstimator", () => {
 
     it("does NOT apply correction to subsequent messages in same sequence", () => {
       const messages = [createMessage(1, "hello")];
-      estimator.recordActual(messages, testModel, 500, undefined, 400);
+      estimator.recordActual(messages, testModel, 500, 400);
 
       // First call gets correction
       estimator.estimateMessage("first", testModel);
@@ -478,7 +467,7 @@ describe("HybridTokenEstimator", () => {
     it("does NOT apply correction when adjustment is zero", () => {
       const messages = [createMessage(1, "hello")];
       // exact match: sequenceEstimate=500, actualTokens=500 → adjustment=0
-      estimator.recordActual(messages, testModel, 500, undefined, 500);
+      estimator.recordActual(messages, testModel, 500, 500);
 
       // "test msg" = 8 chars = 8 tokens (mock), no adjustment since it's 0
       const estimate = estimator.estimateMessage("test msg", testModel);
@@ -545,7 +534,6 @@ describe("HybridTokenEstimator", () => {
         [msg1, msg2, msg3],
         testModel,
         turn1Actual,
-        undefined,
         seqEstimate,
       );
 
@@ -595,7 +583,6 @@ describe("HybridTokenEstimator", () => {
         [msg1, msg2],
         testModel,
         turn1Actual,
-        undefined,
         seq1,
       );
 
@@ -619,7 +606,6 @@ describe("HybridTokenEstimator", () => {
         [msg1, msg2, msg3],
         testModel,
         turn2Actual,
-        undefined,
         seq2,
       );
 
@@ -666,7 +652,7 @@ describe("HybridTokenEstimator", () => {
       expect(seq1).toBe(tiktokenAll); // 14
 
       const actual = 100;
-      estimator.recordActual(messages, testModel, actual, undefined, seq1);
+      estimator.recordActual(messages, testModel, actual, seq1);
       const adjustment = actual - tiktokenAll; // 100 - 14 = 86
 
       // Turn 2
@@ -705,7 +691,7 @@ describe("HybridTokenEstimator", () => {
       const seq1 = estimator.getCurrentSequence()?.totalEstimate; // 5
 
       // Actual matches estimate exactly
-      estimator.recordActual([msg1], testModel, 5, undefined, seq1);
+      estimator.recordActual([msg1], testModel, 5, seq1);
 
       vi.advanceTimersByTime(501);
 
@@ -735,7 +721,7 @@ describe("HybridTokenEstimator", () => {
       estimator.estimateMessage(msg2, testModel);
       const seq1 = estimator.getCurrentSequence()?.totalEstimate; // 10
 
-      estimator.recordActual([msg1, msg2], testModel, 100, undefined, seq1);
+      estimator.recordActual([msg1, msg2], testModel, 100, seq1);
 
       // Cache msg1's actual from API
       estimator.cacheActual(msg1, "claude", 42);
@@ -760,7 +746,7 @@ describe("HybridTokenEstimator", () => {
 
       estimator.estimateMessage(msg, testModel);
       const seq = estimator.getCurrentSequence()?.totalEstimate;
-      estimator.recordActual([msg], testModel, 100, undefined, seq);
+      estimator.recordActual([msg], testModel, 100, seq);
 
       expect(estimator.getAdjustment("claude")).toBe(95); // 100 - 5
 
@@ -789,7 +775,7 @@ describe("HybridTokenEstimator", () => {
 
       // Actual is ~1.52x higher
       const actual = 106;
-      estimator.recordActual(messages, testModel, actual, undefined, seq1);
+      estimator.recordActual(messages, testModel, actual, seq1);
       expect(estimator.getAdjustment("claude")).toBe(36); // 106 - 70
 
       vi.advanceTimersByTime(501);
@@ -824,7 +810,7 @@ describe("HybridTokenEstimator", () => {
 
     it("logs adjustment when correction is applied", () => {
       const msg = createMessage(1, "hello"); // 5 tokens
-      estimator.recordActual([msg], testModel, 100, undefined, 5);
+      estimator.recordActual([msg], testModel, 100, 5);
 
       loggerHoisted.debug.mockClear(); // clear any prior logs
 
@@ -843,7 +829,7 @@ describe("HybridTokenEstimator", () => {
     it("does NOT log when adjustment is zero", () => {
       const msg = createMessage(1, "hello"); // 5 tokens
       // exact match → adjustment = 0
-      estimator.recordActual([msg], testModel, 5, undefined, 5);
+      estimator.recordActual([msg], testModel, 5, 5);
 
       loggerHoisted.debug.mockClear();
 
