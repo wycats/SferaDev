@@ -11,20 +11,55 @@ rfcs = ["00054"]
 [[plan.goals]]
 id = "remove-dead-code"
 
+[[plan.goals.tasks]]
+id = "verify-dead-code"
+title = "Verify actualTokens field is only logged, never used in calculations"
+status = "pending"
+
 [[plan.goals]]
 id = "remove-learned-token-total"
+
+[[plan.goals.tasks]]
+id = "remove-field"
+title = "Remove learnedTokenTotal field and inline type (L125-L132)"
+status = "pending"
 
 [[plan.goals]]
 id = "remove-hash-conversation"
 
+[[plan.goals.tasks]]
+id = "remove-function"
+title = "Remove hashConversation() function (L645-L660)"
+status = "pending"
+
 [[plan.goals]]
 id = "remove-error-path"
+
+[[plan.goals.tasks]]
+id = "remove-token-extraction"
+title = "Remove error handler that sets learnedTokenTotal (L574-L590)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "remove-success-clear"
+title = "Remove success path that clears learnedTokenTotal (L555-L561)"
+status = "pending"
 
 [[plan.goals]]
 id = "remove-multiplier-logic"
 
+[[plan.goals.tasks]]
+id = "remove-1.5x-branch"
+title = "Remove 1.5x multiplier branch in provideTokenCount() (L688-L707)"
+status = "pending"
+
 [[plan.goals]]
 id = "remove-emitter-fire"
+
+[[plan.goals.tasks]]
+id = "remove-fire-call"
+title = "Remove modelInfoChangeEmitter.fire() from error path (L590)"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
