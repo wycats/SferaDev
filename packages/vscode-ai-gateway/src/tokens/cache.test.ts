@@ -146,12 +146,8 @@ describe("TokenCache", () => {
     const cache = new TokenCache();
     const contentA = [new vscode.LanguageModelTextPart("Result")];
     const contentB = [new vscode.LanguageModelTextPart("Result changed")];
-    const messageA = createMessage([
-      { callId: "call-1", content: contentA },
-    ]);
-    const messageB = createMessage([
-      { callId: "call-1", content: contentB },
-    ]);
+    const messageA = createMessage([{ callId: "call-1", content: contentA }]);
+    const messageB = createMessage([{ callId: "call-1", content: contentB }]);
 
     cache.cacheActual(messageA, "openai", 42);
     expect(cache.getCached(messageB, "openai")).toBeUndefined();

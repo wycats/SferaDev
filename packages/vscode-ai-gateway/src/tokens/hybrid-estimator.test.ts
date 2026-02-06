@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionContext, LanguageModelChatMessage } from "vscode";
+import { TokenCache } from "./cache";
 import { HybridTokenEstimator, type ModelInfo } from "./hybrid-estimator";
 
 // Mock vscode module
@@ -227,6 +228,49 @@ describe("HybridTokenEstimator", () => {
       );
     });
 
+    it("caches per-message tokens for new messages on prefix match", () => {
+      const cacheSpy = vi.spyOn(TokenCache.prototype, "cacheActual");
+      const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
+      const messages2 = [
+        ...messages1,
+        createMessage(1, "new message"),
+        createMessage(2, "another one"),
+      ];
+
+      estimator.recordActual(messages1, testModel, 100);
+      cacheSpy.mockClear();
+
+      estimator.recordActual(messages2, testModel, 160);
+
+      expect(cacheSpy).toHaveBeenCalledTimes(2);
+      expect(cacheSpy).toHaveBeenNthCalledWith(
+        1,
+        messages2[2],
+        "claude",
+        30,
+      );
+      expect(cacheSpy).toHaveBeenNthCalledWith(
+        2,
+        messages2[3],
+        "claude",
+        30,
+      );
+
+      cacheSpy.mockRestore();
+    });
+
+    it("uses cached actual for new messages after delta caching", () => {
+      const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
+      const messages2 = [...messages1, createMessage(1, "new message")];
+
+      estimator.recordActual(messages1, testModel, 100);
+      estimator.recordActual(messages2, testModel, 160);
+
+      const result = estimator.estimateMessage(messages2[2]!, testModel);
+
+      expect(result).toBe(60);
+    });
+
     it("logs warning on negative delta", () => {
       const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
       const messages2 = [...messages1, createMessage(1, "new message")];
@@ -239,6 +283,26 @@ describe("HybridTokenEstimator", () => {
       expect(loggerHoisted.warn).toHaveBeenCalledWith(
         "[Estimator] Negative delta detected: -10 tokens (actual=90, known=100)",
       );
+    });
+
+    it("does not throw when lookup includes invalid message index", () => {
+      const messages = [createMessage(1, "hello")];
+      const tracker = (
+        estimator as unknown as { conversationTracker: { lookup: () => unknown } }
+      ).conversationTracker;
+      const lookupSpy = vi.spyOn(tracker, "lookup").mockReturnValue({
+        type: "prefix",
+        knownTokens: 100,
+        newMessageIndices: [1],
+        newMessageCount: 1,
+      });
+
+      expect(() => estimator.recordActual(messages, testModel, 150)).not.toThrow();
+      expect(loggerHoisted.warn).toHaveBeenCalledWith(
+        "[Estimator] Invalid message index 1 during delta caching",
+      );
+
+      lookupSpy.mockRestore();
     });
 
     it("skips delta computation on first turn", () => {
@@ -586,12 +650,13 @@ describe("HybridTokenEstimator", () => {
       const t3est1 = estimator.estimateMessage(msg1, testModel); // 3 + 18 = 21
       expect(t3est1).toBe(21);
       const t3est2 = estimator.estimateMessage(msg2, testModel); // 3
-      const t3est3 = estimator.estimateMessage(msg3, testModel); // 2
+      const t3est3 = estimator.estimateMessage(msg3, testModel); // 20 (cached)
       const t3est4 = estimator.estimateMessage(msg4, testModel); // 1
       const turn3Total = t3est1 + t3est2 + t3est3 + t3est4;
 
-      // sum = tiktoken(all 4 msgs) + adjustment = 9 + 18 = 27
-      expect(turn3Total).toBe(9 + 18);
+      // sum = tiktoken(msg1,msg2,msg4) + cached(msg3) + adjustment
+      // = (3 + 3 + 1) + 20 + 18 = 45
+      expect(turn3Total).toBe(45);
 
       // The adjustment is the marginal error, not cumulative.
       // This is correct: VS Code saw 52 in turn 2 but actual was 70,

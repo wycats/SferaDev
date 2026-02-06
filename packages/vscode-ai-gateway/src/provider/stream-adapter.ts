@@ -369,7 +369,9 @@ export class StreamAdapter {
       };
       fs.appendFileSync(logFile, JSON.stringify(entry) + "\n");
     } catch (err) {
-      logger.warn(`[OpenResponses] Failed to write response chain log: ${err instanceof Error ? err.message : String(err)}`);
+      logger.warn(
+        `[OpenResponses] Failed to write response chain log: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
 
     // Log the raw response for debugging stop_reason issues

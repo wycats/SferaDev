@@ -75,12 +75,16 @@ id = "response-id-cache"
 [[plan.goals.tasks]]
 id = "token-cache-integration::cache-per-message"
 title = "Call tokenCache.cacheActual() for each new message with delta/N tokens"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:15:48.070800200+00:00"
+completion_log = "Added tokenCache.cacheActual() loop for each new message with delta/N tokens. Defensive index check included."
 
 [[plan.goals.tasks]]
 id = "token-cache-integration::verify-hash-consistency"
 title = "Verify hash consistency between lookup and cache (already unified)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T05:15:48.451817370+00:00"
+completion_log = "Hash consistency verified - both ConversationStateTracker and TokenCache use computeNormalizedDigest() from utils/digest.ts"
 
 [[plan.goals]]
 id = "delta-computation"

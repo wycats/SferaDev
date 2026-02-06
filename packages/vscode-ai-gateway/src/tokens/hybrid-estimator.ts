@@ -184,7 +184,16 @@ export class HybridTokenEstimator {
         logger.debug(
           `[Estimator] Delta caching opportunity: ${delta.toString()} tokens / ${newMessageCount.toString()} messages = ${perMessageTokens.toString()} per message`,
         );
-        // Phase 2: Add tokenCache.cacheActual() calls here
+        for (const index of lookup.newMessageIndices) {
+          const message = messages[index];
+          if (message) {
+            this.tokenCache.cacheActual(message, model.family, perMessageTokens);
+          } else {
+            logger.warn(
+              `[Estimator] Invalid message index ${index.toString()} during delta caching`,
+            );
+          }
+        }
       } else if (delta < 0) {
         logger.warn(
           `[Estimator] Negative delta detected: ${delta.toString()} tokens (actual=${actualTokens.toString()}, known=${lookup.knownTokens.toString()})`,
