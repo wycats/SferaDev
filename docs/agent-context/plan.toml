@@ -1063,7 +1063,7 @@ completion_log = "Fixed S4 (tool hash collision), S6 (callId dedupe), M1 (serial
 [[epochs]]
 id = "01kgt5ns37sqw4mrjcxpk5nds3"
 title = "Zombie Identity GC (RFC 00054)"
-status = "active"
+status = "completed"
 ulid = "01KGT5NS37SQW4MRJCXPK5NDS3"
 
 [[epochs.phases]]
@@ -1149,7 +1149,7 @@ ulid = "01KGTCH0FR7Q987PJHZH5DRR9C"
 [[epochs.phases]]
 id = "01kgt9xj4dyj31zs0x8fqzf2tv"
 title = "Error Recovery Redesign"
-status = "active"
+status = "completed"
 goals = []
 rfcs = ["00054"]
 ulid = "01KGT9XJ4DYJ31ZS0X8FQZF2TV"
