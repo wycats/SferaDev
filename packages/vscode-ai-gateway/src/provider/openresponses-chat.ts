@@ -68,6 +68,8 @@ export interface OpenResponsesChatResult {
   success: boolean;
   /** Error message if the response failed */
   error?: string;
+  /** Whether the response was cancelled */
+  cancelled?: boolean;
   /** Response ID from the API */
   responseId?: string;
   /** Finish reason from the API */
@@ -191,6 +193,17 @@ export async function executeOpenResponsesChat(
     if (agentCompleted) return;
     agentCompleted = true;
     statusBar?.errorAgent(chatId);
+  };
+
+  const markAgentCancelled = () => {
+    if (agentCompleted) return;
+    agentCompleted = true;
+    statusBar?.completeAgent(chatId, {
+      inputTokens: Math.max(estimatedInputTokens, 0),
+      outputTokens: 0,
+      maxInputTokens: model.maxInputTokens,
+      modelId: model.id,
+    });
   };
 
   try {
@@ -389,9 +402,12 @@ export async function executeOpenResponsesChat(
         }
 
         result = {
-          success: !adapted.error,
+          success: !adapted.error && !adapted.cancelled,
           ...(adapted.usage !== undefined && { usage: adapted.usage }),
           ...(adapted.error !== undefined && { error: adapted.error }),
+          ...(adapted.cancelled !== undefined && {
+            cancelled: adapted.cancelled,
+          }),
           ...(adapted.responseId !== undefined && {
             responseId: adapted.responseId,
           }),
@@ -402,6 +418,8 @@ export async function executeOpenResponsesChat(
 
         if (adapted.error) {
           markAgentError();
+        } else if (adapted.cancelled) {
+          markAgentCancelled();
         } else {
           markAgentComplete(adapted.usage, accumulatedText);
         }
@@ -422,7 +440,7 @@ export async function executeOpenResponsesChat(
     }
 
     // Safety check: emit something if no response was sent
-    if (!responseSent) {
+    if (!responseSent && !result.cancelled) {
       logger.error(
         `[OpenResponses] Stream completed with no content for chat ${chatId}`,
       );
@@ -443,8 +461,8 @@ export async function executeOpenResponsesChat(
       (error.name === "AbortError" || error.message.includes("abort"))
     ) {
       logger.debug(`[OpenResponses] Request was cancelled`);
-      markAgentError();
-      return { success: false, error: "Cancelled" };
+      markAgentCancelled();
+      return { success: false, cancelled: true };
     }
 
     // Handle API errors

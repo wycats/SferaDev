@@ -72,7 +72,7 @@ export class HybridTokenEstimator {
     );
     this.sequenceTracker = new CallSequenceTracker();
     this.tokenCounter = new TokenCounter();
-    this.tokenCache = new TokenCache();
+    this.tokenCache = new TokenCache(context.globalState);
   }
 
   /**
@@ -187,7 +187,11 @@ export class HybridTokenEstimator {
         for (const index of lookup.newMessageIndices) {
           const message = messages[index];
           if (message) {
-            this.tokenCache.cacheActual(message, model.family, perMessageTokens);
+            this.tokenCache.cacheActual(
+              message,
+              model.family,
+              perMessageTokens,
+            );
           } else {
             logger.warn(
               `[Estimator] Invalid message index ${index.toString()} during delta caching`,
@@ -227,18 +231,27 @@ export class HybridTokenEstimator {
     // CRITICAL: Check if this is first message BEFORE any onCall()
     // wouldStartNewSequence() checks the same condition as onCall() without side effects
     const isFirstInSequence = this.sequenceTracker.wouldStartNewSequence();
+    const adjustment = isFirstInSequence
+      ? this.getAdjustment(model.family, conversationId)
+      : 0;
 
     // Try cached API actual first (ground truth)
     if (typeof content !== "string") {
       const cached = this.tokenCache.getCached(content, model.family);
       if (cached !== undefined) {
+        const finalEstimate = cached + adjustment;
+        if (adjustment > 0) {
+          logger.debug(
+            `[Estimator] Rolling correction: ${cached.toString()} + ${adjustment.toString()} = ${finalEstimate.toString()}`,
+          );
+        }
         this.sequenceTracker.onCall({
-          tokens: cached,
+          tokens: finalEstimate,
           confidence: "high",
           source: "api-actual",
           margin: 0.02,
         });
-        return cached;
+        return finalEstimate;
       }
     }
 
@@ -250,14 +263,11 @@ export class HybridTokenEstimator {
 
     // Apply rolling correction to first message of each turn (RFC 047)
     let finalEstimate = estimate;
-    if (isFirstInSequence) {
-      const adjustment = this.getAdjustment(model.family, conversationId);
-      if (adjustment > 0) {
-        finalEstimate = estimate + adjustment;
-        logger.debug(
-          `[Estimator] Rolling correction: ${estimate.toString()} + ${adjustment.toString()} = ${finalEstimate.toString()}`,
-        );
-      }
+    if (adjustment > 0) {
+      finalEstimate = estimate + adjustment;
+      logger.debug(
+        `[Estimator] Rolling correction: ${estimate.toString()} + ${adjustment.toString()} = ${finalEstimate.toString()}`,
+      );
     }
 
     this.sequenceTracker.onCall({
@@ -278,12 +288,33 @@ export class HybridTokenEstimator {
     model: ModelInfo,
   ): number {
     let total = 0;
+    let cachedCount = 0;
     for (const message of messages) {
-      total += this.estimateMessage(message, model);
+      const cached = this.tokenCache.getCached(message, model.family);
+      if (cached !== undefined) {
+        total += cached;
+        cachedCount += 1;
+        continue;
+      }
+      total += this.estimateMessageTokensOnly(message, model);
     }
     // Add message structure overhead (~4 tokens per message)
-    total += messages.length * 4;
+    total += (messages.length - cachedCount) * 4;
     return total;
+  }
+
+  /**
+   * Side-effect free estimation for conversation-level totals.
+   */
+  private estimateMessageTokensOnly(
+    message: vscode.LanguageModelChatMessage,
+    model: ModelInfo,
+  ): number {
+    const cached = this.tokenCache.getCached(message, model.family);
+    if (cached !== undefined) {
+      return cached;
+    }
+    return this.tokenCounter.estimateMessageTokens(message, model.family);
   }
 
   /**

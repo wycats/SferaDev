@@ -7,8 +7,9 @@ import { createHash } from "node:crypto";
  */
 export function computeToolSetHash(tools: readonly { name: string }[]): string {
   const sortedNames = tools.map((t) => t.name).sort();
+  const encodedNames = sortedNames.map((name) => `${name.length}:${name}`);
   return createHash("sha256")
-    .update(sortedNames.join("|"))
+    .update(encodedNames.join("|"))
     .digest("hex")
     .substring(0, 16);
 }

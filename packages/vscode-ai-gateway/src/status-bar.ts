@@ -335,7 +335,33 @@ export class TokenStatusBar implements vscode.Disposable {
     this.agents.set(agentId, agent);
     this.agentIdAliases.set(agentId, agentId);
     if (partialKey) {
-      this.agentsByPartialKey.set(partialKey, agent);
+      const existingForKey = this.agentsByPartialKey.get(partialKey);
+      if (existingForKey && existingForKey.id !== agent.id) {
+        if (existingForKey.status !== "streaming") {
+          logger.warn(
+            `[StatusBar] partialKey collision, overwriting stale agent`,
+            JSON.stringify({
+              partialKey: partialKey.slice(0, 20),
+              existingAgentId: existingForKey.id.slice(-8),
+              newAgentId: agent.id.slice(-8),
+              existingStatus: existingForKey.status,
+            }),
+          );
+          this.agentsByPartialKey.set(partialKey, agent);
+        } else {
+          logger.warn(
+            `[StatusBar] partialKey collision with active agent, not overwriting`,
+            JSON.stringify({
+              partialKey: partialKey.slice(0, 20),
+              existingAgentId: existingForKey.id.slice(-8),
+              newAgentId: agent.id.slice(-8),
+              existingStatus: existingForKey.status,
+            }),
+          );
+        }
+      } else {
+        this.agentsByPartialKey.set(partialKey, agent);
+      }
     }
     this.activeAgentId = agentId;
 
@@ -441,14 +467,54 @@ export class TokenStatusBar implements vscode.Disposable {
     const tokensSuspicious =
       estimatedTokens !== undefined &&
       existingAgent?.maxObservedInputTokens !== undefined &&
-      existingAgent.maxObservedInputTokens > 0 &&
-      estimatedTokens < existingAgent.maxObservedInputTokens * 0.5;
+      (existingAgent.maxObservedInputTokens === 0 ||
+        estimatedTokens < existingAgent.maxObservedInputTokens * 0.5);
+
+    // FIRST: Check claims for ALL agents when pending claims exist.
+    // This must happen before partialKey resume (including main agent resumes).
+    if (hasPendingClaims && agentTypeHash) {
+      const claimNameIsMain = existingAgent?.isMain && !tokensSuspicious;
+      const extractedName = this.extractAgentName(
+        agentId,
+        modelId,
+        claimNameIsMain,
+      );
+      const claimMatch = this.matchChildClaim(extractedName, agentTypeHash);
+
+      logger.info(
+        `[StatusBar] Claim match attempt (pending claims exist)`,
+        JSON.stringify({
+          extractedName,
+          agentTypeHash: agentTypeHash.slice(0, 8),
+          claimMatched: claimMatch !== null,
+          claimExpectedName: claimMatch?.expectedChildName,
+          claimNameIsMain,
+        }),
+      );
+
+      if (claimMatch) {
+        // This is a child agent - create it as new, don't resume
+        return this.createChildAgent(
+          agentId,
+          now,
+          estimatedTokens,
+          maxTokens,
+          modelId,
+          systemPromptHash,
+          agentTypeHash,
+          firstUserMessageHash,
+          partialKey,
+          claimMatch,
+          estimatedDeltaTokens,
+        );
+      }
+    }
 
     // Resume main agent if partialKey matches and tokens aren't suspicious.
     // NOTE: agentTypeHash is NOT checked here - it's diagnostics only and can
     // change between turns when VS Code adds/removes MCP tools.
     if (existingAgent?.isMain && !tokensSuspicious) {
-      // Resume the main agent - skip claim matching entirely
+      // Resume the main agent
       this.agentIdAliases.set(agentId, existingAgent.id);
       existingAgent.status = "streaming";
       existingAgent.lastUpdateTime = now;
@@ -471,7 +537,7 @@ export class TokenStatusBar implements vscode.Disposable {
       this.activeAgentId = existingAgent.id;
 
       logger.info(
-        `[StatusBar] Main Agent RESUMED (partialKey match, skipped claim check)`,
+        `[StatusBar] Main Agent RESUMED (partialKey match)`,
         JSON.stringify({
           timestamp: now,
           agentId: agentId.slice(-8),
@@ -485,7 +551,7 @@ export class TokenStatusBar implements vscode.Disposable {
           agentTypeHash: existingAgent.agentTypeHash?.slice(0, 8),
           partialKey: partialKey?.slice(0, 20),
           totalAgents: this.agents.size,
-          pendingClaimsSkipped: hasPendingClaims,
+          pendingClaimsPresent: hasPendingClaims,
         }),
       );
 
@@ -498,7 +564,7 @@ export class TokenStatusBar implements vscode.Disposable {
           name: existingAgent.name,
           partialKey: partialKey?.slice(0, 20),
           systemPromptHash: systemPromptHash?.slice(0, 8),
-          pendingClaimsSkipped: hasPendingClaims,
+          pendingClaimsPresent: hasPendingClaims,
         },
         this.createTreeSnapshot(),
         { vscodeSessionId: vscode.env.sessionId },
@@ -507,41 +573,6 @@ export class TokenStatusBar implements vscode.Disposable {
       this.updateDisplay();
       this._onDidChangeAgents.fire();
       return existingAgent.id;
-    }
-
-    // For non-main agents (or new agents), check claims FIRST.
-    // This handles the case where a child agent has identical hashes to its parent
-    // (VS Code can inject summaries that make hashes match).
-    if (hasPendingClaims && agentTypeHash) {
-      const extractedName = this.extractAgentName(agentId, modelId, false);
-      const claimMatch = this.matchChildClaim(extractedName, agentTypeHash);
-
-      logger.info(
-        `[StatusBar] Claim match attempt (pending claims exist)`,
-        JSON.stringify({
-          extractedName,
-          agentTypeHash: agentTypeHash.slice(0, 8),
-          claimMatched: claimMatch !== null,
-          claimExpectedName: claimMatch?.expectedChildName,
-        }),
-      );
-
-      if (claimMatch) {
-        // This is a child agent - create it as new, don't resume
-        return this.createChildAgent(
-          agentId,
-          now,
-          estimatedTokens,
-          maxTokens,
-          modelId,
-          systemPromptHash,
-          agentTypeHash,
-          firstUserMessageHash,
-          partialKey,
-          claimMatch,
-          estimatedDeltaTokens,
-        );
-      }
     }
 
     // Check for partialKey match for non-main agents
@@ -654,6 +685,20 @@ export class TokenStatusBar implements vscode.Disposable {
       isMain = false;
     } else {
       // No claim match - treat as main agent
+      if (this.mainAgentId !== null) {
+        const previousMain = this.agents.get(this.mainAgentId);
+        if (previousMain) {
+          previousMain.isMain = false;
+          logger.info(
+            `[StatusBar] Demoted previous main agent`,
+            JSON.stringify({
+              timestamp: now,
+              previousMainId: previousMain.id.slice(-8),
+              newMainId: agentId.slice(-8),
+            }),
+          );
+        }
+      }
       isMain = true;
       this.mainAgentId = agentId;
     }
@@ -699,7 +744,33 @@ export class TokenStatusBar implements vscode.Disposable {
     this.agents.set(agentId, agent);
     this.agentIdAliases.set(agentId, agentId);
     if (partialKey) {
-      this.agentsByPartialKey.set(partialKey, agent);
+      const existingForKey = this.agentsByPartialKey.get(partialKey);
+      if (existingForKey && existingForKey.id !== agent.id) {
+        if (existingForKey.status !== "streaming") {
+          logger.warn(
+            `[StatusBar] partialKey collision, overwriting stale agent`,
+            JSON.stringify({
+              partialKey: partialKey.slice(0, 20),
+              existingAgentId: existingForKey.id.slice(-8),
+              newAgentId: agent.id.slice(-8),
+              existingStatus: existingForKey.status,
+            }),
+          );
+          this.agentsByPartialKey.set(partialKey, agent);
+        } else {
+          logger.warn(
+            `[StatusBar] partialKey collision with active agent, not overwriting`,
+            JSON.stringify({
+              partialKey: partialKey.slice(0, 20),
+              existingAgentId: existingForKey.id.slice(-8),
+              newAgentId: agent.id.slice(-8),
+              existingStatus: existingForKey.status,
+            }),
+          );
+        }
+      } else {
+        this.agentsByPartialKey.set(partialKey, agent);
+      }
     }
     this.activeAgentId = agentId;
 
@@ -1318,6 +1389,12 @@ export class TokenStatusBar implements vscode.Disposable {
    * Check if an agent has children still in the tree or pending claims
    */
   private hasChildrenInTree(agent: AgentEntry): boolean {
+    // WARNING: agentTypeHash is NOT unique per parent - it's shared across agents
+    // with the same toolset/model. This fallback is intentional for first-turn
+    // provisional linking before conversationHash is computed, but can cause
+    // false positives. The non-uniqueness risk is acceptable because:
+    // 1. It only affects the first turn before conversationHash is available
+    // 2. reconcileProvisionalChildren() fixes linkage once conversationHash is computed
     // An agent is a parent if other agents reference its conversationHash or agentTypeHash
     const parentHash = agent.conversationHash ?? agent.agentTypeHash;
     if (!parentHash) return false;
@@ -1355,8 +1432,8 @@ export class TokenStatusBar implements vscode.Disposable {
       if (agent.status === "streaming") continue;
       // Skip agents without completion order
       if (agent.completionOrder === undefined) continue;
-      // CRITICAL: Never remove the main agent - it anchors the tree
-      if (agent.isMain) continue;
+      // CRITICAL: Never remove the CURRENT main agent - it anchors the tree
+      if (this.mainAgentId === id) continue;
       // Don't remove agents that have children still in the tree
       if (this.hasChildrenInTree(agent)) continue;
 

@@ -141,6 +141,9 @@ export function computeNormalizedDigest(
 
 /**
  * Compute a raw digest for a message, including all fields.
+ *
+ * Note: data parts include byte length (dataSize) instead of full binary
+ * content for performance and log readability.
  */
 export function computeRawDigest(message: LanguageModelChatMessage): string {
   const name = (message as { name?: string }).name;

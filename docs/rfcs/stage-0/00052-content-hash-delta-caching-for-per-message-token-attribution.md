@@ -3,8 +3,8 @@ title: Content-Hash Delta Caching for Per-Message Token Attribution
 stage: 0
 feature: Unknown
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00052: Content-Hash Delta Caching for Per-Message Token Attribution
@@ -59,7 +59,11 @@ VS Code's `provideTokenCount(model, message, token)` API receives a single messa
 When we receive an API response with `usage.input_tokens`, we can compare the current message array against previously recorded states:
 
 ```typescript
-const lookup = conversationStateTracker.lookup(messages, modelFamily, conversationId);
+const lookup = conversationStateTracker.lookup(
+  messages,
+  modelFamily,
+  conversationId,
+);
 if (lookup.type === "prefix" && lookup.knownTokens !== undefined) {
   const delta = actualInputTokens - lookup.knownTokens;
   const perMessageTokens = delta / lookup.newMessageCount;
@@ -89,6 +93,7 @@ VS Code's summarization decision uses the **total token count** across all messa
 > Summarization uses TOTALS, not per-message counts. There's ~15% tolerance built in.
 
 If we add 3 messages totaling 3000 tokens:
+
 - Split evenly: 1000 + 1000 + 1000 = 3000 ✓
 - Actual distribution: 500 + 2000 + 500 = 3000 ✓
 
@@ -156,6 +161,7 @@ provider.recordUsage()
 **Goal:** Cached per-message token counts survive extension restarts.
 
 **Mechanism:**
+
 1. **Constructor change:** Accept optional `vscode.Memento` parameter
 2. **On activation:** Load cache from `globalState`, filtering stale entries (>24h)
 3. **On `cacheActual()`:** Schedule debounced write to `globalState` (1s debounce)
@@ -164,10 +170,10 @@ provider.recordUsage()
    ```typescript
    interface PersistedTokenCache {
      version: 1;
-     savedAt: number;  // When cache was last persisted
+     savedAt: number; // When cache was last persisted
      entries: Array<{
        key: string;
-       entry: CachedTokenCount;  // Includes per-entry timestamp
+       entry: CachedTokenCount; // Includes per-entry timestamp
      }>;
    }
    ```
@@ -175,42 +181,43 @@ provider.recordUsage()
 **TTL filtering:** Each `CachedTokenCount.timestamp` is checked on load; entries older than 24h are discarded.
 
 **Integration:**
+
 - `HybridTokenEstimator` passes `context.globalState` to `TokenCache` constructor
 - Pattern mirrors `ConversationStateTracker` persistence
 
 ## Assumptions
 
-| ID | Assumption | Validation |
-|----|------------|------------|
-| A1 | Message hashes are stable between turns | Verified by hash-unification work; same normalization used throughout |
-| A2 | Prefix matching correctly identifies conversation continuity | ConversationStateTracker tests verify this behavior |
-| A3 | `input_tokens` is monotonically increasing within a conversation | Verify no resets or recounts in production |
-| A4 | TokenCache lookup uses same hash as ConversationStateTracker | Ensured by unified `computeNormalizedDigest()` |
-| A5 | globalState survives extension restarts | VS Code Memento API guarantee |
-| A6 | 2000 entries × ~100 bytes fits in globalState | Well under VS Code's limits |
+| ID  | Assumption                                                       | Validation                                                            |
+| --- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
+| A1  | Message hashes are stable between turns                          | Verified by hash-unification work; same normalization used throughout |
+| A2  | Prefix matching correctly identifies conversation continuity     | ConversationStateTracker tests verify this behavior                   |
+| A3  | `input_tokens` is monotonically increasing within a conversation | Verify no resets or recounts in production                            |
+| A4  | TokenCache lookup uses same hash as ConversationStateTracker     | Ensured by unified `computeNormalizedDigest()`                        |
+| A5  | globalState survives extension restarts                          | VS Code Memento API guarantee                                         |
+| A6  | 2000 entries × ~100 bytes fits in globalState                    | Well under VS Code's limits                                           |
 
 ## Edge Cases
 
-| Case | Behavior |
-|------|----------|
-| First turn (no previous state) | Record state only; no delta to compute |
-| Lookup returns "none" (no match) | Skip delta caching; fall back to rolling correction |
-| Lookup returns "exact" (no new messages) | Skip per-message caching; state already known |
-| Negative delta (shouldn't happen) | Log warning; skip caching |
-| Zero new messages (response without user input) | Skip per-message caching |
-| Summarization (message count drops) | Lookup returns "none"; handled gracefully |
-| Multiple new messages | Split delta evenly; acceptable for total-based decisions |
+| Case                                            | Behavior                                                 |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| First turn (no previous state)                  | Record state only; no delta to compute                   |
+| Lookup returns "none" (no match)                | Skip delta caching; fall back to rolling correction      |
+| Lookup returns "exact" (no new messages)        | Skip per-message caching; state already known            |
+| Negative delta (shouldn't happen)               | Log warning; skip caching                                |
+| Zero new messages (response without user input) | Skip per-message caching                                 |
+| Summarization (message count drops)             | Lookup returns "none"; handled gracefully                |
+| Multiple new messages                           | Split delta evenly; acceptable for total-based decisions |
 
 ## Interaction with Rolling Correction (RFC 047)
 
 Content-hash delta caching **complements** rolling correction:
 
-| Scenario | Delta Caching | Rolling Correction |
-|----------|--------------|-------------------|
-| Cache hit (message seen before) | Returns ground truth | Not applied |
-| Cache miss (new message, prefix match) | Computes and caches delta | Not applied |
-| Cache miss (no prefix match) | Not available | Applied to first message of sequence |
-| First turn | Not available | Applied after first API response |
+| Scenario                               | Delta Caching             | Rolling Correction                   |
+| -------------------------------------- | ------------------------- | ------------------------------------ |
+| Cache hit (message seen before)        | Returns ground truth      | Not applied                          |
+| Cache miss (new message, prefix match) | Computes and caches delta | Not applied                          |
+| Cache miss (no prefix match)           | Not available             | Applied to first message of sequence |
+| First turn                             | Not available             | Applied after first API response     |
 
 **Net effect:** Rolling correction becomes a fallback for cold start and cache misses. Its cross-contamination issue (Phase 4a family-key dual-write) matters less because cached messages bypass correction entirely.
 

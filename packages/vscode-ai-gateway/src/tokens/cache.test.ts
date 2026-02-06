@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { Memento } from "vscode";
 
 const hoisted = vi.hoisted(() => {
   // Mock the role enum
@@ -70,6 +71,33 @@ describe("TokenCache", () => {
       name: "test",
       content: parts,
     }) as vscode.LanguageModelChatMessage;
+
+  const createMockMemento = (
+    initial: Record<string, unknown> = {},
+  ): Memento & { _store: Map<string, unknown> } => {
+    const store = new Map<string, unknown>(Object.entries(initial));
+
+    return {
+      _store: store,
+      keys(): readonly string[] {
+        return Array.from(store.keys());
+      },
+      get<T>(key: string, defaultValue?: T): T | undefined {
+        if (store.has(key)) {
+          return store.get(key) as T;
+        }
+        return defaultValue;
+      },
+      update(key: string, value: unknown): Thenable<void> {
+        if (value === undefined) {
+          store.delete(key);
+        } else {
+          store.set(key, value);
+        }
+        return Promise.resolve();
+      },
+    };
+  };
 
   const getCachedDigest = (cache: TokenCache): string | undefined => {
     const internal = cache as unknown as {
@@ -183,5 +211,95 @@ describe("TokenCache", () => {
       expect(cacheDigest).toBe(normalizedDigest);
       expect(trackedDigest).toBe(normalizedDigest);
     }
+  });
+
+  it("persists state to memento after cacheActual (debounced)", async () => {
+    vi.useFakeTimers();
+    const memento = createMockMemento();
+    const cache = new TokenCache(memento);
+    const message = createMessage([new vscode.LanguageModelTextPart("Hello")]);
+
+    cache.cacheActual(message, "openai", 42);
+
+    await vi.advanceTimersByTimeAsync(1100);
+
+    expect(memento._store.has("tokenCache.v1")).toBe(true);
+    const stored = memento._store.get("tokenCache.v1") as {
+      version: number;
+      entries: Array<{ key: string; entry: CachedTokenCount }>;
+    };
+    expect(stored.version).toBe(1);
+    expect(stored.entries).toHaveLength(1);
+    const digest = computeNormalizedDigest(message);
+    expect(stored.entries[0]?.key).toBe(`openai:${digest}`);
+    expect(stored.entries[0]?.entry.actualTokens).toBe(42);
+
+    vi.useRealTimers();
+  });
+
+  it("loads state from memento on construction", async () => {
+    vi.useFakeTimers();
+    const memento = createMockMemento();
+    const cache1 = new TokenCache(memento);
+    const message = createMessage([new vscode.LanguageModelTextPart("Hello")]);
+
+    cache1.cacheActual(message, "openai", 42);
+    await vi.advanceTimersByTimeAsync(1100);
+
+    const cache2 = new TokenCache(memento);
+
+    expect(cache2.getCached(message, "openai")).toBe(42);
+
+    vi.useRealTimers();
+  });
+
+  it("filters stale entries on load (24h TTL)", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-03T00:00:00.000Z"));
+
+    const memento = createMockMemento();
+    const cache1 = new TokenCache(memento);
+    const message = createMessage([new vscode.LanguageModelTextPart("Hello")]);
+
+    cache1.cacheActual(message, "openai", 42);
+    await vi.advanceTimersByTimeAsync(1100);
+
+    vi.setSystemTime(new Date("2026-02-04T00:00:00.001Z"));
+    const cache2 = new TokenCache(memento);
+
+    expect(cache2.getCached(message, "openai")).toBeUndefined();
+
+    vi.useRealTimers();
+  });
+
+  it("evicts least recently used entries when exceeding max entries", () => {
+    const cache = new TokenCache();
+    const messages: vscode.LanguageModelChatMessage[] = [];
+
+    for (let i = 0; i < 2000; i += 1) {
+      const message = createMessage([
+        new vscode.LanguageModelTextPart(`msg-${i.toString()}`),
+      ]);
+      messages.push(message);
+      cache.cacheActual(message, "openai", i);
+    }
+
+    const overflowMessage = createMessage([
+      new vscode.LanguageModelTextPart("msg-2000"),
+    ]);
+    cache.cacheActual(overflowMessage, "openai", 2000);
+
+    expect(cache.getCached(messages[0]!, "openai")).toBeUndefined();
+    expect(cache.getCached(messages[1]!, "openai")).toBe(1);
+    expect(cache.getCached(overflowMessage, "openai")).toBe(2000);
+  });
+
+  it("works without memento (in-memory only)", () => {
+    const cache = new TokenCache();
+    const message = createMessage([new vscode.LanguageModelTextPart("Hello")]);
+
+    cache.cacheActual(message, "openai", 42);
+
+    expect(cache.getCached(message, "openai")).toBe(42);
   });
 });

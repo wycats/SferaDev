@@ -181,7 +181,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
     expect(statusBar.completeAgent).not.toHaveBeenCalled();
   });
 
-  it("errors agent on cancellation", async () => {
+  it("completes agent on cancellation", async () => {
     const statusBar = {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
@@ -213,8 +213,8 @@ describe("executeOpenResponsesChat terminal completion", () => {
       } as never,
     );
 
-    expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
-    expect(statusBar.completeAgent).not.toHaveBeenCalled();
+    expect(statusBar.errorAgent).not.toHaveBeenCalled();
+    expect(statusBar.completeAgent).toHaveBeenCalledTimes(1);
   });
 
   it("errors agent on no-content response", async () => {

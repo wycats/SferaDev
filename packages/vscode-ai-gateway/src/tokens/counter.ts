@@ -99,6 +99,23 @@ export class TokenCounter {
         total += this.estimateToolCallTokens(part, modelFamily);
       } else if (part instanceof vscode.LanguageModelToolResultPart) {
         total += this.estimateToolResultTokens(part, modelFamily);
+      } else {
+        const serializedText = this.extractSerializedText(part);
+        if (serializedText !== undefined) {
+          total += this.estimateTextTokens(serializedText, modelFamily);
+          continue;
+        }
+        if (this.isSerializedDataPart(part)) {
+          total += this.estimateSerializedDataTokens(part, modelFamily);
+          continue;
+        }
+        if (this.isSerializedToolCallPart(part)) {
+          total += this.estimateSerializedToolCallTokens(part, modelFamily);
+          continue;
+        }
+        if (this.isSerializedToolResultPart(part)) {
+          total += this.estimateSerializedToolResultTokens(part, modelFamily);
+        }
       }
     }
     logger.trace(
@@ -212,13 +229,20 @@ export class TokenCounter {
     modelFamily: string,
     imagePart: vscode.LanguageModelDataPart,
   ): number {
+    return this.estimateImageTokensFromBytes(modelFamily, imagePart.data);
+  }
+
+  private estimateImageTokensFromBytes(
+    modelFamily: string,
+    data: { byteLength: number },
+  ): number {
     const family = modelFamily.toLowerCase();
 
     if (family.includes("anthropic") || family.includes("claude")) {
       return 1600;
     }
 
-    const dataSize = imagePart.data.byteLength;
+    const dataSize = data.byteLength;
     const estimatedPixels = dataSize / 3;
     const estimatedDimension = Math.sqrt(estimatedPixels);
     const scaledDimension = Math.min(estimatedDimension, 2048);
@@ -229,12 +253,169 @@ export class TokenCounter {
     return Math.min(openAITokens, 1700);
   }
 
+  private extractSerializedText(part: unknown): string | undefined {
+    if (typeof part !== "object" || part === null) return undefined;
+    if (
+      "value" in part &&
+      typeof (part as { value?: unknown }).value === "string"
+    ) {
+      return (part as { value: string }).value;
+    }
+    if (
+      "type" in part &&
+      (part as { type?: unknown }).type === "text" &&
+      "text" in part &&
+      typeof (part as { text?: unknown }).text === "string"
+    ) {
+      return (part as { text: string }).text;
+    }
+    return undefined;
+  }
+
+  private isSerializedDataPart(
+    part: unknown,
+  ): part is { mimeType: string; data: unknown } {
+    return (
+      typeof part === "object" &&
+      part !== null &&
+      "mimeType" in part &&
+      typeof (part as { mimeType?: unknown }).mimeType === "string" &&
+      "data" in part
+    );
+  }
+
+  private estimateSerializedDataTokens(
+    part: { mimeType: string; data: unknown },
+    modelFamily: string,
+  ): number {
+    if (part.mimeType.startsWith("image/")) {
+      const byteLength = this.getDataByteLength(part.data);
+      if (byteLength !== undefined) {
+        return this.estimateImageTokensFromBytes(modelFamily, { byteLength });
+      }
+      return 0;
+    }
+
+    const decoded = this.decodeSerializedData(part.data);
+    return decoded ? this.estimateTextTokens(decoded, modelFamily) : 0;
+  }
+
+  private isSerializedToolCallPart(
+    part: unknown,
+  ): part is { name: string; input?: unknown } {
+    return (
+      typeof part === "object" &&
+      part !== null &&
+      "name" in part &&
+      typeof (part as { name?: unknown }).name === "string" &&
+      "input" in part
+    );
+  }
+
+  private estimateSerializedToolCallTokens(
+    part: { name: string; input?: unknown },
+    modelFamily: string,
+  ): number {
+    const inputJson = tryStringify(part.input);
+    const payload = `${part.name}\n${inputJson}`;
+    return this.estimateTextTokens(payload, modelFamily) + 4;
+  }
+
+  private isSerializedToolResultPart(
+    part: unknown,
+  ): part is { callId: string; content?: unknown } {
+    return (
+      typeof part === "object" &&
+      part !== null &&
+      "callId" in part &&
+      typeof (part as { callId?: unknown }).callId === "string" &&
+      "content" in part
+    );
+  }
+
+  private estimateSerializedToolResultTokens(
+    part: { callId: string; content?: unknown },
+    modelFamily: string,
+  ): number {
+    let total = this.estimateTextTokens(part.callId, modelFamily) + 4;
+    const { content } = part;
+
+    if (Array.isArray(content)) {
+      for (const resultPart of content) {
+        const text = this.extractSerializedText(resultPart);
+        if (text !== undefined) {
+          total += this.estimateTextTokens(text, modelFamily);
+        } else if (
+          typeof resultPart === "object" &&
+          resultPart !== null &&
+          "value" in resultPart
+        ) {
+          total += this.estimateTextTokens(
+            String((resultPart as { value?: unknown }).value),
+            modelFamily,
+          );
+        }
+      }
+    } else if (content !== undefined) {
+      const text =
+        this.extractSerializedText(content) ??
+        (typeof content === "string" ? content : undefined);
+      if (text !== undefined) {
+        total += this.estimateTextTokens(text, modelFamily);
+      }
+    }
+
+    return total;
+  }
+
+  private getDataByteLength(data: unknown): number | undefined {
+    if (typeof data === "string") {
+      return data.length;
+    }
+    if (data instanceof ArrayBuffer) {
+      return data.byteLength;
+    }
+    if (ArrayBuffer.isView(data)) {
+      return data.byteLength;
+    }
+    if (
+      typeof data === "object" &&
+      data !== null &&
+      "byteLength" in data &&
+      typeof (data as { byteLength?: unknown }).byteLength === "number"
+    ) {
+      return (data as { byteLength: number }).byteLength;
+    }
+    if (
+      typeof data === "object" &&
+      data !== null &&
+      "length" in data &&
+      typeof (data as { length?: unknown }).length === "number"
+    ) {
+      return (data as { length: number }).length;
+    }
+    return undefined;
+  }
+
+  private decodeSerializedData(data: unknown): string | undefined {
+    if (typeof data === "string") return data;
+    if (data instanceof ArrayBuffer) {
+      return new TextDecoder().decode(new Uint8Array(data));
+    }
+    if (ArrayBuffer.isView(data)) {
+      return new TextDecoder().decode(data);
+    }
+    if (Array.isArray(data)) {
+      return new TextDecoder().decode(new Uint8Array(data));
+    }
+    return undefined;
+  }
+
   private getEncodingForFamily(modelFamily: string): Encoding | undefined {
     const encodingName = this.resolveEncodingName(modelFamily);
     if (encodingName === undefined) {
-      // Non-OpenAI models: use character-based fallback
-      // Claude, Gemini, Llama, etc. have proprietary tokenizers that differ
-      // significantly from tiktoken. Character estimation is more honest.
+      // All model families are approximated with tiktoken encodings.
+      // Character fallback only applies if the encoding lookup fails.
       return undefined;
     }
     if (this.encodings.has(encodingName)) {

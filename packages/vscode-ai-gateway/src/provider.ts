@@ -532,6 +532,12 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         },
       );
 
+      if (result.cancelled) {
+        responseSent = true;
+        logger.debug(`[OpenResponses] Chat request cancelled for ${model.id}`);
+        return;
+      }
+
       // Track if we sent a response (for error handling)
       responseSent = result.success;
 
@@ -605,10 +611,10 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         logger.error(
           `Emitting error response for chat ${chatId} due to: ${errorMessage}`,
         );
+        progress.report(
+          new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`),
+        );
       }
-      progress.report(
-        new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`),
-      );
     } finally {
       // Clear current request tracking
       this.currentRequestMessages = null;

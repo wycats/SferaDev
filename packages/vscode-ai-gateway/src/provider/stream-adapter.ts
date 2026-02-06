@@ -74,6 +74,8 @@ export interface AdaptedEvent {
   done: boolean;
   /** Error message if this is an error/failed event */
   error?: string | undefined;
+  /** Whether this terminal event represents a cancellation */
+  cancelled?: boolean | undefined;
   /** The finish reason extracted from terminal events */
   finishReason?:
     | "stop"
@@ -423,6 +425,10 @@ export class StreamAdapter {
         const functionCall = item as FunctionCallItem;
         const itemId = functionCall.id; // Use itemId as unique identifier!
         const callId = functionCall.call_id;
+        const hasCallId = typeof callId === "string" && callId.length > 0;
+        const callIdAlreadyEmitted = hasCallId
+          ? this.emittedCallIds.has(callId)
+          : false;
         const name = functionCall.name;
         const argsStr = functionCall.arguments;
 
@@ -437,7 +443,7 @@ export class StreamAdapter {
           itemId &&
           name &&
           !this.emittedToolCalls.has(itemId) &&
-          !this.emittedCallIds.has(callId)
+          !callIdAlreadyEmitted
         ) {
           let parsedArgs: ToolCallArguments = {};
           try {
@@ -455,11 +461,13 @@ export class StreamAdapter {
           // The gateway can reuse call_id for multiple function calls, but VS Code needs unique IDs.
           parts.push(new LanguageModelToolCallPart(itemId, name, parsedArgs));
           this.emittedToolCalls.add(itemId);
-          this.emittedCallIds.add(callId);
+          if (hasCallId) {
+            this.emittedCallIds.add(callId);
+          }
           functionCallsEmitted++;
         } else if (
           this.emittedToolCalls.has(itemId) ||
-          this.emittedCallIds.has(callId)
+          callIdAlreadyEmitted
         ) {
           functionCallsSkippedDuplicate++;
           logger.debug(
@@ -510,6 +518,20 @@ export class StreamAdapter {
     const response = event.response as ResponseResource | undefined;
     const responseError = response?.error as ResponseError | null | undefined;
     const errorMessage = responseError?.message ?? "Response generation failed";
+    const errorCode =
+      responseError?.code !== undefined
+        ? String(responseError.code)
+        : undefined;
+
+    if (this.isCancellationError(errorMessage, errorCode)) {
+      return {
+        parts: [],
+        done: true,
+        cancelled: true,
+        finishReason: "other",
+        responseId: response?.id,
+      };
+    }
 
     return {
       parts: [new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`)],
@@ -529,6 +551,7 @@ export class StreamAdapter {
       | null
       | undefined;
     const reason = incompleteDetails?.reason ?? "unknown";
+    const cancelled = this.isCancellationReason(reason);
 
     // Map incomplete reasons to VS Code finish reasons
     let finishReason: AdaptedEvent["finishReason"] = "other";
@@ -545,6 +568,7 @@ export class StreamAdapter {
       ...(usage ? { usage } : {}),
       done: true,
       finishReason,
+      ...(cancelled ? { cancelled } : {}),
       responseId: response?.id,
     };
   }
@@ -654,16 +678,17 @@ export class StreamAdapter {
         ? (item as FunctionCallItem).id
         : ((item as FunctionCallItemFallback).id ?? functionCall.call_id);
       const callId = functionCall.call_id;
+      const hasCallId = typeof callId === "string" && callId.length > 0;
+      const callIdAlreadyEmitted = hasCallId
+        ? this.emittedCallIds.has(callId)
+        : false;
       const argsStr = functionCall.arguments;
       const name = functionCall.name;
 
       // Skip if already emitted via function_call_arguments.done
       // Check BOTH itemId AND callId - the gateway can emit duplicate output items
       // with different itemIds but the same callId (same logical tool call)
-      if (
-        this.emittedToolCalls.has(itemId) ||
-        this.emittedCallIds.has(callId)
-      ) {
+      if (this.emittedToolCalls.has(itemId) || callIdAlreadyEmitted) {
         logger.debug(
           `[OpenResponses] Skipping duplicate output_item.done for already-emitted tool call: ${name} (itemId: ${itemId}, callId: ${callId})`,
         );
@@ -697,7 +722,9 @@ export class StreamAdapter {
       }
 
       this.emittedToolCalls.add(itemId);
-      this.emittedCallIds.add(callId);
+      if (hasCallId) {
+        this.emittedCallIds.add(callId);
+      }
 
       // CRITICAL: Use itemId as the callId sent to VS Code!
       return {
@@ -871,8 +898,7 @@ export class StreamAdapter {
         state.buffer += delta;
       }
 
-      // Emit reasoning in a blockquote format so it's visually distinct
-      // This allows users to see the model's thinking process
+      // Emit reasoning delta as plain text; no formatting is applied here.
       return {
         parts: [new LanguageModelTextPart(delta)],
         done: false,
@@ -1047,10 +1073,12 @@ export class StreamAdapter {
       // Check if already emitted via output_item.done or a previous function_call_arguments.done
       // Check BOTH itemId AND callId - the gateway can emit duplicate output items
       // with different itemIds but the same callId (same logical tool call)
-      if (
-        this.emittedToolCalls.has(foundState.itemId) ||
-        this.emittedCallIds.has(foundState.callId)
-      ) {
+      const hasCallId =
+        typeof foundState.callId === "string" && foundState.callId.length > 0;
+      const callIdAlreadyEmitted = hasCallId
+        ? this.emittedCallIds.has(foundState.callId)
+        : false;
+      if (this.emittedToolCalls.has(foundState.itemId) || callIdAlreadyEmitted) {
         logger.debug(
           `[OpenResponses] Skipping duplicate function_call_arguments.done: ${foundState.name} (itemId: ${foundState.itemId}, callId: ${foundState.callId})`,
         );
@@ -1075,7 +1103,9 @@ export class StreamAdapter {
       this.callIdToResponseId.delete(foundState.callId);
       // Track by BOTH itemId and callId to catch all duplicate patterns
       this.emittedToolCalls.add(foundState.itemId);
-      this.emittedCallIds.add(foundState.callId);
+      if (hasCallId) {
+        this.emittedCallIds.add(foundState.callId);
+      }
 
       logger.info(
         `[OpenResponses] Emitting tool call via function_call_arguments.done: ${foundState.name} (itemId: ${foundState.itemId})`,
@@ -1115,6 +1145,17 @@ export class StreamAdapter {
     const errorMessage = errorPayload?.message ?? "Unknown error";
     const errorCode = errorPayload?.code ?? "UNKNOWN";
 
+    if (this.isCancellationError(errorMessage, errorCode)) {
+      return {
+        parts: [],
+        done: true,
+        cancelled: true,
+        finishReason: "other",
+        responseId: this.responseId,
+        model: this.model,
+      };
+    }
+
     return {
       parts: [
         new LanguageModelTextPart(
@@ -1143,6 +1184,17 @@ export class StreamAdapter {
     this.reasoningSummaries.clear();
     this.responseId = undefined;
     this.model = undefined;
+  }
+
+  private isCancellationError(message?: string, code?: string): boolean {
+    const combined = `${code ?? ""} ${message ?? ""}`.toLowerCase();
+    return combined.includes("cancel") || combined.includes("abort");
+  }
+
+  private isCancellationReason(reason?: string): boolean {
+    if (!reason) return false;
+    const normalized = reason.toLowerCase();
+    return normalized.includes("cancel") || normalized.includes("abort");
   }
 
   /**

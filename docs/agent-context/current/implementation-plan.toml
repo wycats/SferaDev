@@ -123,37 +123,188 @@ id = "token-cache-persistence"
 [[plan.goals.tasks]]
 id = "persistence::add-memento-param"
 title = "Add optional vscode.Memento parameter to TokenCache constructor"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T06:12:15.358043767+00:00"
+completion_log = "Added optional Memento parameter and wired into TokenCache constructor."
 
 [[plan.goals.tasks]]
 id = "persistence::storage-interface"
 title = "Define PersistedTokenCache interface and STORAGE_KEY constant"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T06:12:15.760284568+00:00"
+completion_log = "Defined PersistedTokenCache schema and storage constants for TokenCache persistence."
 
 [[plan.goals.tasks]]
 id = "persistence::load-on-init"
 title = "Implement loadFromStorage() with 24h TTL filtering"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T06:12:16.202312162+00:00"
+completion_log = "Implemented loadFromStorage with TTL filtering for TokenCache."
 
 [[plan.goals.tasks]]
 id = "persistence::debounced-save"
 title = "Implement scheduleSave() with 1s debounce"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T06:12:16.653930511+00:00"
+completion_log = "Implemented debounced persistence (scheduleSave/saveToStorage) for TokenCache."
 
 [[plan.goals.tasks]]
 id = "persistence::lru-eviction"
 title = "Add LRU tracking and eviction (2000 entry limit)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T06:12:17.101882128+00:00"
+completion_log = "Added LRU tracking and eviction for TokenCache with MAX_ENTRIES."
 
 [[plan.goals.tasks]]
 id = "persistence::wire-estimator"
 title = "Pass context.globalState to TokenCache in HybridTokenEstimator"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T06:12:17.508825973+00:00"
+completion_log = "Passed context.globalState into TokenCache in HybridTokenEstimator."
 
 [[plan.goals.tasks]]
 id = "persistence::tests"
 title = "Add persistence tests (round-trip, TTL filtering, LRU eviction)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T06:12:17.923968682+00:00"
+completion_log = "Added TokenCache persistence tests for save/load, TTL filtering, LRU eviction, and no-memento behavior."
+
+[[plan.goals]]
+id = "agent-tracking-correctness"
+
+[[plan.goals.tasks]]
+id = "agent-tracking::reorder-claim-matching"
+title = "Reorder claim matching before partialKey resume (C4)"
+status = "completed"
+completed_at = "2026-02-06T16:24:49.189625220+00:00"
+completion_log = "Claims now checked FIRST before partialKey resume for all agents"
+
+[[plan.goals.tasks]]
+id = "agent-tracking::demote-previous-main"
+title = "Demote previous main agent when new main created (C5)"
+status = "completed"
+completed_at = "2026-02-06T16:24:49.398037051+00:00"
+completion_log = "Previous main agent demoted when new main is created"
+
+[[plan.goals.tasks]]
+id = "agent-tracking::handle-partialkey-collisions"
+title = "Handle agentsByPartialKey collisions (S3)"
+status = "completed"
+completed_at = "2026-02-06T16:24:49.639933671+00:00"
+completion_log = "partialKey collisions handled - only overwrite stale agents"
+
+[[plan.goals.tasks]]
+id = "agent-tracking::document-agenttypehash"
+title = "Add warning comment about agentTypeHash non-uniqueness (I2)"
+status = "completed"
+completed_at = "2026-02-06T16:24:49.952303486+00:00"
+completion_log = "Added warning comment about agentTypeHash non-uniqueness"
+
+[[plan.goals]]
+id = "token-estimation-correctness"
+
+[[plan.goals.tasks]]
+id = "token-estimation::side-effect-free-conversation"
+title = "Make estimateConversation side-effect free (C1)"
+status = "completed"
+completed_at = "2026-02-06T16:28:00.667150929+00:00"
+completion_log = "estimateConversation now uses estimateMessageTokensOnly() which is side-effect free"
+
+[[plan.goals.tasks]]
+id = "token-estimation::remove-double-overhead"
+title = "Remove messages.length*4 overhead for cached actuals (C2)"
+status = "completed"
+completed_at = "2026-02-06T16:28:00.830787943+00:00"
+completion_log = "Overhead only added for non-cached messages, tracked via cachedCount"
+
+[[plan.goals.tasks]]
+id = "token-estimation::apply-correction-cached"
+title = "Apply rolling correction even when first message cached (S1)"
+status = "completed"
+completed_at = "2026-02-06T16:28:00.995952272+00:00"
+completion_log = "Rolling correction now applied even when returning cached values"
+
+[[plan.goals]]
+id = "error-handling-cleanup"
+
+[[plan.goals.tasks]]
+id = "error-handling::gate-error-text"
+title = "Only emit error text if responseSent is false (C7)"
+status = "completed"
+completed_at = "2026-02-06T16:32:39.867349107+00:00"
+completion_log = "Error text only emitted if responseSent is false"
+
+[[plan.goals.tasks]]
+id = "error-handling::cancellation-not-error"
+title = "Don't mark cancellation as error in status bar (M5)"
+status = "completed"
+completed_at = "2026-02-06T16:32:40.055457689+00:00"
+completion_log = "Cancellation treated as non-error completion, not marked as error in status bar"
+
+[[plan.goals]]
+id = "token-cache-ttl-cleanup"
+
+[[plan.goals.tasks]]
+id = "cache-ttl::runtime-ttl-check"
+title = "Add TTL check in getCached to filter stale entries (C3)"
+status = "completed"
+completed_at = "2026-02-06T16:34:12.490343094+00:00"
+completion_log = "getCached now checks TTL at runtime and evicts stale entries"
+
+[[plan.goals.tasks]]
+id = "cache-ttl::remove-unused-timestamp"
+title = "Remove or document unused timestamp field (M2)"
+status = "completed"
+completed_at = "2026-02-06T16:34:12.627319429+00:00"
+completion_log = "timestamp field now used for runtime TTL check, no longer dead code"
+
+[[plan.goals]]
+id = "documentation-fixes"
+
+[[plan.goals.tasks]]
+id = "docs::fix-tokenizer-fallback-comment"
+title = "Update stale tokenizer fallback comment (I1)"
+status = "completed"
+completed_at = "2026-02-06T16:35:34.030509650+00:00"
+completion_log = "Updated comment to reflect tiktoken (cl100k_base) used for all models"
+
+[[plan.goals.tasks]]
+id = "docs::fix-raw-digest-docstring"
+title = "Clarify computeRawDigest uses byteLength for binary (I3)"
+status = "completed"
+completed_at = "2026-02-06T16:35:34.164925844+00:00"
+completion_log = "Clarified that binary parts use byteLength for performance"
+
+[[plan.goals.tasks]]
+id = "docs::fix-reasoning-format-comment"
+title = "Remove/correct blockquote comment in stream-adapter (I4)"
+status = "completed"
+completed_at = "2026-02-06T16:35:34.378894217+00:00"
+completion_log = "Corrected comment to reflect plain-text emission, not blockquote"
+
+[[plan.goals]]
+id = "edge-case-hardening"
+
+[[plan.goals.tasks]]
+id = "edge-cases::escape-tool-names"
+title = "Escape pipe characters in computeToolSetHash (S4)"
+status = "completed"
+completed_at = "2026-02-06T16:40:39.031312930+00:00"
+completion_log = "Tool names now length-prefixed to prevent pipe collision"
+
+[[plan.goals.tasks]]
+id = "edge-cases::dedupe-missing-callid"
+title = "Handle undefined callId in tool call deduplication (S6)"
+status = "completed"
+completed_at = "2026-02-06T16:40:39.171285340+00:00"
+completion_log = "Undefined callId no longer added to dedupe set"
+
+[[plan.goals.tasks]]
+id = "edge-cases::count-serialized-parts"
+title = "Add fallback for serialized message parts in counter (M1)"
+status = "completed"
+completed_at = "2026-02-06T16:40:39.352038874+00:00"
+completion_log = "Added duck-typed fallbacks for serialized text/data/tool parts"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

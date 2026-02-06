@@ -1021,4 +1021,41 @@ status = "pending"
 [[epochs.phases.goals]]
 id = "token-cache-persistence"
 label = "TokenCache Persistence (RFC 052 Phase 4)"
-status = "pending"
+status = "completed"
+completion_log = "RFC 052 Phase 4 complete: TokenCache persistence with 24h TTL, 2000 entry LRU, 1s debounced saves to globalState. All 7 tasks done, tests passing."
+
+[[epochs.phases.goals]]
+id = "agent-tracking-correctness"
+label = "Agent Tracking Correctness (C4, C5, S3, I2)"
+status = "completed"
+completion_log = "Fixed C4 (claim-first), C5 (main demotion), S3 (partialKey collision), I2 (agentTypeHash docs). All 462 tests pass."
+
+[[epochs.phases.goals]]
+id = "token-estimation-correctness"
+label = "Token Estimation Correctness (C1, C2, S1)"
+status = "completed"
+completion_log = "Fixed C1 (side-effect free), C2 (no double overhead), S1 (correction for cached). All 462 tests pass."
+
+[[epochs.phases.goals]]
+id = "error-handling-cleanup"
+label = "Error Handling Cleanup (C7, M5)"
+status = "completed"
+completion_log = "Fixed C7 (gated error text) and M5 (cancellation not error). All 462 tests pass."
+
+[[epochs.phases.goals]]
+id = "token-cache-ttl-cleanup"
+label = "Token Cache TTL & Cleanup (C3, M2)"
+status = "completed"
+completion_log = "Fixed C3 (runtime TTL) and M2 (timestamp now used). All 462 tests pass."
+
+[[epochs.phases.goals]]
+id = "documentation-fixes"
+label = "Documentation & Comment Fixes (I1, I3, I4)"
+status = "completed"
+completion_log = "Fixed I1, I3, I4 - all comments now accurately describe implementation. All 462 tests pass."
+
+[[epochs.phases.goals]]
+id = "edge-case-hardening"
+label = "Edge Case Hardening (S4, S6, M1)"
+status = "completed"
+completion_log = "Fixed S4 (tool hash collision), S6 (callId dedupe), M1 (serialized parts). All 462 tests pass."

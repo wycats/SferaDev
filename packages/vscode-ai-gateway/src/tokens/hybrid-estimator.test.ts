@@ -243,18 +243,8 @@ describe("HybridTokenEstimator", () => {
       estimator.recordActual(messages2, testModel, 160);
 
       expect(cacheSpy).toHaveBeenCalledTimes(2);
-      expect(cacheSpy).toHaveBeenNthCalledWith(
-        1,
-        messages2[2],
-        "claude",
-        30,
-      );
-      expect(cacheSpy).toHaveBeenNthCalledWith(
-        2,
-        messages2[3],
-        "claude",
-        30,
-      );
+      expect(cacheSpy).toHaveBeenNthCalledWith(1, messages2[2], "claude", 30);
+      expect(cacheSpy).toHaveBeenNthCalledWith(2, messages2[3], "claude", 30);
 
       cacheSpy.mockRestore();
     });
@@ -288,7 +278,9 @@ describe("HybridTokenEstimator", () => {
     it("does not throw when lookup includes invalid message index", () => {
       const messages = [createMessage(1, "hello")];
       const tracker = (
-        estimator as unknown as { conversationTracker: { lookup: () => unknown } }
+        estimator as unknown as {
+          conversationTracker: { lookup: () => unknown };
+        }
       ).conversationTracker;
       const lookupSpy = vi.spyOn(tracker, "lookup").mockReturnValue({
         type: "prefix",
@@ -297,7 +289,9 @@ describe("HybridTokenEstimator", () => {
         newMessageCount: 1,
       });
 
-      expect(() => estimator.recordActual(messages, testModel, 150)).not.toThrow();
+      expect(() =>
+        estimator.recordActual(messages, testModel, 150),
+      ).not.toThrow();
       expect(loggerHoisted.warn).toHaveBeenCalledWith(
         "[Estimator] Invalid message index 1 during delta caching",
       );
@@ -745,7 +739,7 @@ describe("HybridTokenEstimator", () => {
       vi.useRealTimers();
     });
 
-    it("cached API actual bypasses correction (returns ground truth)", () => {
+    it("cached API actual still applies correction", () => {
       const msg1 = createMessage(1, "hello"); // 5 tokens
       const msg2 = createMessage(2, "world"); // 5 tokens
 
@@ -762,9 +756,9 @@ describe("HybridTokenEstimator", () => {
       vi.advanceTimersByTime(501);
 
       // Turn 2: msg1 is cached, msg2 is estimated
-      // msg1 is first in sequence BUT has cached actual → returns 42 (ground truth)
+      // msg1 is first in sequence AND cached → applies correction
       const est1 = estimator.estimateMessage(msg1, testModel);
-      expect(est1).toBe(42); // cached, no correction applied
+      expect(est1).toBe(132); // cached + correction (42 + 90)
 
       // msg2 is second in sequence → no correction applied (correction only on first)
       const est2 = estimator.estimateMessage(msg2, testModel);
