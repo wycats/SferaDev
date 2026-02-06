@@ -2,9 +2,9 @@
 # Implementation Plan
 
 [phase]
-id = "01kgt9xj4dyj31zs0x8fqzf2tv"
-title = "Error Recovery Redesign"
-rfcs = ["00054"]
+id = "01kgtm3daenjghakthzf0txt2j"
+title = "Fix claude-sonnet-4.5 Parsing Bug"
+rfcs = ["00051"]
 
 [plan]
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.

@@ -85,10 +85,7 @@ export class HybridTokenEstimator {
     messages: readonly vscode.LanguageModelChatMessage[],
     model: ModelInfo,
   ): ConversationEstimate {
-    const lookup = this.conversationTracker.lookup(
-      messages,
-      model.family,
-    );
+    const lookup = this.conversationTracker.lookup(messages, model.family);
 
     if (lookup.type === "exact" && lookup.knownTokens !== undefined) {
       // Perfect match - return ground truth
@@ -162,10 +159,7 @@ export class HybridTokenEstimator {
     sequenceEstimate?: number,
     summarizationDetected?: boolean,
   ): void {
-    const lookup = this.conversationTracker.lookup(
-      messages,
-      model.family,
-    );
+    const lookup = this.conversationTracker.lookup(messages, model.family);
 
     if (
       lookup.type === "prefix" &&
@@ -327,9 +321,7 @@ export class HybridTokenEstimator {
    * and what the API actually reported.
    */
   getAdjustment(modelFamily: string): number {
-    const state = this.conversationTracker.getState(
-      modelFamily,
-    );
+    const state = this.conversationTracker.getState(modelFamily);
     if (!state || state.lastSequenceEstimate === undefined) {
       return 0;
     }
@@ -343,10 +335,7 @@ export class HybridTokenEstimator {
     messages: readonly vscode.LanguageModelChatMessage[],
     modelFamily: string,
   ): ConversationLookupResult {
-    return this.conversationTracker.lookup(
-      messages,
-      modelFamily,
-    );
+    return this.conversationTracker.lookup(messages, modelFamily);
   }
 
   /**

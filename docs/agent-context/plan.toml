@@ -1153,3 +1153,17 @@ status = "completed"
 goals = []
 rfcs = ["00054"]
 ulid = "01KGT9XJ4DYJ31ZS0X8FQZF2TV"
+
+[[epochs]]
+id = "01kgtm2sg4ddjfk01p6dsxvwr5"
+title = "Model Family Parsing Fix (RFC 00051)"
+status = "active"
+ulid = "01KGTM2SG4DDJFK01P6DSXVWR5"
+
+[[epochs.phases]]
+id = "01kgtm3daenjghakthzf0txt2j"
+title = "Fix claude-sonnet-4.5 Parsing Bug"
+status = "active"
+goals = []
+rfcs = ["00051"]
+ulid = "01KGTM3DAENJGHAKTHZF0TXT2J"

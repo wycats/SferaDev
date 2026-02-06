@@ -530,13 +530,7 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
         "<conversation-summary>\\nSummary\\n</conversation-summary>",
       ),
     ];
-    tracker.recordActual(
-      summaryMessages,
-      "claude",
-      30000,
-      25000,
-      true,
-    );
+    tracker.recordActual(summaryMessages, "claude", 30000, 25000, true);
 
     // Family key should NOT have lastSequenceEstimate
     const stateAfter = tracker.getState("claude");
@@ -557,20 +551,14 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
 
     // Turn 1: normal — establishes adjustment
     tracker.recordActual(messages, "claude", 100000, 50000);
-    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(
-      50000,
-    );
+    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(50000);
 
     // Turn 2: summarization detected — clears adjustment
     tracker.recordActual(messages, "claude", 30000, 25000, true);
-    expect(
-      tracker.getState("claude")?.lastSequenceEstimate,
-    ).toBeUndefined();
+    expect(tracker.getState("claude")?.lastSequenceEstimate).toBeUndefined();
 
     // Turn 3: normal again — re-establishes adjustment
     tracker.recordActual(messages, "claude", 35000, 30000, false);
-    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(
-      30000,
-    );
+    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(30000);
   });
 });

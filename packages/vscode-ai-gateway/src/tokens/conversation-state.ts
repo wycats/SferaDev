@@ -262,9 +262,7 @@ export class ConversationStateTracker {
   /**
    * Get the known state for a model family.
    */
-  getState(
-    modelFamily: string,
-  ): KnownConversationState | undefined {
+  getState(modelFamily: string): KnownConversationState | undefined {
     return this.knownStates.get(modelFamily);
   }
 

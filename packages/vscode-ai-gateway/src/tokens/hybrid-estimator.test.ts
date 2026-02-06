@@ -410,13 +410,7 @@ describe("HybridTokenEstimator", () => {
           "<conversation-summary>\nSummary of conversation\n</conversation-summary>",
         ),
       ];
-      estimator.recordActual(
-        summaryMessages,
-        testModel,
-        30000,
-        25000,
-        true,
-      );
+      estimator.recordActual(summaryMessages, testModel, 30000, 25000, true);
 
       // Family-key adjustment should be 0 (cleared)
       expect(estimator.getAdjustment("claude")).toBe(0);
@@ -579,12 +573,7 @@ describe("HybridTokenEstimator", () => {
       expect(seq1).toBe(6);
 
       const turn1Actual = 50;
-      estimator.recordActual(
-        [msg1, msg2],
-        testModel,
-        turn1Actual,
-        seq1,
-      );
+      estimator.recordActual([msg1, msg2], testModel, turn1Actual, seq1);
 
       // Turn 2: telescoping holds (turn 1→2)
       vi.advanceTimersByTime(501);
@@ -602,12 +591,7 @@ describe("HybridTokenEstimator", () => {
       const seq2 = estimator.getCurrentSequence()?.totalEstimate;
       expect(seq2).toBe(52);
       const turn2Actual = 70;
-      estimator.recordActual(
-        [msg1, msg2, msg3],
-        testModel,
-        turn2Actual,
-        seq2,
-      );
+      estimator.recordActual([msg1, msg2, msg3], testModel, turn2Actual, seq2);
 
       // Turn 3: correction uses marginal error from turn 2
       vi.advanceTimersByTime(501);

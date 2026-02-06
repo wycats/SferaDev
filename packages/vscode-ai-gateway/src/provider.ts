@@ -649,15 +649,19 @@ export class VercelAIChatModelProvider implements LanguageModelChatProvider {
         `${messages.length.toString()} messages, ${estimate.newMessageCount.toString()} new)`,
     );
 
-    // NOTE: Tool schema tokens are NOT added here.
-    // VS Code embeds tool definitions in the system prompt message, so counting
-    // options.tools separately would double-count them. The message estimation
-    // above already includes the system prompt content (with embedded tools).
-    // Evidence: estimates were consistently ~15k over actuals when we added tool tokens.
+    // Count tool schema tokens - these are sent separately to the API
+    // and are NOT embedded in system prompt messages.
+    // Evidence: forensic capture shows tools as separate 'tools' field (~90KB for 75 tools)
+    // while 'instructions' is only ~134 chars. Estimates were ~35k under actual.
     const tokenCounter = this.tokenEstimator.getTokenCounter();
     if (options?.tools && options.tools.length > 0) {
+      const toolTokens = tokenCounter.countToolsTokens(
+        options.tools,
+        model.family,
+      );
+      total += toolTokens;
       logger.debug(
-        `Skipping separate tool token count (${options.tools.length.toString()} tools) - already in system prompt`,
+        `Added ${toolTokens.toString()} tokens for ${options.tools.length.toString()} tool schemas`,
       );
     }
 
