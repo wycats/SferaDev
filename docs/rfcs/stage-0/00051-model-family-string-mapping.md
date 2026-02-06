@@ -165,6 +165,20 @@ The extension's `EnrichmentResponse` type omits `tokenizer` from its `architectu
 
 The `/v1/models` listing has no `architecture` field at all — only the enrichment endpoint returns it, and even there `tokenizer` is always `null`. Any tokenizer selection must be done client-side or the gateway must be updated to populate this field.
 
+### What the Gateway Already Has
+
+The gateway codebase has relevant infrastructure that isn't yet exposed in the API:
+
+- **`architecture.tokenizer` (schema + upstream data, not wired up)**: The enrichment endpoint schema defines `tokenizer: z.string()`. OpenRouter (the gateway's upstream model data source) populates it with labels like `"GPT"`, `"Claude"`, `"Mistral"`. The gateway's enrichment route has a TODO: `// TODO: Source tokenizer from Model interface or provider metadata`. The data is available — it's just not passed through.
+
+- **Primary/secondary slugs (a proto-family)**: The gateway groups models using `primaryModel` / `secondaryModels` fields. For example, `claude-3.5-sonnet-20240620` is a secondary slug under `claude-3.5-sonnet`. This is the closest thing to a family concept in the gateway, but it's not exposed in the API.
+
+- **`type` enum**: `language | embedding | image`. Could be used to filter non-language models from the VS Code model list.
+
+- **`reasoning` tag**: Indicates extended thinking support. Maps to `supported_parameters: ['reasoning', 'include_reasoning']` in the enrichment response.
+
+- **Internal ↔ external ID format**: The gateway uses colon format internally (`anthropic:claude-sonnet-4`) and slash format externally (`anthropic/claude-sonnet-4`), with explicit conversion helpers. Our parser supporting both formats is correct.
+
 ## The Problem: Three Naming Systems
 
 We have three different naming systems that must interoperate:
@@ -272,11 +286,11 @@ The more immediate concern is the **`claude-sonnet-4.5` parsing bug** (see "Pars
 
 ### Q4: Should the gateway provide family and tokenizer metadata?
 
-The Vercel AI Gateway's enrichment endpoint already has an `architecture` object with a `tokenizer` field — but it's always `null`. Two concrete gateway improvements would solve most of this RFC's problems:
+Two small gateway changes would solve most of this RFC's problems. Both build on infrastructure that already exists in the gateway codebase:
 
-1. **Populate `architecture.tokenizer`**: The field already exists in the schema. OpenRouter populates it with labels like `\"GPT\"`, `\"Claude\"`, `\"Mistral\"` — the gateway could pass this through or compute it independently.
+1. **Pass through `architecture.tokenizer`**: The enrichment endpoint schema already defines `tokenizer: z.string()`. OpenRouter (the gateway's upstream data source) already populates it. The gateway route already has a TODO to wire it up. This is a pass-through, not a new feature.
 
-2. **Add a `family` field**: Either on `/v1/models` or in the enrichment response. This would remove the need for client-side regex parsing entirely.
+2. **Expose `primaryModel` as `family`**: The gateway already groups models using `primaryModel` / `secondaryModels` (e.g., `claude-3.5-sonnet-20240620` is secondary under `claude-3.5-sonnet`). Exposing `primaryModel` in the enrichment response or `/v1/models` would give the extension a server-authoritative family string, eliminating client-side regex parsing.
 
 Both changes would:
 
@@ -313,20 +327,18 @@ This would replace the fragile `family.includes("gpt-4o")` pattern with a robust
 
 ## Recommendation
 
-**Short-term**:
+**Short-term** (extension-side):
 
 - **Fix the `claude-sonnet-4.5` parsing bug** (see "Parsing Bug" section). Either exclude single-digit semver from the pattern, or add a minimum-length heuristic.
 - **Keep regex derivation** (`parseModelIdentity`) as the family-string fallback.
 - **Keep hardcoded `resolveEncodingName`** as a conservative fallback for tokenizer selection.
-- **Request gateway change**: Populate `architecture.tokenizer` in the enrichment endpoint (the field exists in the schema but is always `null`).
 
-**Medium-term** (requires gateway changes):
+**Medium-term** (gateway-side — two small changes):
 
-- **Populate `architecture.tokenizer`** on the gateway side. Once populated, the extension can read it from the enrichment response (already fetched by `ModelEnricher`) and use it for data-driven tokenizer selection.
-- **Add a `family` field** to the gateway's `/v1/models` response or enrichment endpoint. Per **DC1**, any family overrides must come from the gateway, not a bundled table.
-- Track what families Copilot adds over time and ensure compatibility.
+- **Pass through `architecture.tokenizer`**: The schema exists, the upstream data exists, there's a TODO in the code. Once wired up, the extension can read it from the enrichment response (already fetched by `ModelEnricher`) and use it for data-driven tokenizer selection.
+- **Expose `primaryModel` as `family`**: The gateway already groups models this way internally. Exposing it in the enrichment response gives the extension a server-authoritative family string, eliminating the regex and the parsing bug in one step.
 
-**Long-term**: The gateway should own the canonical family string and tokenizer metadata, making the extension a thin consumer. If the family concept proves load-bearing for interoperability, formalize it as a first-class concept with a proper registry.
+**Long-term**: The gateway should own the canonical family string and tokenizer metadata, making the extension a thin consumer. Track what families Copilot adds over time and ensure compatibility.
 
 ## References
 

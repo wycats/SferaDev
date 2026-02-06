@@ -9,7 +9,6 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { createHash } from "node:crypto";
 import * as vscode from "vscode";
 import type {
   LanguageModelChatInformation,
@@ -17,6 +16,19 @@ import type {
 } from "vscode";
 import { logger } from "../logger";
 import { safeJsonStringify } from "../utils/serialize.js";
+import {
+  computeNormalizedDigest,
+  computePartDigest,
+  computeRawDigest,
+  hashContent,
+  ROLE_NAMES,
+} from "../utils/digest";
+
+export {
+  computeNormalizedDigest,
+  computeRawDigest,
+  stripOurAdditions,
+} from "../utils/digest";
 
 export interface FullContentCapture {
   systemPrompt?: string;
@@ -157,13 +169,6 @@ export interface ForensicCapture {
 // Global sequence counter
 let captureSequence = 0;
 
-// Role number to string mapping
-const ROLE_NAMES: Record<number, string> = {
-  1: "User",
-  2: "Assistant",
-  3: "System",
-};
-
 export interface CaptureInput {
   model: LanguageModelChatInformation;
   chatMessages: readonly LanguageModelChatMessage[];
@@ -181,10 +186,6 @@ export interface CaptureInput {
   estimatedTokens: number;
   chatId: string;
   currentAgentId: string | null;
-}
-
-function hashContent(content: string): string {
-  return createHash("sha256").update(content).digest("hex").substring(0, 16);
 }
 
 function getMessageTextLength(message: LanguageModelChatMessage): number {
@@ -250,140 +251,6 @@ function getMessageHash(message: LanguageModelChatMessage): string {
     }
   }
   return hashContent(parts.join("|"));
-}
-
-type DigestPartOptions = {
-  includeCallId: boolean;
-  includeName: boolean;
-  stripAdditions: boolean;
-};
-
-function serializeToolPayload(payload: unknown): string {
-  try {
-    return safeJsonStringify(payload);
-  } catch {
-    return "[unserializable]";
-  }
-}
-
-/**
- * Strip additions we add during output streaming:
- * - URL annotations: ` [title](url)` markdown links
- *
- * Per digest-equivalence-algebra.md Section 6:
- * stripOurAdditions(text) = stripUrlAnnotations(text)
- *
- * @visibleForTesting
- */
-export function stripOurAdditions(text: string): string {
-  // Strip URL annotations formatted as ` [title](url)`
-  // The annotation format from stream-adapter.ts: ` [${title}](${url})`
-  // Pattern: space followed by markdown link
-  const stripped = text.replace(/ \[[^\]]+\]\([^)]+\)/g, "");
-  return stripped;
-}
-
-function buildDigestPart(
-  part: LanguageModelChatMessage["content"][number],
-  options: DigestPartOptions,
-): Record<string, unknown> {
-  if ("value" in part && typeof part.value === "string") {
-    const text = options.stripAdditions
-      ? stripOurAdditions(part.value)
-      : part.value;
-    return { type: "text", text };
-  }
-  if ("data" in part && "mimeType" in part) {
-    const data = part.data;
-    // For normalized digest, hash the actual data bytes
-    // For raw digest, just use size (faster, sufficient for debugging)
-    const dataDigest = options.stripAdditions
-      ? hashContent(Buffer.from(data).toString("base64"))
-      : undefined;
-    return {
-      type: "data",
-      mimeType: part.mimeType,
-      ...(dataDigest !== undefined
-        ? { dataDigest }
-        : { dataSize: data.length }),
-    };
-  }
-  if ("callId" in part && "name" in part) {
-    const isResult = "toolResult" in part;
-    const base: Record<string, unknown> = {
-      type: isResult ? "toolResult" : "toolCall",
-      toolName: part.name,
-    };
-    if (options.includeCallId) {
-      base["callId"] = part.callId;
-    }
-    if (isResult) {
-      base["toolResult"] = serializeToolPayload(
-        (part as { toolResult?: unknown }).toolResult,
-      );
-    } else {
-      base["input"] = serializeToolPayload((part as { input?: unknown }).input);
-    }
-    return base;
-  }
-  return { type: "unknown" };
-}
-
-/**
- * Compute a normalized digest for a message, excluding unstable fields.
- * Used to verify A1-A4 assumptions.
- *
- * Normalization rules (from digest-equivalence-algebra.md):
- * - EXCLUDE: name field (often empty/unreliable)
- * - EXCLUDE: callId on tool parts (may be unstable)
- * - Include: role, content text, tool names, tool inputs/results
- */
-export function computeNormalizedDigest(
-  message: LanguageModelChatMessage,
-): string {
-  const payload = {
-    role:
-      ROLE_NAMES[message.role as number] ?? `Unknown(${String(message.role)})`,
-    content: message.content.map((part) =>
-      buildDigestPart(part, {
-        includeCallId: false,
-        includeName: false,
-        stripAdditions: true,
-      }),
-    ),
-  };
-  return hashContent(safeJsonStringify(payload));
-}
-
-/**
- * Compute a raw digest for a message, including all fields.
- */
-export function computeRawDigest(message: LanguageModelChatMessage): string {
-  const name = (message as { name?: string }).name;
-  const payload = {
-    role:
-      ROLE_NAMES[message.role as number] ?? `Unknown(${String(message.role)})`,
-    ...(name !== undefined ? { name } : {}),
-    content: message.content.map((part) =>
-      buildDigestPart(part, {
-        includeCallId: true,
-        includeName: true,
-        stripAdditions: false,
-      }),
-    ),
-  };
-  return hashContent(safeJsonStringify(payload));
-}
-
-function computePartDigest(
-  part: LanguageModelChatMessage["content"][number],
-): string {
-  const payload = buildDigestPart(part, {
-    includeCallId: true,
-    includeName: true,
-    stripAdditions: false,
-  });
-  return hashContent(safeJsonStringify(payload));
 }
 
 function hashToolSchema(tool: {

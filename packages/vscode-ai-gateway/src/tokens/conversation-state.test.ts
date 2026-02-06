@@ -529,17 +529,17 @@ describe("hasSummarizationTag", () => {
 
   it("ignores <conversation-summary> in assistant messages", () => {
     const messages = [
-      createMessage(
-        2,
-        "Here is a <conversation-summary> tag example.",
-      ),
+      createMessage(2, "Here is a <conversation-summary> tag example."),
     ];
     expect(hasSummarizationTag(messages)).toBe(false);
   });
 
   it("is case-insensitive", () => {
     const messages = [
-      createMessage(1, "<Conversation-Summary>\nSummary text\n</Conversation-Summary>"),
+      createMessage(
+        1,
+        "<Conversation-Summary>\nSummary text\n</Conversation-Summary>",
+      ),
     ];
     expect(hasSummarizationTag(messages)).toBe(true);
   });
@@ -553,7 +553,10 @@ describe("hasSummarizationTag", () => {
       {
         role: 1,
         content: [
-          { type: "text", text: "<conversation-summary>\nSummary\n</conversation-summary>" },
+          {
+            type: "text",
+            text: "<conversation-summary>\nSummary\n</conversation-summary>",
+          },
         ],
       },
     ] as unknown as LanguageModelChatMessage[];
@@ -578,9 +581,19 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
 
     // Record with summarization detected — should clear lastSequenceEstimate on family key
     const summaryMessages = [
-      createMessage(1, "<conversation-summary>\nSummary\n</conversation-summary>"),
+      createMessage(
+        1,
+        "<conversation-summary>\nSummary\n</conversation-summary>",
+      ),
     ];
-    tracker.recordActual(summaryMessages, "claude", 30000, "conv-1", 25000, true);
+    tracker.recordActual(
+      summaryMessages,
+      "claude",
+      30000,
+      "conv-1",
+      25000,
+      true,
+    );
 
     // Family key should NOT have lastSequenceEstimate
     const stateAfter = tracker.getState("claude", undefined);
@@ -605,14 +618,20 @@ describe("summarization guard (RFC 047 Phase 4b)", () => {
 
     // Turn 1: normal — establishes adjustment
     tracker.recordActual(messages, "claude", 100000, "conv-1", 50000);
-    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(50000);
+    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(
+      50000,
+    );
 
     // Turn 2: summarization detected — clears adjustment
     tracker.recordActual(messages, "claude", 30000, "conv-1", 25000, true);
-    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBeUndefined();
+    expect(
+      tracker.getState("claude", undefined)?.lastSequenceEstimate,
+    ).toBeUndefined();
 
     // Turn 3: normal again — re-establishes adjustment
     tracker.recordActual(messages, "claude", 35000, "conv-1", 30000, false);
-    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(30000);
+    expect(tracker.getState("claude", undefined)?.lastSequenceEstimate).toBe(
+      30000,
+    );
   });
 });

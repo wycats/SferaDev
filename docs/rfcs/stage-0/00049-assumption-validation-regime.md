@@ -14,7 +14,7 @@ exo:
 **Author:** Copilot  
 **Created:** 2026-02-05
 
-**Related:** 047 (Rolling Correction for provideTokenCount), 029 (Delta-Based Token Estimation), 032 (Integration Test Harness)
+**Related:** 047 (Rolling Correction for provideTokenCount — Phases 4a/4b now complete), 029 (Delta-Based Token Estimation), 032 (Integration Test Harness)
 
 ## Problem
 
@@ -49,13 +49,15 @@ Things that would cause compile errors or obvious runtime failures if violated.
 
 Things we infer from observation and source auditing. Would cause subtle, hard-to-diagnose bugs if violated.
 
-| ID  | Assumption                                                          | Evidence                                 | Current Validation                    |
-| --- | ------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------- |
-| B1  | Copilot calls `countTokens` once per message in a loop              | Production logs (134-289 calls/sequence) | **None (manual log inspection only)** |
-| B2  | All messages in a turn are counted in a single rapid burst (<500ms) | Production logs (sub-ms intra-turn gaps) | **None**                              |
-| B3  | Inter-turn gaps are always >500ms                                   | Production logs (1.8s-84.5s observed)    | **None**                              |
-| B4  | `provideTokenCount` is called before `sendRequest` (not after)      | Inference from VS Code source            | **None**                              |
-| B5  | Call count per sequence ≈ message count in conversation             | Production logs                          | **None**                              |
+| ID  | Assumption                                                                                                                 | Evidence                                 | Current Validation                                                              |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| B1  | Copilot calls `countTokens` once per message in a loop                                                                     | Production logs (134-289 calls/sequence) | **None (manual log inspection only)**                                           |
+| B2  | All messages in a turn are counted in a single rapid burst (<500ms)                                                        | Production logs (sub-ms intra-turn gaps) | **None**                                                                        |
+| B3  | Inter-turn gaps are always >500ms                                                                                          | Production logs (1.8s-84.5s observed)    | **None**                                                                        |
+| B4  | `provideTokenCount` is called before `sendRequest` (not after)                                                             | Inference from VS Code source            | **None**                                                                        |
+| B5  | Call count per sequence ≈ message count in conversation                                                                    | Production logs                          | **None**                                                                        |
+| B6  | Copilot inserts a persistent `<conversation-summary>` user message at the start of the messages array after summarization  | VS Code Copilot Chat source audit        | `hasSummarizationTag()` detects it; summarization guard clears stale correction |
+| B7  | Conversation identity (`extractIdentity`) resets after summarization because the first user message changes to the summary | Inference from `extractIdentity()` impl  | Implicit (dual-write to family key bridges the reset)                           |
 
 **Risk if wrong:** Subtle — rolling correction silently returns wrong values, summarization doesn't trigger.
 **Validation needed:** High — these are the assumptions the rolling correction depends on.
@@ -64,11 +66,12 @@ Things we infer from observation and source auditing. Would cause subtle, hard-t
 
 Things we believe about how token counts are used by the consumer.
 
-| ID  | Assumption                                                        | Evidence                                | Current Validation |
-| --- | ----------------------------------------------------------------- | --------------------------------------- | ------------------ |
-| M1  | Copilot sums per-message token counts to get a total              | Circumstantial (summarization behavior) | **None**           |
-| M2  | That total is compared against `maxInputTokens` for summarization | Circumstantial                          | **None**           |
-| M3  | Our corrected estimates cause earlier/correct summarization       | Not yet tested                          | **None**           |
+| ID  | Assumption                                                                                                    | Evidence                                | Current Validation                                                      |
+| --- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------- |
+| M1  | Copilot sums per-message token counts to get a total                                                          | Circumstantial (summarization behavior) | **None**                                                                |
+| M2  | That total is compared against `maxInputTokens` for summarization                                             | Circumstantial                          | **None**                                                                |
+| M3  | Our corrected estimates cause earlier/correct summarization                                                   | Not yet tested                          | **None**                                                                |
+| M4  | `provideTokenCount()` receives no conversation identity, so rolling correction must use model-family-only key | VS Code API types (no context param)    | Dual-write in `recordActual()` + family-key lookup in `getAdjustment()` |
 
 **Risk if wrong:** Feature doesn't work — but silently.
 **Validation needed:** Medium — hardest to test, but most important for the feature.
@@ -168,6 +171,8 @@ forensic-fixtures/
 
 **What:** After rolling correction is deployed, track whether summarization behavior actually changes. This is the ultimate end-to-end validation.
 
+**Status:** Partially implemented. Rolling correction application and summarization detection are logged at info level (string-based). The remaining work is evolving these into structured JSON events that can be queried and correlated.
+
 **How:**
 
 ```
@@ -180,7 +185,7 @@ logger.info("Rolling correction applied", {
 });
 
 // Log when summarization occurs (or doesn't):
-// (detect via message count decreasing between turns)
+// (detect via <conversation-summary> tag — already implemented)
 logger.info("Summarization detected", {
   messagesBefore: prev_count,
   messagesAfter: curr_count,
@@ -194,6 +199,7 @@ logger.info("Summarization detected", {
 - Validates the end-to-end hypothesis
 - Takes time to collect data (not immediate feedback)
 - Most honest validation of M1-M3
+- **Partially done:** Detection and basic logging exist; structured format and correlation remain
 
 ## Implementation Plan
 
@@ -242,8 +248,8 @@ _Captured 2026-02-05. Documents what testing infrastructure exists today and whe
 
 **1. Unit tests (Vitest)** — `apps/vscode-ai-gateway/` and `packages/vscode-ai-gateway/`
 
-- 33 test files, 417 tests, all passing
-- Includes `sequence-tracker.test.ts` (18 tests) and `sequence-tracker-proof.test.ts` (7 proof tests)
+- 33 test files, 449 tests, all passing
+- Includes `sequence-tracker.test.ts` (18 tests), `sequence-tracker-proof.test.ts` (7 proof tests), `conversation-state.test.ts` (summarization guard + dual-write), and `hybrid-estimator.test.ts` (key alignment + summarization integration)
 - Tests internal logic only — no VS Code host, no real API calls
 
 **2. Integration test harness** — `packages/vscode-ai-gateway/src/test/`
@@ -276,12 +282,40 @@ _Captured 2026-02-05. Documents what testing infrastructure exists today and whe
 
 ### Key Gaps Identified
 
-| Gap                                                  | Impact                                                      | Addressed By                                       |
-| ---------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
-| No forensic capture of `provideTokenCount` calls     | Can't correlate token counting with sendRequest timing (B4) | Strategy 1 (Sentinel) + forensic capture extension |
-| Sequence tracker logs are unstructured text          | Can't easily create regression fixtures                     | Strategy 2 needs structured log format first       |
-| Integration tests don't exercise `provideTokenCount` | Can't validate B4/B5 in CI                                  | Strategy 2 (Integration Sentinels)                 |
-| No summarization event detection                     | Can't validate M1-M3                                        | Strategy 4 (Canary Metrics)                        |
+| Gap                                                  | Impact                                                      | Addressed By                                       | Status                                                                                                                                                   |
+| ---------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No forensic capture of `provideTokenCount` calls     | Can't correlate token counting with sendRequest timing (B4) | Strategy 1 (Sentinel) + forensic capture extension | Open                                                                                                                                                     |
+| Sequence tracker logs are unstructured text          | Can't easily create regression fixtures                     | Strategy 2 needs structured log format first       | Open                                                                                                                                                     |
+| Integration tests don't exercise `provideTokenCount` | Can't validate B4/B5 in CI                                  | Strategy 2 (Integration Sentinels)                 | Open                                                                                                                                                     |
+| ~~No summarization event detection~~                 | ~~Can't validate M1-M3~~                                    | ~~Strategy 4 (Canary Metrics)~~                    | **Resolved** — `hasSummarizationTag()` detects `<conversation-summary>` tag; summarization guard clears stale correction; info-level logging in provider |
+
+### Infrastructure Added Since RFC Creation (RFC 047 Phases 4a/4b)
+
+_Added 2026-02-05 during Phase 4 implementation._
+
+**1. Summarization detection** — `conversation-state.ts`
+
+- `hasSummarizationTag(messages)` — scans user messages for `<conversation-summary>` XML tag
+- `extractPartText(part)` — handles both `LanguageModelTextPart` ({value}) and serialized ({type, text}) formats
+- Detects summarization reliably via a persistent tag Copilot inserts after summarization (B6)
+
+**2. Key alignment (dual-write)** — `conversation-state.ts`
+
+- `recordActual()` writes to both per-conversation key (`"claude:<hash>"`) and model-family-only key (`"claude"`)
+- Bridges the identity gap: `provideTokenCount()` can read family-key correction without conversation identity (M4)
+- LRU eviction guard on first family-key insertion
+
+**3. Summarization guard** — `conversation-state.ts` + `provider.ts`
+
+- When `summarizationDetected` flag is set, `recordActual()` omits `lastSequenceEstimate` from the family key
+- This causes `getAdjustment()` to return 0 (no stale correction applied)
+- Provider detects summarization before API call and threads the flag through `onUsage` callback
+
+**4. Production logging** — `provider.ts` + `hybrid-estimator.ts`
+
+- Info-level log when summarization detected: `"Summarization detected in conversation"`
+- Rolling correction application logged with adjustment value
+- Partial coverage of Strategy 4 (Canary Metrics) — but logs are still string-based, not structured JSON
 
 ### VS Code Source Audit Findings
 

@@ -17,6 +17,10 @@
  * 8. Error events
  */
 
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+
 import type {
   Error as ResponseError,
   ErrorPayload,
@@ -344,6 +348,29 @@ export class StreamAdapter {
   ): AdaptedEvent {
     const response = event.response as ResponseResource;
     const usage = response.usage as Usage;
+
+    // Log response ID chain for RFC 052 delta caching investigation
+    logger.info(
+      `[OpenResponses] Response chain: id=${response.id ?? "null"}, previous_response_id=${response.previous_response_id ?? "null"}`,
+    );
+
+    // Append to response chain log for forensic analysis
+    try {
+      const logDir = path.join(os.homedir(), ".vscode-ai-gateway");
+      fs.mkdirSync(logDir, { recursive: true });
+      const logFile = path.join(logDir, "response-chain.jsonl");
+      const entry = {
+        timestamp: new Date().toISOString(),
+        responseId: response.id,
+        previousResponseId: response.previous_response_id,
+        inputTokens: usage?.input_tokens,
+        outputTokens: usage?.output_tokens,
+        model: response.model,
+      };
+      fs.appendFileSync(logFile, JSON.stringify(entry) + "\n");
+    } catch (err) {
+      logger.warn(`[OpenResponses] Failed to write response chain log: ${err instanceof Error ? err.message : String(err)}`);
+    }
 
     // Log the raw response for debugging stop_reason issues
     const rawResponse = response as unknown as {

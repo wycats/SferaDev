@@ -963,7 +963,7 @@ completion_log = "Phase 3 complete: 11 new tests (5 integration, 4 edge case, 2 
 [[epochs.phases]]
 id = "01kgqrmhy9wagj12ksra2v180m"
 title = "Phase 4: Token Display Fixes (RFC 044)"
-status = "active"
+status = "completed"
 rfcs = ["00044"]
 
 [[epochs.phases.goals]]
@@ -981,6 +981,36 @@ completion_log = "Post-summarization invalidation complete. Detects <conversatio
 [[epochs.phases]]
 id = "01kgqrmqps27k6m4pr3gha40xg"
 title = "Phase 5: Assumption Validation Regime (RFC 049)"
-status = "pending"
-goals = []
+status = "active"
 rfcs = ["00049"]
+
+[[epochs.phases.goals]]
+id = "hash-unification"
+label = "Unify Message Hashing (RFC 050 Blocker)"
+status = "completed"
+completion_log = "PER cycle complete. Created src/utils/digest.ts as shared module with computeNormalizedDigest(). Migrated TokenCache to use shared digest (removed 119 lines of duplicate code). Updated imports in conversation-state.ts. Added cross-module equivalence test. Review confirmed: no blockers, all 450 tests pass."
+
+[[epochs.phases.goals]]
+id = "response-id-plumbing"
+label = "Add Lookup-Before-Record Pattern (RFC 052 Phase 1)"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "response-id-cache"
+label = "Integrate TokenCache Population (RFC 052 Phase 2)"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "delta-computation"
+label = "Handle Edge Cases (RFC 052 Phase 3)"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "sentinel-assertions"
+label = "Sentinel Assertions for B1-B5 (BehaviorValidator)"
+status = "pending"
+
+[[epochs.phases.goals]]
+id = "structured-logging"
+label = "Structured Logging for Rolling Correction & Summarization"
+status = "pending"

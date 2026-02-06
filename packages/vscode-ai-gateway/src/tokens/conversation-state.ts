@@ -15,7 +15,7 @@
 
 import type * as vscode from "vscode";
 import { logger } from "../logger";
-import { computeNormalizedDigest } from "../provider/forensic-capture";
+import { computeNormalizedDigest } from "../utils/digest";
 
 const CONVERSATION_SUMMARY_TAG = /<conversation-summary>/i;
 
@@ -27,7 +27,10 @@ const CONVERSATION_SUMMARY_TAG = /<conversation-summary>/i;
 function extractPartText(part: unknown): string | undefined {
   if (typeof part !== "object" || part === null) return undefined;
   // LanguageModelTextPart: has .value
-  if ("value" in part && typeof (part as { value: unknown }).value === "string") {
+  if (
+    "value" in part &&
+    typeof (part as { value: unknown }).value === "string"
+  ) {
     return (part as { value: string }).value;
   }
   // Serialized text part: has .type === "text" and .text

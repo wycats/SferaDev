@@ -2,45 +2,102 @@
 # Implementation Plan
 
 [phase]
-id = "01kgqrmhy9wagj12ksra2v180m"
-title = "Phase 4: Token Display Fixes (RFC 044)"
-rfcs = ["00044"]
+id = "01kgqrmqps27k6m4pr3gha40xg"
+title = "Phase 5: Assumption Validation Regime (RFC 049)"
+rfcs = ["00049"]
 
 [plan]
 
 [[plan.goals]]
-id = "key-alignment"
-
-[[plan.goals.tasks]]
-id = "write-family-key"
-title = "Write model-family-only adjustment state in recordActual()"
-status = "completed"
-completed_at = "2026-02-05T22:22:12.190612193+00:00"
-completion_log = "Dual-write in recordActual(): writes to both per-conversation and model-family-only key. Eviction guard on first insertion preserves maxEntries invariant. All 438 tests pass."
-
-[[plan.goals.tasks]]
-id = "test-key-alignment"
-title = "Test: getAdjustment() returns non-zero after recordActual() with conversationId"
-status = "completed"
-completed_at = "2026-02-05T22:22:17.307408845+00:00"
-completion_log = "2 new integration tests in hybrid-estimator.test.ts (key alignment + last-write-wins), 1 new edge-case test for LRU cap with new model family, 4 existing tests updated for dual-write. All 438 tests pass."
+id = "sentinel-assertions"
 
 [[plan.goals]]
-id = "summarization-guard"
+id = "structured-logging"
+
+[[plan.goals]]
+id = "hash-unification"
 
 [[plan.goals.tasks]]
-id = "detect-shrinkage"
-title = "Detect <conversation-summary> tag in messages and clear stale family-key adjustment"
+id = "extract-digest-module"
+title = "Extract digest functions to shared module"
 status = "completed"
-completed_at = "2026-02-05T23:59:36.480389250+00:00"
-completion_log = "Added hasSummarizationTag() scanning for <conversation-summary> tag. Handles both LanguageModelTextPart and serialized formats. Wired provider → estimator → state. Clears lastSequenceEstimate from family-key on detection."
+completed_at = "2026-02-06T02:24:42.711455866+00:00"
+completion_log = "Created shared digest module and moved canonical digest helpers with re-exports from forensic-capture."
 
 [[plan.goals.tasks]]
-id = "test-summarization-guard"
-title = "Test: adjustment clears when <conversation-summary> detected, re-establishes on next turn"
+id = "migrate-token-cache"
+title = "Update TokenCache to use unified digest"
 status = "completed"
-completed_at = "2026-02-05T23:59:43.926727714+00:00"
-completion_log = "11 new tests: 6 for hasSummarizationTag, 3 for guard behavior, 2 integration. All 449 tests pass."
+completed_at = "2026-02-06T02:24:43.331816327+00:00"
+completion_log = "TokenCache now uses computeNormalizedDigest and legacy digest helpers removed; tests updated accordingly."
+
+[[plan.goals.tasks]]
+id = "migrate-conversation-state"
+title = "Update ConversationStateTracker import"
+status = "completed"
+completed_at = "2026-02-06T02:24:43.888453917+00:00"
+completion_log = "ConversationStateTracker now imports computeNormalizedDigest from shared digest module."
+
+[[plan.goals.tasks]]
+id = "hash-unification-test"
+title = "Add cross-module digest equivalence test"
+status = "completed"
+completed_at = "2026-02-06T02:24:44.414314904+00:00"
+completion_log = "Added cross-module digest equivalence test covering name/callId/URL annotation cases."
+
+[[plan.goals]]
+id = "response-id-plumbing"
+
+[[plan.goals.tasks]]
+id = "lookup-before-record::add-lookup-call"
+title = "Call ConversationStateTracker.lookup() before recordActual()"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "lookup-before-record::extract-prefix-info"
+title = "Extract knownTokens and newMessageIndices from lookup result"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "lookup-before-record::compute-delta"
+title = "Compute delta = actualTokens - knownTokens when prefix match"
+status = "pending"
+
+[[plan.goals]]
+id = "response-id-cache"
+
+[[plan.goals.tasks]]
+id = "token-cache-integration::cache-per-message"
+title = "Call tokenCache.cacheActual() for each new message with delta/N tokens"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "token-cache-integration::verify-hash-consistency"
+title = "Verify hash consistency between lookup and cache (already unified)"
+status = "pending"
+
+[[plan.goals]]
+id = "delta-computation"
+
+[[plan.goals.tasks]]
+id = "edge-cases::first-turn"
+title = "Handle first turn (no previous state) - skip delta caching"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "edge-cases::summarization"
+title = "Handle summarization (message count drops) - lookup returns none"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "edge-cases::negative-delta"
+title = "Handle negative delta (shouldn't happen) - log warning, skip caching"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "edge-cases::integration-test"
+title = "End-to-end test of content-hash delta caching flow"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
