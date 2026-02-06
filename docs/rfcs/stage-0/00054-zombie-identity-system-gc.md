@@ -204,12 +204,89 @@ Changes:
 
 **Scope:** If post-error behavior is still needed, implement properly
 
-Options:
-1. **Do nothing**: Rolling correction handles systematic error over time
-2. **Clear on error**: On "too long", clear rolling correction state to reset estimates
-3. **Learn from error**: Extract actual token count from error response (if available) and feed to rolling correction
+#### The Gap (Documented 2026-02-06)
 
-**Decision:** Defer until we observe post-Phase-2 behavior in production
+After removing the zombie 1.5x multiplier system:
+
+- On "too long" error: We display the error in status bar, but don't adjust estimates
+- Rolling correction only updates on **successful** requests via `recordActual()`
+- Next request will use the same (too low) estimates → potential for repeated errors
+
+**What the zombie code did (badly):**
+- Stored `actualTokens` from error with a lossy conversation hash
+- Applied 1.5x multiplier to ALL `provideTokenCount()` calls if hash matched
+- Problems: lossy hash caused ping-pong, 1.5x was arbitrary, cross-conversation pollution
+
+#### Options
+
+**Option 1: Do Nothing (Observe)**
+
+Rationale: VS Code may handle this itself. When a request fails with "too long", VS Code might:
+- Automatically trigger summarization
+- Retry with fewer messages
+- Show user a prompt to reduce context
+
+Risk: If VS Code doesn't handle it, users get stuck in error loops.
+
+**Option 2: Clear Rolling Correction on Error**
+
+```typescript
+// In error handler, after extracting tokenInfo:
+if (tokenInfo) {
+  this.tokenEstimator.clearAdjustment(model.family);
+}
+```
+
+Rationale: If we hit a token limit, our estimates were too low. Clearing the rolling correction resets to baseline tiktoken estimates, which are typically conservative (higher than actual).
+
+Pros:
+- Simple to implement
+- No new state to track
+- Conservative approach (higher estimates = safer)
+
+Cons:
+- Loses accumulated correction data
+- May over-correct (estimates too high after reset)
+
+**Option 3: Feed Error to Rolling Correction**
+
+```typescript
+// In error handler, after extracting tokenInfo:
+if (tokenInfo && chatMessages) {
+  this.tokenEstimator.recordActual(
+    chatMessages,
+    model,
+    tokenInfo.actualTokens,
+    conversationId,
+    sequenceEstimate,
+    false,  // not summarization
+  );
+}
+```
+
+Rationale: The error response tells us the actual token count. We can use this to update rolling correction just like a successful response.
+
+Pros:
+- Uses existing infrastructure
+- Correction is proportional to actual error
+- No new mechanisms needed
+
+Cons:
+- Requires access to `chatMessages` in error handler
+- May need to re-add message tracking (removed with zombie code)
+- Error token counts may be less reliable than success counts
+
+#### Recommendation
+
+**Start with Option 1 (Do Nothing)** and observe behavior in production.
+
+Rationale:
+1. We don't know if this is actually a problem in practice
+2. VS Code may already handle "too long" errors gracefully
+3. Adding complexity without evidence of need violates YAGNI
+4. If needed, Option 3 is the cleanest solution
+
+**If issues are observed:** Implement Option 3 - it's the most architecturally sound because it uses the existing rolling correction mechanism rather than adding a parallel system.
 
 ## Migration Strategy
 

@@ -81,12 +81,16 @@ id = "design-error-recovery"
 [[plan.goals.tasks]]
 id = "document-gap"
 title = "Document the error recovery gap in RFC 00054"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T21:00:56.160582723+00:00"
+completion_log = "Added 'The Gap' section to RFC 00054 Phase 4 documenting what was removed and the resulting behavior"
 
 [[plan.goals.tasks]]
 id = "propose-options"
 title = "Propose options: (1) do nothing, (2) clear correction on error, (3) feed error to rolling correction"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-06T21:01:03.943792856+00:00"
+completion_log = "Documented 3 options with code examples and recommendation (Option 1: observe first, Option 3 if needed)"
 
 [verification]
 automated = ["pnpm test", "pnpm typecheck"]
