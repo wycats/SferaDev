@@ -149,6 +149,35 @@ provider.recordUsage()
 3. **Negative delta (shouldn't happen):** Log warning; skip caching
 4. **Zero new messages:** Skip per-message caching
 
+### Phase 4: Persistence
+
+**Files:** tokens/cache.ts, tokens/hybrid-estimator.ts
+
+**Goal:** Cached per-message token counts survive extension restarts.
+
+**Mechanism:**
+1. **Constructor change:** Accept optional `vscode.Memento` parameter
+2. **On activation:** Load cache from `globalState`, filtering stale entries (>24h)
+3. **On `cacheActual()`:** Schedule debounced write to `globalState` (1s debounce)
+4. **LRU eviction:** Maintain access order; evict oldest when exceeding 2000 entries
+5. **Storage format:**
+   ```typescript
+   interface PersistedTokenCache {
+     version: 1;
+     savedAt: number;  // When cache was last persisted
+     entries: Array<{
+       key: string;
+       entry: CachedTokenCount;  // Includes per-entry timestamp
+     }>;
+   }
+   ```
+
+**TTL filtering:** Each `CachedTokenCount.timestamp` is checked on load; entries older than 24h are discarded.
+
+**Integration:**
+- `HybridTokenEstimator` passes `context.globalState` to `TokenCache` constructor
+- Pattern mirrors `ConversationStateTracker` persistence
+
 ## Assumptions
 
 | ID | Assumption | Validation |
@@ -157,6 +186,8 @@ provider.recordUsage()
 | A2 | Prefix matching correctly identifies conversation continuity | ConversationStateTracker tests verify this behavior |
 | A3 | `input_tokens` is monotonically increasing within a conversation | Verify no resets or recounts in production |
 | A4 | TokenCache lookup uses same hash as ConversationStateTracker | Ensured by unified `computeNormalizedDigest()` |
+| A5 | globalState survives extension restarts | VS Code Memento API guarantee |
+| A6 | 2000 entries × ~100 bytes fits in globalState | Well under VS Code's limits |
 
 ## Edge Cases
 
@@ -193,7 +224,8 @@ Content-hash delta caching **complements** rolling correction:
 
 1. Should we track cache hit/miss rates in telemetry?
 2. How do we handle the transition period where some conversations have cached data and others don't?
-3. Should we pre-populate cache from conversation state on extension activation?
+3. ~~Should we pre-populate cache from conversation state on extension activation?~~ **Resolved:** Phase 4 adds persistence; cache is restored from globalState on activation.
+4. Should TokenCache and ConversationStateTracker share a persistence abstraction? (See RFC 034)
 
 ## References
 
