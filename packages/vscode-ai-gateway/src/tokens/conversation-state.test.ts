@@ -407,16 +407,20 @@ describe("ConversationStateTracker", () => {
         createMessage(2, "B"),
         createMessage(1, "C"),
         createMessage(2, "D"),
+        createMessage(1, "E"),
+        createMessage(2, "F"),
       ];
       tracker.recordActual(messagesA, "claude", 100);
 
-      // Same prefix for first 3 messages (A, B, C), but divergence at end (E vs D)
-      // This is 3/4 matches = 75% overlap, which meets > 70% threshold.
+      // Same prefix for first 5 messages, divergence at end (G vs F)
+      // This is 5/6 matches = 83% overlap
       const messagesB = [
         createMessage(1, "A"),
         createMessage(2, "B"),
         createMessage(1, "C"),
-        createMessage(2, "E"), // Divergence
+        createMessage(2, "D"),
+        createMessage(1, "E"),
+        createMessage(2, "G"), // Divergence
       ];
 
       vi.mocked(logger.info).mockClear();
@@ -433,15 +437,53 @@ describe("ConversationStateTracker", () => {
         args[0].includes("[NearMissTelemetry]"),
       );
       expect(logCall).toBeDefined();
-      expect(logCall![0]).toContain("Overlap=3/4 (75.0%)");
-      expect(logCall![0]).toContain("DivergenceIndex=3");
+      expect(logCall![0]).toContain("Overlap=5/6 (83.3%)");
+      expect(logCall![0]).toContain("DivergenceIndex=5");
+    });
+
+    it("does not log near miss for short conversations (< 5 messages)", () => {
+      const messagesA = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "D"),
+      ]; // length 4
+      tracker.recordActual(messagesA, "claude", 100);
+
+      const messagesB = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "E"),
+      ];
+
+      vi.mocked(logger.info).mockClear();
+      tracker.recordActual(messagesB, "claude", 120);
+
+      expect(logger.info).not.toHaveBeenCalledWith(
+        expect.stringContaining("[NearMissTelemetry]"),
+      );
     });
 
     it("does not log near miss for low overlap", () => {
-      const messagesA = [createMessage(1, "A"), createMessage(2, "B")];
+      const messagesA = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "D"),
+        createMessage(1, "E"),
+        createMessage(2, "F"),
+      ];
       tracker.recordActual(messagesA, "claude", 100);
 
-      const messagesB = [createMessage(1, "X"), createMessage(2, "Y")];
+      const messagesB = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "X"),
+        createMessage(2, "Y"),
+        createMessage(1, "Z"),
+        createMessage(2, "W"),
+      ]; // Only 2/6 overlap = 33%
 
       vi.mocked(logger.info).mockClear();
       tracker.recordActual(messagesB, "claude", 120);

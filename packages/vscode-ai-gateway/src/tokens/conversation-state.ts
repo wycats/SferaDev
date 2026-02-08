@@ -480,7 +480,7 @@ export class ConversationStateTracker {
 
     // 1. Minimum complexity threshold: Don't log for tiny conversations
     // where collisions or "near misses" are less statistically significant.
-    if (approxState.messageHashes.length < 3) return;
+    if (approxState.messageHashes.length < 5) return;
 
     // 2. Overlap calculation
     const currentSet = new Set(currentHashes);
