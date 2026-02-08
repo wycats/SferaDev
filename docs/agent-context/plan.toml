@@ -1222,13 +1222,13 @@ id = "00054"
 [[epochs]]
 id = "01kgtm2sg4ddjfk01p6dsxvwr5"
 title = "Model Family Parsing Fix (RFC 00051)"
-status = "active"
+status = "completed"
 ulid = "01KGTM2SG4DDJFK01P6DSXVWR5"
 
 [[epochs.phases]]
 id = "01kgtm3daenjghakthzf0txt2j"
 title = "Fix claude-sonnet-4.5 Parsing Bug"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KGTM3DAENJGHAKTHZF0TXT2J"
 
@@ -1248,3 +1248,40 @@ ulid = "01KGXA0A6WFSX9VMBFN3208J0V"
 
 [[epochs.phases.rfcs]]
 id = "00051"
+
+[[epochs]]
+id = "01kgxzcv70r24gsbaq6y8raxxt"
+title = "Unified Conversation Identity"
+status = "active"
+ulid = "01KGXZCV70R24GSBAQ6Y8RAXXT"
+
+[[epochs.phases]]
+id = "01kgxzd2ma3kxnn1xy6x7pqm8j"
+title = "Phase 1: Add conversationId to ConversationStateTracker"
+status = "active"
+kind = "regular"
+ulid = "01KGXZD2MA3KXNN1XY6X7PQM8J"
+
+[[epochs.phases.goals]]
+id = "add-cid-field"
+label = "Add conversationId to KnownConversationState and ConversationLookupResult"
+status = "pending"
+ulid = "01KGXZDPZQFE8KXM56PD1KQR2P"
+
+[[epochs.phases.goals]]
+id = "thread-estimator"
+label = "Thread conversationId through HybridTokenEstimator"
+status = "pending"
+ulid = "01KGXZDVD3F2W0DVHFEEJ21297"
+
+[[epochs.phases.goals]]
+id = "thread-provider"
+label = "Thread conversationId through Provider.provideTokenCount"
+status = "pending"
+ulid = "01KGXZDVK8PNTR1ZADFNAR4F84"
+
+[[epochs.phases.goals]]
+id = "use-in-status-bar"
+label = "Replace partialKey with conversationId in TokenStatusBar"
+status = "pending"
+ulid = "01KGXZDVV4XY1AWAKWKAJZRGMH"
