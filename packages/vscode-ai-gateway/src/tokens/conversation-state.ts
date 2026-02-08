@@ -283,7 +283,6 @@ export class ConversationStateTracker {
     const currentNormalizedHashes = messages.map((m) =>
       computeNormalizedDigest(m),
     );
-    const currentRawHashes = messages.map((m) => computeRawDigest(m));
 
     logger.info(
       `[ConversationStateDebug] Lookup: hashes=${currentNormalizedHashes.length} last5=${JSON.stringify(currentNormalizedHashes.slice(-5))}`,
@@ -304,22 +303,25 @@ export class ConversationStateTracker {
       // Only log if we expect a prefix match but maxCount != length
       // If state len=33, and we match 30...
       let mismatches = 0;
-      for (
-        let i = 0;
-        i < state.messageHashes.length && i < currentNormalizedHashes.length;
-        i++
-      ) {
-        if (state.messageHashes[i] !== currentNormalizedHashes[i]) {
+      const minLen = Math.min(
+        state.messageHashes.length,
+        currentNormalizedHashes.length,
+        messages.length,
+      );
+      for (let i = 0; i < minLen; i++) {
+        const stateHash = state.messageHashes[i]!;
+        const currentHash = currentNormalizedHashes[i]!;
+        if (stateHash !== currentHash) {
           mismatches++;
           if (mismatches <= 5) {
             logger.info(
-              `[ConversationStateDebug] Hash Mismatch at index ${i}: State=${state.messageHashes[i].substring(0, 8)} Input=${currentNormalizedHashes[i].substring(0, 8)}`,
+              `[ConversationStateDebug] Hash Mismatch at index ${i}: State=${stateHash.substring(0, 8)} Input=${currentHash.substring(0, 8)}`,
             );
             // Log raw content of mismatching messages for forensic analysis
-            const inputMsg = messages[i];
+            const inputMsg = messages[i]!;
             const contentPreview = inputMsg.content
               .map((p) => {
-                if ("value" in p) return (p as any).value.substring(0, 100);
+                if ("value" in p) return (p as { value: string }).value.substring(0, 100);
                 return JSON.stringify(p).substring(0, 100);
               })
               .join(" | ");
@@ -331,7 +333,7 @@ export class ConversationStateTracker {
       }
       if (mismatches > 0) {
         logger.info(
-          `[ConversationStateDebug] Total Mismatches vs Candidate: ${mismatches} / ${Math.min(state.messageHashes.length, currentNormalizedHashes.length)}`,
+          `[ConversationStateDebug] Total Mismatches vs Candidate: ${mismatches} / ${minLen}`,
         );
       }
     }
@@ -377,7 +379,8 @@ export class ConversationStateTracker {
     // Identify which current messages are NEW (not in the known set)
     const newMessageIndices: number[] = [];
     for (let i = 0; i < currentNormalizedHashes.length; i++) {
-      if (!knownHashSet.has(currentNormalizedHashes[i])) {
+      const hash = currentNormalizedHashes[i];
+      if (hash !== undefined && !knownHashSet.has(hash)) {
         newMessageIndices.push(i);
       }
     }
@@ -487,6 +490,7 @@ export class ConversationStateTracker {
 
     for (let i = this.accessOrder.length - 1; i >= 0; i--) {
       const key = this.accessOrder[i];
+      if (key === undefined) continue;
       const count = frequencyMap.get(key) ?? 0;
       if (count === 0) continue;
 

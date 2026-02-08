@@ -21,6 +21,7 @@ export interface TokenValidationLogEntry {
   deducedTokens?: number;
   messageRole?: string;
   messageDigest?: string;
+  isProportional?: boolean; // true if tokens were distributed proportionally across multiple messages
 }
 
 export class TokenValidationLogger {

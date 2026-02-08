@@ -15,6 +15,7 @@ reviewed = true
 id = "phase-stream-adapter"
 title = "Stream Adapter Implementation (RFC 003a)"
 status = "completed"
+kind = "regular"
 ulid = "01KG0K3GP3TKRP5WKHG93K44EY"
 slug = "phase-stream-adapter"
 aliases = ["phase-stream-adapter"]
@@ -47,6 +48,7 @@ aliases = ["usage-tracking"]
 id = "phase-token-estimation"
 title = "Token Estimation & Message Conversion (RFC 003b)"
 status = "completed"
+kind = "regular"
 ulid = "01KG0K3GP3W7D9RV2V062PQ6AZ"
 slug = "phase-token-estimation"
 aliases = ["phase-token-estimation"]
@@ -79,6 +81,7 @@ aliases = ["mime-handling"]
 id = "phase-logging"
 title = "Structured Logging"
 status = "completed"
+kind = "regular"
 ulid = "01KG0K3GP32PFP59Q0TQ0JDHJP"
 slug = "phase-logging"
 aliases = ["phase-logging"]
@@ -104,6 +107,7 @@ reviewed = true
 id = "phase-config-schema"
 title = "Configuration Schema (RFC 005a)"
 status = "completed"
+kind = "regular"
 ulid = "01KG0K3GP3NR9S4K4KKBWD1N1Z"
 slug = "phase-config-schema"
 aliases = ["phase-config-schema"]
@@ -145,7 +149,7 @@ reviewed = true
 id = "phase-model-identity"
 title = "Phase 1: Model Identity Parsing"
 status = "completed"
-rfcs = ["008"]
+kind = "regular"
 ulid = "01KGB6909WKE35WXJ73MJPKKY4"
 slug = "phase-model-identity"
 aliases = ["phase-model-identity"]
@@ -182,11 +186,14 @@ ulid = "01KGB6909W40J5MGD7FGCEEERT"
 slug = "test-identity"
 aliases = ["test-identity"]
 
+[[epochs.phases.rfcs]]
+id = "008"
+
 [[epochs.phases]]
 id = "phase-context-window"
 title = "Phase 2: Context Window Accuracy"
 status = "completed"
-rfcs = ["008"]
+kind = "regular"
 ulid = "01KGB6909WPMQ2V9YB0YAKBM45"
 slug = "phase-context-window"
 aliases = ["phase-context-window"]
@@ -223,11 +230,14 @@ ulid = "01KGB6909W251DH1GZMEMBT75G"
 slug = "test-token-validation"
 aliases = ["test-token-validation"]
 
+[[epochs.phases.rfcs]]
+id = "008"
+
 [[epochs.phases]]
 id = "phase-capability-detection"
 title = "Phase 3: Enhanced Capability Detection"
 status = "completed"
-rfcs = ["008"]
+kind = "regular"
 ulid = "01KGB6909WD5G7TFMCFASJGBWK"
 slug = "phase-capability-detection"
 aliases = ["phase-capability-detection"]
@@ -264,11 +274,14 @@ ulid = "01KGB6909WBGX88ZHG6PE169CP"
 slug = "test-capability-detection"
 aliases = ["test-capability-detection"]
 
+[[epochs.phases.rfcs]]
+id = "008"
+
 [[epochs.phases]]
 id = "phase-model-filtering"
 title = "Phase 4: Model Type Filtering"
 status = "completed"
-rfcs = ["008"]
+kind = "regular"
 ulid = "01KGB6909W52GPRYE8543YPAKJ"
 slug = "phase-model-filtering"
 aliases = ["phase-model-filtering"]
@@ -305,6 +318,9 @@ ulid = "01KGB6909WC4Y4S3SZNPPJZJS3"
 slug = "integration-tests"
 aliases = ["integration-tests"]
 
+[[epochs.phases.rfcs]]
+id = "008"
+
 [[epochs]]
 id = "01kgbg5kb1b3pn7m86wem0515t"
 title = "Delta-Based Token Estimation (RFC 029)"
@@ -317,7 +333,7 @@ aliases = ["01kgbg5kb1b3pn7m86wem0515t"]
 id = "01kgbg5xerpb8p6k43j691t63k"
 title = "Phase 1: Core Infrastructure"
 status = "completed"
-rfcs = ["029"]
+kind = "regular"
 ulid = "01KGBG8XGSRRSC5QMXEP89BWVS"
 slug = "01kgbg5xerpb8p6k43j691t63k"
 aliases = ["01kgbg5xerpb8p6k43j691t63k"]
@@ -354,21 +370,27 @@ ulid = "01KGBG8XGS8QY7JD391R47S3JJ"
 slug = "unit-tests"
 aliases = ["unit-tests"]
 
+[[epochs.phases.rfcs]]
+id = "029"
+
 [[epochs.phases]]
 id = "01kgbg61xj3mgs7fjfj674t4cp"
 title = "Phase 2: Provider Integration"
 status = "completed"
 goals = []
-rfcs = ["029"]
+kind = "regular"
 ulid = "01KGBG8XGS0K6KHEMNZB4JVQ2M"
 slug = "01kgbg61xj3mgs7fjfj674t4cp"
 aliases = ["01kgbg61xj3mgs7fjfj674t4cp"]
+
+[[epochs.phases.rfcs]]
+id = "029"
 
 [[epochs.phases]]
 id = "01kgbg66ynthsrx3mqn2fzadxn"
 title = "Phase 3: Calibration Loop"
 status = "completed"
-rfcs = ["029"]
+kind = "regular"
 ulid = "01KGBG8XGSMGS0RRVTC7JFHNE6"
 slug = "01kgbg66ynthsrx3mqn2fzadxn"
 aliases = ["01kgbg66ynthsrx3mqn2fzadxn"]
@@ -415,15 +437,21 @@ ulid = "01KGJMNKAHYADH82643M80Q218"
 slug = "safe-serialize"
 aliases = ["safe-serialize"]
 
+[[epochs.phases.rfcs]]
+id = "029"
+
 [[epochs.phases]]
 id = "01kgbg6cpxvd67bq84rbcq3zzj"
 title = "Phase 4: Cleanup & Migration"
 status = "bankrupt"
 goals = []
-rfcs = ["029"]
+kind = "regular"
 ulid = "01KGBG8XGSNQJ3ZY18DGNFQKG0"
 slug = "01kgbg6cpxvd67bq84rbcq3zzj"
 aliases = ["01kgbg6cpxvd67bq84rbcq3zzj"]
+
+[[epochs.phases.rfcs]]
+id = "029"
 
 [[epochs]]
 id = "01kgjmbq8658mgjyrzmn3nc39x"
@@ -438,6 +466,7 @@ reviewed = true
 id = "01kgjmc08g68fch8zrxd6p37bd"
 title = "Phase 0: Housekeeping"
 status = "completed"
+kind = "regular"
 ulid = "01KGJMNKAH54GHDJ6J7WBRBZS7"
 slug = "01kgjmc08g68fch8zrxd6p37bd"
 aliases = ["01kgjmc08g68fch8zrxd6p37bd"]
@@ -482,6 +511,7 @@ aliases = ["review-delta-estimation"]
 id = "01kgjmc973vv40jcwkh41k0cd9"
 title = "Phase 1: Critical Fixes (P0)"
 status = "completed"
+kind = "regular"
 ulid = "01KGJMNKAH7BVJ0C831T13VKJ3"
 slug = "01kgjmc973vv40jcwkh41k0cd9"
 aliases = ["01kgjmc973vv40jcwkh41k0cd9"]
@@ -529,6 +559,7 @@ completion_log = "Moved to ideas backlog - not a P0 fix, future consideration"
 id = "01kgjmcke2fq6rg6rkknaccsmj"
 title = "Phase 2: Correctness Fixes (P1)"
 status = "completed"
+kind = "regular"
 ulid = "01KGJMNKAHG7RBBXY2KYG317AN"
 slug = "01kgjmcke2fq6rg6rkknaccsmj"
 aliases = ["01kgjmcke2fq6rg6rkknaccsmj"]
@@ -577,6 +608,7 @@ aliases = ["fix-stream-cancellation"]
 id = "01kgjmcvf2f9w5bcaw6qaxx2x0"
 title = "Phase 3: Foundation Work"
 status = "completed"
+kind = "regular"
 ulid = "01KGJMNKAH4QSRZYHGHYBZRJPZ"
 slug = "01kgjmcvf2f9w5bcaw6qaxx2x0"
 aliases = ["01kgjmcvf2f9w5bcaw6qaxx2x0"]
@@ -603,6 +635,7 @@ reviewed = true
 id = "phase-branding"
 title = "Branding & Identity (RFC 002)"
 status = "completed"
+kind = "regular"
 ulid = "01KG0K3GP3VKKXATH48QCQ3DTR"
 slug = "phase-branding"
 aliases = ["phase-branding"]
@@ -636,6 +669,7 @@ aliases = ["visual-identity"]
 id = "phase-repository"
 title = "Standalone Repository (RFC 001)"
 status = "completed"
+kind = "regular"
 ulid = "01KG0K3GP3E0P85VTEFP4FGDY2"
 slug = "phase-repository"
 aliases = ["phase-repository"]
@@ -671,6 +705,7 @@ aliases = ["marketplace-publishing"]
 id = "phase-migration"
 title = "Migration & Deprecation (RFC 007)"
 status = "completed"
+kind = "regular"
 ulid = "01KG0K3GP3MW3JGT7RV40STGWZ"
 slug = "phase-migration"
 aliases = ["phase-migration"]
@@ -713,6 +748,7 @@ aliases = ["triage-epoch"]
 id = "phase-auth-triage"
 title = "Authentication (RFC 005b - Triage)"
 status = "pending"
+kind = "regular"
 ulid = "01KG0K3GP3M2BAGZ7V83FDSBQ0"
 slug = "phase-auth-triage"
 aliases = ["phase-auth-triage"]
@@ -729,6 +765,7 @@ aliases = ["evaluate-enterprise-oidc"]
 id = "phase-telemetry-triage"
 title = "Telemetry & Privacy (RFC 005c - Triage)"
 status = "pending"
+kind = "regular"
 ulid = "01KG0K3GP346JR19VFSXSENDMX"
 slug = "phase-telemetry-triage"
 aliases = ["phase-telemetry-triage"]
@@ -745,6 +782,7 @@ aliases = ["telemetry-decision"]
 id = "phase-openresponses-triage"
 title = "OpenResponses API (RFC 004 - Triage)"
 status = "pending"
+kind = "regular"
 ulid = "01KG0K3GP36T580126F5T36X2J"
 slug = "phase-openresponses-triage"
 aliases = ["phase-openresponses-triage"]
@@ -767,7 +805,7 @@ reviewed = true
 id = "01kgkqpde1s9zfqfe5s8x01zwz"
 title = "Digest-Based Token Correlation"
 status = "completed"
-rfcs = ["042"]
+kind = "regular"
 
 [[epochs.phases.goals]]
 id = "capsule-guard"
@@ -895,6 +933,9 @@ label = "Persist token state to Memento storage"
 status = "completed"
 completion_log = "Implemented Memento-based persistence for ConversationStateTracker with save/restore, key-based lookup, and cross-session state recovery."
 
+[[epochs.phases.rfcs]]
+id = "042"
+
 [[epochs]]
 id = "01kgqrknaewkshpfjt4wyns061"
 title = "Rolling Correction & Token Display (RFC 047/044/049)"
@@ -904,7 +945,7 @@ status = "completed"
 id = "01kgqrm141nzq23wyxnzfs6n6v"
 title = "Phase 1: Correction Factor Infrastructure (RFC 047)"
 status = "completed"
-rfcs = ["00047"]
+kind = "regular"
 
 [[epochs.phases.goals]]
 id = "capture-sequence-estimate"
@@ -936,11 +977,14 @@ label = "Store sequenceEstimate alongside actualTokens for rolling correction"
 status = "completed"
 completion_log = "Implemented Phase 1: lastSequenceEstimate stored in KnownConversationState, wired through recordActual() signature chain from provider to conversation-state. All 417 tests pass."
 
+[[epochs.phases.rfcs]]
+id = "00047"
+
 [[epochs.phases]]
 id = "01kgqrm6fjqy1xb0te56ks9r8r"
 title = "Phase 2: provideTokenCount Integration (RFC 047)"
 status = "completed"
-rfcs = ["00047"]
+kind = "regular"
 
 [[epochs.phases.goals]]
 id = "apply-rolling-correction"
@@ -948,11 +992,14 @@ label = "Apply rolling correction to first message of each turn in provideTokenC
 status = "completed"
 completion_log = "Implemented rolling correction in estimateMessage(): getAdjustment() returns Math.max(0, actual - sequenceEstimate), applied to first message via wouldStartNewSequence() check before onCall(). Added 7 tests for getAdjustment() and rolling correction behavior. All 424 tests pass."
 
+[[epochs.phases.rfcs]]
+id = "00047"
+
 [[epochs.phases]]
 id = "01kgqrmcab087zhk1pfs0hvw1f"
 title = "Phase 3: Summarization Detection (RFC 047)"
 status = "completed"
-rfcs = ["00047"]
+kind = "regular"
 
 [[epochs.phases.goals]]
 id = "testing-validation"
@@ -960,11 +1007,14 @@ label = "RFC 047 Phase 3: Testing & Validation"
 status = "completed"
 completion_log = "Phase 3 complete: 11 new tests (5 integration, 4 edge case, 2 logging). All 435 tests pass. Verified telescoping property, marginal correction, cached bypass, multi-conversation independence, production ratio simulation, and logging format."
 
+[[epochs.phases.rfcs]]
+id = "00047"
+
 [[epochs.phases]]
 id = "01kgqrmhy9wagj12ksra2v180m"
 title = "Phase 4: Token Display Fixes (RFC 044)"
 status = "completed"
-rfcs = ["00044"]
+kind = "regular"
 
 [[epochs.phases.goals]]
 id = "key-alignment"
@@ -978,11 +1028,14 @@ label = "Post-summarization invalidation: clear stale adjustment (RFC 047)"
 status = "completed"
 completion_log = "Post-summarization invalidation complete. Detects <conversation-summary> tag (confirmed from Copilot Chat source), clears stale rolling correction on family key. 11 new tests, 449 total pass. Review addressed serialized text part handling."
 
+[[epochs.phases.rfcs]]
+id = "00044"
+
 [[epochs.phases]]
 id = "01kgqrmqps27k6m4pr3gha40xg"
 title = "Phase 5: Assumption Validation Regime (RFC 049)"
 status = "completed"
-rfcs = ["00049"]
+kind = "regular"
 
 [[epochs.phases.goals]]
 id = "hash-unification"
@@ -1060,6 +1113,9 @@ label = "Edge Case Hardening (S4, S6, M1)"
 status = "completed"
 completion_log = "Fixed S4 (tool hash collision), S6 (callId dedupe), M1 (serialized parts). All 462 tests pass."
 
+[[epochs.phases.rfcs]]
+id = "00049"
+
 [[epochs]]
 id = "01kgt5ns37sqw4mrjcxpk5nds3"
 title = "Zombie Identity GC (RFC 00054)"
@@ -1070,7 +1126,7 @@ ulid = "01KGT5NS37SQW4MRJCXPK5NDS3"
 id = "01kgt5p8kcsy08hdnevegysp3x"
 title = "Phase 1-2: Remove 1.5x Multiplier System"
 status = "completed"
-rfcs = ["00054"]
+kind = "regular"
 ulid = "01KGT5P8KCSY08HDNEVEGYSP3X"
 
 [[epochs.phases.goals]]
@@ -1109,11 +1165,14 @@ label = "Remove modelInfoChangeEmitter.fire() from error path"
 status = "pending"
 ulid = "01KGT5RHVRJY909TJW4E0PED23"
 
+[[epochs.phases.rfcs]]
+id = "00054"
+
 [[epochs.phases]]
 id = "01kgt9xctfx6b9r0v4ghnx0vmm"
 title = "Remove conversationId System"
 status = "completed"
-rfcs = ["00054"]
+kind = "regular"
 ulid = "01KGT9XCTFX6B9R0V4GHNX0VMM"
 
 [[epochs.phases.goals]]
@@ -1146,13 +1205,19 @@ label = "Update tests to remove conversationId assertions"
 status = "pending"
 ulid = "01KGTCH0FR7Q987PJHZH5DRR9C"
 
+[[epochs.phases.rfcs]]
+id = "00054"
+
 [[epochs.phases]]
 id = "01kgt9xj4dyj31zs0x8fqzf2tv"
 title = "Error Recovery Redesign"
 status = "completed"
 goals = []
-rfcs = ["00054"]
+kind = "regular"
 ulid = "01KGT9XJ4DYJ31ZS0X8FQZF2TV"
+
+[[epochs.phases.rfcs]]
+id = "00054"
 
 [[epochs]]
 id = "01kgtm2sg4ddjfk01p6dsxvwr5"
@@ -1164,17 +1229,22 @@ ulid = "01KGTM2SG4DDJFK01P6DSXVWR5"
 id = "01kgtm3daenjghakthzf0txt2j"
 title = "Fix claude-sonnet-4.5 Parsing Bug"
 status = "active"
-rfcs = ["00051"]
+kind = "regular"
 ulid = "01KGTM3DAENJGHAKTHZF0TXT2J"
 
 [[epochs.phases.goals]]
 id = "clean-rfcs"
 label = "Clean up RFCs referencing legacy models"
-status = "pending"
+status = "completed"
+completion_log = "Scanned RFCs for legacy references and superseded conflicting RFCs (00058-00061). Documentation updated."
 ulid = "01KGX9ZPT3TBBBQYXFP7C5JR5D"
 
 [[epochs.phases.goals]]
 id = "clean-code"
 label = "Purge legacy implementation details (Splash Damage)"
-status = "pending"
+status = "completed"
+completion_log = "Implemented canonical projection, updated hybrid-estimator and conversation-state, removed legacy stripping code."
 ulid = "01KGXA0A6WFSX9VMBFN3208J0V"
+
+[[epochs.phases.rfcs]]
+id = "00051"

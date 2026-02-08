@@ -1234,6 +1234,7 @@ export class StreamAdapter {
     return {
       role: ROLE_ASSISTANT as any,
       content: this.accumulatedParts,
+      name: undefined,
     };
   }
 

@@ -510,7 +510,7 @@ export class HybridTokenEstimator implements vscode.Disposable {
    * @deprecated Model-family based lookup is deprecated in favor of exact history.
    */
   getConversationState(
-    modelFamily: string,
+    _modelFamily: string,
   ): KnownConversationState | undefined {
     // Current tracker does not support family-based lookup (latest wins)
     // We return undefined to signal no "global family state" exists.

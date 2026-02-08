@@ -116,6 +116,15 @@ export interface ForensicCapture {
     modelOptions: Record<string, unknown>;
     // Tool schema hashes for identifier discovery
     toolSchemaHashes: string[];
+    // Debug: total character count of tool schemas
+    toolSchemaCharacterTotal?: number;
+    // Debug: sample of first tool for verification
+    firstToolSample?: {
+      name: string;
+      descLength: number;
+      hasInputSchema: boolean;
+      inputSchemaKeys?: string[];
+    } | null;
   };
 
   // RAW options object - dump everything VS Code passes
@@ -338,13 +347,17 @@ function extractFullContent(
           };
         } else if ("callId" in part && "toolResult" in part) {
           // Legacy tool result format: has callId, toolResult, optionally name
-          return {
+          const toolName = (part as { name?: string }).name;
+          const base = {
             type: "toolResult" as const,
-            toolName: (part as { name?: string }).name,
-            callId: part.callId,
+            callId: part.callId as string,
             toolResult: (part as { toolResult?: unknown }).toolResult,
             partDigest: computePartDigest(part),
           };
+          if (toolName !== undefined) {
+            return { ...base, toolName };
+          }
+          return base;
         } else {
           // Debug: capture what properties exist on unknown parts
           const partKeys = Object.keys(part);
@@ -494,7 +507,7 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
               name: input.options.tools[0].name,
               descLength: input.options.tools[0].description?.length ?? 0,
               hasInputSchema: input.options.tools[0].inputSchema !== undefined,
-              schemaKeys: input.options.tools[0].inputSchema
+              inputSchemaKeys: input.options.tools[0].inputSchema
                 ? Object.keys(input.options.tools[0].inputSchema as object)
                 : [],
             }

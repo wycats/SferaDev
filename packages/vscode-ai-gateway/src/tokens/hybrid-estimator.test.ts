@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionContext, LanguageModelChatMessage } from "vscode";
 import { TokenCache } from "./cache";
 import { HybridTokenEstimator, type ModelInfo } from "./hybrid-estimator";

@@ -663,10 +663,25 @@ export class VercelAIChatModelProvider
     // Use conversation-level delta estimation
     // Now passing tools and systemPrompt so the estimator can decide whether to add them
     // (on full estimate) or use the cached total (which includes them).
-    const estimate = this.tokenEstimator.estimateConversation(messages, model, {
-      tools: options?.tools,
-      systemPrompt: options?.systemPrompt,
-    });
+    const estimateOptions: {
+      tools?: readonly {
+        name: string;
+        description?: string;
+        inputSchema?: unknown;
+      }[];
+      systemPrompt?: string;
+    } = {};
+    if (options?.tools) {
+      estimateOptions.tools = options.tools;
+    }
+    if (options?.systemPrompt) {
+      estimateOptions.systemPrompt = options.systemPrompt;
+    }
+    const estimate = this.tokenEstimator.estimateConversation(
+      messages,
+      model,
+      estimateOptions,
+    );
 
     const total = estimate.tokens;
 
