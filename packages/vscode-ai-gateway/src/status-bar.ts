@@ -95,6 +95,8 @@ export interface AgentEntry {
 
   /** Source of the token estimate (for diagnostics/UI) */
   estimationSource?: "exact" | "delta" | "estimated" | undefined;
+  /** Stable conversation UUID from ConversationStateTracker (primary identity) */
+  conversationId?: string | undefined;
 }
 
 /** Agent aging configuration */
@@ -156,6 +158,8 @@ export class TokenStatusBar implements vscode.Disposable {
   private agentsByConversationHash = new Map<string, AgentEntry>();
   // Partial identity lookup (firstUserMessageHash)
   private agentsByPartialKey = new Map<string, AgentEntry>();
+  // Stable conversation identity lookup (ConversationStateTracker UUID)
+  private agentsByConversationId = new Map<string, AgentEntry>();
   // Map request IDs to canonical agent IDs (for deduped conversations)
   private agentIdAliases = new Map<string, string>();
   /** Fired when agents are added, updated, or removed */
@@ -284,6 +288,12 @@ export class TokenStatusBar implements vscode.Disposable {
         this.agentsByPartialKey.delete(partialKey);
       }
     }
+    if (agent.conversationId) {
+      const mapped = this.agentsByConversationId.get(agent.conversationId);
+      if (mapped?.id === agent.id) {
+        this.agentsByConversationId.delete(agent.conversationId);
+      }
+    }
   }
 
   private removeAliasesForAgent(agentId: string): void {
@@ -312,6 +322,7 @@ export class TokenStatusBar implements vscode.Disposable {
     claimMatch: { parentConversationHash: string; expectedChildName: string },
     estimatedDeltaTokens: number | undefined,
     estimationSource: "exact" | "delta" | "estimated" | undefined,
+    conversationId: string | undefined,
   ): string {
     const agent: AgentEntry = {
       id: agentId,
@@ -335,6 +346,7 @@ export class TokenStatusBar implements vscode.Disposable {
       agentTypeHash,
       firstUserMessageHash,
       parentConversationHash: claimMatch.parentConversationHash,
+      conversationId,
     };
 
     this.agents.set(agentId, agent);
@@ -367,6 +379,10 @@ export class TokenStatusBar implements vscode.Disposable {
       } else {
         this.agentsByPartialKey.set(partialKey, agent);
       }
+    }
+    // Register by conversationId for stable identity (takes precedence over partialKey)
+    if (conversationId) {
+      this.agentsByConversationId.set(conversationId, agent);
     }
     this.activeAgentId = agentId;
 
@@ -416,7 +432,7 @@ export class TokenStatusBar implements vscode.Disposable {
    * @param modelId Model identifier
    * @param systemPromptHash Hash of the system prompt - diagnostics only
    * @param estimatedDeltaTokens Estimated tokens for NEW messages only (delta)
-   * @param estimationSource Source of the estimate ("exact", "delta", "estimated")
+   * @param conversationId Stable conversation UUID from ConversationStateTracker
    */
   startAgent(
     agentId: string,
@@ -427,7 +443,7 @@ export class TokenStatusBar implements vscode.Disposable {
     agentTypeHash?: string,
     firstUserMessageHash?: string,
     estimatedDeltaTokens?: number,
-    estimationSource?: "exact" | "delta" | "estimated",
+    conversationId?: string,
   ): string {
     const now = Date.now();
 
@@ -448,10 +464,16 @@ export class TokenStatusBar implements vscode.Disposable {
       agentTypeHash !== undefined &&
       agentTypeHash !== mainAgent.agentTypeHash;
 
-    // Check for partialKey match (resume existing agent)
-    const existingAgent = partialKey
+    // Check for conversation identity match (prefer conversationId over partialKey)
+    // conversationId is a stable UUID from ConversationStateTracker that survives across turns
+    // partialKey is a hash of first user message (fallback for first turn before API response)
+    const existingByConversationId = conversationId
+      ? this.agentsByConversationId.get(conversationId)
+      : undefined;
+    const existingByPartialKey = partialKey
       ? this.agentsByPartialKey.get(partialKey)
       : undefined;
+    const existingAgent = existingByConversationId ?? existingByPartialKey;
 
     logger.info(
       `[StatusBar] Subagent detection check`,
@@ -464,6 +486,8 @@ export class TokenStatusBar implements vscode.Disposable {
         thisSystemPromptHash: systemPromptHash?.slice(0, 8),
         existingAgentMaxTokens: existingAgent?.maxObservedInputTokens,
         thisEstimatedTokens: estimatedTokens,
+        conversationId: conversationId?.slice(0, 8),
+        matchedBy: existingByConversationId ? "conversationId" : existingByPartialKey ? "partialKey" : "none",
       }),
     );
 
@@ -513,7 +537,8 @@ export class TokenStatusBar implements vscode.Disposable {
           partialKey,
           claimMatch,
           estimatedDeltaTokens,
-          estimationSource,
+          undefined, // estimationSource not passed from provider
+          conversationId,
         );
       }
     }
@@ -528,7 +553,7 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.lastUpdateTime = now;
       existingAgent.estimatedInputTokens = estimatedTokens;
       existingAgent.estimatedDeltaTokens = estimatedDeltaTokens;
-      existingAgent.estimationSource = estimationSource;
+      // Note: estimationSource is not passed from provider.ts, so we don't update it
       existingAgent.maxInputTokens =
         maxTokens ?? existingAgent.maxInputTokens ?? undefined;
       existingAgent.modelId = modelId ?? existingAgent.modelId;
@@ -538,6 +563,11 @@ export class TokenStatusBar implements vscode.Disposable {
         agentTypeHash ?? existingAgent.agentTypeHash;
       existingAgent.firstUserMessageHash =
         firstUserMessageHash ?? existingAgent.firstUserMessageHash;
+      // Update conversationId if a new one is provided (may not have been available on first turn)
+      if (conversationId && !existingAgent.conversationId) {
+        existingAgent.conversationId = conversationId;
+        this.agentsByConversationId.set(conversationId, existingAgent);
+      }
       existingAgent.contextManagement = undefined;
       existingAgent.dimmed = false;
       existingAgent.completionOrder = undefined;
@@ -559,6 +589,7 @@ export class TokenStatusBar implements vscode.Disposable {
           systemPromptHash: systemPromptHash?.slice(0, 8),
           agentTypeHash: existingAgent.agentTypeHash?.slice(0, 8),
           partialKey: partialKey?.slice(0, 20),
+          conversationId: existingAgent.conversationId?.slice(0, 8),
           totalAgents: this.agents.size,
           pendingClaimsPresent: hasPendingClaims,
         }),
@@ -597,7 +628,7 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.lastUpdateTime = now;
       existingAgent.estimatedInputTokens = estimatedTokens;
       existingAgent.estimatedDeltaTokens = estimatedDeltaTokens;
-      existingAgent.estimationSource = estimationSource;
+      // Note: estimationSource is not passed from provider.ts, so we don't update it
       existingAgent.maxInputTokens =
         maxTokens ?? existingAgent.maxInputTokens ?? undefined;
       existingAgent.modelId = modelId ?? existingAgent.modelId;
@@ -607,6 +638,11 @@ export class TokenStatusBar implements vscode.Disposable {
         agentTypeHash ?? existingAgent.agentTypeHash;
       existingAgent.firstUserMessageHash =
         firstUserMessageHash ?? existingAgent.firstUserMessageHash;
+      // Update conversationId if a new one is provided (may not have been available on first turn)
+      if (conversationId && !existingAgent.conversationId) {
+        existingAgent.conversationId = conversationId;
+        this.agentsByConversationId.set(conversationId, existingAgent);
+      }
       // Don't reset inputTokens/outputTokens - they'll be updated in completeAgent
       // Keep maxObservedInputTokens/totalOutputTokens for accumulation
       existingAgent.contextManagement = undefined;
@@ -741,7 +777,7 @@ export class TokenStatusBar implements vscode.Disposable {
       maxInputTokens: maxTokens,
       estimatedInputTokens: estimatedTokens,
       estimatedDeltaTokens,
-      estimationSource,
+      estimationSource: undefined, // Not passed from provider.ts
       modelId,
       status: "streaming",
       dimmed: false,
@@ -750,6 +786,7 @@ export class TokenStatusBar implements vscode.Disposable {
       agentTypeHash,
       firstUserMessageHash,
       parentConversationHash,
+      conversationId,
     };
 
     this.agents.set(agentId, agent);
@@ -782,6 +819,10 @@ export class TokenStatusBar implements vscode.Disposable {
       } else {
         this.agentsByPartialKey.set(partialKey, agent);
       }
+    }
+    // Register by conversationId for stable identity (takes precedence over partialKey)
+    if (conversationId) {
+      this.agentsByConversationId.set(conversationId, agent);
     }
     this.activeAgentId = agentId;
 
@@ -1584,6 +1625,7 @@ export class TokenStatusBar implements vscode.Disposable {
     this.agents.clear();
     this.agentsByConversationHash.clear();
     this.agentsByPartialKey.clear();
+    this.agentsByConversationId.clear();
     this.agentIdAliases.clear();
     this.claimRegistry.clearAll();
     this.mainAgentId = null;

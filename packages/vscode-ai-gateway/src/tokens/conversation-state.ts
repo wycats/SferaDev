@@ -13,6 +13,7 @@
  * Persistence: When provided with a Memento, state survives extension restarts.
  */
 
+import { randomUUID } from "node:crypto";
 import type * as vscode from "vscode";
 import { logger } from "../logger";
 import { computeNormalizedDigest, computeRawDigest } from "../utils/digest";
@@ -107,6 +108,8 @@ export interface KnownConversationState {
   modelFamily: string;
   /** When this was recorded */
   timestamp: number;
+  /** Stable conversation identifier (UUID) - survives across turns */
+  conversationId?: string;
 }
 
 /**
@@ -121,6 +124,8 @@ export interface ConversationLookupResult {
   newMessageCount?: number;
   /** Indices of new messages (for prefix match) */
   newMessageIndices?: number[];
+  /** Stable conversation identifier (from matched state) */
+  conversationId?: string;
 }
 
 /**
@@ -226,6 +231,15 @@ export class ConversationStateTracker {
     const lastHash = messageHashes[messageHashes.length - 1] ?? "empty";
     const key = `${modelFamily}:${messageHashes.length}:${lastHash.substring(0, 16)}`;
 
+    // Preserve conversationId from existing conversation, or generate new one.
+    // We use set intersection to find matching prior state (even with different key).
+    const existingConversation = this.identifyConversation(
+      messageHashes,
+      modelFamily,
+    );
+    const conversationId =
+      existingConversation?.state.conversationId ?? randomUUID();
+
     // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
     // from the state. This clears the rolling correction so getAdjustment()
     // returns 0 until a new estimate-vs-actual pair is established post-summarization.
@@ -236,6 +250,7 @@ export class ConversationStateTracker {
           actualTokens,
           modelFamily,
           timestamp: Date.now(),
+          conversationId,
         }
       : {
           messageHashes,
@@ -246,6 +261,7 @@ export class ConversationStateTracker {
             : {}),
           modelFamily,
           timestamp: Date.now(),
+          conversationId,
         };
 
     // If updating an existing key, clear its old index entries first
@@ -321,7 +337,8 @@ export class ConversationStateTracker {
             const inputMsg = messages[i]!;
             const contentPreview = inputMsg.content
               .map((p) => {
-                if ("value" in p) return (p as { value: string }).value.substring(0, 100);
+                if ("value" in p)
+                  return (p as { value: string }).value.substring(0, 100);
                 return JSON.stringify(p).substring(0, 100);
               })
               .join(" | ");
@@ -394,7 +411,14 @@ export class ConversationStateTracker {
       logger.info(
         `[ConversationStateDebug] Exact match via set intersection: ${matchedKnownCount} hashes`,
       );
-      return { type: "exact", knownTokens: state.actualTokens };
+      const result: ConversationLookupResult = {
+        type: "exact",
+        knownTokens: state.actualTokens,
+      };
+      if (state.conversationId) {
+        result.conversationId = state.conversationId;
+      }
+      return result;
     }
 
     // Prefix/superset match: current conversation contains all (or most) known
@@ -404,12 +428,16 @@ export class ConversationStateTracker {
       logger.info(
         `[ConversationStateDebug] Set intersection match: ${matchedKnownCount}/${state.messageHashes.length} known, ${newMessageIndices.length} new messages at indices [${newMessageIndices.slice(0, 10).join(",")}]`,
       );
-      return {
+      const result: ConversationLookupResult = {
         type: "prefix",
         knownTokens: state.actualTokens,
         newMessageCount: newMessageIndices.length,
         newMessageIndices,
       };
+      if (state.conversationId) {
+        result.conversationId = state.conversationId;
+      }
+      return result;
     }
 
     // Edge case: current is a strict subset of the known state (e.g., after
@@ -425,12 +453,16 @@ export class ConversationStateTracker {
       );
       // Return as prefix with 0 new messages — the caller gets knownTokens
       // which is an overestimate, but better than pure estimation.
-      return {
+      const result: ConversationLookupResult = {
         type: "prefix",
         knownTokens: state.actualTokens,
         newMessageCount: 0,
         newMessageIndices: [],
       };
+      if (state.conversationId) {
+        result.conversationId = state.conversationId;
+      }
+      return result;
     }
 
     return { type: "none" };
@@ -616,9 +648,13 @@ export class ConversationStateTracker {
       let loadedCount = 0;
       for (const entry of stored.entries) {
         if (now - entry.state.timestamp <= this.ttlMs) {
-          this.knownStates.set(entry.key, entry.state);
+          // Backfill conversationId for entries that lack one (migration)
+          const state = entry.state.conversationId
+            ? entry.state
+            : { ...entry.state, conversationId: randomUUID() };
+          this.knownStates.set(entry.key, state);
           // Rebuild index
-          this.addToIndex(entry.key, entry.state);
+          this.addToIndex(entry.key, state);
           this.accessOrder.push(entry.key);
           loadedCount++;
         }

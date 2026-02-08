@@ -358,10 +358,11 @@ export class VercelAIChatModelProvider
       );
       const estimatedTokens = tokenEstimate.total;
       const estimatedDeltaTokens = tokenEstimate.delta;
+      const conversationId = tokenEstimate.conversationId;
       const tokenBreakdown = tokenEstimate.breakdown;
       const maxInputTokens = model.maxInputTokens;
       logger.debug(
-        `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%), delta: ${estimatedDeltaTokens?.toString() ?? "n/a"}`,
+        `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%), delta: ${estimatedDeltaTokens?.toString() ?? "n/a"}, conversationId: ${conversationId ?? "n/a"}`,
       );
 
       // Forensic capture for debugging conversation identifiers
@@ -460,6 +461,7 @@ export class VercelAIChatModelProvider
         agentTypeHash,
         firstUserMessageHash,
         estimatedDeltaTokens,
+        conversationId,
       );
 
       const apiKey = await this.getApiKey(false);
@@ -649,6 +651,7 @@ export class VercelAIChatModelProvider
   ): {
     total: number;
     delta: number | undefined;
+    conversationId: string | undefined;
     breakdown: {
       messageTokens: number;
       toolTokens: number;
@@ -731,6 +734,7 @@ export class VercelAIChatModelProvider
     return {
       total,
       delta,
+      conversationId: estimate.conversationId,
       breakdown: {
         messageTokens,
         toolTokens,

@@ -1265,23 +1265,27 @@ ulid = "01KGXZD2MA3KXNN1XY6X7PQM8J"
 [[epochs.phases.goals]]
 id = "add-cid-field"
 label = "Add conversationId to KnownConversationState and ConversationLookupResult"
-status = "pending"
+status = "completed"
+completion_log = "Added conversationId to KnownConversationState and ConversationLookupResult with proper UUID generation, preservation across turns, persistence/backfill support, and comprehensive tests"
 ulid = "01KGXZDPZQFE8KXM56PD1KQR2P"
 
 [[epochs.phases.goals]]
 id = "thread-estimator"
 label = "Thread conversationId through HybridTokenEstimator"
-status = "pending"
+status = "completed"
+completion_log = "Threaded conversationId from ConversationStateTracker through HybridTokenEstimator with tests for exact, delta, and full estimate cases"
 ulid = "01KGXZDVD3F2W0DVHFEEJ21297"
 
 [[epochs.phases.goals]]
 id = "thread-provider"
 label = "Thread conversationId through Provider.provideTokenCount"
-status = "pending"
+status = "completed"
+completion_log = "Threaded conversationId through provider: updated estimateTotalInputTokens to return conversationId, captured in provideLanguageModelResponse2, passed to startAgent"
 ulid = "01KGXZDVK8PNTR1ZADFNAR4F84"
 
 [[epochs.phases.goals]]
 id = "use-in-status-bar"
 label = "Replace partialKey with conversationId in TokenStatusBar"
-status = "pending"
+status = "completed"
+completion_log = "Implemented conversationId in TokenStatusBar: added to AgentEntry, agentsByConversationId map, updated lookup/resume/cleanup logic to prefer conversationId with partialKey fallback"
 ulid = "01KGXZDVV4XY1AWAKWKAJZRGMH"

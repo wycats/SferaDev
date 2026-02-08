@@ -51,6 +51,8 @@ export interface ConversationEstimate {
   newMessageCount: number;
   /** Whether this is fully known (exact match) or partially estimated */
   source: "exact" | "delta" | "estimated";
+  /** Stable conversation identifier (UUID) when matched against known state */
+  conversationId?: string;
 }
 
 /**
@@ -149,6 +151,9 @@ export class HybridTokenEstimator implements vscode.Disposable {
         newMessageCount: 0,
         source: "exact",
       };
+      if (lookup.conversationId) {
+        result.conversationId = lookup.conversationId;
+      }
       this.validationLogger?.log({
         type: "estimate",
         modelFamily: model.family,
@@ -191,6 +196,9 @@ export class HybridTokenEstimator implements vscode.Disposable {
         newMessageCount: newMessages.length,
         source: "delta",
       };
+      if (lookup.conversationId) {
+        result.conversationId = lookup.conversationId;
+      }
       this.validationLogger?.log({
         type: "estimate",
         modelFamily: model.family,

@@ -372,6 +372,50 @@ describe("HybridTokenEstimator", () => {
     });
   });
 
+  describe("conversationId threading", () => {
+    it("returns conversationId for exact match", () => {
+      const messages = [createMessage(1, "hello"), createMessage(2, "world")];
+
+      // Record actual from API to create conversation state with conversationId
+      estimator.recordActual(messages, testModel, 500);
+
+      // Same messages should return exact match with conversationId
+      const result = estimator.estimateConversation(messages, testModel);
+
+      expect(result.source).toBe("exact");
+      expect(result.conversationId).toBeDefined();
+      expect(typeof result.conversationId).toBe("string");
+    });
+
+    it("returns conversationId for delta match", () => {
+      const messages1 = [createMessage(1, "hello"), createMessage(2, "world")];
+      const messages2 = [...messages1, createMessage(1, "new message")];
+
+      // Record actual from API
+      estimator.recordActual(messages1, testModel, 500);
+
+      // Get the conversationId from exact match
+      const exactResult = estimator.estimateConversation(messages1, testModel);
+      const originalConversationId = exactResult.conversationId;
+
+      // Extended conversation should return delta match with same conversationId
+      const deltaResult = estimator.estimateConversation(messages2, testModel);
+
+      expect(deltaResult.source).toBe("delta");
+      expect(deltaResult.conversationId).toBe(originalConversationId);
+    });
+
+    it("returns undefined conversationId for full estimate", () => {
+      const messages = [createMessage(1, "hello"), createMessage(2, "world")];
+
+      // No prior recording - should be full estimate with no conversationId
+      const result = estimator.estimateConversation(messages, testModel);
+
+      expect(result.source).toBe("estimated");
+      expect(result.conversationId).toBeUndefined();
+    });
+  });
+
   describe("reset", () => {
     it("clears sequence and conversation state", () => {
       const messages = [createMessage(1, "hello")];
