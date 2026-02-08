@@ -231,14 +231,10 @@ export class ConversationStateTracker {
     const lastHash = messageHashes[messageHashes.length - 1] ?? "empty";
     const key = `${modelFamily}:${messageHashes.length}:${lastHash.substring(0, 16)}`;
 
-    // Preserve conversationId from existing conversation, or generate new one.
-    // We use set intersection to find matching prior state (even with different key).
-    const existingConversation = this.identifyConversation(
-      messageHashes,
-      modelFamily,
-    );
-    const conversationId =
-      existingConversation?.state.conversationId ?? randomUUID();
+    // Preserve conversationId from an existing prefix conversation, or generate new.
+    // We use strict prefix matching (not set intersection) to avoid collisions.
+    const prefixState = this.findPrefixConversation(messageHashes, modelFamily);
+    const conversationId = prefixState?.conversationId ?? randomUUID();
 
     // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
     // from the state. This clears the rolling correction so getAdjustment()
@@ -466,6 +462,49 @@ export class ConversationStateTracker {
     }
 
     return { type: "none" };
+  }
+
+  /**
+   * Find a prior conversation state that is an exact prefix of the current
+   * message sequence. Used for conversationId inheritance - we only inherit
+   * a conversationId from a prior state if ALL of its messages appear at the
+   * START of the current messages (strict prefix relationship).
+   *
+   * This prevents conversationId collision when two conversations share some
+   * messages but are actually different (e.g., ["hello", "A"] vs ["hello", "B"]).
+   *
+   * Returns the state with the longest matching prefix for best accuracy.
+   */
+  private findPrefixConversation(
+    currentNormalizedHashes: string[],
+    modelFamily: string,
+  ): KnownConversationState | undefined {
+    let bestState: KnownConversationState | undefined;
+    let bestLength = 0;
+
+    for (const [key, state] of this.knownStates) {
+      // Must be same model family
+      if (!key.startsWith(modelFamily + ":")) continue;
+
+      // Must be shorter than or equal to current (can't be a prefix if longer)
+      if (state.messageHashes.length > currentNormalizedHashes.length) continue;
+
+      // Check if all hashes in state match the corresponding prefix of current
+      let isPrefix = true;
+      for (let i = 0; i < state.messageHashes.length; i++) {
+        if (state.messageHashes[i] !== currentNormalizedHashes[i]) {
+          isPrefix = false;
+          break;
+        }
+      }
+
+      if (isPrefix && state.messageHashes.length > bestLength) {
+        bestState = state;
+        bestLength = state.messageHashes.length;
+      }
+    }
+
+    return bestState;
   }
 
   /**

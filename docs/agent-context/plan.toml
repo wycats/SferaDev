@@ -1252,13 +1252,13 @@ id = "00051"
 [[epochs]]
 id = "01kgxzcv70r24gsbaq6y8raxxt"
 title = "Unified Conversation Identity"
-status = "active"
+status = "completed"
 ulid = "01KGXZCV70R24GSBAQ6Y8RAXXT"
 
 [[epochs.phases]]
 id = "01kgxzd2ma3kxnn1xy6x7pqm8j"
 title = "Phase 1: Add conversationId to ConversationStateTracker"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KGXZD2MA3KXNN1XY6X7PQM8J"
 
