@@ -2,66 +2,188 @@
 # Implementation Plan
 
 [phase]
-id = "01kgtm3daenjghakthzf0txt2j"
-title = "Fix claude-sonnet-4.5 Parsing Bug"
-rfcs = ["00051"]
+id = "01kgxzd2ma3kxnn1xy6x7pqm8j"
+title = "Phase 1: Add conversationId to ConversationStateTracker"
+rfcs = []
 
 [plan]
 
 [[plan.goals]]
-id = "clean-rfcs"
+id = "add-cid-field"
 
 [[plan.goals.tasks]]
-id = "scan-docs"
-title = "Scan RFCs for legacy Linear Prefix and Anchor references"
-status = "completed"
-completed_at = "2026-02-08T00:32:29.519098305+00:00"
-completion_log = "Scan complete. Identified critical legacy docs. 'copilot-participant-protocol.md' not found in checked dir, 'TOKEN_ESTIMATION_REALITY.md' found and deprecated."
+id = "cid-uuid-import"
+title = "Add randomUUID import from node:crypto in conversation-state.ts"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "update-rfcs"
-title = "Supersede or Withdraw logic-conflicting RFCs (00034, 00054, etc)"
-status = "completed"
-completed_at = "2026-02-08T00:32:25.341748509+00:00"
-completion_log = "Superseded RFC 00055 and 00034; Deprecated TOKEN_ESTIMATION_REALITY.md. Confirmed copilot-participant-protocol.md does not exist (likely deleted previously)."
+id = "cid-state-field"
+title = "Add conversationId field to KnownConversationState interface"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-result-field"
+title = "Add conversationId field to ConversationLookupResult interface"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-generate-record"
+title = "Generate UUID in recordActual() when creating new KnownConversationState"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-return-exact"
+title = "Return conversationId in lookup() for exact match case"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-return-prefix"
+title = "Return conversationId in lookup() for prefix match case"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-return-subset"
+title = "Return conversationId in lookup() for subset match case"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-test-exact"
+title = "Add test: exact match returns conversationId"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-test-prefix"
+title = "Add test: prefix match returns same conversationId as original"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "cid-test-persist"
+title = "Add test: conversationId survives persistence round-trip"
+status = "pending"
 
 [[plan.goals]]
-id = "clean-code"
+id = "thread-estimator"
 
 [[plan.goals.tasks]]
-id = "implement-projection"
-title = "Implement projectToCanonicalMessage utility in src/utils/projection.ts"
-status = "completed"
-completed_at = "2026-02-08T01:20:25.122310665+00:00"
-completion_log = "Implemented 'Forward Projection' (getFinalMessage) in StreamAdapter. No separate utility needed as the adapter *is* the projection engine."
+id = "est-interface-field"
+title = "Add conversationId field to ConversationEstimate interface"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "update-estimator"
-title = "Update hybrid-estimator.ts to use canonical projection for hashing API deltas"
-status = "completed"
-completed_at = "2026-02-08T01:20:20.593150345+00:00"
-completion_log = "Verified hybrid-estimator.ts consumes the new Forward Projected messages correctly via recordActual plumbing."
+id = "est-exact-thread"
+title = "Thread conversationId from lookup result in exact match case"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "remove-legacy-stripping"
-title = "Remove stripOurAdditions and regex hacks from digest.ts"
-status = "completed"
-completed_at = "2026-02-08T01:20:14.381845937+00:00"
-completion_log = "Removed stripOurAdditions from digest.ts. Forward Projection is now the only normalization."
+id = "est-delta-thread"
+title = "Thread conversationId from lookup result in delta/prefix match case"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "update-state-tracker"
-title = "Sanitize lookup() method in conversation-state.ts to remove legacy comments"
-status = "completed"
-completed_at = "2026-02-08T01:20:09.760610858+00:00"
-completion_log = "Removed legacy 'Resilient/Suffix' logic and comments. Usage is now strictly 'Identify by Intersection' -> 'Return Candidate'."
+id = "est-full-thread"
+title = "Set conversationId: undefined explicitly in full estimate case"
+status = "pending"
 
 [[plan.goals.tasks]]
-id = "clean-code::forward-projection"
-title = "Plumb forward-projection message into recordActual path"
-status = "completed"
-completed_at = "2026-02-08T01:12:48.270313219+00:00"
-completion_log = "Plumbed final assistant message through stream adapter, openresponses chat, provider, and hybrid estimator; cached response tokens using output_tokens."
+id = "est-test-exact"
+title = "Add test: estimateConversation returns conversationId for exact match"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "est-test-delta"
+title = "Add test: estimateConversation returns conversationId for delta match"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "est-test-none"
+title = "Add test: estimateConversation returns undefined conversationId for full estimate"
+status = "pending"
+
+[[plan.goals]]
+id = "thread-provider"
+
+[[plan.goals.tasks]]
+id = "prov-estimate-total"
+title = "Update estimateTotalInputTokens to capture and return conversationId"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "prov-breakdown-type"
+title = "Add conversationId to the breakdown return type"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "prov-chat-capture"
+title = "Capture conversationId from estimate result in provideLanguageModelResponse2"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "prov-start-agent"
+title = "Pass conversationId to startAgent() call"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "prov-test-thread"
+title = "Add test: verify conversationId flows from estimator through provider"
+status = "pending"
+
+[[plan.goals]]
+id = "use-in-status-bar"
+
+[[plan.goals.tasks]]
+id = "sb-param-add"
+title = "Add conversationId parameter to startAgent() method signature"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-agent-field"
+title = "Add conversationId field to AgentEntry interface"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-map-rename"
+title = "Add agentsByConversationId map alongside agentsByPartialKey"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-lookup-cid"
+title = "Update agent lookup to prefer conversationId over partialKey"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-store-cid"
+title = "Store conversationId on agent entry when provided"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-resume-cid"
+title = "Update resume logic to use conversationId for matching"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-fallback-partial"
+title = "Keep partialKey as fallback when conversationId is undefined"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-cleanup-maps"
+title = "Update cleanup to handle both identity maps"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-test-cid-resume"
+title = "Add test: agent resumes correctly using conversationId"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-test-fallback"
+title = "Add test: agent uses partialKey fallback when conversationId unavailable"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sb-test-no-collision"
+title = "Add test: two conversations with same first message get different conversationIds"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
