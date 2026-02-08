@@ -56,11 +56,16 @@ import type {
   Usage,
 } from "openresponses-client";
 import {
+  type LanguageModelChatMessage,
   type LanguageModelResponsePart,
   LanguageModelTextPart,
   LanguageModelToolCallPart,
 } from "vscode";
 import { logger } from "../logger.js";
+
+// Hardcoded to avoid runtime import issues with vscode.LanguageModelChatRole
+// 2 = Assistant
+const ROLE_ASSISTANT = 2;
 
 /**
  * Result of adapting a single streaming event
@@ -171,6 +176,9 @@ type ToolCallArguments = Record<string, unknown>;
  * ```
  */
 export class StreamAdapter {
+  /** All emitted response parts for the final assistant message */
+  private accumulatedParts: LanguageModelResponsePart[] = [];
+
   /** Function calls being assembled from streaming deltas */
   private functionCalls = new Map<string, FunctionCallState>();
 
@@ -215,86 +223,111 @@ export class StreamAdapter {
    * its own handler to ensure high-fidelity translation.
    */
   adapt(event: StreamingEvent): AdaptedEvent {
+    let result: AdaptedEvent;
     switch (event.type) {
       // ===== Lifecycle Events =====
       case "response.created":
-        return this.handleResponseCreated(event);
+        result = this.handleResponseCreated(event);
+        break;
 
       case "response.queued":
-        return this.handleResponseQueued(event);
+        result = this.handleResponseQueued(event);
+        break;
 
       case "response.in_progress":
-        return this.handleResponseInProgress(event);
+        result = this.handleResponseInProgress(event);
+        break;
 
       case "response.completed":
-        return this.handleResponseCompleted(event);
+        result = this.handleResponseCompleted(event);
+        break;
 
       case "response.failed":
-        return this.handleResponseFailed(event);
+        result = this.handleResponseFailed(event);
+        break;
 
       case "response.incomplete":
-        return this.handleResponseIncomplete(event);
+        result = this.handleResponseIncomplete(event);
+        break;
 
       // ===== Output Item Events =====
       case "response.output_item.added":
-        return this.handleOutputItemAdded(event);
+        result = this.handleOutputItemAdded(event);
+        break;
 
       case "response.output_item.done":
-        return this.handleOutputItemDone(event);
+        result = this.handleOutputItemDone(event);
+        break;
 
       // ===== Content Part Events =====
       case "response.content_part.added":
-        return this.handleContentPartAdded(event);
+        result = this.handleContentPartAdded(event);
+        break;
 
       case "response.content_part.done":
-        return this.handleContentPartDone(event);
+        result = this.handleContentPartDone(event);
+        break;
 
       // ===== Text Events =====
       case "response.output_text.delta":
-        return this.handleTextDelta(event);
+        result = this.handleTextDelta(event);
+        break;
 
       case "response.output_text.done":
-        return this.handleTextDone(event);
+        result = this.handleTextDone(event);
+        break;
 
       case "response.output_text.annotation.added":
-        return this.handleAnnotationAdded(event);
+        result = this.handleAnnotationAdded(event);
+        break;
 
       // ===== Refusal Events =====
       case "response.refusal.delta":
-        return this.handleRefusalDelta(event);
+        result = this.handleRefusalDelta(event);
+        break;
 
       case "response.refusal.done":
-        return this.handleRefusalDone(event);
+        result = this.handleRefusalDone(event);
+        break;
 
       // ===== Reasoning Events (for thinking models) =====
       case "response.reasoning.delta":
-        return this.handleReasoningDelta(event);
+        result = this.handleReasoningDelta(event);
+        break;
 
       case "response.reasoning.done":
-        return this.handleReasoningDone(event);
+        result = this.handleReasoningDone(event);
+        break;
 
       case "response.reasoning_summary_text.delta":
-        return this.handleReasoningSummaryDelta(event);
+        result = this.handleReasoningSummaryDelta(event);
+        break;
 
       case "response.reasoning_summary_text.done":
-        return this.handleReasoningSummaryDone(event);
+        result = this.handleReasoningSummaryDone(event);
+        break;
 
       case "response.reasoning_summary_part.added":
-        return this.handleReasoningSummaryPartAdded(event);
+        result = this.handleReasoningSummaryPartAdded(event);
+        break;
 
       case "response.reasoning_summary_part.done":
-        return this.handleReasoningSummaryPartDone(event);
+        result = this.handleReasoningSummaryPartDone(event);
+        break;
 
       // ===== Function Call Events =====
       case "response.function_call_arguments.delta":
-        return this.handleFunctionCallArgsDelta(event);
+        result = this.handleFunctionCallArgsDelta(event);
+        break;
 
       case "response.function_call_arguments.done":
-        return this.handleFunctionCallArgsDone(event);
+        result = this.handleFunctionCallArgsDone(event);
+        break;
 
       // ===== Error Events =====
       case "error":
-        return this.handleError(event);
+        result = this.handleError(event);
+        break;
 
       default: {
         // TypeScript exhaustiveness check - this should never happen
@@ -304,9 +337,16 @@ export class StreamAdapter {
         console.warn(
           `Unhandled streaming event type: ${(event as StreamingEvent).type}`,
         );
-        return { parts: [], done: false };
+        result = { parts: [], done: false };
+        break;
       }
     }
+
+    if (result.parts.length > 0) {
+      this.accumulatedParts.push(...result.parts);
+    }
+
+    return result;
   }
 
   // ===== Lifecycle Event Handlers =====
@@ -1174,6 +1214,7 @@ export class StreamAdapter {
    * Reset adapter state between requests
    */
   reset(): void {
+    this.accumulatedParts = [];
     this.functionCalls.clear();
     this.callIdToResponseId.clear();
     this.emittedToolCalls.clear();
@@ -1184,6 +1225,16 @@ export class StreamAdapter {
     this.reasoningSummaries.clear();
     this.responseId = undefined;
     this.model = undefined;
+  }
+
+  /**
+   * Get the final assistant message assembled from streamed parts.
+   */
+  getFinalMessage(): LanguageModelChatMessage {
+    return {
+      role: ROLE_ASSISTANT as any,
+      content: this.accumulatedParts,
+    };
   }
 
   private isCancellationError(message?: string, code?: string): boolean {

@@ -1164,6 +1164,17 @@ ulid = "01KGTM2SG4DDJFK01P6DSXVWR5"
 id = "01kgtm3daenjghakthzf0txt2j"
 title = "Fix claude-sonnet-4.5 Parsing Bug"
 status = "active"
-goals = []
 rfcs = ["00051"]
 ulid = "01KGTM3DAENJGHAKTHZF0TXT2J"
+
+[[epochs.phases.goals]]
+id = "clean-rfcs"
+label = "Clean up RFCs referencing legacy models"
+status = "pending"
+ulid = "01KGX9ZPT3TBBBQYXFP7C5JR5D"
+
+[[epochs.phases.goals]]
+id = "clean-code"
+label = "Purge legacy implementation details (Splash Damage)"
+status = "pending"
+ulid = "01KGXA0A6WFSX9VMBFN3208J0V"

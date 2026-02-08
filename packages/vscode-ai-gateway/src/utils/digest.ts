@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { LanguageModelChatMessage } from "vscode";
-import { safeJsonStringify } from "./serialize.js";
+import { safeJsonStringify, stripVscodeInternals } from "./serialize.js";
 
 // Role number to string mapping
 export const ROLE_NAMES: Record<number, string> = {
@@ -9,11 +9,42 @@ export const ROLE_NAMES: Record<number, string> = {
   3: "System",
 };
 
-type DigestPartOptions = {
+interface DigestPartOptions {
   includeCallId: boolean;
   includeName: boolean;
-  stripAdditions: boolean;
-};
+  includeDataDigest: boolean;
+}
+
+/**
+ * Check if a string is a valid MIME type (type/subtype format).
+ * Used to filter out metadata "mimeTypes" like "cache_control" that
+ * VS Code/Copilot use for out-of-band signaling but aren't real content.
+ *
+ * Valid MIME types follow RFC 2045: type "/" subtype *(";" parameter)
+ * We check for the basic type/subtype pattern.
+ */
+const MIME_TYPE_PATTERN = /^[a-z]+\/[a-z0-9.+-]+$/i;
+
+function isValidMimeType(mimeType: string): boolean {
+  return MIME_TYPE_PATTERN.test(mimeType);
+}
+
+/**
+ * Check if a data part should be excluded from identity hashing.
+ * We exclude data parts with invalid MIME types (like "cache_control")
+ * since these are metadata signals, not real content, and VS Code
+ * doesn't persist them across reloads.
+ */
+function isMetadataDataPart(
+  part: LanguageModelChatMessage["content"][number],
+): boolean {
+  return (
+    "data" in part &&
+    "mimeType" in part &&
+    typeof part.mimeType === "string" &&
+    !isValidMimeType(part.mimeType)
+  );
+}
 
 export function hashContent(content: string): string {
   return createHash("sha256").update(content).digest("hex").substring(0, 16);
@@ -21,27 +52,23 @@ export function hashContent(content: string): string {
 
 function serializeToolPayload(payload: unknown): string {
   try {
-    return safeJsonStringify(payload);
+    // If the payload is already a string, it might be stringified JSON.
+    // We try to parse it so safeJsonStringify can re-serialize it canonically (sorted keys).
+    if (typeof payload === "string") {
+      try {
+        const parsed = JSON.parse(payload);
+        return safeJsonStringify(stripVscodeInternals(parsed));
+      } catch {
+        // Not JSON, use as-is but trimmed
+        return payload.trim();
+      }
+    }
+    // Strip VS Code internal properties ($mid, etc.) that change between
+    // turns/sessions and break hash stability.
+    return safeJsonStringify(stripVscodeInternals(payload));
   } catch {
     return "[unserializable]";
   }
-}
-
-/**
- * Strip additions we add during output streaming:
- * - URL annotations: ` [title](url)` markdown links
- *
- * Per digest-equivalence-algebra.md Section 6:
- * stripOurAdditions(text) = stripUrlAnnotations(text)
- *
- * @visibleForTesting
- */
-export function stripOurAdditions(text: string): string {
-  // Strip URL annotations formatted as ` [title](url)`
-  // The annotation format from stream-adapter.ts: ` [${title}](${url})`
-  // Pattern: space followed by markdown link
-  const stripped = text.replace(/ \[[^\]]+\]\([^)]+\)/g, "");
-  return stripped;
 }
 
 function buildDigestPart(
@@ -49,16 +76,13 @@ function buildDigestPart(
   options: DigestPartOptions,
 ): Record<string, unknown> {
   if ("value" in part && typeof part.value === "string") {
-    const text = options.stripAdditions
-      ? stripOurAdditions(part.value)
-      : part.value;
-    return { type: "text", text };
+    return { type: "text", text: part.value };
   }
   if ("data" in part && "mimeType" in part) {
     const data = part.data;
     // For normalized digest, hash the actual data bytes
     // For raw digest, just use size (faster, sufficient for debugging)
-    const dataDigest = options.stripAdditions
+    const dataDigest = options.includeDataDigest
       ? hashContent(Buffer.from(data).toString("base64"))
       : undefined;
     return {
@@ -128,15 +152,116 @@ export function computeNormalizedDigest(
   const payload = {
     role:
       ROLE_NAMES[message.role as number] ?? `Unknown(${String(message.role)})`,
-    content: message.content.map((part) =>
-      buildDigestPart(part, {
-        includeCallId: false,
-        includeName: false,
-        stripAdditions: true,
-      }),
-    ),
+    content: message.content
+      .filter((part) => !isMetadataDataPart(part))
+      .map((part) =>
+        buildDigestPart(part, {
+          includeCallId: false,
+          includeName: false,
+          includeDataDigest: true,
+        }),
+      ),
   };
   return hashContent(safeJsonStringify(payload));
+}
+
+/**
+ * Compute a stable message hash for conversation tracking.
+ *
+ * Mirrors forensic capture hashing to avoid drift between
+ * tracking and diagnostics.
+ */
+export function computeStableMessageHash(
+  message: LanguageModelChatMessage,
+): string {
+  const parts: string[] = [];
+  for (const part of message.content) {
+    // Skip metadata data parts (e.g. cache_control breakpoints)
+    if (isMetadataDataPart(part)) {
+      continue;
+    }
+    if ("value" in part && typeof part.value === "string") {
+      parts.push(`text:${hashContent(part.value)}`);
+      continue;
+    }
+    if ("data" in part && "mimeType" in part) {
+      const data = part.data;
+      parts.push(`data:${part.mimeType}:${data.length.toString()}`);
+      continue;
+    }
+    if ("callId" in part && "name" in part) {
+      const callId = part.callId;
+      const name = part.name;
+
+      // Handle tool call (has input)
+      if ("input" in part) {
+        let inputHash = "";
+        try {
+          inputHash = hashContent(
+            serializeToolPayload((part as { input?: unknown }).input),
+          );
+        } catch {
+          inputHash = "unserializable";
+        }
+        parts.push(`tool:${name}:${callId}:input:${inputHash}`);
+        continue;
+      }
+
+      const isResult = "toolResult" in part || "content" in part;
+      let resultHash = "";
+      if (isResult) {
+        try {
+          const safeToolResult = {
+            callId,
+            name,
+            content:
+              "content" in part
+                ? String((part as { content?: unknown }).content)
+                : undefined,
+            toolResult:
+              "toolResult" in part
+                ? String((part as { toolResult?: unknown }).toolResult)
+                : undefined,
+          };
+          resultHash = hashContent(safeJsonStringify(safeToolResult));
+        } catch {
+          resultHash = "unserializable";
+        }
+      }
+      parts.push(`tool:${name}:${callId}${isResult ? `:${resultHash}` : ""}`);
+      continue;
+    }
+    if ("callId" in part && "content" in part) {
+      const callId = part.callId;
+      let resultHash = "";
+      try {
+        const safeToolResult = {
+          callId,
+          content: String((part as { content?: unknown }).content),
+        };
+        resultHash = hashContent(safeJsonStringify(safeToolResult));
+      } catch {
+        resultHash = "unserializable";
+      }
+      parts.push(`tool:${callId}:${resultHash}`);
+      continue;
+    }
+    if ("callId" in part && "toolResult" in part) {
+      const callId = String(part.callId);
+      let resultHash = "";
+      try {
+        const safeToolResult = {
+          callId,
+          toolResult: String((part as { toolResult?: unknown }).toolResult),
+        };
+        resultHash = hashContent(safeJsonStringify(safeToolResult));
+      } catch {
+        resultHash = "unserializable";
+      }
+      parts.push(`tool:${callId}:${resultHash}`);
+    }
+  }
+  return hashContent(parts.join("|"));
 }
 
 /**
@@ -155,7 +280,7 @@ export function computeRawDigest(message: LanguageModelChatMessage): string {
       buildDigestPart(part, {
         includeCallId: true,
         includeName: true,
-        stripAdditions: false,
+        includeDataDigest: false,
       }),
     ),
   };
@@ -168,7 +293,7 @@ export function computePartDigest(
   const payload = buildDigestPart(part, {
     includeCallId: true,
     includeName: true,
-    stripAdditions: false,
+    includeDataDigest: false,
   });
   return hashContent(safeJsonStringify(payload));
 }

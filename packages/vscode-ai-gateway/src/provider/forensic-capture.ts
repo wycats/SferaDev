@@ -10,9 +10,13 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import type {
-  LanguageModelChatInformation,
-  LanguageModelChatMessage,
+import {
+  LanguageModelDataPart,
+  LanguageModelTextPart,
+  LanguageModelToolCallPart,
+  LanguageModelToolResultPart,
+  type LanguageModelChatInformation,
+  type LanguageModelChatMessage,
 } from "vscode";
 import { logger } from "../logger";
 import { safeJsonStringify } from "../utils/serialize.js";
@@ -24,11 +28,7 @@ import {
   ROLE_NAMES,
 } from "../utils/digest";
 
-export {
-  computeNormalizedDigest,
-  computeRawDigest,
-  stripOurAdditions,
-} from "../utils/digest";
+export { computeNormalizedDigest, computeRawDigest } from "../utils/digest";
 
 export interface FullContentCapture {
   systemPrompt?: string;
@@ -184,6 +184,21 @@ export interface CaptureInput {
   systemPrompt: string | undefined;
   systemPromptHash: string | undefined;
   estimatedTokens: number;
+  // Debug breakdown of token estimate components
+  tokenBreakdown?: {
+    messageTokens: number;
+    toolTokens: number;
+    systemPromptTokens: number;
+    source: string;
+    knownTokens: number;
+    estimatedTokens: number;
+  };
+  // Conversation state lookup result for debugging
+  conversationLookup?: {
+    hasState: boolean;
+    stateSize: number;
+    storedMsgCount?: number;
+  };
   chatId: string;
   currentAgentId: string | null;
 }
@@ -205,8 +220,15 @@ function getPartTypes(message: LanguageModelChatMessage): string[] {
       types.push("text");
     } else if ("data" in part && "mimeType" in part) {
       types.push("data");
-    } else if ("callId" in part && "name" in part) {
-      types.push("toolResult" in part ? "toolResult" : "toolCall");
+    } else if ("callId" in part && "name" in part && "input" in part) {
+      // Tool call: has callId, name, input
+      types.push("toolCall");
+    } else if ("callId" in part && "content" in part) {
+      // Tool result: has callId, content (no name)
+      types.push("toolResult");
+    } else if ("callId" in part && "toolResult" in part) {
+      // Legacy tool result format
+      types.push("toolResult");
     } else {
       types.push("unknown");
     }
@@ -297,29 +319,50 @@ function extractFullContent(
             dataSize: data.length,
             partDigest: computePartDigest(part),
           };
-        } else if ("callId" in part && "name" in part) {
-          const isResult = "toolResult" in part;
-          if (isResult) {
-            return {
-              type: "toolResult" as const,
-              toolName: part.name,
-              callId: part.callId,
-              toolResult: (part as { toolResult?: unknown }).toolResult,
-              partDigest: computePartDigest(part),
-            };
-          } else {
-            return {
-              type: "toolCall" as const,
-              toolName: part.name,
-              callId: part.callId,
-              input: (part as { input?: unknown }).input,
-              partDigest: computePartDigest(part),
-            };
-          }
+        } else if ("callId" in part && "name" in part && "input" in part) {
+          // Tool call: has callId, name, input
+          return {
+            type: "toolCall" as const,
+            toolName: part.name,
+            callId: part.callId,
+            input: (part as { input?: unknown }).input,
+            partDigest: computePartDigest(part),
+          };
+        } else if ("callId" in part && "content" in part) {
+          // Tool result (VS Code standard API): has callId, content (no name)
+          return {
+            type: "toolResult" as const,
+            callId: part.callId,
+            content: (part as { content?: unknown }).content,
+            partDigest: computePartDigest(part),
+          };
+        } else if ("callId" in part && "toolResult" in part) {
+          // Legacy tool result format: has callId, toolResult, optionally name
+          return {
+            type: "toolResult" as const,
+            toolName: (part as { name?: string }).name,
+            callId: part.callId,
+            toolResult: (part as { toolResult?: unknown }).toolResult,
+            partDigest: computePartDigest(part),
+          };
         } else {
+          // Debug: capture what properties exist on unknown parts
+          const partKeys = Object.keys(part);
+          const ownProps = Object.getOwnPropertyNames(part);
+          const proto = Object.getPrototypeOf(part);
+          const protoName = proto?.constructor?.name;
           return {
             type: "unknown" as const,
             partDigest: computePartDigest(part),
+            _debug: {
+              partKeys,
+              ownProps,
+              protoName,
+              hasCallId: "callId" in part,
+              hasContent: "content" in part,
+              hasName: "name" in part,
+              hasValue: "value" in part,
+            },
           };
         }
       });
@@ -434,6 +477,28 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
         modelOptions: input.options.modelOptions ?? {},
         toolSchemaHashes:
           input.options.tools?.map((t) => hashToolSchema(t)) ?? [],
+        // Debug: capture total tool schema size to verify token estimation
+        toolSchemaCharacterTotal:
+          input.options.tools?.reduce((sum, t) => {
+            const schemaJson = JSON.stringify(t.inputSchema ?? {});
+            return (
+              sum +
+              t.name.length +
+              (t.description?.length ?? 0) +
+              schemaJson.length
+            );
+          }, 0) ?? 0,
+        // Debug: sample first tool to verify schema presence
+        firstToolSample: input.options.tools?.[0]
+          ? {
+              name: input.options.tools[0].name,
+              descLength: input.options.tools[0].description?.length ?? 0,
+              hasInputSchema: input.options.tools[0].inputSchema !== undefined,
+              schemaKeys: input.options.tools[0].inputSchema
+                ? Object.keys(input.options.tools[0].inputSchema as object)
+                : [],
+            }
+          : null,
       },
 
       // RAW dump of everything in options
@@ -491,7 +556,20 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
                     length: msg.content.length,
                     partTypes: msg.content.map((p) => {
                       const keys = Object.keys(p);
-                      return { keys, type: typeof p };
+                      // INSTRUMENTATION: Record instanceof results to verify if it works
+                      const instanceofResults = {
+                        TextPart: p instanceof LanguageModelTextPart,
+                        DataPart: p instanceof LanguageModelDataPart,
+                        ToolCallPart: p instanceof LanguageModelToolCallPart,
+                        ToolResultPart:
+                          p instanceof LanguageModelToolResultPart,
+                      };
+                      return {
+                        keys,
+                        type: typeof p,
+                        constructor: (p as object)?.constructor?.name ?? "null",
+                        instanceof: instanceofResults,
+                      };
                     }),
                   };
                 } catch {
@@ -532,6 +610,12 @@ export async function captureForensicData(input: CaptureInput): Promise<void> {
                 (input.estimatedTokens / input.model.maxInputTokens) * 100,
               )
             : 0,
+        // Debug breakdown if available
+        ...(input.tokenBreakdown ? { breakdown: input.tokenBreakdown } : {}),
+        // Conversation lookup debug info
+        ...(input.conversationLookup
+          ? { conversationLookup: input.conversationLookup }
+          : {}),
       },
 
       internalState: {

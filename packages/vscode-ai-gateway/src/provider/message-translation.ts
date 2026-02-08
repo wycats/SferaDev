@@ -33,8 +33,12 @@ import {
   LanguageModelToolResultPart,
 } from "vscode";
 import { logger } from "../logger.js";
-import { tryStringify } from "../utils/serialize.js";
+import { stripVscodeInternals, tryStringify } from "../utils/serialize.js";
 import { detectImageMimeType } from "./image-utils.js";
+
+// NOTE: We verified via instrumentation (2026-02-06) that instanceof checks work correctly
+// for VS Code's LanguageModel part types. The parts are actual class instances, not plain
+// objects, and instanceof returns true. No duck-typing fallbacks are needed.
 
 /**
  * Special tokens used by various language models that must be stripped from input.
@@ -103,9 +107,19 @@ export function translateMessage(
       : userContentParts;
 
   for (const part of message.content) {
+    // instanceof checks work correctly for VS Code's LanguageModel part types.
+    // Verified via instrumentation 2026-02-06: constructor is minified ("zt") but instanceof returns true.
     if (part instanceof LanguageModelTextPart) {
       // Sanitize special tokens that may appear in tool outputs
-      const finalText = sanitizeSpecialTokens(part.value);
+      let finalText = sanitizeSpecialTokens(part.value);
+
+      // Strip VS Code UI citations (markdown links appended to the message)
+      // e.g. "Hello world [Title](url)" -> "Hello world"
+      // This prevents cache busting and "ghost content" in the history.
+      if (openResponsesRole === "assistant") {
+        finalText = finalText.replace(/\s*\[[^\]]+\]\([^)]+\)$/, "");
+      }
+
       // Use input_text for User role, output_text for Assistant
       if (openResponsesRole === "assistant") {
         assistantContentParts.push({
@@ -180,10 +194,11 @@ export function translateMessage(
         contentParts.length = 0;
       }
 
+      // Strip VS Code internal properties ($mid, etc.) that change between
+      // turns and bust Claude prompt caching.
+      const rawContent = stripVscodeInternals(part.content);
       const output =
-        typeof part.content === "string"
-          ? part.content
-          : tryStringify(part.content);
+        typeof rawContent === "string" ? rawContent : tryStringify(rawContent);
       if (output.trim() === "") {
         logger.debug("[OpenResponses] Skipping empty tool result content");
         continue;
@@ -196,6 +211,13 @@ export function translateMessage(
         output,
       };
       items.push(functionCallOutputItem);
+    } else {
+      // Unrecognized part type - log for debugging
+      logger.warn(
+        `[OpenResponses] Unrecognized message part type. ` +
+          `Keys: [${Object.keys(part as object).join(", ")}], ` +
+          `Proto: ${Object.getPrototypeOf(part)?.constructor?.name ?? "null"}`,
+      );
     }
   }
 

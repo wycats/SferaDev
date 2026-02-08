@@ -173,13 +173,13 @@ cat .logs/last-suspicious-request.json | jq '.context.usage'
 
 #### 4. Log File Reference
 
-| File | Purpose |
-|------|---------|
-| `tree-diagnostics.log` | Agent tree state changes with full token data |
-| `current.log` | Current session's detailed logs |
+| File                           | Purpose                                        |
+| ------------------------------ | ---------------------------------------------- |
+| `tree-diagnostics.log`         | Agent tree state changes with full token data  |
+| `current.log`                  | Current session's detailed logs                |
 | `last-suspicious-request.json` | Most recent API request that triggered logging |
-| `sessions.jsonl` | Historical session data |
-| `errors.jsonl` | Error events |
+| `sessions.jsonl`               | Historical session data                        |
+| `errors.jsonl`                 | Error events                                   |
 
 ## OpenResponses Client
 

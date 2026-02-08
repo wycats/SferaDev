@@ -24,7 +24,7 @@
     ".logs/**": true
   },
 
-  "vercel.ai.logging.fileDirectory": "/tmp/ai-gateway-logs",
+  "vercel.ai.logging.fileDirectory": ".logs",
   "vercel.ai.logging.level": "trace",
 
   // Forensic capture - capture full Copilot prompts for analysis

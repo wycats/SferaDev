@@ -5,6 +5,21 @@ import { logger } from "../logger";
 import { tryStringify } from "../utils/serialize.js";
 import { LRUCache } from "./lru-cache";
 
+/**
+ * ⚠️ WARNING: READ BEFORE MODIFYING
+ *
+ * If you are investigating "wrong token counts" or "massive jumps" in the status bar:
+ *
+ * 1. DO NOT assume this estimator is the problem.
+ * 2. Massive errors (>20k) are almost always caused by 'ConversationStateTracker'
+ *    losing state and forcing a fallback to this estimator.
+ * 3. This estimator is intentionally conservative. Tuning these constants
+ *    should be the LAST resort, only after verifying that `ConversationStateTracker`
+ *    is correctly persisting and retrieving "Ground Truth" counts from the API.
+ *
+ * See: docs/research/TOKEN_ESTIMATION_REALITY.md
+ */
+
 interface Encoding {
   /**
    * Encode text to tokens.
@@ -41,8 +56,12 @@ const PER_TOOL_OVERHEAD = 8;
 /**
  * Safety multiplier for tool token estimates.
  * From official vscode-copilot-chat implementation.
+ *
+ * Update 2026-02-07: Anthropic models require a higher multiplier (~1.4)
+ * due to XML formatting overhead for tools.
  */
 const TOOL_SAFETY_MULTIPLIER = 1.1;
+const ANTHROPIC_TOOL_MULTIPLIER = 1.4;
 
 export class TokenCounter {
   private encodings = new Map<string, Encoding>();
@@ -115,7 +134,14 @@ export class TokenCounter {
         }
         if (this.isSerializedToolResultPart(part)) {
           total += this.estimateSerializedToolResultTokens(part, modelFamily);
+          continue;
         }
+        // Part was not recognized - log for debugging
+        logger.warn(
+          `Unrecognized message part type. Keys: [${Object.keys(part as object).join(", ")}], ` +
+            `Proto: ${Object.getPrototypeOf(part)?.constructor?.name ?? "null"}, ` +
+            `hasCallId: ${"callId" in (part as object)}, hasContent: ${"content" in (part as object)}`,
+        );
       }
     }
     logger.trace(
@@ -159,9 +185,15 @@ export class TokenCounter {
       );
     }
 
-    const result = Math.ceil(numTokens * TOOL_SAFETY_MULTIPLIER);
+    const multiplier =
+      modelFamily.toLowerCase().includes("claude") ||
+      modelFamily.toLowerCase().includes("anthropic")
+        ? ANTHROPIC_TOOL_MULTIPLIER
+        : TOOL_SAFETY_MULTIPLIER;
+
+    const result = Math.ceil(numTokens * multiplier);
     logger.debug(
-      `Tool schema token estimate: ${result.toString()} tokens for ${tools.length.toString()} tools (family: ${modelFamily})`,
+      `Tool schema token estimate: ${result.toString()} tokens for ${tools.length.toString()} tools (family: ${modelFamily}, multiplier: ${multiplier})`,
     );
     return result;
   }
@@ -214,12 +246,34 @@ export class TokenCounter {
   ): number {
     let total = this.estimateTextTokens(part.callId, modelFamily) + 4;
     for (const resultPart of part.content) {
-      if (
-        typeof resultPart === "object" &&
-        resultPart !== null &&
-        "value" in resultPart
-      ) {
-        total += this.estimateTextTokens(String(resultPart.value), modelFamily);
+      // Handle text-like parts (LanguageModelTextPart or serialized {type: 'text', text: ...})
+      const text = this.extractSerializedText(resultPart);
+      if (text !== undefined) {
+        total += this.estimateTextTokens(text, modelFamily);
+        continue;
+      }
+
+      // Handle serialized data parts
+      if (this.isSerializedDataPart(resultPart)) {
+        total += this.estimateSerializedDataTokens(resultPart, modelFamily);
+        continue;
+      }
+
+      // Handle raw strings (if present)
+      if (typeof resultPart === "string") {
+        total += this.estimateTextTokens(resultPart, modelFamily);
+        continue;
+      }
+
+      // Handle LanguageModelDataPart (native)
+      if (resultPart instanceof vscode.LanguageModelDataPart) {
+        if (resultPart.mimeType.startsWith("image/")) {
+          total += this.estimateImageTokens(modelFamily, resultPart);
+        } else {
+          const decoded = new TextDecoder().decode(resultPart.data);
+          total += this.estimateTextTokens(decoded, modelFamily);
+        }
+        continue;
       }
     }
     return total;

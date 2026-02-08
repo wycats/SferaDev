@@ -540,4 +540,16 @@ describe("translateMessage content type invariants", () => {
       "Hello from unknown",
     );
   });
+
+  it("should strip UI additions from translated messages", () => {
+    // Regression guard: UI additions (citations) must be stripped to match TokenCache keys.
+    const message = LanguageModelChatMessage.Assistant([
+      new LanguageModelTextPart("Hello world [Title](url)"),
+    ]);
+
+    const items = messageTranslation.translateMessage(message);
+    const [messageItem] = items;
+    // Expect content to be "Hello world"
+    expect((messageItem as { content: string }).content).toBe("Hello world");
+  });
 });

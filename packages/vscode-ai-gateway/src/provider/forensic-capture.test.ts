@@ -1,11 +1,7 @@
 /**
- * Tests for A3 assumption: normalize(transform_out(x)) = normalize(x)
+ * Tests for canonical projection: normalize(transform_out(x)) != normalize(x)
  *
- * A3: Our normalization correctly strips all additions we inject during output.
- *
- * Per digest-equivalence-algebra.md Section 6:
- * - transform_out injects URL annotations: ` [title](url)`
- * - normalize must strip these back to get the original content
+ * Canonical normalization preserves output text including citations/links.
  */
 import { describe, expect, it, vi } from "vitest";
 
@@ -34,57 +30,11 @@ vi.mock("../logger.js", () => ({
 }));
 
 import {
-  stripOurAdditions,
   computeNormalizedDigest,
   computeRawDigest,
 } from "./forensic-capture.js";
 
-describe("stripOurAdditions", () => {
-  it("strips single URL annotation", () => {
-    const input = "Check out this link [Example](https://example.com)";
-    const result = stripOurAdditions(input);
-    expect(result).toBe("Check out this link");
-  });
-
-  it("strips multiple URL annotations", () => {
-    const input =
-      "See [First](https://first.com) and [Second](https://second.com) links";
-    const result = stripOurAdditions(input);
-    expect(result).toBe("See and links");
-  });
-
-  it("preserves text without annotations", () => {
-    const input = "Plain text without any links";
-    const result = stripOurAdditions(input);
-    expect(result).toBe("Plain text without any links");
-  });
-
-  it("handles empty string", () => {
-    const result = stripOurAdditions("");
-    expect(result).toBe("");
-  });
-
-  it("strips annotation at end of text", () => {
-    const input = "See the docs [Documentation](https://docs.example.com)";
-    const result = stripOurAdditions(input);
-    expect(result).toBe("See the docs");
-  });
-
-  it("handles URLs with special characters", () => {
-    const input =
-      "Link [Query](https://example.com/search?q=test&sort=asc) here";
-    const result = stripOurAdditions(input);
-    expect(result).toBe("Link here");
-  });
-
-  it("handles markdown links with complex titles", () => {
-    const input = "Check [Docs: Getting Started](https://docs.io/start) now";
-    const result = stripOurAdditions(input);
-    expect(result).toBe("Check now");
-  });
-});
-
-describe("A3 assumption: normalize(transform_out(x)) = normalize(x)", () => {
+describe("Canonical projection: normalize(transform_out(x)) preserves additions", () => {
   // Simulate transform_out by adding URL annotations
   function transformOut(text: string): string {
     // This simulates what stream-adapter.ts does
@@ -103,7 +53,7 @@ describe("A3 assumption: normalize(transform_out(x)) = normalize(x)", () => {
     };
   }
 
-  it("normalized digest is stable after transform_out", () => {
+  it("normalized digest changes after transform_out", () => {
     const original = "This is the response content.";
     const transformed = transformOut(original);
 
@@ -117,10 +67,10 @@ describe("A3 assumption: normalize(transform_out(x)) = normalize(x)", () => {
       transformedMsg as Parameters<typeof computeNormalizedDigest>[0],
     );
 
-    expect(transformedDigest).toBe(originalDigest);
+    expect(transformedDigest).not.toBe(originalDigest);
   });
 
-  it("normalized digest is stable with multiple annotations", () => {
+  it("normalized digest changes with multiple annotations", () => {
     const original = "Response with citations.";
     const transformed = `${original} [Ref1](https://ref1.com) [Ref2](https://ref2.com)`;
 
@@ -134,7 +84,7 @@ describe("A3 assumption: normalize(transform_out(x)) = normalize(x)", () => {
       transformedMsg as Parameters<typeof computeNormalizedDigest>[0],
     );
 
-    expect(transformedDigest).toBe(originalDigest);
+    expect(transformedDigest).not.toBe(originalDigest);
   });
 
   it("normalized digest is stable when original has no annotations", () => {
@@ -149,17 +99,6 @@ describe("A3 assumption: normalize(transform_out(x)) = normalize(x)", () => {
     );
 
     expect(digest1).toBe(digest2);
-  });
-
-  it("idempotence: strip(strip(x)) = strip(x)", () => {
-    const withAnnotations =
-      "Text [Link1](https://url1.com) more [Link2](https://url2.com)";
-
-    const once = stripOurAdditions(withAnnotations);
-    const twice = stripOurAdditions(once);
-
-    expect(twice).toBe(once);
-    expect(twice).toBe("Text more");
   });
 });
 

@@ -92,6 +92,9 @@ export interface AgentEntry {
   firstUserMessageHash?: string | undefined;
   /** Hash of first assistant response (computed after first response) */
   firstAssistantResponseHash?: string | null | undefined;
+
+  /** Source of the token estimate (for diagnostics/UI) */
+  estimationSource?: "exact" | "delta" | "estimated" | undefined;
 }
 
 /** Agent aging configuration */
@@ -308,6 +311,7 @@ export class TokenStatusBar implements vscode.Disposable {
     partialKey: string | null,
     claimMatch: { parentConversationHash: string; expectedChildName: string },
     estimatedDeltaTokens: number | undefined,
+    estimationSource: "exact" | "delta" | "estimated" | undefined,
   ): string {
     const agent: AgentEntry = {
       id: agentId,
@@ -322,6 +326,7 @@ export class TokenStatusBar implements vscode.Disposable {
       maxInputTokens: maxTokens,
       estimatedInputTokens: estimatedTokens,
       estimatedDeltaTokens,
+      estimationSource,
       modelId,
       status: "streaming",
       dimmed: false,
@@ -411,6 +416,7 @@ export class TokenStatusBar implements vscode.Disposable {
    * @param modelId Model identifier
    * @param systemPromptHash Hash of the system prompt - diagnostics only
    * @param estimatedDeltaTokens Estimated tokens for NEW messages only (delta)
+   * @param estimationSource Source of the estimate ("exact", "delta", "estimated")
    */
   startAgent(
     agentId: string,
@@ -421,6 +427,7 @@ export class TokenStatusBar implements vscode.Disposable {
     agentTypeHash?: string,
     firstUserMessageHash?: string,
     estimatedDeltaTokens?: number,
+    estimationSource?: "exact" | "delta" | "estimated",
   ): string {
     const now = Date.now();
 
@@ -506,6 +513,7 @@ export class TokenStatusBar implements vscode.Disposable {
           partialKey,
           claimMatch,
           estimatedDeltaTokens,
+          estimationSource,
         );
       }
     }
@@ -520,6 +528,7 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.lastUpdateTime = now;
       existingAgent.estimatedInputTokens = estimatedTokens;
       existingAgent.estimatedDeltaTokens = estimatedDeltaTokens;
+      existingAgent.estimationSource = estimationSource;
       existingAgent.maxInputTokens =
         maxTokens ?? existingAgent.maxInputTokens ?? undefined;
       existingAgent.modelId = modelId ?? existingAgent.modelId;
@@ -588,6 +597,7 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.lastUpdateTime = now;
       existingAgent.estimatedInputTokens = estimatedTokens;
       existingAgent.estimatedDeltaTokens = estimatedDeltaTokens;
+      existingAgent.estimationSource = estimationSource;
       existingAgent.maxInputTokens =
         maxTokens ?? existingAgent.maxInputTokens ?? undefined;
       existingAgent.modelId = modelId ?? existingAgent.modelId;
@@ -731,6 +741,7 @@ export class TokenStatusBar implements vscode.Disposable {
       maxInputTokens: maxTokens,
       estimatedInputTokens: estimatedTokens,
       estimatedDeltaTokens,
+      estimationSource,
       modelId,
       status: "streaming",
       dimmed: false,
@@ -1320,8 +1331,11 @@ export class TokenStatusBar implements vscode.Disposable {
           );
         }
       } else if (agent.estimatedInputTokens) {
+        const sourceLabel = agent.estimationSource
+          ? `(${agent.estimationSource})`
+          : "";
         lines.push(
-          `   Estimated: ~${agent.estimatedInputTokens.toLocaleString()}`,
+          `   Estimated: ~${agent.estimatedInputTokens.toLocaleString()} ${sourceLabel}`,
         );
       }
 

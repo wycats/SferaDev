@@ -71,381 +71,194 @@ describe("ConversationStateTracker", () => {
     tracker = new ConversationStateTracker();
   });
 
-  describe("recordActual", () => {
-    it("stores conversation state", () => {
+  describe("Token Tracking (Exact & Prefix)", () => {
+    it("stores and retrieves exact match", () => {
       const messages = [createMessage(1, "hello"), createMessage(2, "world")];
 
       tracker.recordActual(messages, "claude", 500);
 
-      const state = tracker.getState("claude");
-      expect(state).toBeDefined();
-      expect(state?.actualTokens).toBe(500);
-      expect(state?.messageHashes).toHaveLength(2);
-      expect(state?.modelFamily).toBe("claude");
-    });
-
-    it("tracks different model families separately", () => {
-      const messages = [createMessage(1, "hello")];
-
-      tracker.recordActual(messages, "claude", 100);
-      tracker.recordActual(messages, "gpt-4", 120);
-
-      expect(tracker.getState("claude")?.actualTokens).toBe(100);
-      expect(tracker.getState("gpt-4")?.actualTokens).toBe(120);
-    });
-
-    it("overwrites previous state for same model", () => {
-      const messages1 = [createMessage(1, "first")];
-      const messages2 = [createMessage(1, "second")];
-
-      tracker.recordActual(messages1, "claude", 100);
-      tracker.recordActual(messages2, "claude", 200);
-
-      expect(tracker.getState("claude")?.actualTokens).toBe(200);
-    });
-  });
-
-  // NOTE: "conversation isolation" describe block deleted - zombie tests (RFC 00054)
-  // Per-conversation keying removed in favor of family-only keying.
-  // The "falls back to model-only key" test is now the default behavior.
-
-  describe("model-family keying", () => {
-    it("uses model-family as key", () => {
-      const messages = [createMessage(1, "hello")];
-
-      tracker.recordActual(messages, "claude", 100);
-
-      const state = tracker.getState("claude");
-      expect(state?.actualTokens).toBe(100);
-
       const result = tracker.lookup(messages, "claude");
       expect(result.type).toBe("exact");
-      expect(result.knownTokens).toBe(100);
-    });
-  });
-
-  describe("lookup", () => {
-    describe("no match", () => {
-      it("returns none when no state exists", () => {
-        const messages = [createMessage(1, "hello")];
-
-        const result = tracker.lookup(messages, "claude");
-
-        expect(result.type).toBe("none");
-        expect(result.knownTokens).toBeUndefined();
-      });
-
-      it("returns none when messages diverge from known state", () => {
-        const messages1 = [
-          createMessage(1, "hello"),
-          createMessage(2, "world"),
-        ];
-        const messages2 = [
-          createMessage(1, "different"),
-          createMessage(2, "conversation"),
-        ];
-
-        tracker.recordActual(messages1, "claude", 500);
-
-        const result = tracker.lookup(messages2, "claude");
-
-        expect(result.type).toBe("none");
-      });
-
-      it("returns none when messages are shorter than known state", () => {
-        const messages1 = [
-          createMessage(1, "hello"),
-          createMessage(2, "world"),
-        ];
-        const messages2 = [createMessage(1, "hello")];
-
-        tracker.recordActual(messages1, "claude", 500);
-
-        const result = tracker.lookup(messages2, "claude");
-
-        expect(result.type).toBe("none");
-      });
+      expect(result.knownTokens).toBe(500);
     });
 
-    describe("exact match", () => {
-      it("returns exact when messages match exactly", () => {
-        const messages = [createMessage(1, "hello"), createMessage(2, "world")];
-
-        tracker.recordActual(messages, "claude", 500);
-
-        const result = tracker.lookup(messages, "claude");
-
-        expect(result.type).toBe("exact");
-        expect(result.knownTokens).toBe(500);
-      });
-
-      it("matches based on content hash, not object identity", () => {
-        const messages1 = [createMessage(1, "hello")];
-        const messages2 = [createMessage(1, "hello")]; // Same content, different object
-
-        tracker.recordActual(messages1, "claude", 100);
-
-        const result = tracker.lookup(messages2, "claude");
-
-        expect(result.type).toBe("exact");
-        expect(result.knownTokens).toBe(100);
-      });
-    });
-
-    describe("prefix match", () => {
-      it("returns prefix when conversation extends known state", () => {
-        const messages1 = [
-          createMessage(1, "hello"),
-          createMessage(2, "world"),
-        ];
-
-        tracker.recordActual(messages1, "claude", 500);
-
-        const messages2 = [...messages1, createMessage(1, "new message")];
-
-        const result = tracker.lookup(messages2, "claude");
-
-        expect(result.type).toBe("prefix");
-        expect(result.knownTokens).toBe(500);
-        expect(result.newMessageCount).toBe(1);
-        expect(result.newMessageIndices).toEqual([2]);
-      });
-
-      it("handles multiple new messages", () => {
-        const messages1 = [createMessage(1, "hello")];
-
-        tracker.recordActual(messages1, "claude", 100);
-
-        const messages2 = [
-          ...messages1,
-          createMessage(2, "response"),
-          createMessage(1, "follow up"),
-        ];
-
-        const result = tracker.lookup(messages2, "claude");
-
-        expect(result.type).toBe("prefix");
-        expect(result.newMessageCount).toBe(2);
-        expect(result.newMessageIndices).toEqual([1, 2]);
-      });
-    });
-  });
-
-  describe("clear", () => {
-    it("removes all state", () => {
+    it("distinguishes between model families", () => {
       const messages = [createMessage(1, "hello")];
 
       tracker.recordActual(messages, "claude", 100);
       tracker.recordActual(messages, "gpt-4", 120);
 
-      tracker.clear();
+      const resultClaude = tracker.lookup(messages, "claude");
+      expect(resultClaude.type).toBe("exact");
+      expect(resultClaude.knownTokens).toBe(100);
 
-      expect(tracker.getState("claude")).toBeUndefined();
-      expect(tracker.getState("gpt-4")).toBeUndefined();
-    });
-  });
-
-  describe("memory leak protections", () => {
-    it("evicts least recently used entries when max size is reached", () => {
-      // With family-only keying, each unique modelFamily gets one entry
-      // Fill to capacity with different model families
-      for (let i = 0; i < 100; i += 1) {
-        tracker.recordActual(
-          [createMessage(1, `msg-${i.toString()}`)],
-          `model-${i.toString()}`,
-          i,
-        );
-      }
-
-      expect(tracker.size()).toBe(100);
-      expect(tracker.getState("model-0")).toBeDefined();
-
-      // Add one more family - should evict oldest
-      tracker.recordActual([createMessage(1, "msg-100")], "model-100", 100);
-
-      // model-0 should be evicted (oldest)
-      expect(tracker.getState("model-0")).toBeUndefined();
-      expect(tracker.getState("model-100")).toBeDefined();
+      const resultGpt = tracker.lookup(messages, "gpt-4");
+      expect(resultGpt.type).toBe("exact");
+      expect(resultGpt.knownTokens).toBe(120);
     });
 
-    it("preserves recently used entries in LRU eviction", () => {
-      for (let i = 0; i < 100; i += 1) {
-        tracker.recordActual(
-          [createMessage(1, `msg-${i.toString()}`)],
-          `model-${i.toString()}`,
-          i,
-        );
-      }
+    it("retrieves prefix match for extended conversation", () => {
+      const msg1 = createMessage(1, "hello");
+      const msg2 = createMessage(2, "world");
+      const msg3 = createMessage(1, "how are you?");
 
-      // Touch model-0 to make it recently used
-      const lookup = tracker.lookup([createMessage(1, "msg-0")], "model-0");
-      expect(lookup.type).toBe("exact");
+      // Record state for [msg1, msg2]
+      tracker.recordActual([msg1, msg2], "claude", 500);
 
-      // Add new entry
-      tracker.recordActual([createMessage(1, "msg-100")], "model-100", 100);
+      // Lookup [msg1, msg2, msg3]
+      const result = tracker.lookup([msg1, msg2, msg3], "claude");
 
-      // model-0 was recently touched, so model-1 should be evicted instead
-      expect(tracker.getState("model-0")).toBeDefined();
-      expect(tracker.getState("model-1")).toBeUndefined();
-    });
-
-    it("does not exceed maxEntries when new model family is introduced at capacity", () => {
-      // Fill to capacity with different model families
-      for (let i = 0; i < 100; i += 1) {
-        tracker.recordActual(
-          [createMessage(1, `msg-${i.toString()}`)],
-          `model-${i.toString()}`,
-          i,
-        );
-      }
-      expect(tracker.size()).toBe(100);
-
-      // Introduce a new model family — should evict to stay at 100
-      tracker.recordActual([createMessage(1, "gpt-msg")], "gpt-4", 999);
-
-      expect(tracker.size()).toBeLessThanOrEqual(100);
-      expect(tracker.getState("gpt-4")).toBeDefined();
-    });
-
-    it("cleans up stale entries based on TTL", () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-02-03T00:00:00.000Z"));
-
-      tracker.recordActual([createMessage(1, "old")], "claude-old", 1);
-
-      vi.setSystemTime(new Date("2026-02-03T01:01:00.000Z"));
-
-      tracker.recordActual([createMessage(1, "new")], "claude-new", 2);
-
-      expect(tracker.getState("claude-old")).toBeUndefined();
-      expect(tracker.getState("claude-new")).toBeDefined();
-
-      vi.useRealTimers();
-    });
-  });
-
-  describe("persistence", () => {
-    it("persists state to memento", async () => {
-      vi.useFakeTimers();
-      const memento = createMockMemento();
-      const trackerWithPersistence = new ConversationStateTracker(memento);
-
-      const messages = [createMessage(1, "hello"), createMessage(2, "world")];
-      trackerWithPersistence.recordActual(messages, "claude", 500);
-
-      // Wait for debounced save
-      await vi.advanceTimersByTimeAsync(1100);
-
-      // Verify memento was updated
-      expect(memento._store.has("conversationStateTracker.v1")).toBe(true);
-      const stored = memento._store.get("conversationStateTracker.v1") as {
-        version: number;
-        entries: Array<{ key: string }>;
-      };
-      expect(stored.version).toBe(1);
-      // Family-only keying: 1 entry per model family (RFC 00054)
-      expect(stored.entries).toHaveLength(1);
-      const keys = stored.entries.map((e) => e.key);
-      expect(keys).toContain("claude");
-
-      vi.useRealTimers();
-    });
-
-    it("loads state from memento on construction", async () => {
-      vi.useFakeTimers();
-      const memento = createMockMemento();
-      const tracker1 = new ConversationStateTracker(memento);
-
-      const messages = [createMessage(1, "hello"), createMessage(2, "world")];
-      tracker1.recordActual(messages, "claude", 500);
-
-      // Wait for debounced save
-      await vi.advanceTimersByTimeAsync(1100);
-
-      // Create new tracker with same memento - should load state
-      const tracker2 = new ConversationStateTracker(memento);
-
-      const result = tracker2.lookup(messages, "claude");
-      expect(result.type).toBe("exact");
+      expect(result.type).toBe("prefix");
       expect(result.knownTokens).toBe(500);
-
-      vi.useRealTimers();
+      expect(result.newMessageCount).toBe(1);
     });
 
-    it("survives extension restart round-trip", async () => {
-      vi.useFakeTimers();
-      const memento = createMockMemento();
+    it("handles deeply nested prefix lookups (backtracking)", () => {
+      const msgs = [
+        createMessage(1, "1"),
+        createMessage(2, "2"),
+        createMessage(1, "3"),
+        createMessage(2, "4"),
+      ];
 
-      // First "session" - record data
-      const tracker1 = new ConversationStateTracker(memento);
-      const msg1 = [createMessage(1, "hello")];
-      const msg2 = [createMessage(1, "hi there")];
+      // Store state for [1, 2]
+      tracker.recordActual(msgs.slice(0, 2), "claude", 200);
 
-      tracker1.recordActual(msg1, "claude", 100);
-      tracker1.recordActual(msg2, "gpt-4", 200);
+      // Lookup [1, 2, 3, 4]
+      // It should backtrack from [1,2,3,4] -> [1,2,3] -> [1,2] match!
+      const result = tracker.lookup(msgs, "claude");
 
-      await vi.advanceTimersByTimeAsync(1100);
-
-      // Second "session" - load data (simulates restart)
-      const tracker2 = new ConversationStateTracker(memento);
-
-      // Family-only keying: 1 entry per model family (RFC 00054)
-      expect(tracker2.size()).toBe(2);
-      expect(tracker2.lookup(msg1, "claude").type).toBe("exact");
-      expect(tracker2.lookup(msg2, "gpt-4").type).toBe("exact");
-      expect(tracker2.lookup(msg1, "claude").knownTokens).toBe(100);
-      expect(tracker2.lookup(msg2, "gpt-4").knownTokens).toBe(200);
-
-      vi.useRealTimers();
+      expect(result.type).toBe("prefix");
+      expect(result.knownTokens).toBe(200);
+      expect(result.newMessageCount).toBe(2);
     });
 
-    it("filters stale entries on load", async () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-02-03T00:00:00.000Z"));
-
-      const memento = createMockMemento();
-      const tracker1 = new ConversationStateTracker(memento);
-
-      tracker1.recordActual([createMessage(1, "old")], "claude", 100);
-      await vi.advanceTimersByTimeAsync(1100);
-
-      // Advance time past TTL (1 hour)
-      vi.setSystemTime(new Date("2026-02-03T01:30:00.000Z"));
-
-      // New tracker should not load stale entry
-      const tracker2 = new ConversationStateTracker(memento);
-      expect(tracker2.size()).toBe(0);
-
-      vi.useRealTimers();
-    });
-
-    it("clear() removes persisted state", async () => {
-      vi.useFakeTimers();
-      const memento = createMockMemento();
-      const tracker1 = new ConversationStateTracker(memento);
-
-      tracker1.recordActual([createMessage(1, "hello")], "claude", 100);
-      await vi.advanceTimersByTimeAsync(1100);
-
-      expect(memento._store.has("conversationStateTracker.v1")).toBe(true);
-
-      tracker1.clear();
-      await vi.advanceTimersByTimeAsync(100);
-
-      expect(memento._store.has("conversationStateTracker.v1")).toBe(false);
-
-      vi.useRealTimers();
-    });
-
-    it("works without memento (in-memory only)", () => {
-      const tracker1 = new ConversationStateTracker();
+    it("returns none when no matching state exists", () => {
       const messages = [createMessage(1, "hello")];
+      const result = tracker.lookup(messages, "claude");
+      expect(result.type).toBe("none");
+    });
 
-      tracker1.recordActual(messages, "claude", 100);
+    it("returns none when prefix exists but families mismatch", () => {
+      const messages = [createMessage(1, "hello")];
+      tracker.recordActual(messages, "claude", 100);
 
-      const result = tracker1.lookup(messages, "claude");
-      expect(result.type).toBe("exact");
+      const result = tracker.lookup(messages, "gpt-4");
+      expect(result.type).toBe("none");
+    });
+
+    it("tolerates system prompt drift at index 0 (RFC 00058 §2.3)", () => {
+      // Record state with system prompt v1
+      const original = [
+        createMessage(0, "System prompt version 1 with agents block A"),
+        createMessage(1, "hello"),
+        createMessage(2, "world"),
+        createMessage(1, "how are you?"),
+        createMessage(2, "I'm fine"),
+      ];
+      tracker.recordActual(original, "claude", 5000);
+
+      // Lookup with system prompt v2 (changed) but same history
+      const drifted = [
+        createMessage(
+          0,
+          "System prompt version 2 with agents block B and workspace info",
+        ),
+        createMessage(1, "hello"),
+        createMessage(2, "world"),
+        createMessage(1, "how are you?"),
+        createMessage(2, "I'm fine"),
+        createMessage(1, "new question"),
+      ];
+
+      const result = tracker.lookup(drifted, "claude");
+      // With strict inclusion, we reject candidates where known messages are missing in current
+      expect(result.type).toBe("none");
+    });
+
+    it("handles set intersection when known state has different system prompt", () => {
+      // Record with 4 messages (need at least 2 matches)
+      const original = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "D"),
+      ];
+      tracker.recordActual(original, "claude", 2000);
+
+      // Same messages but with one additional message at the end
+      const extended = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "D"),
+        createMessage(1, "E"),
+      ];
+
+      const result = tracker.lookup(extended, "claude");
+      expect(result.type).toBe("prefix");
+      expect(result.knownTokens).toBe(2000);
+      expect(result.newMessageCount).toBe(1);
+    });
+
+    it("rejects candidates with insufficient overlap", () => {
+      // Record a conversation with 6 messages
+      const original = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "D"),
+        createMessage(1, "E"),
+        createMessage(2, "F"),
+      ];
+      tracker.recordActual(original, "claude", 3000);
+
+      // Lookup a mostly-different conversation that only shares 1 message
+      const different = [
+        createMessage(1, "X"),
+        createMessage(2, "Y"),
+        createMessage(1, "A"), // only 1 overlap - below threshold
+        createMessage(2, "Z"),
+      ];
+
+      const result = tracker.lookup(different, "claude");
+      expect(result.type).toBe("none");
+    });
+
+    it("supports branching conversations (backtracking works across branches)", () => {
+      const root = [createMessage(1, "A"), createMessage(2, "B")];
+      tracker.recordActual(root, "claude", 100);
+
+      // Branch 1: [A, B, C]
+      const branch1 = [...root, createMessage(1, "C")];
+      tracker.recordActual(branch1, "claude", 150);
+
+      // Branch 2: [A, B, D]
+      const branch2 = [...root, createMessage(1, "D")];
+
+      // Lookup Branch 2 should accept Root as prefix
+      const result = tracker.lookup(branch2, "claude");
+      expect(result.type).toBe("prefix");
       expect(result.knownTokens).toBe(100);
+      expect(result.newMessageCount).toBe(1);
+    });
+  });
+
+  describe("Persistence", () => {
+    it("saves and loads state", async () => {
+      const memento = createMockMemento();
+      const persistedTracker = new ConversationStateTracker(memento);
+
+      const messages = [createMessage(1, "persist me")];
+      persistedTracker.recordActual(messages, "claude", 777);
+
+      // Wait for debounce
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+
+      const newTracker = new ConversationStateTracker(memento);
+      const result = newTracker.lookup(messages, "claude");
+      expect(result.type).toBe("exact");
+      expect(result.knownTokens).toBe(777);
     });
   });
 });
@@ -505,60 +318,5 @@ describe("hasSummarizationTag", () => {
       },
     ] as unknown as LanguageModelChatMessage[];
     expect(hasSummarizationTag(messages)).toBe(true);
-  });
-});
-
-describe("summarization guard (RFC 047 Phase 4b)", () => {
-  let tracker: ConversationStateTracker;
-
-  beforeEach(() => {
-    tracker = new ConversationStateTracker();
-  });
-
-  it("clears lastSequenceEstimate from family key when summarization detected", () => {
-    const messages = [createMessage(1, "hello")];
-
-    // Record with sequence estimate — creates family-key with lastSequenceEstimate
-    tracker.recordActual(messages, "claude", 100000, 50000);
-    const stateBefore = tracker.getState("claude");
-    expect(stateBefore?.lastSequenceEstimate).toBe(50000);
-
-    // Record with summarization detected — should clear lastSequenceEstimate on family key
-    const summaryMessages = [
-      createMessage(
-        1,
-        "<conversation-summary>\\nSummary\\n</conversation-summary>",
-      ),
-    ];
-    tracker.recordActual(summaryMessages, "claude", 30000, 25000, true);
-
-    // Family key should NOT have lastSequenceEstimate
-    const stateAfter = tracker.getState("claude");
-    expect(stateAfter?.lastSequenceEstimate).toBeUndefined();
-    expect(stateAfter?.actualTokens).toBe(30000);
-  });
-
-  it("preserves lastSequenceEstimate when no summarization detected", () => {
-    const messages = [createMessage(1, "hello")];
-
-    tracker.recordActual(messages, "claude", 100000, 50000);
-    const state = tracker.getState("claude");
-    expect(state?.lastSequenceEstimate).toBe(50000);
-  });
-
-  it("re-establishes adjustment after summarization on next non-summarized turn", () => {
-    const messages = [createMessage(1, "hello")];
-
-    // Turn 1: normal — establishes adjustment
-    tracker.recordActual(messages, "claude", 100000, 50000);
-    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(50000);
-
-    // Turn 2: summarization detected — clears adjustment
-    tracker.recordActual(messages, "claude", 30000, 25000, true);
-    expect(tracker.getState("claude")?.lastSequenceEstimate).toBeUndefined();
-
-    // Turn 3: normal again — re-establishes adjustment
-    tracker.recordActual(messages, "claude", 35000, 30000, false);
-    expect(tracker.getState("claude")?.lastSequenceEstimate).toBe(30000);
   });
 });

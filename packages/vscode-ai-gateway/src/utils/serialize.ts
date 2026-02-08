@@ -77,3 +77,36 @@ export function tryStringify(value: unknown): string {
     return safeJsonStringify(value);
   }
 }
+
+/**
+ * VS Code internal property keys that should be stripped before serialization.
+ * These are marshaling artifacts that change between turns/sessions
+ * and bust both our hash stability AND Claude prompt caching.
+ *
+ * Known keys:
+ * - $mid: URI marshaling identifier (changes on rehydration)
+ */
+const VSCODE_INTERNAL_KEYS = new Set(["$mid"]);
+
+/**
+ * Recursively strip VS Code internal properties from an object.
+ * Returns a cleaned copy; does not mutate the input.
+ *
+ * Use this before serializing tool result content for:
+ * - Hashing (digest stability across turns)
+ * - Sending to the model (Claude prompt cache stability)
+ */
+export function stripVscodeInternals(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== "object") return value;
+  if (Array.isArray(value)) {
+    return value.map(stripVscodeInternals);
+  }
+  const result: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+    if (!VSCODE_INTERNAL_KEYS.has(key)) {
+      result[key] = stripVscodeInternals(val);
+    }
+  }
+  return result;
+}

@@ -2,6 +2,78 @@
 
 This VS Code extension provides AI models via the Vercel AI Gateway using the OpenResponses wire protocol.
 
+---
+
+## 🔬 FORENSIC CAPTURE: Live Debugging Workflow
+
+**Forensic Capture** records full request/response data to `.logs/` for debugging conversation state, token tracking, and subagent detection issues.
+
+### Enabling Forensic Capture
+
+1. Open VS Code Settings (`Ctrl+,`)
+2. Search for `vercel.ai.forensicCaptureEnabled`
+3. Set to `true`
+
+Or add to `settings.json`:
+
+```json
+{
+  "vercel.ai.forensicCaptureEnabled": true
+}
+```
+
+### Where Logs Go
+
+Logs are written to the workspace's `.logs/` directory:
+
+```
+.logs/
+├── forensic-capture-2026-02-07T16-30-00.000Z.json
+├── forensic-capture-2026-02-07T16-31-15.000Z.json
+└── tree-snapshot-2026-02-07T16-30-00.000Z.json
+```
+
+### Analyzing Captures
+
+**Option 1: Narrative Tool** (correlates our logs with VS Code internals)
+
+```bash
+node scripts/analyze-agent-logs.ts /path/to/workspace --narrative
+```
+
+**Option 2: Raw JSON** (for specific request/response debugging)
+
+```bash
+cat .logs/forensic-capture-*.json | jq .
+```
+
+**Option 3: VS Code Output Panel**
+
+- Open Output panel (`Ctrl+Shift+U`)
+- Select **"Vercel AI"** from dropdown
+- Watch `[ConversationStateDebug]`, `[StatusBar]`, `[HybridEstimator]` in real-time
+
+### What Each Capture Contains
+
+| Field              | Purpose                                       |
+| ------------------ | --------------------------------------------- |
+| `messages`         | Full conversation history sent to API         |
+| `model`            | Model ID used for the request                 |
+| `usage`            | Actual token counts from API response         |
+| `sequenceEstimate` | Token estimate from ConversationStateTracker  |
+| `conversationHash` | Unique identifier for this conversation state |
+| `agentTypeHash`    | Fingerprint of system prompt + model          |
+
+### Debugging Checklist
+
+1. **Enable forensic capture** before reproducing the issue
+2. **Reproduce the issue** (subagent spawn, token jump, etc.)
+3. **Check `.logs/`** for the relevant capture files
+4. **Run narrative tool** for correlated timeline
+5. **Share relevant JSON** if asking for help
+
+---
+
 ## ⚠️ CRITICAL: System Prompt Extraction
 
 **DO NOT REMOVE `extractSystemPrompt()` from openresponses-chat.ts!**
@@ -219,3 +291,26 @@ When debugging a new issue:
 1. Add logging to `treeDiagnostics.log()` calls in `status-bar.ts`
 2. Include relevant data in the `data` parameter
 3. The narrative tool will automatically include it in the timeline
+
+## ⚠️ CRITICAL: Token Counting vs. State Persistence
+
+**Symptoms**: Status bar shows massive "jumps" (e.g., 20k to 40k) or consistently underestimates by >40%.
+
+**Likely Cause**: **State Amnesia**, NOT "Bad Math".
+
+### The Trap
+
+Agents often assume `TokenCounter` logic is imprecise and try to "tune" the estimator (e.g., changing overhead constants).
+**THIS IS ALMOST ALWAYS WRONG FOR LARGE ERRORS.**
+
+### The Reality
+
+Token estimation is mathematically bounded. It is rare for a tokenizer to be off by >20% on English text.
+If you see a 50% discrepancy or a 20k jump, it means the extension **forgot the previous conversation state** and is re-estimating the entire context from scratch (incorrectly) instead of using the "Ground Truth" returned by the API.
+
+**Investigation Checklist**:
+
+1. Check `ConversationStateTracker` logic. Are keys unique?
+2. Are keys persisting across requests?
+3. Is `recordActual` being called?
+4. **DO NOT** tune `src/tokens/counter.ts` constants until you verify state persistence.

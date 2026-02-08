@@ -15,9 +15,12 @@
 
 import type * as vscode from "vscode";
 import { logger } from "../logger";
-import { computeNormalizedDigest } from "../utils/digest";
+import { computeNormalizedDigest, computeRawDigest } from "../utils/digest";
+import { VSCODE_SYSTEM_ROLE } from "../provider/system-prompt";
 
 const CONVERSATION_SUMMARY_TAG = /<conversation-summary>/i;
+const SUMMARIZATION_SYSTEM_PROMPT_MARKER =
+  "Your task is to create a comprehensive, detailed summary";
 
 /**
  * Extract text from a message content part.
@@ -68,11 +71,34 @@ export function hasSummarizationTag(
 }
 
 /**
+ * Detect if this request is a specific "Summary Generation" pass.
+ * Copilot invokes a dedicated pass (with full history) to generate a summary.
+ * This prompt is distinct from the normal agent prompt.
+ */
+export function isSummarizationGenerationPass(
+  messages: readonly vscode.LanguageModelChatMessage[],
+): boolean {
+  for (const message of messages) {
+    if (message.role === (VSCODE_SYSTEM_ROLE as any)) {
+      for (const part of message.content) {
+        const text = extractPartText(part);
+        if (text && text.includes(SUMMARIZATION_SYSTEM_PROMPT_MARKER)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
  * A known conversation state from an API response.
  */
 export interface KnownConversationState {
-  /** Ordered hashes of messages in this conversation */
+  /** Ordered hashes of messages in this conversation (Normalized) */
   messageHashes: string[];
+  /** Raw hashes (for forensic drift detection) */
+  rawHashes?: string[];
   /** Actual total input tokens from API */
   actualTokens: number;
   /** Sequence estimate before API call (for rolling correction) */
@@ -118,6 +144,8 @@ const STORAGE_VERSION = 1;
 export class ConversationStateTracker {
   /** Most recent known state per conversation key */
   private knownStates = new Map<string, KnownConversationState>();
+  /** Inverted index: MessageHash -> Set<ConversationID> */
+  private messageIndex = new Map<string, Set<string>>();
   private accessOrder: string[] = [];
   private readonly maxEntries = 100;
   private readonly ttlMs = 60 * 60 * 1000;
@@ -132,6 +160,47 @@ export class ConversationStateTracker {
   }
 
   // NOTE: computeKey() removed - family-only keying (RFC 00054)
+
+  /**
+   * Force immediate save of pending state.
+   * Call this on extension deactivation.
+   */
+  dispose(): void {
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+      this.saveDebounceTimer = undefined;
+      void this.saveToStorage();
+    }
+  }
+
+  /**
+   * Helper to add a state to the inverted index.
+   */
+  private addToIndex(key: string, state: KnownConversationState): void {
+    for (const hash of state.messageHashes) {
+      let set = this.messageIndex.get(hash);
+      if (!set) {
+        set = new Set();
+        this.messageIndex.set(hash, set);
+      }
+      set.add(key);
+    }
+  }
+
+  /**
+   * Helper to remove a state from the inverted index.
+   */
+  private removeFromIndex(key: string, state: KnownConversationState): void {
+    for (const hash of state.messageHashes) {
+      const set = this.messageIndex.get(hash);
+      if (set) {
+        set.delete(key);
+        if (set.size === 0) {
+          this.messageIndex.delete(hash);
+        }
+      }
+    }
+  }
 
   /**
    * Record actual token count from an API response.
@@ -149,7 +218,13 @@ export class ConversationStateTracker {
   ): void {
     this.cleanupStale();
     const messageHashes = messages.map((m) => computeNormalizedDigest(m));
-    const key = modelFamily; // Family-only keying (RFC 00054)
+    const rawHashes = messages.map((m) => computeRawDigest(m));
+
+    // Generate a unique key for this specific conversation state.
+    // Using the last message hash helps ensuring uniqueness for different states
+    // but we mix in length to be safe.
+    const lastHash = messageHashes[messageHashes.length - 1] ?? "empty";
+    const key = `${modelFamily}:${messageHashes.length}:${lastHash.substring(0, 16)}`;
 
     // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
     // from the state. This clears the rolling correction so getAdjustment()
@@ -157,12 +232,14 @@ export class ConversationStateTracker {
     const state: KnownConversationState = summarizationDetected
       ? {
           messageHashes,
+          rawHashes,
           actualTokens,
           modelFamily,
           timestamp: Date.now(),
         }
       : {
           messageHashes,
+          rawHashes,
           actualTokens,
           ...(sequenceEstimate !== undefined
             ? { lastSequenceEstimate: sequenceEstimate }
@@ -171,99 +248,283 @@ export class ConversationStateTracker {
           timestamp: Date.now(),
         };
 
-    this.touchKey(key);
-    this.evictIfNeeded(key);
-    this.knownStates.set(key, state);
-
-    // NOTE: Dual-write logic removed (RFC 00054) - family-only keying now
-
-    this.scheduleSave();
-
-    if (summarizationDetected) {
-      logger.info(
-        `[ConversationState] Summarization guard: cleared rolling correction ` +
-          `for family key "${modelFamily}"`,
-      );
+    // If updating an existing key, clear its old index entries first
+    const oldState = this.knownStates.get(key);
+    if (oldState) {
+      this.removeFromIndex(key, oldState);
     }
 
+    this.touchKey(key);
+    this.knownStates.set(key, state);
+    this.addToIndex(key, state);
+    this.evictIfNeeded(key);
+    this.scheduleSave();
+
     logger.debug(
-      `[ConversationState] Recorded: ${messageHashes.length.toString()} messages, ` +
-        `${actualTokens.toString()} tokens (${modelFamily}) key=${key}`,
+      `[ConversationState] Recorded state for key ${key} (${actualTokens} tokens)`,
+    );
+    logger.info(
+      `[ConversationStateDebug] Indexed state: key=${key} hashes=${messageHashes.length} last5=${JSON.stringify(messageHashes.slice(-5))}`,
     );
   }
 
   /**
    * Look up whether we have knowledge about this conversation.
    *
-   * Returns:
-   * - "exact": Messages exactly match a known state
-   * - "prefix": Known state is a prefix of current messages
-   * - "none": No matching state found
+   * Uses an Inverted Index (set intersection) to identify the conversation,
+   * then verifies exact or prefix matching.
    */
   lookup(
     messages: readonly vscode.LanguageModelChatMessage[],
     modelFamily: string,
   ): ConversationLookupResult {
     this.cleanupStale();
-    const key = modelFamily; // Family-only keying (RFC 00054)
-    const state = this.knownStates.get(key);
-    if (!state) {
+
+    const currentNormalizedHashes = messages.map((m) =>
+      computeNormalizedDigest(m),
+    );
+    const currentRawHashes = messages.map((m) => computeRawDigest(m));
+
+    logger.info(
+      `[ConversationStateDebug] Lookup: hashes=${currentNormalizedHashes.length} last5=${JSON.stringify(currentNormalizedHashes.slice(-5))}`,
+    );
+
+    // 1. Identify candidate via Set Intersection
+    const candidateState = this.identifyConversation(
+      currentNormalizedHashes,
+      modelFamily,
+    );
+    if (!candidateState) {
       return { type: "none" };
     }
-    this.touchKey(key);
 
-    const currentHashes = messages.map((m) => computeNormalizedDigest(m));
-
-    // Check for exact match
-    if (
-      currentHashes.length === state.messageHashes.length &&
-      currentHashes.every((h, i) => h === state.messageHashes[i])
-    ) {
-      logger.trace(
-        `[ConversationState] Exact match: ${state.actualTokens.toString()} tokens`,
-      );
-      return {
-        type: "exact",
-        knownTokens: state.actualTokens,
-      };
+    // Debug: Trace mismatches
+    const { key, state } = candidateState;
+    if (state.messageHashes.length !== currentNormalizedHashes.length) {
+      // Only log if we expect a prefix match but maxCount != length
+      // If state len=33, and we match 30...
+      let mismatches = 0;
+      for (
+        let i = 0;
+        i < state.messageHashes.length && i < currentNormalizedHashes.length;
+        i++
+      ) {
+        if (state.messageHashes[i] !== currentNormalizedHashes[i]) {
+          mismatches++;
+          if (mismatches <= 5) {
+            logger.info(
+              `[ConversationStateDebug] Hash Mismatch at index ${i}: State=${state.messageHashes[i].substring(0, 8)} Input=${currentNormalizedHashes[i].substring(0, 8)}`,
+            );
+            // Log raw content of mismatching messages for forensic analysis
+            const inputMsg = messages[i];
+            const contentPreview = inputMsg.content
+              .map((p) => {
+                if ("value" in p) return (p as any).value.substring(0, 100);
+                return JSON.stringify(p).substring(0, 100);
+              })
+              .join(" | ");
+            logger.info(
+              `[ConversationStateDebug] Mismatch Input Content [${i}] (${inputMsg.role}): ${contentPreview}`,
+            );
+          }
+        }
+      }
+      if (mismatches > 0) {
+        logger.info(
+          `[ConversationStateDebug] Total Mismatches vs Candidate: ${mismatches} / ${Math.min(state.messageHashes.length, currentNormalizedHashes.length)}`,
+        );
+      }
     }
 
-    // Check for prefix match (known state is prefix of current)
+    // 2. Verify relationship using Atomic Set Intersection (RFC 00058)
+    //
+    // Instead of strict positional prefix matching (which fails when VS Code
+    // regenerates the system prompt or reorders context), we use set intersection:
+    //   - Build a set of known message hashes from the candidate state
+    //   - Count how many current messages match known hashes
+    //   - Messages NOT in the known set are "new" (need estimation)
+    //
+    // This tolerates:
+    //   - System prompt drift (index 0 changes on every request)
+    //   - Context injection changes (agents block, workspace instructions)
+    //   - History compaction/reordering after reload
+
+    const knownHashSet = new Set(state.messageHashes);
+    const currentHashSet = new Set(currentNormalizedHashes);
+
+    // Count how many of the KNOWN hashes appear in the current messages
+    let matchedKnownCount = 0;
+    for (const hash of state.messageHashes) {
+      if (currentHashSet.has(hash)) {
+        matchedKnownCount++;
+      }
+    }
+
+    // Strict Inclusion Rule (Atomic Message Algebra Compliance):
+    // To safely use the cached total tokens, we must ensure that ALL messages
+    // contributing to that total are present in the current conversation.
+    // Otherwise, we are counting "ghost tokens" from deleted/drifted messages
+    // which cannot be subtracted (as we lack per-message granularity).
+    //
+    // We strictly require that the candidate state is a SUBSET of the current conversation.
+    if (matchedKnownCount < state.messageHashes.length) {
+      logger.info(
+        `[ConversationStateDebug] Candidate rejected: strict inclusion failed. ${matchedKnownCount}/${state.messageHashes.length} known hashes matched.`,
+      );
+      return { type: "none" };
+    }
+
+    // Identify which current messages are NEW (not in the known set)
+    const newMessageIndices: number[] = [];
+    for (let i = 0; i < currentNormalizedHashes.length; i++) {
+      if (!knownHashSet.has(currentNormalizedHashes[i])) {
+        newMessageIndices.push(i);
+      }
+    }
+
+    // Check for exact match: all current hashes are known AND no new messages
     if (
-      currentHashes.length > state.messageHashes.length &&
-      state.messageHashes.every((h, i) => h === currentHashes[i])
+      newMessageIndices.length === 0 &&
+      currentNormalizedHashes.length === state.messageHashes.length
     ) {
-      const newMessageCount = currentHashes.length - state.messageHashes.length;
-      const newMessageIndices = Array.from(
-        { length: newMessageCount },
-        (_, i) => state.messageHashes.length + i,
+      this.touchKey(key);
+      logger.info(
+        `[ConversationStateDebug] Exact match via set intersection: ${matchedKnownCount} hashes`,
       );
+      return { type: "exact", knownTokens: state.actualTokens };
+    }
 
-      logger.trace(
-        `[ConversationState] Prefix match: ${state.actualTokens.toString()} known + ` +
-          `${newMessageCount.toString()} new messages`,
+    // Prefix/superset match: current conversation contains all (or most) known
+    // messages plus some new ones
+    if (newMessageIndices.length > 0) {
+      this.touchKey(key);
+      logger.info(
+        `[ConversationStateDebug] Set intersection match: ${matchedKnownCount}/${state.messageHashes.length} known, ${newMessageIndices.length} new messages at indices [${newMessageIndices.slice(0, 10).join(",")}]`,
       );
-
       return {
         type: "prefix",
         knownTokens: state.actualTokens,
-        newMessageCount,
+        newMessageCount: newMessageIndices.length,
         newMessageIndices,
       };
     }
 
-    // No match - conversation has changed (e.g., regeneration, branch)
-    logger.trace(
-      `[ConversationState] No match: conversation diverged from known state`,
-    );
+    // Edge case: current is a strict subset of the known state (e.g., after
+    // history truncation). We can still use the known tokens as an upper bound,
+    // but mark it as "exact" since we have no new messages to estimate.
+    if (
+      newMessageIndices.length === 0 &&
+      currentNormalizedHashes.length < state.messageHashes.length
+    ) {
+      this.touchKey(key);
+      logger.info(
+        `[ConversationStateDebug] Subset match: ${currentNormalizedHashes.length} current ⊂ ${state.messageHashes.length} known`,
+      );
+      // Return as prefix with 0 new messages — the caller gets knownTokens
+      // which is an overestimate, but better than pure estimation.
+      return {
+        type: "prefix",
+        knownTokens: state.actualTokens,
+        newMessageCount: 0,
+        newMessageIndices: [],
+      };
+    }
+
     return { type: "none" };
+  }
+
+  /**
+   * Identifies the best candidate conversation using the inverted index.
+   * Uses set intersection over message hashes to select the best match.
+   * Filters by model family to avoid cross-family contamination.
+   * Returns the Key and State, or undefined.
+   */
+  private identifyConversation(
+    currentNormalizedHashes: string[],
+    modelFamily?: string,
+  ): { key: string; state: KnownConversationState } | undefined {
+    // logger.info(
+    //   `[ConversationStateDebug] Identifying conversation: ${currentNormalizedHashes.length} hashes`,
+    // );
+    const frequencyMap = new Map<string, number>();
+    let maxCount = 0;
+
+    // Count occurrences for each conversation ID from the message hashes
+    for (const hash of currentNormalizedHashes) {
+      const ids = this.messageIndex.get(hash);
+      if (ids) {
+        // logger.info(
+        //   `[ConversationStateDebug] Hit for hash ${hash.substring(0, 8)}: ${ids.size} candidates`,
+        // );
+        for (const id of ids) {
+          const newCount = (frequencyMap.get(id) || 0) + 1;
+          frequencyMap.set(id, newCount);
+          if (newCount > maxCount) {
+            maxCount = newCount;
+          }
+        }
+      } else {
+        // logger.info(
+        //   `[ConversationStateDebug] Miss for hash ${hash.substring(0, 8)}`,
+        // );
+      }
+    }
+
+    logger.info(
+      `[ConversationStateDebug] Identify result: maxCount=${maxCount} inputHashes=${currentNormalizedHashes.length}`,
+    );
+
+    if (maxCount === 0) return undefined;
+
+    // Find the best match using overlap ratio (matches / known_hashes).
+    // Prefer candidates that are proper subsets of the current conversation
+    // (ratio = 1.0) over partial matches. If tied on ratio, prefer the one
+    // with more absolute matches (larger known base = better anchor).
+    // If still tied, prefer the most recent one.
+    let bestKey: string | undefined;
+    let bestRatio = 0;
+    let bestCount = 0;
+
+    for (let i = this.accessOrder.length - 1; i >= 0; i--) {
+      const key = this.accessOrder[i];
+      const count = frequencyMap.get(key) ?? 0;
+      if (count === 0) continue;
+
+      // Filter by model family if specified (keys are formatted as "family:length:hash")
+      if (modelFamily && !key.startsWith(modelFamily + ":")) continue;
+
+      const state = this.knownStates.get(key);
+      if (!state) continue;
+
+      const ratio = count / state.messageHashes.length;
+
+      // Prefer higher ratio first, then higher absolute count, then more recent
+      if (ratio > bestRatio || (ratio === bestRatio && count > bestCount)) {
+        bestKey = key;
+        bestRatio = ratio;
+        bestCount = count;
+      }
+    }
+
+    if (bestKey) {
+      return { key: bestKey, state: this.knownStates.get(bestKey)! };
+    }
+
+    return undefined;
   }
 
   /**
    * Get the known state for a model family.
    */
   getState(modelFamily: string): KnownConversationState | undefined {
-    return this.knownStates.get(modelFamily);
+    // Return the most recent state for this family
+    for (let i = this.accessOrder.length - 1; i >= 0; i--) {
+      const key = this.accessOrder[i];
+      if (key && key.startsWith(modelFamily + ":")) {
+        return this.knownStates.get(key);
+      }
+    }
+    return undefined;
   }
 
   /**
@@ -271,6 +532,7 @@ export class ConversationStateTracker {
    */
   clear(): void {
     this.knownStates.clear();
+    this.messageIndex.clear();
     this.accessOrder = [];
     if (this.memento) {
       void this.memento.update(STORAGE_KEY, undefined);
@@ -304,6 +566,10 @@ export class ConversationStateTracker {
       if (oldest === key) {
         continue;
       }
+      const state = this.knownStates.get(oldest);
+      if (state) {
+        this.removeFromIndex(oldest, state);
+      }
       this.knownStates.delete(oldest);
       break;
     }
@@ -314,6 +580,7 @@ export class ConversationStateTracker {
     let changed = false;
     for (const [key, state] of this.knownStates) {
       if (now - state.timestamp > this.ttlMs) {
+        this.removeFromIndex(key, state);
         this.knownStates.delete(key);
         const index = this.accessOrder.indexOf(key);
         if (index !== -1) {
@@ -346,6 +613,8 @@ export class ConversationStateTracker {
       for (const entry of stored.entries) {
         if (now - entry.state.timestamp <= this.ttlMs) {
           this.knownStates.set(entry.key, entry.state);
+          // Rebuild index
+          this.addToIndex(entry.key, entry.state);
           this.accessOrder.push(entry.key);
           loadedCount++;
         }

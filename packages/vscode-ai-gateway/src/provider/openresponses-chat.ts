@@ -55,7 +55,11 @@ export interface OpenResponsesChatOptions {
   /** Chat ID for logging/tracking */
   chatId: string;
   /** Callback to calibrate token estimation from actual usage */
-  onUsage?: (actualInputTokens: number) => void;
+  onUsage?: (
+    actualInputTokens: number,
+    responseMessage?: LanguageModelChatMessage,
+    actualOutputTokens?: number,
+  ) => void;
 }
 
 /**
@@ -432,7 +436,12 @@ export async function executeOpenResponsesChat(
 
           // Calibrate token estimation from actual usage (RFC 029)
           if (onUsage) {
-            onUsage(adapted.usage.input_tokens);
+            const finalMessage = adapter.getFinalMessage();
+            onUsage(
+              adapted.usage.input_tokens,
+              finalMessage,
+              adapted.usage.output_tokens,
+            );
           }
         }
         break;

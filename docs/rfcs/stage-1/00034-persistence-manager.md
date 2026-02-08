@@ -7,7 +7,9 @@ exo:
   protocol: 1
 ---
 
-# RFC 00034: Persistence Manager
+# RFC 00034: Persistence Manager (Legacy)
+
+> **Warning**: The conversation state model described here (linear prefix) is obsolete. See **RFC 00057** for the current "Atomic Message Algebra" and Inverted Index model.
 
 ## Problem Statement
 

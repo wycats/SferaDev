@@ -139,6 +139,11 @@
             "Log everything including trace-level diagnostic messages"
           ]
         },
+        "vercel.ai.logging.fileDirectory": {
+          "type": "string",
+          "default": ".logs",
+          "description": "Directory to write log files (e.g., token-validation.jsonl). Relative paths are resolved against the workspace root."
+        },
         "vercel.ai.debug.forensicCapture": {
           "type": "boolean",
           "default": false,

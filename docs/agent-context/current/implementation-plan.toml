@@ -7,6 +7,61 @@ title = "Fix claude-sonnet-4.5 Parsing Bug"
 rfcs = ["00051"]
 
 [plan]
+
+[[plan.goals]]
+id = "clean-rfcs"
+
+[[plan.goals.tasks]]
+id = "scan-docs"
+title = "Scan RFCs for legacy Linear Prefix and Anchor references"
+status = "completed"
+completed_at = "2026-02-08T00:32:29.519098305+00:00"
+completion_log = "Scan complete. Identified critical legacy docs. 'copilot-participant-protocol.md' not found in checked dir, 'TOKEN_ESTIMATION_REALITY.md' found and deprecated."
+
+[[plan.goals.tasks]]
+id = "update-rfcs"
+title = "Supersede or Withdraw logic-conflicting RFCs (00034, 00054, etc)"
+status = "completed"
+completed_at = "2026-02-08T00:32:25.341748509+00:00"
+completion_log = "Superseded RFC 00055 and 00034; Deprecated TOKEN_ESTIMATION_REALITY.md. Confirmed copilot-participant-protocol.md does not exist (likely deleted previously)."
+
+[[plan.goals]]
+id = "clean-code"
+
+[[plan.goals.tasks]]
+id = "implement-projection"
+title = "Implement projectToCanonicalMessage utility in src/utils/projection.ts"
+status = "completed"
+completed_at = "2026-02-08T01:20:25.122310665+00:00"
+completion_log = "Implemented 'Forward Projection' (getFinalMessage) in StreamAdapter. No separate utility needed as the adapter *is* the projection engine."
+
+[[plan.goals.tasks]]
+id = "update-estimator"
+title = "Update hybrid-estimator.ts to use canonical projection for hashing API deltas"
+status = "completed"
+completed_at = "2026-02-08T01:20:20.593150345+00:00"
+completion_log = "Verified hybrid-estimator.ts consumes the new Forward Projected messages correctly via recordActual plumbing."
+
+[[plan.goals.tasks]]
+id = "remove-legacy-stripping"
+title = "Remove stripOurAdditions and regex hacks from digest.ts"
+status = "completed"
+completed_at = "2026-02-08T01:20:14.381845937+00:00"
+completion_log = "Removed stripOurAdditions from digest.ts. Forward Projection is now the only normalization."
+
+[[plan.goals.tasks]]
+id = "update-state-tracker"
+title = "Sanitize lookup() method in conversation-state.ts to remove legacy comments"
+status = "completed"
+completed_at = "2026-02-08T01:20:09.760610858+00:00"
+completion_log = "Removed legacy 'Resilient/Suffix' logic and comments. Usage is now strictly 'Identify by Intersection' -> 'Return Candidate'."
+
+[[plan.goals.tasks]]
+id = "clean-code::forward-projection"
+title = "Plumb forward-projection message into recordActual path"
+status = "completed"
+completed_at = "2026-02-08T01:12:48.270313219+00:00"
+completion_log = "Plumbed final assistant message through stream adapter, openresponses chat, provider, and hybrid estimator; cached response tokens using output_tokens."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

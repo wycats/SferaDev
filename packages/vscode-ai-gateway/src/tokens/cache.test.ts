@@ -61,7 +61,6 @@ vi.mock("vscode", () => hoisted);
 
 import * as vscode from "vscode";
 import { TokenCache, type CachedTokenCount } from "./cache";
-import { ConversationStateTracker } from "./conversation-state";
 import { computeNormalizedDigest } from "../utils/digest";
 
 describe("TokenCache", () => {
@@ -181,9 +180,7 @@ describe("TokenCache", () => {
     expect(cache.getCached(messageB, "openai")).toBeUndefined();
   });
 
-  it("matches ConversationStateTracker digests for edge cases", () => {
-    const tracker = new ConversationStateTracker();
-
+  it("matches expected digests for edge cases", () => {
     const messages = [
       createMessage([new vscode.LanguageModelTextPart("Hello")]),
       createMessage([
@@ -203,13 +200,9 @@ describe("TokenCache", () => {
       cache.cacheActual(message, "openai", 42);
       const cacheDigest = getCachedDigest(cache);
 
-      tracker.recordActual([message], "openai", 42);
-      const trackedDigest = tracker.getState("openai")?.messageHashes[0];
-
       const normalizedDigest = computeNormalizedDigest(message);
 
       expect(cacheDigest).toBe(normalizedDigest);
-      expect(trackedDigest).toBe(normalizedDigest);
     }
   });
 
