@@ -234,6 +234,11 @@ export class ConversationStateTracker {
     // Preserve conversationId from an existing prefix conversation, or generate new.
     // We use strict prefix matching (not set intersection) to avoid collisions.
     const prefixState = this.findPrefixConversation(messageHashes, modelFamily);
+
+    if (!prefixState) {
+      this.detectAndLogNearMiss(messageHashes, modelFamily);
+    }
+
     const conversationId = prefixState?.conversationId ?? randomUUID();
 
     // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
@@ -462,6 +467,48 @@ export class ConversationStateTracker {
     }
 
     return { type: "none" };
+  }
+
+  private detectAndLogNearMiss(
+    currentHashes: string[],
+    modelFamily: string,
+  ): void {
+    const approximate = this.identifyConversation(currentHashes, modelFamily);
+    if (!approximate) return;
+
+    const { state: approxState, key: approxKey } = approximate;
+
+    // 1. Minimum complexity threshold: Don't log for tiny conversations
+    // where collisions or "near misses" are less statistically significant.
+    if (approxState.messageHashes.length < 3) return;
+
+    // 2. Overlap calculation
+    const currentSet = new Set(currentHashes);
+    let matchCount = 0;
+    for (const h of approxState.messageHashes) {
+      if (currentSet.has(h)) matchCount++;
+    }
+    const overlapRatio = matchCount / approxState.messageHashes.length;
+
+    // 3. Significant overlap threshold (70%)
+    // If we match 70% of a prior conversation but failed prefix check,
+    // that's a notable event (likely a history mutation).
+    if (overlapRatio < 0.7) return;
+
+    // 4. Analyze divergence
+    const divergenceIndex = approxState.messageHashes.findIndex(
+      (h, i) => h !== currentHashes[i],
+    );
+
+    logger.info(
+      `[NearMissTelemetry] Strict prefix match failed, but strong approximate match found. ` +
+        `This suggests VS Code modified history (mutation) rather than branching. ` +
+        `Key=${approxKey} ` +
+        `Overlap=${matchCount}/${approxState.messageHashes.length} (${(overlapRatio * 100).toFixed(1)}%) ` +
+        `DivergenceIndex=${divergenceIndex} ` +
+        `SystemPromptMatch=${approxState.messageHashes[0] === currentHashes[0]} ` +
+        `ApproxID=${approxState.conversationId}`,
+    );
   }
 
   /**

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LanguageModelChatMessage, Memento } from "vscode";
+import { logger } from "../logger";
 import {
   ConversationStateTracker,
   hasSummarizationTag,
@@ -23,6 +24,15 @@ const vscodeHoisted = vi.hoisted(() => {
 });
 
 vi.mock("vscode", () => vscodeHoisted);
+
+vi.mock("../logger", () => ({
+  logger: {
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 // Helper to create mock messages
 function createMessage(
@@ -387,6 +397,58 @@ describe("ConversationStateTracker", () => {
 
       const result = tracker.lookup(messages, "claude");
       expect(result.conversationId).toBeDefined();
+    });
+  });
+
+  describe("Telemetry", () => {
+    it("logs near miss when strict prefix fails but approximate match is found", () => {
+      const messagesA = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "D"),
+      ];
+      tracker.recordActual(messagesA, "claude", 100);
+
+      // Same prefix for first 3 messages (A, B, C), but divergence at end (E vs D)
+      // This is 3/4 matches = 75% overlap, which meets > 70% threshold.
+      const messagesB = [
+        createMessage(1, "A"),
+        createMessage(2, "B"),
+        createMessage(1, "C"),
+        createMessage(2, "E"), // Divergence
+      ];
+
+      vi.mocked(logger.info).mockClear();
+
+      tracker.recordActual(messagesB, "claude", 120);
+
+      // Should log the near miss
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining("[NearMissTelemetry]"),
+      );
+
+      // Verify log details
+      const logCall = vi.mocked(logger.info).mock.calls.find((args) =>
+        args[0].includes("[NearMissTelemetry]"),
+      );
+      expect(logCall).toBeDefined();
+      expect(logCall![0]).toContain("Overlap=3/4 (75.0%)");
+      expect(logCall![0]).toContain("DivergenceIndex=3");
+    });
+
+    it("does not log near miss for low overlap", () => {
+      const messagesA = [createMessage(1, "A"), createMessage(2, "B")];
+      tracker.recordActual(messagesA, "claude", 100);
+
+      const messagesB = [createMessage(1, "X"), createMessage(2, "Y")];
+
+      vi.mocked(logger.info).mockClear();
+      tracker.recordActual(messagesB, "claude", 120);
+
+      expect(logger.info).not.toHaveBeenCalledWith(
+        expect.stringContaining("[NearMissTelemetry]"),
+      );
     });
   });
 });
