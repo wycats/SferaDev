@@ -1390,6 +1390,24 @@ label = "Remove tokensEstimationMode and tokensCharsPerToken config settings"
 status = "pending"
 ulid = "01KH0QXZNGZHECGVPWG9TSMKET"
 
+[[epochs.phases.goals]]
+id = "validate-bundle-size"
+label = "Validate ai-tokenizer bundle size impact (o200k_base + claude encodings); implement lazy-loading if needed"
+status = "pending"
+ulid = "01KH1MQXBTJ84R3WYNZJKEMMAA"
+
+[[epochs.phases.goals]]
+id = "delete-digest-functions"
+label = "Remove computeNormalizedDigest, computeRawDigest, computeStableMessageHash from digest.ts (conversation identity now via stateful markers)"
+status = "pending"
+ulid = "01KH1MR1FS4E9PD67NA4RJ3YFV"
+
+[[epochs.phases.goals]]
+id = "evaluate-usage-calibration"
+label = "Evaluate whether server-side usage data from previous_response_id warrants a lightweight calibration layer atop ai-tokenizer"
+status = "pending"
+ulid = "01KH1MR56SG4JKRX08Z9J4JBGW"
+
 [[epochs.phases.rfcs]]
 id = "00063"
 
