@@ -190,7 +190,7 @@ Our elaborate delta system was built on the premise that tiktoken alone wasn't a
 
 ### Accuracy Reality Check
 
-Tiktoken alone is not *perfectly* accurate. `ai-tokenizer`'s Claude accuracy is 97-99%, meaning a 1-3% error on a 128K context window is 1,280-3,840 tokens off. For VS Code's truncation decisions (which have wide margins), this is fine. For cost display or precise context budget management, it might not be.
+Tiktoken alone is not _perfectly_ accurate. `ai-tokenizer`'s Claude accuracy is 97-99%, meaning a 1-3% error on a 128K context window is 1,280-3,840 tokens off. For VS Code's truncation decisions (which have wide margins), this is fine. For cost display or precise context budget management, it might not be.
 
 **The real argument for deleting the delta system isn't "tiktoken is accurate enough on its own."** It's that `previous_response_id` + server-side `usage` data provides a **better correction signal** than our current client-side digest-matching system:
 
@@ -265,7 +265,7 @@ We currently use `js-tiktoken`. GCMP and Microsoft both use `@microsoft/tiktoken
 
 ## Proposed Overhaul
 
-### Phase 1: Formalize Stateful Marker (PoC → Production)
+### Phase 1: Formalize Stateful Marker (PoC → Production) ✅
 
 Clean up the existing PoC code:
 
@@ -274,6 +274,16 @@ Clean up the existing PoC code:
 - **Reliable `previous_response_id`**: Set on every request where a marker is found, enabling OpenResponses server-side conversation context
 - **Remove diagnostic logging**: Strip the JSONL diagnostic and `logger.warn` dumps
 - **Update exclusion filters**: `digest.ts`, `counter.ts`, `message-translation.ts` already skip `stateful_marker`; verify they use the constant
+
+**Implementation Notes (2026-02-09)**:
+
+- Created `CustomDataPartMimeTypes` namespace in `stateful-marker.ts` with all 4 VS Code persisted MIME types
+- Kept deprecated `STATEFUL_MARKER_MIME` alias for backward compatibility during transition
+- Removed `logStatefulMarkerEvent()` function and all JSONL file I/O — production code now uses `logger.debug()` for observability
+- Role comparison uses numeric values (`2 = Assistant`) since VS Code's enum may not be reliably importable at runtime
+- All three exclusion sites (`digest.ts`, `counter.ts`, `message-translation.ts`) already used `isStatefulMarkerMime()` — the design was sound
+- Added 25 tests in `stateful-marker.test.ts` covering encode/decode/find/round-trip scenarios
+- Extension namespace remains `sferadev.vscode-ai-gateway` (branding transition to Vercel is in naming only, not the internal marker format)
 
 ### Phase 2: Simplify Token Counting (~3,000 lines removed)
 
@@ -306,28 +316,51 @@ The `cache_control` DataPart is already present in messages from VS Code (we see
 - **Emit on response**: Mirror VS Code's pattern by adding cache control breakpoints to our outgoing messages where appropriate
 - **Depends on**: OpenResponses server supporting per-message cache_control (see `docs/bugs/ai-gateway-openresponses-anthropic-caching.md`)
 
-### Phase 5: Context Management (Future)
+### Phase 5: CI Monitoring for Upstream DataPart Changes
+
+The 4 MIME types we depend on are **undocumented internal APIs**. If Microsoft changes them, our DataParts would silently stop persisting. This phase establishes automated monitoring to detect drift:
+
+- **Track vscode-copilot-chat source changes**: Set up a mechanism to detect changes to `endpointTypes.ts` where `CustomDataPartMimeTypes` is defined. Options include:
+  - Git submodule or shallow clone of vscode-copilot-chat in `.reference/`
+  - Script that fetches/checksums relevant source files
+  - GitHub Action that monitors the upstream repo
+
+- **Create MIME type conformance test**: A dedicated test file that explicitly asserts the 4 known MIME types and their exact string values. This test serves as documentation and would fail if we accidentally drift from upstream.
+
+- **Add CI workflow for upstream monitoring**: A scheduled GitHub Action (e.g., weekly) that:
+  1. Clones/fetches latest vscode-copilot-chat
+  2. Extracts `CustomDataPartMimeTypes` definitions
+  3. Compares against our `CustomDataPartMimeTypes` constants
+  4. Opens an issue or fails CI if drift is detected
+
+- **Document the dependency**: Add `UPSTREAM_DEPENDENCIES.md` explaining:
+  - Which internal VS Code APIs we rely on
+  - How to update if upstream changes
+  - Risk assessment (low: these MIME types are core to Copilot's multi-turn functionality)
+
+### Phase 6: Context Management (Future)
 
 Anthropic's context editing (`clear_tool_uses`, `clear_thinking`) would allow automatic context window management for long agent sessions. This is lower priority but the `context_management` DataPart provides the persistence mechanism when we're ready.
 
 ## Risks
 
-1. **Undocumented API surface**: These MIME types are not in any public documentation. Microsoft could change the allowlist at any time. Mitigation: they won't break their own Copilot Chat extension, and GCMP has been shipping this for months.
+1. **Undocumented API surface**: These MIME types are not in any public documentation. Microsoft could change the allowlist at any time. Mitigation: (a) they won't break their own Copilot Chat extension, (b) GCMP has been shipping this for months, and (c) **Phase 5 establishes CI monitoring** to detect upstream drift before it affects users.
 
 2. **`modelId` rewriting**: VS Code may rewrite the modelId prefix in the `stateful_marker` encoding. We already handle this by reading from the JSON payload after the backslash, not from the prefix.
 
 3. **Proposed API churn**: `chatProvider` is still proposed. If `LanguageModelThinkingPart` changes shape, our code breaks. Mitigation: the DataPart-based persistence format is more stable since it's just bytes.
 
-## Files Modified (PoC, current state)
+## Files Modified (Phase 1 Complete)
 
-| File                                  | Change                                                      |
-| ------------------------------------- | ----------------------------------------------------------- |
-| `src/utils/stateful-marker.ts`        | New: encode/decode/find/log using GCMP's format             |
-| `src/provider/stream-adapter.ts`      | Emit marker DataPart at `response.completed`                |
-| `src/provider/openresponses-chat.ts`  | Read marker, set `previous_response_id`, diagnostic logging |
-| `src/provider/message-translation.ts` | Skip `stateful_marker` DataParts during translation         |
-| `src/tokens/counter.ts`               | Skip `stateful_marker` DataParts in token estimation        |
-| `src/utils/digest.ts`                 | Exclude `stateful_marker` DataParts from digest hashing     |
+| File                                  | Change                                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `src/utils/stateful-marker.ts`        | `CustomDataPartMimeTypes` namespace, encode/decode/find (no file logging) |
+| `src/utils/stateful-marker.test.ts`   | 25 tests for encode/decode/find/round-trip                                |
+| `src/provider/stream-adapter.ts`      | Emit marker DataPart at `response.completed`                              |
+| `src/provider/openresponses-chat.ts`  | Read marker, set `previous_response_id` (diagnostic logging removed)      |
+| `src/provider/message-translation.ts` | Skip `stateful_marker` DataParts during translation                       |
+| `src/tokens/counter.ts`               | Skip `stateful_marker` DataParts in token estimation                      |
+| `src/utils/digest.ts`                 | Exclude `stateful_marker` DataParts from digest hashing                   |
 
 ## References
 

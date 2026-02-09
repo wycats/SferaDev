@@ -3,7 +3,7 @@
 **Reporter:** Yehuda Katz  
 **Date:** 2026-02-04  
 **Severity:** High (significant cost impact)  
-**Component:** ai-gateway `/v1/responses` endpoint  
+**Component:** ai-gateway `/v1/responses` endpoint
 
 ---
 
@@ -25,13 +25,13 @@ In contrast, the Anthropic-compat endpoint (`/v1/messages`) properly maps `cache
 **Lines:** 79-85
 
 ```typescript
-  // Convert input items to AI SDK messages
-  const messages = convertInputItemsToMessages(request.input);
+// Convert input items to AI SDK messages
+const messages = convertInputItemsToMessages(request.input);
 
-  // Prepend instructions as system message
-  if (request.instructions) {
-    messages.unshift({ role: 'system', content: request.instructions });
-  }
+// Prepend instructions as system message
+if (request.instructions) {
+  messages.unshift({ role: "system", content: request.instructions });
+}
 ```
 
 **Problem:** `instructions` is always converted to a system message with only `role` and `content`. There is no `providerOptions` or per-message `cacheControl` applied, so Anthropic prompt caching cannot be expressed for instructions.
@@ -75,31 +75,31 @@ In contrast, the Anthropic-compat endpoint (`/v1/messages`) properly maps `cache
 
 ```typescript
 const inputTextContentSchema = z.object({
-  type: z.literal('input_text'),
+  type: z.literal("input_text"),
   text: z.string(),
 });
 
 const outputTextContentSchema = z.object({
-  type: z.literal('output_text'),
+  type: z.literal("output_text"),
   text: z.string(),
   annotations: z.array(z.unknown()).optional(),
 });
 
 const inputImageContentSchema = z.object({
-  type: z.literal('input_image'),
+  type: z.literal("input_image"),
   image_url: z.string().optional(),
-  detail: z.enum(['auto', 'low', 'high']).optional(),
+  detail: z.enum(["auto", "low", "high"]).optional(),
 });
 
 const inputFileContentSchema = z.object({
-  type: z.literal('input_file'),
+  type: z.literal("input_file"),
   filename: z.string().optional(),
   file_data: z.string().optional(),
   file_url: z.string().optional(),
 });
 
 const inputVideoContentSchema = z.object({
-  type: z.literal('input_video'),
+  type: z.literal("input_video"),
   video_url: z.string(),
 });
 ```
@@ -114,29 +114,30 @@ const inputVideoContentSchema = z.object({
 **Lines:** 65-85
 
 ```typescript
-  // Add system message if present
-  if (request.system) {
-    if (typeof request.system === 'string') {
+// Add system message if present
+if (request.system) {
+  if (typeof request.system === "string") {
+    messages.push({
+      role: "system",
+      content: request.system,
+    });
+  } else {
+    // Array of system content blocks
+    for (const block of request.system) {
+      const cacheControlProviderOptions = createProviderOptionsFromCacheControl(
+        block.cache_control,
+      );
       messages.push({
-        role: 'system',
-        content: request.system,
+        role: "system",
+        content: block.text,
+        ...(cacheControlProviderOptions && {
+          providerOptions:
+            cacheControlProviderOptions as SharedV2ProviderOptions,
+        }),
       });
-    } else {
-      // Array of system content blocks
-      for (const block of request.system) {
-        const cacheControlProviderOptions =
-          createProviderOptionsFromCacheControl(block.cache_control);
-        messages.push({
-          role: 'system',
-          content: block.text,
-          ...(cacheControlProviderOptions && {
-            providerOptions:
-              cacheControlProviderOptions as SharedV2ProviderOptions,
-          }),
-        });
-      }
     }
   }
+}
 ```
 
 **This shows:** Anthropic-compat explicitly maps `cache_control` into per-message `providerOptions`. OpenResponses does not have an equivalent mapping for instructions or message parts.
@@ -174,21 +175,27 @@ Apply top-level `providerOptions.anthropic.cacheControl` to the instructions sys
 ```typescript
 // Current (lines 82-85):
 if (request.instructions) {
-  messages.unshift({ role: 'system', content: request.instructions });
+  messages.unshift({ role: "system", content: request.instructions });
 }
 
 // Proposed:
 if (request.instructions) {
-  const anthropicCacheControl = (request.providerOptions?.anthropic as Record<string, unknown>)?.cacheControl;
+  const anthropicCacheControl = (
+    request.providerOptions?.anthropic as Record<string, unknown>
+  )?.cacheControl;
   messages.unshift({
-    role: 'system',
-    content: [{
-      type: 'text',
-      text: request.instructions,
-      ...(anthropicCacheControl && {
-        providerOptions: { anthropic: { cacheControl: anthropicCacheControl } }
-      })
-    }]
+    role: "system",
+    content: [
+      {
+        type: "text",
+        text: request.instructions,
+        ...(anthropicCacheControl && {
+          providerOptions: {
+            anthropic: { cacheControl: anthropicCacheControl },
+          },
+        }),
+      },
+    ],
   });
 }
 ```
@@ -200,11 +207,12 @@ This would enable caching of the system prompt (often the largest stable prefix)
 Extend OpenResponses to support per-message caching:
 
 1. **Schema updates** in `openresponses-compat-api-types.ts`:
+
    ```typescript
    const inputTextContentSchema = z.object({
-     type: z.literal('input_text'),
+     type: z.literal("input_text"),
      text: z.string(),
-     cache_control: z.object({ type: z.enum(['ephemeral']) }).optional(),
+     cache_control: z.object({ type: z.enum(["ephemeral"]) }).optional(),
    });
    ```
 
@@ -221,15 +229,18 @@ Extend OpenResponses to support per-message caching:
 ### Cost Impact
 
 For a 50-turn conversation with:
+
 - 5k token system prompt
 - 3k tokens average per turn
 
 **Without caching (current):**
+
 - Each turn pays for full context: 5k + (turn# × 3k) tokens
 - Turn 50 pays: 155k input tokens
 - Total across all turns: ~3.8M input tokens
 
 **With caching (proposed):**
+
 - System prompt cached after first turn: 5k × 1 + (5k × 0.1 × 49) = ~30k tokens for system prompt
 - Savings: ~88% on system prompt alone
 - Message history could also be cached with Option B
@@ -284,9 +295,9 @@ Currently none available for OpenResponses users. Options:
 
 ## Related Files
 
-| File | Purpose |
-|------|---------|
-| `lib/openresponses-compat/convert-to-aisdk-call-options.ts` | Message conversion (needs fix) |
-| `lib/openresponses-compat/openresponses-compat-api-types.ts` | Schema (needs cache_control field) |
-| `lib/anthropic-compat/convert-to-aisdk-call-options.ts` | Reference implementation (works correctly) |
-| `app/v1/responses/route.ts` | Route handler |
+| File                                                         | Purpose                                    |
+| ------------------------------------------------------------ | ------------------------------------------ |
+| `lib/openresponses-compat/convert-to-aisdk-call-options.ts`  | Message conversion (needs fix)             |
+| `lib/openresponses-compat/openresponses-compat-api-types.ts` | Schema (needs cache_control field)         |
+| `lib/anthropic-compat/convert-to-aisdk-call-options.ts`      | Reference implementation (works correctly) |
+| `app/v1/responses/route.ts`                                  | Route handler                              |

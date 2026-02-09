@@ -14,19 +14,19 @@ The process begins in `ExtChatEndpoint` (the Chat Participant implementation).
 
 - **Source**: `src/platform/endpoint/vscode-node/extChatEndpoint.ts`
 - **Mechanism**:
-    1.  Generates a unique `ourRequestId` (UUID).
-    2.  Snapshots the current `AsyncLocalStorage` context (containing the `CapturingToken`—an object with session ID, user intent, etc.).
-    3.  Stores this snapshot in a global `Map`, keyed by `ourRequestId`.
-    4.  Injects `ourRequestId` into the request options as `_capturingTokenCorrelationId`.
+  1.  Generates a unique `ourRequestId` (UUID).
+  2.  Snapshots the current `AsyncLocalStorage` context (containing the `CapturingToken`—an object with session ID, user intent, etc.).
+  3.  Stores this snapshot in a global `Map`, keyed by `ourRequestId`.
+  4.  Injects `ourRequestId` into the request options as `_capturingTokenCorrelationId`.
 
 ```typescript
 // Conceptual Flow
 const ourRequestId = generateUuid();
 storeCapturingTokenForCorrelation(ourRequestId); // Snapshot ALS
 const requestOptions = {
-    modelOptions: {
-        _capturingTokenCorrelationId: ourRequestId
-    }
+  modelOptions: {
+    _capturingTokenCorrelationId: ourRequestId,
+  },
 };
 ```
 
@@ -40,9 +40,9 @@ The internal provider (e.g., `AnthropicProvider`, `GeminiNativeProvider`) receiv
 
 - **Source**: `src/extension/byok/vscode-node/abstractLanguageModelChatProvider.ts`
 - **Mechanism**:
-    1.  Extracts `_capturingTokenCorrelationId` from `options.modelOptions`.
-    2.  Calls `retrieveCapturingTokenByCorrelation(id)` to get the original `CapturingToken` object.
-    3.  Wraps its execution workflow in `runWithCapturingToken(token, callback)`.
+  1.  Extracts `_capturingTokenCorrelationId` from `options.modelOptions`.
+  2.  Calls `retrieveCapturingTokenByCorrelation(id)` to get the original `CapturingToken` object.
+  3.  Wraps its execution workflow in `runWithCapturingToken(token, callback)`.
 
 ```typescript
 // Conceptual Flow
@@ -57,19 +57,19 @@ await requestLogger.runWithCapturingToken(originalToken, async () => {
 
 ## Comparison with VS Code AI Gateway
 
-| Feature | Copilot ("Loopback") | Gateway ("Stable Identity") |
-| :--- | :--- | :--- |
-| **Architecture** | Split (Chat UI calls Internal Provider via API) | Unified (Chat UI *is* the Provider Client) |
-| **Context ID** | `requestId` (Ephemeral, per-turn) | `conversationId` (Persistent, per-thread) |
-| **Storage** | Global `Map<string, Token>` (In-memory) | Redux/State Store (Persisted) |
-| **Transport** | `options.modelOptions._capturingTokenCorrelationId` | Internal State / `customContext` |
-| **Purpose** | Telemetry attribution & Logging continuity | Conversation History & Token Accumulation |
+| Feature          | Copilot ("Loopback")                                | Gateway ("Stable Identity")                |
+| :--------------- | :-------------------------------------------------- | :----------------------------------------- |
+| **Architecture** | Split (Chat UI calls Internal Provider via API)     | Unified (Chat UI _is_ the Provider Client) |
+| **Context ID**   | `requestId` (Ephemeral, per-turn)                   | `conversationId` (Persistent, per-thread)  |
+| **Storage**      | Global `Map<string, Token>` (In-memory)             | Redux/State Store (Persisted)              |
+| **Transport**    | `options.modelOptions._capturingTokenCorrelationId` | Internal State / `customContext`           |
+| **Purpose**      | Telemetry attribution & Logging continuity          | Conversation History & Token Accumulation  |
 
 ## Why Gateway Doesn't Need This (Yet)
 
-The Gateway currently acts as a monolithic client to `OpenResponses`. We don't implement distinct `LanguageModelChatProvider` backends that we then call via the VS Code API *from within the same extension*.
+The Gateway currently acts as a monolithic client to `OpenResponses`. We don't implement distinct `LanguageModelChatProvider` backends that we then call via the VS Code API _from within the same extension_.
 
-If we were to refactor `vscode-ai-gateway` to expose its models as standard VS Code LM Providers (to be consumed by *other* extensions), we would need to adopt this pattern to maintain trace context.
+If we were to refactor `vscode-ai-gateway` to expose its models as standard VS Code LM Providers (to be consumed by _other_ extensions), we would need to adopt this pattern to maintain trace context.
 
 ## Recommendation
 

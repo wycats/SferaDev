@@ -3,8 +3,8 @@ title: Model Family String Mapping
 stage: 0
 feature: Unknown
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00051: Model Family String Mapping

@@ -1,6 +1,6 @@
 # What VS Code Is Cooking for AI Extensions
 
-*Based on automated scanning of 162 proposed APIs, git activity, GitHub milestones, and the February 2026 iteration plan. Generated February 2026.*
+_Based on automated scanning of 162 proposed APIs, git activity, GitHub milestones, and the February 2026 iteration plan. Generated February 2026._
 
 ---
 
@@ -44,7 +44,7 @@ VS Code is building first-class MCP (Model Context Protocol) support, and two pr
 
 **`mcpServerDefinitions` (score 80, in iteration plan)** is the foundational piece. It exposes `lm.mcpServerDefinitions` — a live-updating list of all MCP servers known to the editor (from `mcp.json` files, extension contributions, etc.). More importantly, it adds `lm.startMcpGateway()`, which spins up a localhost HTTP endpoint that external processes can connect to. This means a CLI agent loop can talk to the editor's MCP servers without any custom protocol bridging. The gateway is reference-counted and auto-tears-down when the last consumer disposes it.
 
-**`mcpToolDefinitions` (score 50)** tackles the cold-start problem. Currently, VS Code has to *start* an MCP server to discover its tools. This proposal lets extensions eagerly provide a static manifest of tool metadata — names, descriptions, availability conditions — without starting the server. The `McpToolAvailability` enum controls when tools become callable.
+**`mcpToolDefinitions` (score 50)** tackles the cold-start problem. Currently, VS Code has to _start_ an MCP server to discover its tools. This proposal lets extensions eagerly provide a static manifest of tool metadata — names, descriptions, availability conditions — without starting the server. The `McpToolAvailability` enum controls when tools become callable.
 
 Together, these two proposals paint a picture: VS Code wants to be an MCP hub where extensions both provide and consume MCP servers, servers can be discovered without starting them, and external processes can connect through a managed gateway.
 
@@ -64,7 +64,7 @@ The chat proposals are the most numerous (12 of 28) and span from near-finalizat
 
 - **`chatHooks` (70, milestoned Feb 2026)** — Lifecycle hooks for chat sessions, configured via `hooks.json` files in the workspace. Extensions can intercept eight different moments: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PreCompact`, `SubagentStart`, `SubagentStop`, `Stop`. Hooks run as commands that receive JSON input on stdin and return flow-control results (success, blocking error, or non-blocking warning). This is how projects enforce coding standards, security policies, or workflow constraints on AI agents. The `PreCompact` hook is particularly interesting — it fires before context window compaction, letting extensions influence what gets preserved.
 
-- **`chatProvider` (70, milestoned Feb 2026)** — The provider side of the LM API. If you're *hosting* a model (not just consuming one), this is how you register it. `ProvideLanguageModelChatResponseOptions` gives providers visibility into which extension initiated the request. `LanguageModelChatInformation` includes quota multipliers, authorization gating, model picker categories, and the `editToolsHint` capability for declaring which editing strategies the model prefers (find-replace, apply-patch, code-rewrite, etc.).
+- **`chatProvider` (70, milestoned Feb 2026)** — The provider side of the LM API. If you're _hosting_ a model (not just consuming one), this is how you register it. `ProvideLanguageModelChatResponseOptions` gives providers visibility into which extension initiated the request. `LanguageModelChatInformation` includes quota multipliers, authorization gating, model picker categories, and the `editToolsHint` capability for declaring which editing strategies the model prefers (find-replace, apply-patch, code-rewrite, etc.).
 
 **Mid-term stabilization:**
 
@@ -126,15 +126,18 @@ A smaller cluster of proposals extends VS Code's core editor features with AI ca
 ## What This Means for Extension Authors
 
 **Right now (February 2026):**
+
 - `languageModelSystem` will finalize this month. If you're using the LM API, you'll soon be able to send system prompts.
 - MCP integration (`mcpServerDefinitions`) and prompt files (`chatPromptFiles`) are in the iteration plan and actively landing.
 
 **Over the next 1-3 months:**
+
 - Chat hooks will give extensions lifecycle control over agent sessions.
 - MCP will become a first-class protocol with gateway support for external processes.
 - The chat provider API will stabilize, making it possible for third-party extensions to register their own models.
 
 **Over the next 3-6 months:**
+
 - Model capabilities, thinking tokens, and audience-targeted tool results will make the LM API more expressive.
 - Agent session infrastructure will formalize the multi-agent patterns currently being prototyped in the grab-bag proposals.
 - AI-augmented search, settings, and code actions will start stabilizing.
@@ -144,4 +147,4 @@ The grab-bag proposals (`chatParticipantAdditions`, `chatSessionsProvider`, `inl
 
 ---
 
-*Data source: Automated scan of `microsoft/vscode` proposed API files, git activity (30-day window), GitHub milestones, api-finalization labels, and February 2026 iteration plan (api-proposal issues). Scores represent a composite readiness signal, not a quality judgment.*
+_Data source: Automated scan of `microsoft/vscode` proposed API files, git activity (30-day window), GitHub milestones, api-finalization labels, and February 2026 iteration plan (api-proposal issues). Scores represent a composite readiness signal, not a quality judgment._

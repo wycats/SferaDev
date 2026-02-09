@@ -65,7 +65,6 @@ import {
 import { logger } from "../logger.js";
 import {
   encodeStatefulMarker,
-  logStatefulMarkerEvent,
   STATEFUL_MARKER_MIME,
 } from "../utils/stateful-marker.js";
 
@@ -555,11 +554,9 @@ export class StreamAdapter {
         responseId: response.id,
       });
       parts.push(new LanguageModelDataPart(marker, STATEFUL_MARKER_MIME));
-      logStatefulMarkerEvent({
-        type: "emit",
-        modelId,
-        responseId: response.id,
-      });
+      logger.debug(
+        `[OpenResponses] Emitting stateful marker with responseId=${response.id}`,
+      );
     }
 
     return {

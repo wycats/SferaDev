@@ -1,15 +1,30 @@
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
 import type { LanguageModelChatMessage } from "vscode";
 
 /**
- * MIME type for stateful markers. Must match GCMP's convention exactly:
- * VS Code only persists DataParts with specific simple MIME types
- * (e.g. "cache_control", "stateful_marker", "thinking").
+ * Custom DataPart MIME Types
+ *
+ * VS Code only persists LanguageModelDataPart instances whose mimeType matches
+ * one of these specific strings. This is NOT documented in the public API.
+ * The strings are defined in Microsoft's vscode-copilot-chat:
+ * src/platform/endpoint/common/endpointTypes.ts
+ *
  * Standard MIME types like "application/..." are silently dropped.
  */
-export const STATEFUL_MARKER_MIME = "stateful_marker";
+export namespace CustomDataPartMimeTypes {
+  /** Anthropic prompt caching breakpoints */
+  export const CacheControl = "cache_control";
+  /** Session/response ID for conversation chaining */
+  export const StatefulMarker = "stateful_marker";
+  /** Persisted thinking/reasoning blocks */
+  export const ThinkingData = "thinking";
+  /** Anthropic context editing responses */
+  export const ContextManagement = "context_management";
+}
+
+/**
+ * @deprecated Use CustomDataPartMimeTypes.StatefulMarker instead
+ */
+export const STATEFUL_MARKER_MIME = CustomDataPartMimeTypes.StatefulMarker;
 
 const STATEFUL_MARKER_EXTENSION = "sferadev.vscode-ai-gateway";
 
@@ -23,17 +38,8 @@ export interface StatefulMarker {
   expireAt?: number;
 }
 
-export interface StatefulMarkerLogEvent {
-  type: "emit" | "use";
-  timestamp?: string;
-  modelId?: string;
-  responseId?: string;
-  previousResponseId?: string;
-  chatId?: string;
-}
-
 export function isStatefulMarkerMime(mimeType: string): boolean {
-  return mimeType === STATEFUL_MARKER_MIME;
+  return mimeType === CustomDataPartMimeTypes.StatefulMarker;
 }
 
 /**
@@ -101,25 +107,4 @@ export function findLatestStatefulMarker(
     }
   }
   return undefined;
-}
-
-export function logStatefulMarkerEvent(event: StatefulMarkerLogEvent): void {
-  try {
-    const entry = {
-      timestamp: event.timestamp ?? new Date().toISOString(),
-      type: event.type,
-      modelId: event.modelId,
-      responseId: event.responseId,
-      previousResponseId: event.previousResponseId,
-      chatId: event.chatId,
-    };
-    const dir = path.join(os.homedir(), ".vscode-ai-gateway");
-    fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(
-      path.join(dir, "stateful-marker.jsonl"),
-      `${JSON.stringify(entry)}\n`,
-    );
-  } catch {
-    // Never let logging affect request flow.
-  }
 }

@@ -1,20 +1,25 @@
 # Summarization Loop & Tool Overhead Analysis
+
 **Date:** 2026-02-09
 **Status:** Findings Confirmed
 
 ## Executive Summary
+
 The "context pressure death spiral" where Copilot Chat repeatedly summarizes the conversation is caused by a structural conflict between the high fixed token cost of VS Code's tool definitions (~45k tokens) and the conservative `maxInputTokens` limit (128k) enforced by the specific model configuration.
 
 ## Key Findings
 
 ### 1. Tool Overhead is "Real" (Not Fragmentation)
+
 We suspected that VS Code's method of tokenizing tool schemas (fragment-by-fragment) might inflate the token count compared to tokenizing the whole schema.
 **Experiment:** Tokenized 100 sample tool schema strings individually vs joined.
 **Result:** 282 tokens (sum of parts) vs 288 tokens (joined). Difference is < 2%.
 **Conclusion:** The ~45k tool overhead observed in logs is accurate. The tool definitions provided by VS Code are simply voluminous.
 
 ### 2. The Budget Squeeze
+
 With 128k `maxInputTokens`:
+
 - **Tools:** ~45k tokens (Fixed Cost, ~35% of budget)
 - **Available for Chat:** ~83k tokens
 - **Summarization Trigger:** When Total > 128k.
@@ -25,8 +30,10 @@ When a conversation exceeds 128k, VS Code summarizes the message history. Howeve
 This leaves only **3k tokens** of headroom. The very next user message or model response pushes the total back over 128k, triggering another summarization attempt immediately. This creates the "loop".
 
 ### 3. Forensic Analysis Tooling
+
 Created `packages/vscode-ai-gateway/scripts/analyze-forensic-logs.cjs` to automate token distribution analysis.
 Sample Output:
+
 ```text
 Burst #1
   Tools (Strings): 3514 calls, 20498 tokens
@@ -36,7 +43,7 @@ Burst #1
 
 ## Comparative Analysis: Why Copilot Models Don't Loop
 
-The user asked: *"Why is the behavior different with copilot models than vercel models?"*
+The user asked: _"Why is the behavior different with copilot models than vercel models?"_
 
 Since VS Code injects the same tool definitions for all participants, the difference lies in **Token Reporting Strategy**.
 
@@ -58,9 +65,10 @@ Since VS Code injects the same tool definitions for all participants, the differ
 
 ## Recommendation
 
-Since we cannot control the size of the tool definitions (controlled by VS Code/Participant) and "lying" about token counts (ignoring tools) risks API rejections if we exceed the *actual* model hard limit, we must increase the reported capacity to match the **true capability** of the models we function with.
+Since we cannot control the size of the tool definitions (controlled by VS Code/Participant) and "lying" about token counts (ignoring tools) risks API rejections if we exceed the _actual_ model hard limit, we must increase the reported capacity to match the **true capability** of the models we function with.
 
 **Proposal:** Increase `CONSERVATIVE_MAX_INPUT_TOKENS` in `src/constants.ts` to **180,000** (or model max).
+
 - **Claude 3 Opus / 3.5 Sonnet:** Supports 200k context.
 - **Proposed Budget:** 180k.
 - **New Math:** 45k (Tools) + 135k (Chat).

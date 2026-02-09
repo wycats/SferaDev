@@ -39,10 +39,7 @@ import { saveSuspiciousRequest } from "./debug-utils.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
-import {
-  findLatestStatefulMarker,
-  logStatefulMarkerEvent,
-} from "../utils/stateful-marker.js";
+import { findLatestStatefulMarker } from "../utils/stateful-marker.js";
 
 /**
  * Options for the OpenResponses chat implementation
@@ -124,42 +121,6 @@ export async function executeOpenResponsesChat(
   logger.debug(
     `[OpenResponses] Estimated input tokens: ${estimatedInputTokens.toString()}`,
   );
-
-  // DIAGNOSTIC: Dump all DataParts in incoming messages to trace marker round-trip
-  const messageSummary: Array<{ idx: number; role: string; parts: string[] }> =
-    [];
-  for (let mi = 0; mi < chatMessages.length; mi++) {
-    const msg = chatMessages[mi];
-    if (!msg) continue;
-    const role = roleNames[msg.role as number] ?? `Unknown(${msg.role})`;
-    const partTypes = msg.content.map((p) => {
-      if ("mimeType" in p && typeof p.mimeType === "string") {
-        return `DataPart(${p.mimeType})`;
-      }
-      if ("value" in p && typeof p.value === "string") {
-        return "TextPart";
-      }
-      if ("name" in p) {
-        return "ToolCallPart|ToolResultPart";
-      }
-      return `Unknown(${Object.keys(p as object).join(",")})`;
-    });
-    // Only log assistant messages with DataParts or the last 3 messages (to keep log small)
-    const hasDataPart = partTypes.some((t) => t.startsWith("DataPart"));
-    if (hasDataPart || mi >= chatMessages.length - 3) {
-      messageSummary.push({ idx: mi, role, parts: partTypes });
-    }
-    logger.warn(
-      `[StatefulMarker diagnostic] msg[${mi}] role=${role} parts=[${partTypes.join(", ")}]`,
-    );
-  }
-  // Write summary to JSONL for terminal inspection
-  logStatefulMarkerEvent({
-    type: "use",
-    modelId: `diagnostic:${chatMessages.length}msgs`,
-    chatId,
-    responseId: JSON.stringify(messageSummary),
-  });
 
   // Create client with trace logging
   const client = createClient({
@@ -283,14 +244,8 @@ export async function executeOpenResponsesChat(
     if (statefulMarker?.responseId) {
       requestBody.previous_response_id = statefulMarker.responseId;
       logger.debug(
-        `[OpenResponses] Using previous_response_id=${statefulMarker.responseId} (marker model=${statefulMarker.modelId})`,
+        `[OpenResponses] Using previous_response_id=${statefulMarker.responseId} from stateful marker (model=${statefulMarker.modelId})`,
       );
-      logStatefulMarkerEvent({
-        type: "use",
-        modelId: model.id,
-        previousResponseId: statefulMarker.responseId,
-        chatId,
-      });
     }
 
     if (instructions) {
