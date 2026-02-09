@@ -4,7 +4,7 @@ import * as claude from "ai-tokenizer/encoding/claude";
 import * as vscode from "vscode";
 import { logger } from "../logger";
 import { tryStringify } from "../utils/serialize.js";
-import { isStatefulMarkerMime } from "../utils/stateful-marker.js";
+import { isMetadataMime } from "../utils/stateful-marker.js";
 import { LRUCache } from "./lru-cache";
 
 /**
@@ -86,7 +86,7 @@ export class TokenCounter {
       if (part instanceof vscode.LanguageModelTextPart) {
         total += this.estimateTextTokens(part.value, modelFamily);
       } else if (part instanceof vscode.LanguageModelDataPart) {
-        if (isStatefulMarkerMime(part.mimeType)) {
+        if (isMetadataMime(part.mimeType)) {
           continue;
         }
         if (part.mimeType.startsWith("image/")) {
@@ -117,7 +117,9 @@ export class TokenCounter {
           total += this.estimateSerializedToolResultTokens(part, modelFamily);
           continue;
         }
-        const protoName = (Object.getPrototypeOf(part) as { constructor?: { name?: string } }).constructor?.name ?? "null";
+        const protoName =
+          (Object.getPrototypeOf(part) as { constructor?: { name?: string } })
+            .constructor?.name ?? "null";
         logger.warn(
           `Unrecognized message part type. Keys: [${Object.keys(part as object).join(", ")}], ` +
             `Proto: ${protoName}, ` +
@@ -329,7 +331,7 @@ export class TokenCounter {
     part: { mimeType: string; data: unknown },
     modelFamily: string,
   ): number {
-    if (isStatefulMarkerMime(part.mimeType)) {
+    if (isMetadataMime(part.mimeType)) {
       return 0;
     }
     if (part.mimeType.startsWith("image/")) {

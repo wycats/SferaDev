@@ -169,8 +169,6 @@ export class VercelAIChatModelProvider
     this.statusBar = statusBar;
   }
 
-
-
   private applyEnrichmentToModels(
     models: LanguageModelChatInformation[],
   ): LanguageModelChatInformation[] {

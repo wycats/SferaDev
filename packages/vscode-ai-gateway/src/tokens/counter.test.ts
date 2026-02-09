@@ -50,7 +50,10 @@ import { STATEFUL_MARKER_MIME } from "../utils/stateful-marker";
 describe("TokenCounter", () => {
   it("uses claude encoding for Anthropic models", () => {
     const counter = new TokenCounter();
-    const tokens = counter.estimateTextTokens("hello world", "claude-3-5-sonnet");
+    const tokens = counter.estimateTextTokens(
+      "hello world",
+      "claude-3-5-sonnet",
+    );
     // ai-tokenizer's claude encoding should produce a reasonable count
     expect(tokens).toBeGreaterThan(0);
     expect(tokens).toBeLessThan(10);
@@ -66,8 +69,14 @@ describe("TokenCounter", () => {
   it("uses o200k_base for non-Anthropic models (gemini, llama, etc.)", () => {
     const counter = new TokenCounter();
 
-    const geminiTokens = counter.estimateTextTokens("hello world", "gemini-2.0-flash");
-    const llamaTokens = counter.estimateTextTokens("hello world", "llama-3.1-70b");
+    const geminiTokens = counter.estimateTextTokens(
+      "hello world",
+      "gemini-2.0-flash",
+    );
+    const llamaTokens = counter.estimateTextTokens(
+      "hello world",
+      "llama-3.1-70b",
+    );
 
     expect(geminiTokens).toBeGreaterThan(0);
     expect(llamaTokens).toBeGreaterThan(0);
@@ -133,7 +142,10 @@ describe("TokenCounter", () => {
     const counter = new TokenCounter();
 
     const openai = counter.estimateTextTokens("hello world test", "gpt-4o");
-    const anthropic = counter.estimateTextTokens("hello world test", "claude-3-5-sonnet");
+    const anthropic = counter.estimateTextTokens(
+      "hello world test",
+      "claude-3-5-sonnet",
+    );
 
     // Both should produce a count, values may differ between encodings
     expect(openai).toBeGreaterThan(0);
@@ -165,12 +177,18 @@ describe("countToolsTokens", () => {
       {
         name: "readFile",
         description: "Read a file from disk",
-        inputSchema: { type: "object", properties: { path: { type: "string" } } },
+        inputSchema: {
+          type: "object",
+          properties: { path: { type: "string" } },
+        },
       },
       {
         name: "writeFile",
         description: "Write content to a file",
-        inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } } },
+        inputSchema: {
+          type: "object",
+          properties: { path: { type: "string" }, content: { type: "string" } },
+        },
       },
     ];
 
@@ -185,7 +203,10 @@ describe("countToolsTokens", () => {
       {
         name: "search",
         description: "Search the codebase",
-        inputSchema: { type: "object", properties: { query: { type: "string" } } },
+        inputSchema: {
+          type: "object",
+          properties: { query: { type: "string" } },
+        },
       },
     ];
 
@@ -215,7 +236,10 @@ describe("countSystemPromptTokens", () => {
     const systemPrompt = "You are a helpful assistant.";
 
     const textTokens = counter.estimateTextTokens(systemPrompt, "gpt-4o");
-    const systemTokens = counter.countSystemPromptTokens(systemPrompt, "gpt-4o");
+    const systemTokens = counter.countSystemPromptTokens(
+      systemPrompt,
+      "gpt-4o",
+    );
 
     expect(systemTokens).toBe(textTokens + 28);
   });

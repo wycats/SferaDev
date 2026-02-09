@@ -100,15 +100,15 @@ export type SyntheticPart =
 
 /**
  * Type-safe access to LanguageModelThinkingPart.
- * Returns undefined in stable VS Code where the proposed API is unavailable.
+ *
+ * The class is available unconditionally on the vscode namespace at runtime
+ * (no enabledApiProposals needed) but is not in stable @types/vscode.
+ * Our module augmentation in src/types/vscode-thinking.d.ts provides the type.
+ *
+ * Returns undefined if the runtime doesn't expose the class (older VS Code).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-export const VSCodeThinkingPart = (vscode as any).LanguageModelThinkingPart as
-  | (new (
-      value: string | string[],
-      id?: string,
-    ) => vscode.LanguageModelTextPart)
-  | undefined;
+export const VSCodeThinkingPart: typeof vscode.LanguageModelThinkingPart | undefined =
+  vscode.LanguageModelThinkingPart;
 
 /**
  * Check if ThinkingPart is available at runtime.
@@ -159,7 +159,7 @@ const DEFAULT_OPTIONS: ConversionOptions = {
 export function toVSCodePart(
   part: SyntheticPart,
   options: ConversionOptions = DEFAULT_OPTIONS,
-): vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | undefined {
+): vscode.LanguageModelTextPart | vscode.LanguageModelThinkingPart | vscode.LanguageModelToolCallPart | undefined {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
   switch (part.kind) {
@@ -217,13 +217,13 @@ export function toVSCodePart(
 export function toVSCodeParts(
   parts: SyntheticPart[],
   options?: ConversionOptions,
-): (vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart)[] {
+): (vscode.LanguageModelTextPart | vscode.LanguageModelThinkingPart | vscode.LanguageModelToolCallPart)[] {
   return parts
     .map((p) => toVSCodePart(p, options))
     .filter(
       (
         p,
-      ): p is vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart =>
+      ): p is vscode.LanguageModelTextPart | vscode.LanguageModelThinkingPart | vscode.LanguageModelToolCallPart =>
         p !== undefined,
     );
 }

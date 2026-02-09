@@ -60,17 +60,23 @@ import {
   type LanguageModelResponsePart,
   LanguageModelDataPart,
   LanguageModelTextPart,
+  LanguageModelThinkingPart,
   LanguageModelToolCallPart,
 } from "vscode";
 import { logger } from "../logger.js";
 import {
+  CustomDataPartMimeTypes,
   encodeStatefulMarker,
+  encodeThinkingData,
   STATEFUL_MARKER_MIME,
 } from "../utils/stateful-marker.js";
 
 // Hardcoded to avoid runtime import issues with vscode.LanguageModelChatRole
 // 2 = Assistant
 const ROLE_ASSISTANT = 2;
+
+/** Minimum characters to buffer before emitting a ThinkingPart */
+const THINKING_BUFFER_THRESHOLD = 20;
 
 /**
  * Result of adapting a single streaming event
@@ -134,6 +140,7 @@ interface RefusalState {
 interface ReasoningState {
   itemId: string;
   contentIndex: number;
+  /** Full accumulated text for persistence (DataPart emission) */
   buffer: string;
 }
 
@@ -216,6 +223,13 @@ export class StreamAdapter {
 
   /** Reasoning summaries being assembled */
   private reasoningSummaries = new Map<string, ReasoningSummaryState>();
+
+  /**
+   * Thinking chain state for buffered ThinkingPart emission.
+   * A "thinking chain" is a continuous sequence of reasoning deltas.
+   */
+  private currentThinkingId: string | null = null;
+  private thinkingBuffer = "";
 
   /** Response metadata captured from lifecycle events */
   private responseId: string | undefined;
@@ -440,8 +454,12 @@ export class StreamAdapter {
     // Determine finish reason from output
     let finishReason: AdaptedEvent["finishReason"] = "stop";
 
-    // Collect any tool calls from the response output that weren't emitted during streaming
+    // Flush any remaining thinking state before completion
     const parts: LanguageModelResponsePart[] = [];
+    parts.push(...this.flushThinkingBuffer());
+    parts.push(...this.endThinkingChain());
+
+    // Collect any tool calls from the response output that weren't emitted during streaming
     const outputItems = response.output;
     const typeCounts = new Map<string, number>();
     for (const item of outputItems) {
@@ -856,10 +874,12 @@ export class StreamAdapter {
     const delta = event.delta;
 
     if (delta) {
-      return {
-        parts: [new LanguageModelTextPart(delta)],
-        done: false,
-      };
+      // End thinking chain before text output starts
+      const parts: LanguageModelResponsePart[] = [];
+      parts.push(...this.flushThinkingBuffer());
+      parts.push(...this.endThinkingChain());
+      parts.push(new LanguageModelTextPart(delta));
+      return { parts, done: false };
     }
 
     return { parts: [], done: false };
@@ -940,7 +960,47 @@ export class StreamAdapter {
     return { parts: [], done: false };
   }
 
-  // ===== Reasoning Event Handlers (for thinking models like o1) =====
+  // ===== Reasoning Event Handlers (for thinking models like o1, Claude) =====
+
+  /**
+   * Flush the thinking buffer, emitting a ThinkingPart with accumulated content.
+   * Does NOT end the thinking chain — call endThinkingChain() for that.
+   *
+   * Returns parts typed as `any[]` because LanguageModelThinkingPart is not
+   * in the stable LanguageModelResponsePart union. At runtime VS Code handles
+   * it via instanceof dispatch regardless of compile-time types.
+   */
+  private flushThinkingBuffer(): LanguageModelResponsePart[] {
+    if (this.thinkingBuffer.length > 0 && this.currentThinkingId) {
+      const part = new LanguageModelThinkingPart(
+        this.thinkingBuffer,
+        this.currentThinkingId,
+      );
+      this.thinkingBuffer = "";
+      // ThinkingPart is not in the stable LanguageModelResponsePart union
+      // but VS Code handles it at runtime via instanceof checks.
+      return [part as unknown as LanguageModelResponsePart];
+    }
+    return [];
+  }
+
+  /**
+   * End the current thinking chain by emitting an empty ThinkingPart.
+   * This signals to VS Code that the thinking sequence is complete.
+   */
+  private endThinkingChain(): LanguageModelResponsePart[] {
+    if (this.currentThinkingId) {
+      const id = this.currentThinkingId;
+      this.currentThinkingId = null;
+      logger.debug(
+        `[OpenResponses] Ending thinking chain: ${id}`,
+      );
+      return [
+        new LanguageModelThinkingPart("", id) as unknown as LanguageModelResponsePart,
+      ];
+    }
+    return [];
+  }
 
   private handleReasoningDelta(
     event: ResponseReasoningDeltaStreamingEvent,
@@ -948,18 +1008,30 @@ export class StreamAdapter {
     const delta = event.delta;
 
     if (delta) {
-      // Track reasoning content
+      // Track full reasoning content for persistence
       const key = `${event.item_id}:${event.content_index.toString()}`;
       const state = this.reasoningContent.get(key);
       if (state) {
         state.buffer += delta;
       }
 
-      // Emit reasoning delta as plain text; no formatting is applied here.
-      return {
-        parts: [new LanguageModelTextPart(delta)],
-        done: false,
-      };
+      // Start a new thinking chain if needed
+      if (!this.currentThinkingId) {
+        this.currentThinkingId = `thinking_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        logger.debug(
+          `[OpenResponses] Starting thinking chain: ${this.currentThinkingId}`,
+        );
+      }
+
+      this.thinkingBuffer += delta;
+
+      // Emit ThinkingPart when buffer exceeds threshold
+      if (this.thinkingBuffer.length >= THINKING_BUFFER_THRESHOLD) {
+        const parts = this.flushThinkingBuffer();
+        return { parts, done: false };
+      }
+
+      return { parts: [], done: false };
     }
 
     return { parts: [], done: false };
@@ -968,11 +1040,35 @@ export class StreamAdapter {
   private handleReasoningDone(
     _event: ResponseReasoningDoneStreamingEvent,
   ): AdaptedEvent {
-    // Reasoning is complete - cleanup
     const key = `${_event.item_id}:${_event.content_index.toString()}`;
-    this.reasoningContent.delete(key);
+    const state = this.reasoningContent.get(key);
 
-    return { parts: [], done: false };
+    // Flush remaining thinking buffer
+    const parts: LanguageModelResponsePart[] = [];
+    parts.push(...this.flushThinkingBuffer());
+
+    // End the thinking chain
+    parts.push(...this.endThinkingChain());
+
+    // Emit a DataPart('thinking') for persistence if we accumulated content
+    if (state && state.buffer.length > 0) {
+      const encoded = encodeThinkingData({
+        id: `${_event.item_id}:${_event.content_index.toString()}`,
+        text: state.buffer,
+      });
+      parts.push(
+        new LanguageModelDataPart(
+          encoded,
+          CustomDataPartMimeTypes.ThinkingData,
+        ),
+      );
+      logger.debug(
+        `[OpenResponses] Emitting thinking DataPart: ${state.buffer.length.toString()} chars`,
+      );
+    }
+
+    this.reasoningContent.delete(key);
+    return { parts, done: false };
   }
 
   private handleReasoningSummaryDelta(

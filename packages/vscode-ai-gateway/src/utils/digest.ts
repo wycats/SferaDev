@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { LanguageModelChatMessage } from "vscode";
 import { safeJsonStringify, stripVscodeInternals } from "./serialize.js";
-import { isStatefulMarkerMime } from "./stateful-marker.js";
+import { isMetadataMime } from "./stateful-marker.js";
 
 // Role number to string mapping
 export const ROLE_NAMES: Record<number, string> = {
@@ -43,7 +43,7 @@ function isMetadataDataPart(
     "data" in part &&
     "mimeType" in part &&
     typeof part.mimeType === "string" &&
-    (!isValidMimeType(part.mimeType) || isStatefulMarkerMime(part.mimeType))
+    (!isValidMimeType(part.mimeType) || isMetadataMime(part.mimeType))
   );
 }
 
