@@ -3,6 +3,7 @@ import { getEncoding } from "js-tiktoken";
 import * as vscode from "vscode";
 import { logger } from "../logger";
 import { tryStringify } from "../utils/serialize.js";
+import { isStatefulMarkerMime } from "../utils/stateful-marker.js";
 import { LRUCache } from "./lru-cache";
 
 /**
@@ -108,6 +109,9 @@ export class TokenCounter {
       if (part instanceof vscode.LanguageModelTextPart) {
         total += this.estimateTextTokens(part.value, modelFamily);
       } else if (part instanceof vscode.LanguageModelDataPart) {
+        if (isStatefulMarkerMime(part.mimeType)) {
+          continue;
+        }
         if (part.mimeType.startsWith("image/")) {
           total += this.estimateImageTokens(modelFamily, part);
         } else {
@@ -342,6 +346,9 @@ export class TokenCounter {
     part: { mimeType: string; data: unknown },
     modelFamily: string,
   ): number {
+    if (isStatefulMarkerMime(part.mimeType)) {
+      return 0;
+    }
     if (part.mimeType.startsWith("image/")) {
       const byteLength = this.getDataByteLength(part.data);
       if (byteLength !== undefined) {

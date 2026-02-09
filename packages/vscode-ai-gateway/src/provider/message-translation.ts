@@ -34,6 +34,7 @@ import {
 } from "vscode";
 import { logger } from "../logger.js";
 import { stripVscodeInternals, tryStringify } from "../utils/serialize.js";
+import { isStatefulMarkerMime } from "../utils/stateful-marker.js";
 import { detectImageMimeType } from "./image-utils.js";
 
 // NOTE: We verified via instrumentation (2026-02-06) that instanceof checks work correctly
@@ -133,6 +134,9 @@ export function translateMessage(
         });
       }
     } else if (part instanceof LanguageModelDataPart) {
+      if (isStatefulMarkerMime(part.mimeType)) {
+        continue;
+      }
       // Binary data - images
       if (part.mimeType.startsWith("image/") && openResponsesRole === "user") {
         const base64 = Buffer.from(part.data).toString("base64");

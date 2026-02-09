@@ -239,8 +239,11 @@ export class ConversationStateTracker {
     if (!conversationId) {
       // Fallback: Check for System Prompt mutation (RFC 00058 Atomic Set Intersection support)
       // If the only difference is the system prompt, we should preserve the conversation ID.
-      conversationId = this.findIdentityFromRelaxedPrefix(messages, modelFamily);
-      
+      conversationId = this.findIdentityFromRelaxedPrefix(
+        messages,
+        modelFamily,
+      );
+
       if (conversationId) {
         logger.info(
           `[ConversationState] Preserving conversationId ${conversationId} despite System Prompt mismatch (Relaxed Prefix)`,
@@ -418,7 +421,8 @@ export class ConversationStateTracker {
     }
 
     // If only Index 0 is missing, we allow it (System Prompt drift per RFC 00033)
-    const systemPromptDrifted = missingHashes.length === 1 && missingHashes[0] === 0;
+    const systemPromptDrifted =
+      missingHashes.length === 1 && missingHashes[0] === 0;
     if (systemPromptDrifted) {
       logger.info(
         `[ConversationStateDebug] Allowing System Prompt drift (RFC 00033 AXIOM): ` +
@@ -446,7 +450,9 @@ export class ConversationStateTracker {
       currentNormalizedHashes.length === state.messageHashes.length
     ) {
       this.touchKey(key);
-      const driftNote = systemPromptDrifted ? " (with System Prompt drift)" : "";
+      const driftNote = systemPromptDrifted
+        ? " (with System Prompt drift)"
+        : "";
       logger.info(
         `[ConversationStateDebug] Exact match via set intersection: ${matchedKnownCount} hashes${driftNote}`,
       );
@@ -464,7 +470,9 @@ export class ConversationStateTracker {
     // messages plus some new ones
     if (newMessageIndices.length > 0) {
       this.touchKey(key);
-      const driftNote = systemPromptDrifted ? " (with System Prompt drift)" : "";
+      const driftNote = systemPromptDrifted
+        ? " (with System Prompt drift)"
+        : "";
       logger.info(
         `[ConversationStateDebug] Set intersection match: ${matchedKnownCount}/${state.messageHashes.length} known, ` +
           `${newMessageIndices.length} new messages at indices [${newMessageIndices.slice(0, 10).join(",")}]${driftNote}`,

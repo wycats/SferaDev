@@ -15,5 +15,6 @@ json/
 .recovered/
 .context/
 .logs/
-.reference/
+.reference/*
+!.reference/README.md
 .private/

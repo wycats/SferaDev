@@ -487,7 +487,11 @@ export class TokenStatusBar implements vscode.Disposable {
         existingAgentMaxTokens: existingAgent?.maxObservedInputTokens,
         thisEstimatedTokens: estimatedTokens,
         conversationId: conversationId?.slice(0, 8),
-        matchedBy: existingByConversationId ? "conversationId" : existingByPartialKey ? "partialKey" : "none",
+        matchedBy: existingByConversationId
+          ? "conversationId"
+          : existingByPartialKey
+            ? "partialKey"
+            : "none",
       }),
     );
 

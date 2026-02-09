@@ -1289,3 +1289,174 @@ label = "Replace partialKey with conversationId in TokenStatusBar"
 status = "completed"
 completion_log = "Implemented conversationId in TokenStatusBar: added to AgentEntry, agentsByConversationId map, updated lookup/resume/cleanup logic to prefer conversationId with partialKey fallback"
 ulid = "01KGXZDVV4XY1AWAKWKAJZRGMH"
+
+[[epochs]]
+id = "01kh0qw5jrpj129msr33sdkajj"
+title = "DataPart Persistence & Token Simplification (RFC 00063)"
+status = "active"
+ulid = "01KH0QW5JRPJ129MSR33SDKAJJ"
+
+[[epochs.phases]]
+id = "01kh0qw9dyaj8jm1sz3tpqh830"
+title = "Formalize Stateful Marker (PoC → Production)"
+status = "active"
+kind = "regular"
+ulid = "01KH0QW9DYAJ8JM1SZ3TPQH830"
+
+[[epochs.phases.goals]]
+id = "define-mime-constants"
+label = "Define CustomDataPartMimeTypes constants matching Microsoft's naming"
+status = "pending"
+ulid = "01KH0QWZ848ZMEHQWB05E90AXQ"
+rfc = "00063"
+
+[[epochs.phases.goals]]
+id = "stabilize-encoding"
+label = 'Stabilize stateful marker encoding: modelId\\JSON format with extension namespace'
+status = "pending"
+ulid = "01KH0QX3TZH6YT4JKJN930HBKM"
+rfc = "00063"
+
+[[epochs.phases.goals]]
+id = "remove-diagnostics"
+label = "Remove PoC diagnostic logging from openresponses-chat.ts and stateful-marker.ts"
+status = "pending"
+ulid = "01KH0QX7DD0QW27X01DW8R6QRV"
+rfc = "00063"
+
+[[epochs.phases.goals]]
+id = "unify-exclusion-filters"
+label = "Verify all exclusion filters (digest, counter, message-translation) use the MIME constant"
+status = "pending"
+ulid = "01KH0QXB35WQN9GEGX8ZEVGSVR"
+rfc = "00063"
+
+[[epochs.phases.goals]]
+id = "marker-tests"
+label = "Add tests for stateful marker encode/decode/find/round-trip"
+status = "pending"
+ulid = "01KH0QXE8R5SBV9SGV153JBPPW"
+rfc = "00063"
+
+[[epochs.phases.rfcs]]
+id = "00063"
+
+[[epochs.phases]]
+id = "01kh0qwd40dst0a6m3zrccvdse"
+title = "Simplify Token Counting with ai-tokenizer (~3,000 lines removed)"
+status = "pending"
+kind = "regular"
+ulid = "01KH0QWD40DST0A6M3ZRCCVDSE"
+
+[[epochs.phases.goals]]
+id = "swap-tokenizer"
+label = "Replace js-tiktoken with ai-tokenizer; import o200k_base and claude encodings"
+status = "pending"
+ulid = "01KH0QXYS4QMZ0H2NJZ9JRT843"
+
+[[epochs.phases.goals]]
+id = "write-token-counter"
+label = "Write new TokenCounter class with model-family encoding dispatch and LRU cache"
+status = "pending"
+ulid = "01KH0QXYXW4DRVSAYCF1ZMHEJA"
+
+[[epochs.phases.goals]]
+id = "simplify-provide-token-count"
+label = "Simplify provideTokenCount to one-liner delegating to TokenCounter"
+status = "pending"
+ulid = "01KH0QXZ2Q9122NN4V9H4DD7X2"
+
+[[epochs.phases.goals]]
+id = "simplify-estimate-total"
+label = "Simplify estimateTotalInputTokens to sum messages + tool + system overhead"
+status = "pending"
+ulid = "01KH0QXZ76ZJQ0E0Y5R0VN26M8"
+
+[[epochs.phases.goals]]
+id = "delete-delta-infra"
+label = "Delete conversation-state, sequence-tracker, hybrid-estimator, estimator, validation-logger, cache (and tests)"
+status = "pending"
+ulid = "01KH0QXZBZ31ZF9VNCZBK5TX4F"
+
+[[epochs.phases.goals]]
+id = "remove-forensic-logging"
+label = "Remove forensic JSONL logging from provider.ts provideTokenCount"
+status = "pending"
+ulid = "01KH0QXZGF2RFFMTFN57B3BB5Y"
+
+[[epochs.phases.goals]]
+id = "remove-token-config"
+label = "Remove tokensEstimationMode and tokensCharsPerToken config settings"
+status = "pending"
+ulid = "01KH0QXZNGZHECGVPWG9TSMKET"
+
+[[epochs.phases.rfcs]]
+id = "00063"
+
+[[epochs.phases]]
+id = "01kh0qwgcqtxkpwyt8j1vdfjtj"
+title = "Thinking Block Persistence"
+status = "pending"
+kind = "regular"
+ulid = "01KH0QWGCQTXKPWYT8J1VDFJTJ"
+
+[[epochs.phases.goals]]
+id = "reconstruct-thinking"
+label = "Scan assistant messages for thinking DataParts and reconstruct on next turn"
+status = "pending"
+ulid = "01KH0QY8907F31Y8Z1X95PHRN2"
+
+[[epochs.phases.goals]]
+id = "thinking-exclusion-filters"
+label = "Add thinking MIME to exclusion filters (digest, counter, message-translation)"
+status = "pending"
+ulid = "01KH0QY8J56CD98X5NSHJBXNBV"
+
+[[epochs.phases.goals]]
+id = "declare-chatprovider-api"
+label = "Declare chatProvider in enabledApiProposals in package.json"
+status = "pending"
+ulid = "01KH0R0SZE3NHPNM77X3XBA6WH"
+
+[[epochs.phases.goals]]
+id = "emit-thinking-part"
+label = "Stream thinking blocks via LanguageModelThinkingPart progress callback"
+status = "pending"
+ulid = "01KH0R0T36TGZWDSFEVCAMRPKR"
+
+[[epochs.phases.goals]]
+id = "persist-thinking-datapart"
+label = "Also emit DataPart('thinking') with text, signature, and redacted token ID"
+status = "pending"
+ulid = "01KH0R0T86DDBQ6129SJETN4D2"
+
+[[epochs.phases.rfcs]]
+id = "00063"
+
+[[epochs.phases]]
+id = "01kh0qwmfa5hbdstkne6g6hdga"
+title = "Prompt Caching Integration (cache_control DataPart)"
+status = "pending"
+kind = "regular"
+ulid = "01KH0QWMFA5HBDSTKNE6G6HDGA"
+
+[[epochs.phases.goals]]
+id = "translate-cache-control"
+label = "Translate cache_control DataParts to Anthropic cache_control on preceding content block"
+status = "pending"
+ulid = "01KH0QYE1J97C7WTDQ2PFN6PT0"
+
+[[epochs.phases.goals]]
+id = "emit-cache-control"
+label = "Emit cache_control breakpoints on outgoing assistant messages"
+status = "pending"
+ulid = "01KH0QYE5RXYQQB1S60EZ2GEEZ"
+
+[[epochs.phases.goals]]
+id = "verify-server-support"
+label = "Verify OpenResponses server supports per-message cache_control passthrough"
+status = "pending"
+ulid = "01KH0QYEBAMYCCA583MCFA55QR"
+
+[[epochs.phases.rfcs]]
+id = "00063"

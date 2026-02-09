@@ -400,6 +400,7 @@ export class ModelsClient {
         model.max_tokens,
         CONSERVATIVE_MAX_OUTPUT_TOKENS,
       );
+
       const modelInfo = {
         id: model.id,
         name: model.name,

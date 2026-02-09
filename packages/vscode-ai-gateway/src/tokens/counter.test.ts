@@ -71,6 +71,7 @@ vi.mock("js-tiktoken", () => ({
 
 import * as vscode from "vscode";
 import { TokenCounter } from "./counter";
+import { STATEFUL_MARKER_MIME } from "../utils/stateful-marker";
 
 describe("TokenCounter", () => {
   it("uses o200k_base for gpt-4o families", () => {
@@ -118,6 +119,22 @@ describe("TokenCounter", () => {
 
     expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
     expect(counter.usesCharacterFallback("llama-3.1-70b")).toBe(false);
+  });
+
+  it("ignores stateful marker data parts", () => {
+    const counter = new TokenCounter();
+    const message = {
+      role: vscode.LanguageModelChatMessageRole.Assistant,
+      content: [
+        new vscode.LanguageModelDataPart(
+          new Uint8Array([1, 2, 3]),
+          STATEFUL_MARKER_MIME,
+        ),
+      ],
+    } as vscode.LanguageModelChatMessage;
+
+    const tokens = counter.estimateMessageTokens(message, "gpt-4o");
+    expect(tokens).toBe(0);
   });
 
   it("falls back to character estimation when encoding is unavailable", () => {

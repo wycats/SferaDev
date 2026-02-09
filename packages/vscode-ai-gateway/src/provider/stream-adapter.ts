@@ -58,10 +58,16 @@ import type {
 import {
   type LanguageModelChatMessage,
   type LanguageModelResponsePart,
+  LanguageModelDataPart,
   LanguageModelTextPart,
   LanguageModelToolCallPart,
 } from "vscode";
 import { logger } from "../logger.js";
+import {
+  encodeStatefulMarker,
+  logStatefulMarkerEvent,
+  STATEFUL_MARKER_MIME,
+} from "../utils/stateful-marker.js";
 
 // Hardcoded to avoid runtime import issues with vscode.LanguageModelChatRole
 // 2 = Assistant
@@ -538,6 +544,23 @@ export class StreamAdapter {
     logger.debug(
       `[OpenResponses] Total tool calls emitted during stream: ${this.emittedToolCalls.size.toString()}`,
     );
+
+    if (response.id) {
+      const modelId = response.model ?? this.model ?? "unknown";
+      const marker = encodeStatefulMarker(modelId, {
+        provider: "openresponses",
+        modelId,
+        sdkMode: "openai-responses",
+        sessionId: response.id, // Use response ID as session for now
+        responseId: response.id,
+      });
+      parts.push(new LanguageModelDataPart(marker, STATEFUL_MARKER_MIME));
+      logStatefulMarkerEvent({
+        type: "emit",
+        modelId,
+        responseId: response.id,
+      });
+    }
 
     return {
       parts,

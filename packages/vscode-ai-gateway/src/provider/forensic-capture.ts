@@ -206,7 +206,7 @@ export interface CaptureInput {
   conversationLookup?: {
     hasState: boolean;
     stateSize: number;
-    storedMsgCount?: number;
+    [key: string]: unknown;
   };
   chatId: string;
   currentAgentId: string | null;

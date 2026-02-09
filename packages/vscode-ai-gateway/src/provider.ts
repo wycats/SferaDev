@@ -1,4 +1,7 @@
 import { createHash } from "node:crypto";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import {
   authentication,
@@ -130,6 +133,18 @@ export class VercelAIChatModelProvider
   private statusBar: TokenStatusBar | null = null;
   /** Current agent ID for status bar tracking */
   private currentAgentId: string | null = null;
+  /** Most recent tool definitions received from VS Code */
+  private lastTools: ProvideLanguageModelChatResponseOptions["tools"] | null =
+    null;
+  /** Pending token debug capture bundle */
+  private pendingTokenCapture: {
+    dir: string;
+    startedAt: string;
+    sessionId: string;
+  } | null = null;
+  /** Track token count bursts to group provideTokenCount calls */
+  private tokenCountBatchId = 0;
+  private lastTokenCountAt = 0;
 
   constructor(
     context: ExtensionContext,
@@ -338,6 +353,7 @@ export class VercelAIChatModelProvider
     let responseSent = false;
 
     try {
+      this.lastTools = options.tools ?? null;
       // Extract system prompt for diagnostics logging
       // NOTE: systemPromptHash is for diagnostics ONLY - not used for identity
       const systemPrompt = extractSystemPrompt(chatMessages);
@@ -577,9 +593,129 @@ export class VercelAIChatModelProvider
         );
       }
     } finally {
+      this.finalizeTokenDebugCapture(model.id, chatId, model.maxInputTokens);
       // Clear current request tracking
       this.currentAgentId = null;
       abortSubscription.dispose();
+    }
+  }
+
+  /**
+   * Arm a token debug capture bundle for the next request.
+   */
+  startTokenDebugCapture(): string | null {
+    const dir = path.join(
+      os.homedir(),
+      ".vscode-ai-gateway",
+      "captures",
+      `token-debug-${Date.now().toString()}`,
+    );
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      const logPath = path.join(
+        os.homedir(),
+        ".vscode-ai-gateway",
+        "token-count-calls.jsonl",
+      );
+      fs.writeFileSync(logPath, "");
+      this.pendingTokenCapture = {
+        dir,
+        startedAt: new Date().toISOString(),
+        sessionId: vscode.env.sessionId,
+      };
+      return dir;
+    } catch (err) {
+      logger.error(`[Token Debug] Failed to start capture: ${String(err)}`);
+      return null;
+    }
+  }
+
+  private finalizeTokenDebugCapture(
+    modelId: string,
+    chatId: string,
+    maxInputTokens: number,
+  ): void {
+    if (!this.pendingTokenCapture) {
+      return;
+    }
+
+    const { dir, startedAt, sessionId } = this.pendingTokenCapture;
+    this.pendingTokenCapture = null;
+
+    try {
+      const logPath = path.join(
+        os.homedir(),
+        ".vscode-ai-gateway",
+        "token-count-calls.jsonl",
+      );
+      const bundleLogPath = path.join(dir, "token-count-calls.jsonl");
+      if (fs.existsSync(logPath)) {
+        fs.copyFileSync(logPath, bundleLogPath);
+      } else {
+        fs.writeFileSync(bundleLogPath, "");
+      }
+
+      const toolsPath = path.join(dir, "tools-snapshot.json");
+      if (this.lastTools) {
+        const payload = {
+          capturedAt: new Date().toISOString(),
+          toolCount: this.lastTools.length,
+          tools: this.lastTools,
+        };
+        fs.writeFileSync(toolsPath, JSON.stringify(payload, null, 2));
+      } else {
+        fs.writeFileSync(toolsPath, JSON.stringify({ tools: [] }, null, 2));
+      }
+
+      const metaPath = path.join(dir, "bundle-metadata.json");
+      fs.writeFileSync(
+        metaPath,
+        JSON.stringify(
+          {
+            startedAt,
+            completedAt: new Date().toISOString(),
+            sessionId,
+            chatId,
+            modelId,
+            maxInputTokens,
+          },
+          null,
+          2,
+        ),
+      );
+
+      window.showInformationMessage(`Token debug bundle written to ${dir}`);
+    } catch (err) {
+      logger.error(`[Token Debug] Failed to finalize capture: ${String(err)}`);
+    }
+  }
+
+  /**
+   * Write the most recent tool definitions to a JSON file for analysis.
+   */
+  dumpLastToolsSnapshot(): string | null {
+    if (!this.lastTools) {
+      return null;
+    }
+    const dir = path.join(os.homedir(), ".vscode-ai-gateway");
+    const filePath = path.join(
+      dir,
+      `tools-snapshot-${Date.now().toString()}.json`,
+    );
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      const payload = {
+        capturedAt: new Date().toISOString(),
+        toolCount: this.lastTools.length,
+        tools: this.lastTools,
+      };
+      fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
+      return filePath;
+    } catch (err) {
+      logger.error(
+        `[Tools Snapshot] Failed to write tool snapshot: ${String(err)}`,
+      );
+      return null;
     }
   }
 
@@ -617,6 +753,59 @@ export class VercelAIChatModelProvider
 
     // Use tiktoken for per-message estimation
     const estimate = this.tokenEstimator.estimateMessage(text, model);
+
+    // Forensic file logging: write to ~/.vscode-ai-gateway/token-count-calls.jsonl
+    try {
+      const now = Date.now();
+      if (now - this.lastTokenCountAt > 1500) {
+        this.tokenCountBatchId += 1;
+      }
+      this.lastTokenCountAt = now;
+      const isString = typeof text === "string";
+      const contentLen = isString
+        ? text.length
+        : Array.from(text.content).reduce(
+            (acc, part) =>
+              acc +
+              ("value" in part && typeof part.value === "string"
+                ? part.value.length
+                : 0),
+            0,
+          );
+      const entry = {
+        ts: new Date().toISOString(),
+        batchId: this.tokenCountBatchId,
+        sessionId: vscode.env.sessionId,
+        chatId: this.currentAgentId,
+        model: model.id,
+        family: model.family,
+        maxInput: model.maxInputTokens,
+        estimate,
+        chars: contentLen,
+        type: isString ? "string" : "message",
+        ...(isString
+          ? { preview: text.substring(0, 120).replace(/\n/g, "\\n") }
+          : {
+              role: text.role,
+              parts: Array.from(text.content).length,
+              preview: Array.from(text.content)
+                .map((p) =>
+                  "value" in p && typeof p.value === "string"
+                    ? p.value.substring(0, 60).replace(/\n/g, "\\n")
+                    : `[${Object.keys(p as unknown as Record<string, unknown>).join(",")}]`,
+                )
+                .join(" | "),
+            }),
+      };
+      const dir = path.join(os.homedir(), ".vscode-ai-gateway");
+      fs.mkdirSync(dir, { recursive: true });
+      fs.appendFileSync(
+        path.join(dir, "token-count-calls.jsonl"),
+        JSON.stringify(entry) + "\n",
+      );
+    } catch {
+      // never let logging break token counting
+    }
 
     return Promise.resolve(estimate);
   }

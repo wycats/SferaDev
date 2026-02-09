@@ -261,6 +261,24 @@ export class HybridTokenEstimator implements vscode.Disposable {
       newMessageCount: messages.length,
       source: "estimated",
     };
+
+    // Attempt recovery if ID lost (common with System Prompt mutation)
+    let conversationId = lookup.conversationId;
+    if (!conversationId) {
+      conversationId = this.conversationTracker.findIdentityFromRelaxedPrefix(
+        messages,
+        model.family,
+      );
+      if (conversationId) {
+        logger.info(
+          `[Estimator] Recovered identity ${conversationId} via relaxed prefix match`,
+        );
+      }
+    }
+
+    if (conversationId) {
+      result.conversationId = conversationId;
+    }
     this.validationLogger?.log({
       type: "estimate",
       modelFamily: model.family,
@@ -553,20 +571,27 @@ export class HybridTokenEstimator implements vscode.Disposable {
     hasState: boolean;
     stateSize: number;
     matchType?: string;
+    [key: string]: unknown;
   } {
     // Basic debug info
     // Since we can't look up by family, we can only report size or check lookup if messages provided
     let matchType = "none";
+    let extraDebug: Record<string, unknown> = {};
 
     if (messages) {
       const result = this.conversationTracker.lookup(messages, modelFamily);
       matchType = result.type;
+      extraDebug = this.conversationTracker.getForensicDebugInfo(
+        messages,
+        modelFamily,
+      );
     }
 
     return {
       hasState: this.conversationTracker.size() > 0,
       stateSize: this.conversationTracker.size(),
       matchType,
+      ...extraDebug,
     };
   }
 

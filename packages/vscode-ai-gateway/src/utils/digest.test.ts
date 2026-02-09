@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeStableMessageHash, computeNormalizedDigest } from "./digest";
+import { STATEFUL_MARKER_MIME } from "./stateful-marker";
 
 describe("Digest Collision Audit", () => {
   // 1. Audit TokenCache behavior (computeNormalizedDigest)
@@ -82,6 +83,10 @@ describe("Digest Collision Audit", () => {
     const textOnly = { role: 1, content: [{ value: "Hello" }] } as any;
     const withCacheControl = createMsgWithDataPart("Hello", "cache_control");
     const withValidMime = createMsgWithDataPart("Hello", "image/png");
+    const withStatefulMarker = createMsgWithDataPart(
+      "Hello",
+      STATEFUL_MARKER_MIME,
+    );
 
     // cache_control (invalid MIME) should be ignored - same hash as text-only
     expect(computeNormalizedDigest(withCacheControl)).toBe(
@@ -90,6 +95,11 @@ describe("Digest Collision Audit", () => {
 
     // image/png (valid MIME) should be included - different hash
     expect(computeNormalizedDigest(withValidMime)).not.toBe(
+      computeNormalizedDigest(textOnly),
+    );
+
+    // stateful marker should be ignored like metadata
+    expect(computeNormalizedDigest(withStatefulMarker)).toBe(
       computeNormalizedDigest(textOnly),
     );
   });
@@ -109,6 +119,10 @@ describe("Digest Collision Audit", () => {
     const textOnly = { role: 1, content: [{ value: "Hello" }] } as any;
     const withCacheControl = createMsgWithDataPart("Hello", "cache_control");
     const withValidMime = createMsgWithDataPart("Hello", "image/png");
+    const withStatefulMarker = createMsgWithDataPart(
+      "Hello",
+      STATEFUL_MARKER_MIME,
+    );
 
     // cache_control (invalid MIME) should be ignored - same hash as text-only
     expect(computeStableMessageHash(withCacheControl)).toBe(
@@ -117,6 +131,11 @@ describe("Digest Collision Audit", () => {
 
     // image/png (valid MIME) should be included - different hash
     expect(computeStableMessageHash(withValidMime)).not.toBe(
+      computeStableMessageHash(textOnly),
+    );
+
+    // stateful marker should be ignored like metadata
+    expect(computeStableMessageHash(withStatefulMarker)).toBe(
       computeStableMessageHash(textOnly),
     );
   });

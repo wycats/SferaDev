@@ -33,7 +33,25 @@ Where:
 
 In VS Code, $M_0$ (System Prompt) is unstable. It drifts turn-by-turn as Copilot injects dynamic context. Because $M_0$ is unstable, the "Prefix Anchor" is unreliable. We treat $M_0$ as a special variable part of the "Conversation Overhead" rather than a stable atomic message when looking up prefix hits.
 
-## 3. The Proportional Learning Rule
+## 3. Structural Normalization
+
+### The Text Fragmentation Problem
+
+VS Code's internal representation of chat messages is unstable with respect to text fragmentation. A single message `Hello world` may be represented as:
+
+1.  `[{ "text": "Hello world" }]` (Turn 1)
+2.  `[{ "text": "Hello" }, { "text": " world" }]` (Turn 2, or after streaming)
+
+This fragmentation is often an artifact of streaming responses or upstream request parsing (identifying references or commands) and does not represent a semantic difference. However, strictly hashing the `content` array structure causes the digest to change ($D(M_1) \neq D(M_2)$), breaking message identity.
+
+**Solution: Semantic Text Merging**
+The digest algorithm MUST normalize the content structure by merging adjacent text parts into a single text block/string before hashing.
+
+$$ Normalize([T_1, T_2, ...]) \rightarrow [T_{merged}] $$
+
+This ensures that $D(["A", "B"]) = D(["AB"])$, recovering stability for user messages.
+
+## 4. The Proportional Learning Rule
 
 When we receive an actual token count $A$ from an API, we can "learn" the counts for unknown messages by distributing the delta according to their relative weights.
 
@@ -58,7 +76,7 @@ Given a conversation with $n$ messages where some have known "Ground Truth" coun
 - **Weighted Accuracy**: If an image part is 1000 tokens and a text part is 10 tokens, averaging would assign 505 to each. Proportional scaling preserves the magnitude of the difference.
 - **Provider Alignment**: It automatically scales local estimates to match the provider's specific counting logic (e.g., how they count tool result overhead).
 
-## 4. Multi-Turn Triangulation
+## 5. Multi-Turn Triangulation
 
 Atomic counts are refined over time as messages appear in different contexts.
 
@@ -66,15 +84,22 @@ Atomic counts are refined over time as messages appear in different contexts.
 - **Turn 2**: We see $[M_1, M_2, M_3]$. Since we "know" $M_1$ and $M_2$ from Turn 1, we can isolate $M_3$ with much higher precision.
 - **Conflict Resolution**: If the same $Digest(M)$ yields different scaled counts in different turns, we store the **most recent** value, provided it came from a "Pure" turn (one with fewer unknown messages).
 
-## 5. Resilience to "State Amnesia"
+## 6. Resilience to "State Amnesia"
 
-Because we match **individual messages** rather than **prefixes**:
+### 1. Handling System Prompt Drift (The "Relaxed Match" Strategy)
 
-1.  **System Drift**: If $M_0$ shifts, we only lose the $M_0$ anchor. We still "know" $M_1 \dots M_n$, allowing us to estimate the total as $Estimate(M_{0,new}) + \sum_{1}^n Known(M_i)$.
-2.  **History Truncation**: If the IDE removes $M_1$ and $M_2$ (context window management), we don't lose the counts for $M_3 \dots M_n$.
-3.  **Summarization**: When a `<conversation-summary>` is injected, it is treated as a single new atomic message. We learn its cost on the very first turn it appears, and it remains stable thereafter.
+When the System Prompt ($M_0$) varies between turns (a common VS Code behavior):
 
-## 6. Implementation Constraints
+1.  **Strict Lookup Fails**: The conversation state hash changes, preventing a "Delta" estimate.
+2.  **Fallback to Fresh Estimate**: We perform a full local estimate (TikToken) on the _new_ content. This ensures no under-counting occurs; if the System Prompt grew by 500 tokens, we count them.
+3.  **Identity Recovery**: We use "Relaxed Prefix Matching" (ignoring Index 0) to recover the persistent `conversationId`.
+4.  **Result**: The user sees continuity (same ID) and accurate estimation (fresh calculation), avoiding the "reset to zero" UX.
+
+### 2. History Truncation: If the IDE removes $M_1$ and $M_2$ (context window management), we don't lose the counts for $M_3 \dots M_n$.
+
+### 3. Summarization: When a `<conversation-summary>` is injected, it is treated as a single new atomic message. We learn its cost on the very first turn it appears, and it remains stable thereafter.
+
+## 7. Implementation Constraints
 
 ### Cache Invalidation
 
