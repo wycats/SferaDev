@@ -188,11 +188,11 @@
     "release": "pnpm run package && vsce publish --no-dependencies"
   },
   "devDependencies": {
-    "@vercel/tsconfig": "workspace:*",
     "@types/json-schema": "catalog:",
     "@types/mocha": "^10.0.6",
     "@types/node": "catalog:",
     "@types/vscode": "^1.108.1",
+    "@vercel/tsconfig": "workspace:*",
     "@vscode/test-electron": "^2.4.0",
     "@vscode/vsce": "catalog:",
     "dotenv": "^17.2.3",
@@ -205,7 +205,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
-    "js-tiktoken": "^1.0.15",
+    "ai-tokenizer": "^1.0.6",
     "openresponses-client": "workspace:*",
     "safe-stable-stringify": "^2.5.0"
   }

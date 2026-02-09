@@ -97,8 +97,6 @@ describe("ConfigService", () => {
     expect(config.modelsAllowlist).toEqual([]);
     expect(config.modelsDenylist).toEqual([]);
     expect(config.modelsFallbacks).toEqual({});
-    expect(config.tokensEstimationMode).toBe("balanced");
-    expect(config.tokensCharsPerToken).toBe(4);
     expect(config.modelsEnrichmentEnabled).toBe(true);
   });
 

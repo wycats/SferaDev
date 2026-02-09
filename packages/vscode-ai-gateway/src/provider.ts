@@ -84,11 +84,7 @@ import {
   hashUserMessage,
 } from "./identity";
 import type { TokenStatusBar } from "./status-bar";
-import {
-  hasSummarizationTag,
-  isSummarizationGenerationPass,
-} from "./tokens/conversation-state";
-import { HybridTokenEstimator } from "./tokens/hybrid-estimator";
+import { TokenCounter } from "./tokens/counter";
 
 function hashMessage(msg: LanguageModelChatRequestMessage): string {
   const payload = {
@@ -122,7 +118,7 @@ export class VercelAIChatModelProvider
 {
   private context: ExtensionContext;
   private modelsClient: ModelsClient;
-  private tokenEstimator: HybridTokenEstimator;
+  private tokenCounter: TokenCounter;
   private configService: ConfigService;
   private enricher: ModelEnricher;
   /** Cache of enriched model data for the session */
@@ -142,9 +138,6 @@ export class VercelAIChatModelProvider
     startedAt: string;
     sessionId: string;
   } | null = null;
-  /** Track token count bursts to group provideTokenCount calls */
-  private tokenCountBatchId = 0;
-  private lastTokenCountAt = 0;
 
   constructor(
     context: ExtensionContext,
@@ -153,7 +146,7 @@ export class VercelAIChatModelProvider
     this.context = context;
     this.configService = configService;
     this.modelsClient = new ModelsClient(configService);
-    this.tokenEstimator = new HybridTokenEstimator(context, configService);
+    this.tokenCounter = new TokenCounter();
     this.enricher = new ModelEnricher(configService);
     // Initialize enricher persistence for faster startup
     this.enricher.initializePersistence(context.globalState);
@@ -165,7 +158,6 @@ export class VercelAIChatModelProvider
   }
 
   dispose(): void {
-    this.tokenEstimator.dispose();
     this.modelInfoChangeEmitter.dispose();
   }
 
@@ -177,32 +169,7 @@ export class VercelAIChatModelProvider
     this.statusBar = statusBar;
   }
 
-  /**
-   * Record actual token count from API response.
-   * Called after successful chat responses with actual usage data.
-   *
-   * This enables delta-based estimation: for subsequent requests that extend
-   * this conversation, we use knownTotal + tiktoken(new messages only).
-   */
-  recordUsage(
-    model: LanguageModelChatInformation,
-    messages: readonly LanguageModelChatMessage[],
-    actualInputTokens: number,
-    sequenceEstimate?: number,
-    summarizationDetected?: boolean,
-    responseMessage?: LanguageModelChatMessage,
-    actualOutputTokens?: number,
-  ): void {
-    this.tokenEstimator.recordActual(
-      messages,
-      model,
-      actualInputTokens,
-      sequenceEstimate,
-      summarizationDetected,
-      responseMessage,
-      actualOutputTokens,
-    );
-  }
+
 
   private applyEnrichmentToModels(
     models: LanguageModelChatInformation[],
@@ -369,16 +336,13 @@ export class VercelAIChatModelProvider
       const tokenEstimate = this.estimateTotalInputTokens(
         model,
         chatMessages,
-        token,
         options.tools ? { tools: options.tools } : {},
       );
       const estimatedTokens = tokenEstimate.total;
-      const estimatedDeltaTokens = tokenEstimate.delta;
-      const conversationId = tokenEstimate.conversationId;
       const tokenBreakdown = tokenEstimate.breakdown;
       const maxInputTokens = model.maxInputTokens;
       logger.debug(
-        `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%), delta: ${estimatedDeltaTokens?.toString() ?? "n/a"}, conversationId: ${conversationId ?? "n/a"}`,
+        `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%)`,
       );
 
       // Forensic capture for debugging conversation identifiers
@@ -391,10 +355,6 @@ export class VercelAIChatModelProvider
           systemPromptHash,
           estimatedTokens,
           tokenBreakdown,
-          conversationLookup: this.tokenEstimator.getConversationLookupDebug(
-            model.family,
-            chatMessages,
-          ),
           chatId,
           currentAgentId: this.currentAgentId,
         });
@@ -476,8 +436,6 @@ export class VercelAIChatModelProvider
         systemPromptHash,
         agentTypeHash,
         firstUserMessageHash,
-        estimatedDeltaTokens,
-        conversationId,
       );
 
       const apiKey = await this.getApiKey(false);
@@ -488,25 +446,6 @@ export class VercelAIChatModelProvider
       // Lazy enrichment: fetch additional metadata on first use of each model
       if (this.configService.modelsEnrichmentEnabled) {
         await this.enrichModelIfNeeded(model.id, apiKey);
-      }
-
-      // Capture sequence estimate BEFORE API call for rolling correction (RFC 047)
-      const sequenceEstimate =
-        this.tokenEstimator.getCurrentSequence()?.totalEstimate;
-
-      // Detect summarization for logging/forensics
-      const summarizationDetected = hasSummarizationTag(chatMessages);
-      const isGenerationPass = isSummarizationGenerationPass(chatMessages);
-
-      if (summarizationDetected) {
-        logger.info(
-          `[TokenState] Summarization detected: <conversation-summary> tag found`,
-        );
-      }
-      if (isGenerationPass) {
-        logger.info(
-          `[TokenState] Summarization Generation detected: System prompt marker found`,
-        );
       }
 
       // Execute chat using OpenResponses API
@@ -524,17 +463,10 @@ export class VercelAIChatModelProvider
           apiKey,
           estimatedInputTokens: estimatedTokens,
           chatId,
-          onUsage: (actualInputTokens, responseMessage, actualOutputTokens) => {
-            // Record actual tokens for delta estimation
-            this.recordUsage(
-              model,
-              chatMessages,
-              actualInputTokens,
-              sequenceEstimate,
-              summarizationDetected, // maintained for signature compatibility but used differently
-              responseMessage,
-              actualOutputTokens,
-            );
+          onUsage: () => {
+            // Usage data from API responses is available here.
+            // With stateful markers (previous_response_id), server-side usage
+            // provides ground truth — no client-side delta tracking needed.
           },
         },
       );
@@ -735,14 +667,10 @@ export class VercelAIChatModelProvider
   }
 
   /**
-   * Estimate token count for a single message.
+   * Estimate token count for a single message or string.
    *
-   * This is called by VS Code BEFORE sending messages to decide whether
-   * to compact/truncate. For per-message estimation, we use tiktoken.
-   *
-   * Note: The more accurate conversation-level delta estimation is used
-   * in estimateTotalInputTokens() for our internal pre-flight checks.
-   * VS Code's per-message calls don't have conversation context.
+   * Called by VS Code before sending messages to decide whether to
+   * compact/truncate. Uses ai-tokenizer for direct encoding-based counting.
    */
   provideTokenCount(
     model: LanguageModelChatInformation,
@@ -751,61 +679,10 @@ export class VercelAIChatModelProvider
   ): Promise<number> {
     void _token;
 
-    // Use tiktoken for per-message estimation
-    const estimate = this.tokenEstimator.estimateMessage(text, model);
-
-    // Forensic file logging: write to ~/.vscode-ai-gateway/token-count-calls.jsonl
-    try {
-      const now = Date.now();
-      if (now - this.lastTokenCountAt > 1500) {
-        this.tokenCountBatchId += 1;
-      }
-      this.lastTokenCountAt = now;
-      const isString = typeof text === "string";
-      const contentLen = isString
-        ? text.length
-        : Array.from(text.content).reduce(
-            (acc, part) =>
-              acc +
-              ("value" in part && typeof part.value === "string"
-                ? part.value.length
-                : 0),
-            0,
-          );
-      const entry = {
-        ts: new Date().toISOString(),
-        batchId: this.tokenCountBatchId,
-        sessionId: vscode.env.sessionId,
-        chatId: this.currentAgentId,
-        model: model.id,
-        family: model.family,
-        maxInput: model.maxInputTokens,
-        estimate,
-        chars: contentLen,
-        type: isString ? "string" : "message",
-        ...(isString
-          ? { preview: text.substring(0, 120).replace(/\n/g, "\\n") }
-          : {
-              role: text.role,
-              parts: Array.from(text.content).length,
-              preview: Array.from(text.content)
-                .map((p) =>
-                  "value" in p && typeof p.value === "string"
-                    ? p.value.substring(0, 60).replace(/\n/g, "\\n")
-                    : `[${Object.keys(p as unknown as Record<string, unknown>).join(",")}]`,
-                )
-                .join(" | "),
-            }),
-      };
-      const dir = path.join(os.homedir(), ".vscode-ai-gateway");
-      fs.mkdirSync(dir, { recursive: true });
-      fs.appendFileSync(
-        path.join(dir, "token-count-calls.jsonl"),
-        JSON.stringify(entry) + "\n",
-      );
-    } catch {
-      // never let logging break token counting
-    }
+    const estimate =
+      typeof text === "string"
+        ? this.tokenCounter.estimateTextTokens(text, model.family)
+        : this.tokenCounter.estimateMessageTokens(text, model.family);
 
     return Promise.resolve(estimate);
   }
@@ -814,21 +691,14 @@ export class VercelAIChatModelProvider
    * Estimate total input tokens for all messages.
    * Used for pre-flight validation before sending to the API.
    *
-   * Includes:
-   * - Message content tokens (from delta estimation or tiktoken)
-   * - Message structure overhead (included in delta estimation)
+   * Sums:
+   * - Per-message token estimates (ai-tokenizer encoding)
    * - Tool schema tokens (16 + 8/tool + content × 1.1)
    * - System prompt tokens (content + 28 overhead)
-   *
-   * Uses delta-based estimation when we have a known conversation state:
-   * - If messages exactly match known state → return actual (ground truth)
-   * - If messages extend known state → knownTotal + tiktoken(new messages)
-   * - Otherwise → tiktoken for all messages
    */
   private estimateTotalInputTokens(
     model: LanguageModelChatInformation,
     messages: readonly LanguageModelChatMessage[],
-    _token: CancellationToken,
     options?: {
       tools?: readonly {
         name: string;
@@ -839,8 +709,6 @@ export class VercelAIChatModelProvider
     },
   ): {
     total: number;
-    delta: number | undefined;
-    conversationId: string | undefined;
     breakdown: {
       messageTokens: number;
       toolTokens: number;
@@ -850,39 +718,20 @@ export class VercelAIChatModelProvider
       estimatedTokens: number;
     };
   } {
-    void _token;
-
-    // Use conversation-level delta estimation
-    // Now passing tools and systemPrompt so the estimator can decide whether to add them
-    // (on full estimate) or use the cached total (which includes them).
-    const estimateOptions: {
-      tools?: readonly {
-        name: string;
-        description?: string;
-        inputSchema?: unknown;
-      }[];
-      systemPrompt?: string;
-    } = {};
-    if (options?.tools) {
-      estimateOptions.tools = options.tools;
+    let messageTokens = 0;
+    for (const msg of messages) {
+      messageTokens += this.tokenCounter.estimateMessageTokens(
+        msg,
+        model.family,
+      );
     }
-    if (options?.systemPrompt) {
-      estimateOptions.systemPrompt = options.systemPrompt;
-    }
-    const estimate = this.tokenEstimator.estimateConversation(
-      messages,
-      model,
-      estimateOptions,
-    );
 
-    const total = estimate.tokens;
-
-    // We still calculate component tokens for logging and breakdown reporting,
-    // but we do NOT add them to the total (HybridTokenEstimator handles that consistently now).
-    const tokenCounter = this.tokenEstimator.getTokenCounter();
     let toolTokens = 0;
     if (options?.tools && options.tools.length > 0) {
-      toolTokens = tokenCounter.countToolsTokens(options.tools, model.family);
+      toolTokens = this.tokenCounter.countToolsTokens(
+        options.tools,
+        model.family,
+      );
       logger.debug(
         `Tool schemas: ${toolTokens.toString()} tokens for ${options.tools.length.toString()} tools`,
       );
@@ -890,47 +739,30 @@ export class VercelAIChatModelProvider
 
     let systemPromptTokens = 0;
     if (options?.systemPrompt) {
-      systemPromptTokens = tokenCounter.countSystemPromptTokens(
+      systemPromptTokens = this.tokenCounter.countSystemPromptTokens(
         options.systemPrompt,
         model.family,
       );
       logger.debug(`System prompt: ${systemPromptTokens.toString()} tokens`);
     }
 
-    // Reconstruct message tokens portion
-    // Note: If estimate.source is 'estimated', total = messages + tools + system.
-    // If estimate.source is 'exact' or 'delta', total = known(messages+tools+system) [+ est(newMessages)].
-    // So distinct messageTokens is roughly total - tools - system.
-    const messageTokens = Math.max(0, total - toolTokens - systemPromptTokens);
-
-    const sourceLabel =
-      estimate.source === "exact"
-        ? "ground truth"
-        : estimate.source === "delta"
-          ? `delta (${estimate.knownTokens.toString()} known + ${estimate.estimatedTokens.toString()} est)`
-          : "full estimate";
+    const total = messageTokens + toolTokens + systemPromptTokens;
 
     logger.debug(
-      `Total input token estimate: ${total.toString()} tokens (${sourceLabel}, ` +
-        `${messages.length.toString()} messages, ${estimate.newMessageCount.toString()} new). ` +
+      `Total input token estimate: ${total.toString()} tokens (full estimate, ` +
+        `${messages.length.toString()} messages). ` +
         `Breakdown: ~${messageTokens.toString()} msg + ${toolTokens.toString()} tool + ${systemPromptTokens.toString()} sys`,
     );
 
-    // Return both total and delta (estimated tokens for new messages only)
-    // Only return delta when we have a known prefix - otherwise it's a full estimate
-    const delta =
-      estimate.source === "delta" ? estimate.estimatedTokens : undefined;
     return {
       total,
-      delta,
-      conversationId: estimate.conversationId,
       breakdown: {
         messageTokens,
         toolTokens,
         systemPromptTokens,
-        source: estimate.source,
-        knownTokens: estimate.knownTokens,
-        estimatedTokens: estimate.estimatedTokens,
+        source: "estimate",
+        knownTokens: 0,
+        estimatedTokens: total,
       },
     };
   }

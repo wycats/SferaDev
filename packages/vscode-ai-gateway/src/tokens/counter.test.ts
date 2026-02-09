@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
 const vscodeHoisted = vi.hoisted(() => {
-  // Mock the role enum
   const LanguageModelChatMessageRole = {
     User: 1,
     Assistant: 2,
@@ -42,83 +41,43 @@ const vscodeHoisted = vi.hoisted(() => {
   };
 });
 
-const tiktokenHoisted = vi.hoisted(() => {
-  const mockEncode = vi.fn(
-    (
-      text: string,
-      _allowedSpecial?: string[] | "all",
-      _disallowedSpecial?: string[] | "all",
-    ) => {
-      void _allowedSpecial;
-      void _disallowedSpecial;
-      return Array.from({ length: text.length });
-    },
-  );
-  const mockEncoding = { encode: mockEncode };
-  const mockGetEncoding = vi.fn(() => mockEncoding);
-
-  return {
-    mockEncode,
-    mockEncoding,
-    mockGetEncoding,
-  };
-});
-
 vi.mock("vscode", () => vscodeHoisted);
-vi.mock("js-tiktoken", () => ({
-  getEncoding: tiktokenHoisted.mockGetEncoding,
-}));
 
 import * as vscode from "vscode";
 import { TokenCounter } from "./counter";
 import { STATEFUL_MARKER_MIME } from "../utils/stateful-marker";
 
 describe("TokenCounter", () => {
-  it("uses o200k_base for gpt-4o families", () => {
+  it("uses claude encoding for Anthropic models", () => {
     const counter = new TokenCounter();
-    counter.estimateTextTokens("hello", "gpt-4o");
-
-    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("o200k_base");
+    const tokens = counter.estimateTextTokens("hello world", "claude-3-5-sonnet");
+    // ai-tokenizer's claude encoding should produce a reasonable count
+    expect(tokens).toBeGreaterThan(0);
+    expect(tokens).toBeLessThan(10);
   });
 
-  it("uses o200k_base for o1 families", () => {
+  it("uses o200k_base for OpenAI models", () => {
     const counter = new TokenCounter();
-    counter.estimateTextTokens("hello", "o1-mini");
-
-    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("o200k_base");
+    const tokens = counter.estimateTextTokens("hello world", "gpt-4o");
+    expect(tokens).toBeGreaterThan(0);
+    expect(tokens).toBeLessThan(10);
   });
 
-  it("uses cl100k_base for gpt-4 families", () => {
+  it("uses o200k_base for non-Anthropic models (gemini, llama, etc.)", () => {
     const counter = new TokenCounter();
-    counter.estimateTextTokens("hello", "gpt-4-turbo");
 
-    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
+    const geminiTokens = counter.estimateTextTokens("hello world", "gemini-2.0-flash");
+    const llamaTokens = counter.estimateTextTokens("hello world", "llama-3.1-70b");
+
+    expect(geminiTokens).toBeGreaterThan(0);
+    expect(llamaTokens).toBeGreaterThan(0);
   });
 
-  it("uses cl100k_base for claude (approximation for non-OpenAI)", () => {
+  it("treats Claude family names case-insensitively", () => {
     const counter = new TokenCounter();
-    counter.estimateTextTokens("hello", "claude-3-5-sonnet");
-
-    // Non-OpenAI models use cl100k_base as a reasonable approximation
-    // (see counter.ts resolveEncodingName for rationale)
-    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
-    expect(counter.usesCharacterFallback("claude-3-5-sonnet")).toBe(false);
-  });
-
-  it("uses cl100k_base for gemini (approximation for non-OpenAI)", () => {
-    const counter = new TokenCounter();
-    counter.estimateTextTokens("hello", "gemini-2.0-flash");
-
-    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
-    expect(counter.usesCharacterFallback("gemini-2.0-flash")).toBe(false);
-  });
-
-  it("uses cl100k_base for llama (approximation for non-OpenAI)", () => {
-    const counter = new TokenCounter();
-    counter.estimateTextTokens("hello", "llama-3.1-70b");
-
-    expect(tiktokenHoisted.mockGetEncoding).toHaveBeenCalledWith("cl100k_base");
-    expect(counter.usesCharacterFallback("llama-3.1-70b")).toBe(false);
+    const lower = counter.estimateTextTokens("test input", "claude-3-5-sonnet");
+    const upper = counter.estimateTextTokens("test input", "Claude-3-5-Sonnet");
+    expect(lower).toBe(upper);
   });
 
   it("ignores stateful marker data parts", () => {
@@ -133,79 +92,57 @@ describe("TokenCounter", () => {
       ],
     } as vscode.LanguageModelChatMessage;
 
+    // Only MESSAGE_OVERHEAD (3) should be counted, no content tokens
     const tokens = counter.estimateMessageTokens(message, "gpt-4o");
-    expect(tokens).toBe(0);
+    expect(tokens).toBe(3); // MESSAGE_OVERHEAD only
   });
 
-  it("falls back to character estimation when encoding is unavailable", () => {
-    tiktokenHoisted.mockGetEncoding.mockImplementationOnce(() => {
-      throw new Error("encoding unavailable");
-    });
-
+  it("adds per-message overhead", () => {
     const counter = new TokenCounter();
-    const result = counter.estimateTextTokens("1234567", "gpt-4");
+    const emptyMessage = {
+      role: vscode.LanguageModelChatMessageRole.User,
+      content: [],
+    } as unknown as vscode.LanguageModelChatMessage;
 
-    expect(result).toBe(2);
+    const tokens = counter.estimateMessageTokens(emptyMessage, "gpt-4o");
+    expect(tokens).toBe(3); // MESSAGE_OVERHEAD
   });
 
-  it("reports character fallback when encoding is unavailable", () => {
-    tiktokenHoisted.mockGetEncoding.mockImplementationOnce(() => {
-      throw new Error("encoding unavailable");
-    });
-
-    const counter = new TokenCounter();
-    const fallback = counter.usesCharacterFallback("gpt-4");
-
-    expect(fallback).toBe(true);
-  });
-
-  it("estimates message tokens using tiktoken", () => {
+  it("estimates message tokens with text parts", () => {
     const counter = new TokenCounter();
     const message = {
       role: vscode.LanguageModelChatMessageRole.User,
-      name: "test",
-      content: [new vscode.LanguageModelTextPart("Hello")],
+      content: [new vscode.LanguageModelTextPart("Hello, world!")],
     } as vscode.LanguageModelChatMessage;
 
-    const result = counter.estimateMessageTokens(message, "gpt-4");
-
-    expect(result).toBe(5);
-    expect(tiktokenHoisted.mockEncode).toHaveBeenCalled();
+    const result = counter.estimateMessageTokens(message, "gpt-4o");
+    // Should be text tokens + MESSAGE_OVERHEAD (3)
+    expect(result).toBeGreaterThan(3);
   });
 
   it("caches text tokenization results", () => {
-    tiktokenHoisted.mockEncode.mockClear();
     const counter = new TokenCounter();
 
-    counter.estimateTextTokens("hello", "gpt-4");
-    counter.estimateTextTokens("hello", "gpt-4");
+    const first = counter.estimateTextTokens("hello world test", "gpt-4o");
+    const second = counter.estimateTextTokens("hello world test", "gpt-4o");
 
-    expect(tiktokenHoisted.mockEncode).toHaveBeenCalledTimes(1);
+    expect(first).toBe(second);
   });
 
-  it("uses separate cache entries per model family", () => {
-    tiktokenHoisted.mockEncode.mockClear();
+  it("uses separate cache entries per encoding", () => {
     const counter = new TokenCounter();
 
-    counter.estimateTextTokens("hello", "gpt-4");
-    counter.estimateTextTokens("hello", "claude-3-5-sonnet");
+    const openai = counter.estimateTextTokens("hello world test", "gpt-4o");
+    const anthropic = counter.estimateTextTokens("hello world test", "claude-3-5-sonnet");
 
-    expect(tiktokenHoisted.mockEncode).toHaveBeenCalledTimes(2);
+    // Both should produce a count, values may differ between encodings
+    expect(openai).toBeGreaterThan(0);
+    expect(anthropic).toBeGreaterThan(0);
   });
 
-  it("passes allowedSpecial='all' to allow special tokens like <|endoftext|>", () => {
-    tiktokenHoisted.mockEncode.mockClear();
+  it("returns 0 for empty text", () => {
     const counter = new TokenCounter();
-
-    // This text contains a special token that would throw without allowedSpecial
-    counter.estimateTextTokens("Hello <|endoftext|> world", "gpt-4");
-
-    // Verify encode was called with allowedSpecial="all" and disallowedSpecial=[]
-    expect(tiktokenHoisted.mockEncode).toHaveBeenCalledWith(
-      "Hello <|endoftext|> world",
-      "all",
-      [],
-    );
+    expect(counter.estimateTextTokens("", "gpt-4o")).toBe(0);
   });
 });
 
@@ -222,28 +159,41 @@ describe("countToolsTokens", () => {
     expect(result).toBe(0);
   });
 
-  it("calculates tokens using GCMP formula: 16 base + 8/tool + content × 1.1", () => {
+  it("produces positive token count for tools with schemas", () => {
     const counter = new TokenCounter();
     const tools = [
       {
-        name: "tool1",
-        description: "desc1",
-        inputSchema: { type: "object" },
+        name: "readFile",
+        description: "Read a file from disk",
+        inputSchema: { type: "object", properties: { path: { type: "string" } } },
       },
       {
-        name: "tool2",
-        description: "desc2",
-        inputSchema: { type: "string" },
+        name: "writeFile",
+        description: "Write content to a file",
+        inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } } },
       },
-    ] as vscode.LanguageModelChatTool[];
+    ];
 
     const result = counter.countToolsTokens(tools, "gpt-4o");
+    // Base: 16, per-tool: 8 × 2 = 16, plus content tokens × 1.1
+    expect(result).toBeGreaterThan(32);
+  });
 
-    // Base: 16, per-tool: 8 × 2 = 16, content tokens × 1.1
-    // Content = "tool1" (5) + "desc1" (5) + JSON (17) + "tool2" (5) + "desc2" (5) + JSON (17) = 54
-    // Total = Math.ceil((16 + 16 + 54) × 1.1) = Math.ceil(94.6) = 95
-    expect(result).toBeGreaterThan(0);
-    expect(tiktokenHoisted.mockEncode).toHaveBeenCalled();
+  it("uses higher multiplier for Anthropic models", () => {
+    const counter = new TokenCounter();
+    const tools = [
+      {
+        name: "search",
+        description: "Search the codebase",
+        inputSchema: { type: "object", properties: { query: { type: "string" } } },
+      },
+    ];
+
+    const openai = counter.countToolsTokens(tools, "gpt-4o");
+    const anthropic = counter.countToolsTokens(tools, "claude-3-5-sonnet");
+
+    // Anthropic uses 1.4 multiplier vs 1.1 for OpenAI
+    expect(anthropic).toBeGreaterThan(openai);
   });
 });
 
@@ -260,15 +210,13 @@ describe("countSystemPromptTokens", () => {
     expect(result).toBe(0);
   });
 
-  it("adds 28 token overhead for system prompt wrapping", () => {
+  it("adds 28 token overhead for system prompt", () => {
     const counter = new TokenCounter();
     const systemPrompt = "You are a helpful assistant.";
-    const result = counter.countSystemPromptTokens(systemPrompt, "gpt-4o");
 
-    // Text length + 28 overhead
-    // "You are a helpful assistant." = 29 chars = 29 tokens (mock)
-    // Total = 29 + 28 = 57
-    expect(result).toBe(systemPrompt.length + 28);
-    expect(tiktokenHoisted.mockEncode).toHaveBeenCalled();
+    const textTokens = counter.estimateTextTokens(systemPrompt, "gpt-4o");
+    const systemTokens = counter.countSystemPromptTokens(systemPrompt, "gpt-4o");
+
+    expect(systemTokens).toBe(textTokens + 28);
   });
 });

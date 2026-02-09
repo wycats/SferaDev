@@ -352,8 +352,8 @@ Anthropic's context editing (`clear_tool_uses`, `clear_thinking`) would allow au
 
 ## Files Modified (Phase 1 Complete)
 
-| File                                  | Change                                                                     |
-| ------------------------------------- | -------------------------------------------------------------------------- |
+| File                                  | Change                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------- |
 | `src/utils/stateful-marker.ts`        | `CustomDataPartMimeTypes` namespace, encode/decode/find (no file logging) |
 | `src/utils/stateful-marker.test.ts`   | 25 tests for encode/decode/find/round-trip                                |
 | `src/provider/stream-adapter.ts`      | Emit marker DataPart at `response.completed`                              |

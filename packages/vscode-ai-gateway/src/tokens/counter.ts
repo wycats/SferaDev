@@ -1,42 +1,11 @@
-import * as crypto from "node:crypto";
-import { getEncoding } from "js-tiktoken";
+import { Tokenizer } from "ai-tokenizer";
+import * as o200k_base from "ai-tokenizer/encoding/o200k_base";
+import * as claude from "ai-tokenizer/encoding/claude";
 import * as vscode from "vscode";
 import { logger } from "../logger";
 import { tryStringify } from "../utils/serialize.js";
 import { isStatefulMarkerMime } from "../utils/stateful-marker.js";
 import { LRUCache } from "./lru-cache";
-
-/**
- * ⚠️ WARNING: READ BEFORE MODIFYING
- *
- * If you are investigating "wrong token counts" or "massive jumps" in the status bar:
- *
- * 1. DO NOT assume this estimator is the problem.
- * 2. Massive errors (>20k) are almost always caused by 'ConversationStateTracker'
- *    losing state and forcing a fallback to this estimator.
- * 3. This estimator is intentionally conservative. Tuning these constants
- *    should be the LAST resort, only after verifying that `ConversationStateTracker`
- *    is correctly persisting and retrieving "Ground Truth" counts from the API.
- *
- * See: docs/research/TOKEN_ESTIMATION_REALITY.md
- */
-
-interface Encoding {
-  /**
-   * Encode text to tokens.
-   * @param text - The text to encode
-   * @param allowedSpecial - Special tokens to allow (use "all" to allow all special tokens)
-   * @param disallowedSpecial - Special tokens to disallow (use "all" to disallow all)
-   */
-  encode: (
-    text: string,
-    allowedSpecial?: string[] | "all",
-    disallowedSpecial?: string[] | "all",
-  ) => number[];
-  free?: () => void;
-}
-
-const FALLBACK_CHARS_PER_TOKEN = 3.5;
 
 /**
  * Structural overhead for system prompt (Anthropic SDK wrapping).
@@ -64,35 +33,40 @@ const PER_TOOL_OVERHEAD = 8;
 const TOOL_SAFETY_MULTIPLIER = 1.1;
 const ANTHROPIC_TOOL_MULTIPLIER = 1.4;
 
+/**
+ * Per-message structural overhead (role, separator tokens).
+ */
+const MESSAGE_OVERHEAD = 3;
+
+/**
+ * Token counter using ai-tokenizer with model-family encoding dispatch.
+ *
+ * Uses o200k_base for OpenAI/general models and claude encoding for
+ * Anthropic models. Replaces the previous js-tiktoken + delta estimation
+ * infrastructure with direct tokenizer calls (RFC 00063 Phase 2).
+ */
 export class TokenCounter {
-  private encodings = new Map<string, Encoding>();
+  private tokenizers = new Map<string, Tokenizer>();
   private textCache = new LRUCache<number>(5000);
 
+  /**
+   * Count tokens for a text string.
+   */
   estimateTextTokens(text: string, modelFamily: string): number {
     if (!text) return 0;
-    const textHash = crypto
-      .createHash("sha256")
-      .update(text)
-      .digest("hex")
-      .slice(0, 16);
-    const cacheKey = `${modelFamily}:${textHash}`;
+
+    // Use a fast cache key based on encoding + text length + content prefix/suffix.
+    // Collisions are theoretically possible but vanishingly unlikely in practice.
+    const encodingName = this.resolveEncodingName(modelFamily);
+    const cacheKey = `${encodingName}:${text.length.toString()}:${text.slice(0, 64)}:${text.slice(-32)}`;
     const cached = this.textCache.get(cacheKey);
     if (cached !== undefined) {
       return cached;
     }
-    const encoding = this.getEncodingForFamily(modelFamily);
-    if (encoding) {
-      // Allow all special tokens to be encoded - they may appear in tool outputs,
-      // summarized conversations, or user-provided content. Disallowing them causes
-      // errors like "The text contains a special token that is not allowed: <|endoftext|>"
-      const count = encoding.encode(text, "all", []).length;
-      logger.trace(
-        `Text token estimate: ${count.toString()} tokens for ${text.length.toString()} chars (family: ${modelFamily})`,
-      );
-      this.textCache.put(cacheKey, count);
-      return count;
-    }
-    const count = this.estimateByChars(text);
+
+    const tokenizer = this.getTokenizerForFamily(modelFamily);
+    const count = tokenizer.count(text);
+
     logger.trace(
       `Text token estimate: ${count.toString()} tokens for ${text.length.toString()} chars (family: ${modelFamily})`,
     );
@@ -100,6 +74,9 @@ export class TokenCounter {
     return count;
   }
 
+  /**
+   * Count tokens for a chat message including all content parts.
+   */
   estimateMessageTokens(
     message: vscode.LanguageModelChatMessage,
     modelFamily: string,
@@ -140,32 +117,28 @@ export class TokenCounter {
           total += this.estimateSerializedToolResultTokens(part, modelFamily);
           continue;
         }
-        // Part was not recognized - log for debugging
+        const protoName = (Object.getPrototypeOf(part) as { constructor?: { name?: string } }).constructor?.name ?? "null";
         logger.warn(
           `Unrecognized message part type. Keys: [${Object.keys(part as object).join(", ")}], ` +
-            `Proto: ${Object.getPrototypeOf(part)?.constructor?.name ?? "null"}, ` +
+            `Proto: ${protoName}, ` +
             `hasCallId: ${"callId" in (part as object)}, hasContent: ${"content" in (part as object)}`,
         );
       }
     }
+
+    // Add per-message structural overhead
+    total += MESSAGE_OVERHEAD;
+
     logger.trace(
       `Message token estimate: ${total.toString()} tokens (family: ${modelFamily})`,
     );
     return total;
   }
 
-  applySafetyMargin(tokens: number, margin: number): number {
-    const result = Math.ceil(tokens * (1 + margin));
-    logger.trace(
-      `Applied ${(margin * 100).toString()}% safety margin: ${tokens.toString()} -> ${result.toString()}`,
-    );
-    return result;
-  }
-
   /**
    * Count tokens for tool schemas.
    *
-   * Formula from GCMP research: 16 base + 8/tool + content × 1.1
+   * Formula from GCMP research: 16 base + 8/tool + content × multiplier
    * This is CRITICAL - tool schemas can be 50k+ tokens and are the
    * primary cause of token underestimation.
    */
@@ -189,11 +162,9 @@ export class TokenCounter {
       );
     }
 
-    const multiplier =
-      modelFamily.toLowerCase().includes("claude") ||
-      modelFamily.toLowerCase().includes("anthropic")
-        ? ANTHROPIC_TOOL_MULTIPLIER
-        : TOOL_SAFETY_MULTIPLIER;
+    const multiplier = this.isAnthropicFamily(modelFamily)
+      ? ANTHROPIC_TOOL_MULTIPLIER
+      : TOOL_SAFETY_MULTIPLIER;
 
     const result = Math.ceil(numTokens * multiplier);
     logger.debug(
@@ -222,23 +193,41 @@ export class TokenCounter {
     return result;
   }
 
-  usesCharacterFallback(modelFamily: string): boolean {
-    const fallback = this.getEncodingForFamily(modelFamily) === undefined;
-    if (fallback) {
-      logger.debug(`Using character fallback for family: ${modelFamily}`);
+  /**
+   * Get the tokenizer for a model family, lazily initialized.
+   */
+  private getTokenizerForFamily(modelFamily: string): Tokenizer {
+    const encodingName = this.resolveEncodingName(modelFamily);
+    const existing = this.tokenizers.get(encodingName);
+    if (existing) {
+      return existing;
     }
-    return fallback;
+    const encoding = encodingName === "claude" ? claude : o200k_base;
+    const tokenizer = new Tokenizer(encoding);
+    this.tokenizers.set(encodingName, tokenizer);
+    return tokenizer;
   }
 
-  private estimateByChars(text: string): number {
-    return Math.ceil(text.length / FALLBACK_CHARS_PER_TOKEN);
+  /**
+   * Resolve encoding name for a model family.
+   *
+   * Claude/Anthropic models use the dedicated claude encoding (~97-99% accuracy).
+   * All other models use o200k_base (the most modern OpenAI encoding, which is
+   * a reasonable approximation even for non-OpenAI models like Gemini, Llama, etc.).
+   */
+  private resolveEncodingName(modelFamily: string): "o200k_base" | "claude" {
+    return this.isAnthropicFamily(modelFamily) ? "claude" : "o200k_base";
+  }
+
+  private isAnthropicFamily(modelFamily: string): boolean {
+    const family = modelFamily.toLowerCase();
+    return family.includes("claude") || family.includes("anthropic");
   }
 
   private estimateToolCallTokens(
     part: vscode.LanguageModelToolCallPart,
     modelFamily: string,
   ): number {
-    // Use tryStringify to handle potential circular refs in VS Code objects
     const inputJson = tryStringify(part.input);
     const payload = `${part.name}\n${inputJson}`;
     return this.estimateTextTokens(payload, modelFamily) + 4;
@@ -250,26 +239,22 @@ export class TokenCounter {
   ): number {
     let total = this.estimateTextTokens(part.callId, modelFamily) + 4;
     for (const resultPart of part.content) {
-      // Handle text-like parts (LanguageModelTextPart or serialized {type: 'text', text: ...})
       const text = this.extractSerializedText(resultPart);
       if (text !== undefined) {
         total += this.estimateTextTokens(text, modelFamily);
         continue;
       }
 
-      // Handle serialized data parts
       if (this.isSerializedDataPart(resultPart)) {
         total += this.estimateSerializedDataTokens(resultPart, modelFamily);
         continue;
       }
 
-      // Handle raw strings (if present)
       if (typeof resultPart === "string") {
         total += this.estimateTextTokens(resultPart, modelFamily);
         continue;
       }
 
-      // Handle LanguageModelDataPart (native)
       if (resultPart instanceof vscode.LanguageModelDataPart) {
         if (resultPart.mimeType.startsWith("image/")) {
           total += this.estimateImageTokens(modelFamily, resultPart);
@@ -294,9 +279,7 @@ export class TokenCounter {
     modelFamily: string,
     data: { byteLength: number },
   ): number {
-    const family = modelFamily.toLowerCase();
-
-    if (family.includes("anthropic") || family.includes("claude")) {
+    if (this.isAnthropicFamily(modelFamily)) {
       return 1600;
     }
 
@@ -470,58 +453,5 @@ export class TokenCounter {
       return new TextDecoder().decode(new Uint8Array(data));
     }
     return undefined;
-  }
-
-  private getEncodingForFamily(modelFamily: string): Encoding | undefined {
-    const encodingName = this.resolveEncodingName(modelFamily);
-    if (encodingName === undefined) {
-      // All model families are approximated with tiktoken encodings.
-      // Character fallback only applies if the encoding lookup fails.
-      return undefined;
-    }
-    if (this.encodings.has(encodingName)) {
-      return this.encodings.get(encodingName);
-    }
-    try {
-      const encoding = getEncoding(encodingName) as Encoding;
-      this.encodings.set(encodingName, encoding);
-      return encoding;
-    } catch {
-      return undefined;
-    }
-  }
-
-  /**
-   * Resolve tiktoken encoding name for a model family.
-   *
-   * NOTE: This uses OpenAI's tiktoken encodings as an approximation for ALL models.
-   * Non-OpenAI models (Claude, Gemini, Llama, etc.) use proprietary tokenizers that
-   * can differ by 10-30% from tiktoken. However, for status bar estimation purposes,
-   * this approximation is acceptable - users need "am I near the limit?" not exact counts.
-   *
-   * Alternatives considered:
-   * - Character fallback (~3.5 chars/token): Less consistent, not more accurate
-   * - Model-specific tokenizers: Heavy dependencies (WASM), not all publicly available
-   * - API-based counting: Adds latency and cost
-   */
-  private resolveEncodingName(
-    modelFamily: string,
-  ): "o200k_base" | "cl100k_base" {
-    const family = modelFamily.toLowerCase();
-
-    // GPT-4o and O1/O3 series use o200k_base (newer, larger vocabulary)
-    if (
-      family.includes("gpt-4o") ||
-      family.includes("o1-") ||
-      family.includes("o3-") ||
-      family === "o1" ||
-      family === "o3"
-    ) {
-      return "o200k_base";
-    }
-
-    // All other models use cl100k_base as a reasonable approximation
-    // This includes: GPT-4, GPT-3.5, Claude, Gemini, Llama, Mistral, etc.
-    return "cl100k_base";
   }
 }

@@ -150,16 +150,6 @@ export class ConfigService implements vscode.Disposable {
     return {};
   }
 
-  /** @deprecated Token estimation now uses balanced mode internally */
-  get tokensEstimationMode(): "balanced" {
-    return "balanced";
-  }
-
-  /** @deprecated Token estimation now uses 4 chars/token internally */
-  get tokensCharsPerToken(): number {
-    return 4;
-  }
-
   /** @deprecated Enrichment is always enabled */
   get modelsEnrichmentEnabled(): boolean {
     return true;

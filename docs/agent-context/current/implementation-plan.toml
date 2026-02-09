@@ -2,27 +2,41 @@
 # Implementation Plan
 
 [phase]
-id = "01kh0qw9dyaj8jm1sz3tpqh830"
-title = "Formalize Stateful Marker (PoC → Production)"
+id = "01kh0qwd40dst0a6m3zrccvdse"
+title = "Simplify Token Counting with ai-tokenizer (~3,000 lines removed)"
 rfcs = ["00063"]
 
 [plan]
+[[plan.goals]]
+id = "swap-tokenizer"
 
 [[plan.goals]]
-id = "define-mime-constants"
+id = "write-token-counter"
 
 [[plan.goals]]
-id = "stabilize-encoding"
+id = "simplify-provide-token-count"
 
 [[plan.goals]]
-id = "remove-diagnostics"
+id = "simplify-estimate-total"
 
 [[plan.goals]]
-id = "unify-exclusion-filters"
+id = "delete-delta-infra"
 
 [[plan.goals]]
-id = "marker-tests"
-# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
+id = "remove-forensic-logging"
+
+[[plan.goals]]
+id = "remove-token-config"
+
+[[plan.goals]]
+id = "validate-bundle-size"
+
+[[plan.goals]]
+id = "delete-digest-functions"
+
+[[plan.goals]]
+id = "evaluate-usage-calibration"
+
 
 
 [verification]
