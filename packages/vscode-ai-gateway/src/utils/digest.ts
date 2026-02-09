@@ -149,18 +149,37 @@ function buildDigestPart(
 export function computeNormalizedDigest(
   message: LanguageModelChatMessage,
 ): string {
+  // Normalize content: merge adjacent text parts
+  const normalizedContent: Record<string, unknown>[] = [];
+  const parts = message.content
+    .filter((part) => !isMetadataDataPart(part))
+    .map((part) =>
+      buildDigestPart(part, {
+        includeCallId: false,
+        includeName: false,
+        includeDataDigest: true,
+      }),
+    );
+
+  for (const part of parts) {
+    const last = normalizedContent[normalizedContent.length - 1];
+    if (
+      last &&
+      last["type"] === "text" &&
+      part["type"] === "text" &&
+      typeof last["value"] === "string" &&
+      typeof part["value"] === "string"
+    ) {
+      (last as { value: string })["value"] += part["value"];
+    } else {
+      normalizedContent.push(part);
+    }
+  }
+
   const payload = {
     role:
       ROLE_NAMES[message.role as number] ?? `Unknown(${String(message.role)})`,
-    content: message.content
-      .filter((part) => !isMetadataDataPart(part))
-      .map((part) =>
-        buildDigestPart(part, {
-          includeCallId: false,
-          includeName: false,
-          includeDataDigest: true,
-        }),
-      ),
+    content: normalizedContent,
   };
   return hashContent(safeJsonStringify(payload));
 }

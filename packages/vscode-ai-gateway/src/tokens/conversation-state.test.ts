@@ -157,7 +157,7 @@ describe("ConversationStateTracker", () => {
       expect(result.type).toBe("none");
     });
 
-    it("tolerates system prompt drift at index 0 (RFC 00058 §2.3)", () => {
+    it("tolerates system prompt drift at index 0 (RFC 00033 AXIOM)", () => {
       // Record state with system prompt v1
       const original = [
         createMessage(0, "System prompt version 1 with agents block A"),
@@ -168,7 +168,7 @@ describe("ConversationStateTracker", () => {
       ];
       tracker.recordActual(original, "claude", 5000);
 
-      // Lookup with system prompt v2 (changed) but same history
+      // Lookup with system prompt v2 (changed) but same history, plus new message
       const drifted = [
         createMessage(
           0,
@@ -182,8 +182,40 @@ describe("ConversationStateTracker", () => {
       ];
 
       const result = tracker.lookup(drifted, "claude");
-      // With strict inclusion, we reject candidates where known messages are missing in current
-      expect(result.type).toBe("none");
+      // RFC 00033 AXIOM: firstUserMessageHash is the ONLY identity key.
+      // System Prompt at index 0 is diagnostics-only, NOT identity.
+      // We should tolerate the drift and return prefix match for new message.
+      expect(result.type).toBe("prefix");
+      if (result.type === "prefix") {
+        expect(result.knownTokens).toBe(5000);
+        expect(result.newMessageCount).toBe(1); // Only the "new question" message
+        expect(result.newMessageIndices).toEqual([5]); // Index 5 is the new user message
+      }
+    });
+
+    it("returns exact match despite system prompt drift (RFC 00033 AXIOM)", () => {
+      // Record state with system prompt v1
+      const original = [
+        createMessage(0, "System prompt version 1"),
+        createMessage(1, "hello"),
+        createMessage(2, "world"),
+      ];
+      tracker.recordActual(original, "claude", 3000);
+
+      // Same conversation but system prompt changed (VS Code injected new content)
+      const drifted = [
+        createMessage(0, "System prompt version 2 with <agents> block"),
+        createMessage(1, "hello"),
+        createMessage(2, "world"),
+      ];
+
+      const result = tracker.lookup(drifted, "claude");
+      // RFC 00033 AXIOM: System prompt drift at Index 0 is allowed
+      // Should still return exact match since all user messages are present
+      expect(result.type).toBe("exact");
+      if (result.type === "exact") {
+        expect(result.knownTokens).toBe(3000);
+      }
     });
 
     it("handles set intersection when known state has different system prompt", () => {
@@ -433,9 +465,9 @@ describe("ConversationStateTracker", () => {
       );
 
       // Verify log details
-      const logCall = vi.mocked(logger.info).mock.calls.find((args) =>
-        args[0].includes("[NearMissTelemetry]"),
-      );
+      const logCall = vi
+        .mocked(logger.info)
+        .mock.calls.find((args) => args[0].includes("[NearMissTelemetry]"));
       expect(logCall).toBeDefined();
       expect(logCall![0]).toContain("Overlap=5/6 (83.3%)");
       expect(logCall![0]).toContain("DivergenceIndex=5");

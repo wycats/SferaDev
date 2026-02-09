@@ -234,12 +234,22 @@ export class ConversationStateTracker {
     // Preserve conversationId from an existing prefix conversation, or generate new.
     // We use strict prefix matching (not set intersection) to avoid collisions.
     const prefixState = this.findPrefixConversation(messageHashes, modelFamily);
+    let conversationId = prefixState?.conversationId;
 
-    if (!prefixState) {
-      this.detectAndLogNearMiss(messageHashes, modelFamily);
+    if (!conversationId) {
+      // Fallback: Check for System Prompt mutation (RFC 00058 Atomic Set Intersection support)
+      // If the only difference is the system prompt, we should preserve the conversation ID.
+      conversationId = this.findIdentityFromRelaxedPrefix(messages, modelFamily);
+      
+      if (conversationId) {
+        logger.info(
+          `[ConversationState] Preserving conversationId ${conversationId} despite System Prompt mismatch (Relaxed Prefix)`,
+        );
+      } else {
+        this.detectAndLogNearMiss(messageHashes, modelFamily);
+        conversationId = randomUUID();
+      }
     }
-
-    const conversationId = prefixState?.conversationId ?? randomUUID();
 
     // RFC 047 Phase 4b: When summarization is detected, omit lastSequenceEstimate
     // from the state. This clears the rolling correction so getAdjustment()
@@ -380,23 +390,49 @@ export class ConversationStateTracker {
       }
     }
 
-    // Strict Inclusion Rule (Atomic Message Algebra Compliance):
-    // To safely use the cached total tokens, we must ensure that ALL messages
+    // RFC 00033 Relaxed Inclusion Rule:
+    // To safely use the cached total tokens, we must ensure that messages
     // contributing to that total are present in the current conversation.
-    // Otherwise, we are counting "ghost tokens" from deleted/drifted messages
-    // which cannot be subtracted (as we lack per-message granularity).
     //
-    // We strictly require that the candidate state is a SUBSET of the current conversation.
-    if (matchedKnownCount < state.messageHashes.length) {
+    // EXCEPTION (RFC 00033 AXIOM): Index 0 (System Prompt) is allowed to drift.
+    // VS Code dynamically injects content (<agents>, <taskTracking>, summaries).
+    // Only `firstUserMessageHash` is identity - System Prompt is diagnostics-only.
+    //
+    // We check: are ALL non-Index-0 known hashes present in current?
+    const missingHashes: number[] = [];
+    for (let i = 0; i < state.messageHashes.length; i++) {
+      const hash = state.messageHashes[i];
+      if (hash !== undefined && !currentHashSet.has(hash)) {
+        missingHashes.push(i);
+      }
+    }
+
+    // If any hash beyond Index 0 is missing, reject (strict for user messages)
+    const hasMissingUserMessages = missingHashes.some((idx) => idx > 0);
+    if (hasMissingUserMessages) {
       logger.info(
-        `[ConversationStateDebug] Candidate rejected: strict inclusion failed. ${matchedKnownCount}/${state.messageHashes.length} known hashes matched.`,
+        `[ConversationStateDebug] Candidate rejected: strict inclusion failed for user messages. ` +
+          `Missing indices: [${missingHashes.join(",")}], matched ${matchedKnownCount}/${state.messageHashes.length}.`,
       );
       return { type: "none" };
     }
 
+    // If only Index 0 is missing, we allow it (System Prompt drift per RFC 00033)
+    const systemPromptDrifted = missingHashes.length === 1 && missingHashes[0] === 0;
+    if (systemPromptDrifted) {
+      logger.info(
+        `[ConversationStateDebug] Allowing System Prompt drift (RFC 00033 AXIOM): ` +
+          `Index 0 hash mismatch, ${matchedKnownCount}/${state.messageHashes.length} user messages matched.`,
+      );
+    }
+
     // Identify which current messages are NEW (not in the known set)
+    // When System Prompt drifted, exclude Index 0 - it's a replacement, not a new message.
+    // The token difference from System Prompt drift is accepted per RFC 00033.
     const newMessageIndices: number[] = [];
     for (let i = 0; i < currentNormalizedHashes.length; i++) {
+      // Skip Index 0 when system prompt drifted - not a genuinely new message
+      if (systemPromptDrifted && i === 0) continue;
       const hash = currentNormalizedHashes[i];
       if (hash !== undefined && !knownHashSet.has(hash)) {
         newMessageIndices.push(i);
@@ -404,13 +440,15 @@ export class ConversationStateTracker {
     }
 
     // Check for exact match: all current hashes are known AND no new messages
+    // (System Prompt drift at Index 0 is allowed per RFC 00033)
     if (
       newMessageIndices.length === 0 &&
       currentNormalizedHashes.length === state.messageHashes.length
     ) {
       this.touchKey(key);
+      const driftNote = systemPromptDrifted ? " (with System Prompt drift)" : "";
       logger.info(
-        `[ConversationStateDebug] Exact match via set intersection: ${matchedKnownCount} hashes`,
+        `[ConversationStateDebug] Exact match via set intersection: ${matchedKnownCount} hashes${driftNote}`,
       );
       const result: ConversationLookupResult = {
         type: "exact",
@@ -426,8 +464,10 @@ export class ConversationStateTracker {
     // messages plus some new ones
     if (newMessageIndices.length > 0) {
       this.touchKey(key);
+      const driftNote = systemPromptDrifted ? " (with System Prompt drift)" : "";
       logger.info(
-        `[ConversationStateDebug] Set intersection match: ${matchedKnownCount}/${state.messageHashes.length} known, ${newMessageIndices.length} new messages at indices [${newMessageIndices.slice(0, 10).join(",")}]`,
+        `[ConversationStateDebug] Set intersection match: ${matchedKnownCount}/${state.messageHashes.length} known, ` +
+          `${newMessageIndices.length} new messages at indices [${newMessageIndices.slice(0, 10).join(",")}]${driftNote}`,
       );
       const result: ConversationLookupResult = {
         type: "prefix",
@@ -522,6 +562,105 @@ export class ConversationStateTracker {
    *
    * Returns the state with the longest matching prefix for best accuracy.
    */
+  public getForensicDebugInfo(
+    messages: readonly vscode.LanguageModelChatMessage[],
+    modelFamily: string,
+  ): Record<string, unknown> {
+    const currentHashes = messages.map((m) => computeNormalizedDigest(m));
+
+    // Find approximate matches for debugging
+    const candidates: unknown[] = [];
+    for (const [key, state] of this.knownStates) {
+      // Must be same model family
+      if (!key.startsWith(modelFamily + ":")) continue;
+
+      // Compute overlap prefix
+      let matchCount = 0;
+      const minLen = Math.min(state.messageHashes.length, currentHashes.length);
+      for (let i = 0; i < minLen; i++) {
+        if (state.messageHashes[i] === currentHashes[i]) {
+          matchCount++;
+        } else {
+          break; // strict prefix
+        }
+      }
+
+      // Also check set intersection for "near miss" context
+      let setIntersectionCount = 0;
+      const currentSet = new Set(currentHashes);
+      for (const h of state.messageHashes) {
+        if (currentSet.has(h)) setIntersectionCount++;
+      }
+
+      if (matchCount > 0 || setIntersectionCount > 0) {
+        candidates.push({
+          key,
+          conversationId: state.conversationId,
+          stateLen: state.messageHashes.length,
+          prefixMatch: matchCount,
+          setMatch: setIntersectionCount,
+          firstHash: state.messageHashes[0],
+        });
+      }
+    }
+
+    return {
+      currentFirstHash: currentHashes[0],
+      currentLen: currentHashes.length,
+      candidates: candidates.slice(0, 5),
+    };
+  }
+
+  /**
+   * Find a conversation ID using relaxed prefix matching rules.
+   * Allows specific divergences (like System Prompt mutation) to preserve identity.
+   */
+  public findIdentityFromRelaxedPrefix(
+    messages: readonly vscode.LanguageModelChatMessage[],
+    modelFamily: string,
+  ): string | undefined {
+    // Linear scan is acceptable as fallback for identity recovery
+    const currentHashes = messages.map((m) => computeNormalizedDigest(m));
+
+    for (const [key, state] of this.knownStates) {
+      if (!key.startsWith(modelFamily + ":")) continue;
+      if (!state.conversationId) continue;
+
+      const stateHashes = state.messageHashes;
+      // Must be a prefix (state must fit into current)
+      if (stateHashes.length > currentHashes.length) continue;
+
+      // Check match with relaxation for Index 0 (System Prompt)
+      let matchCount = 0;
+      let strictMismatch = false;
+
+      for (let i = 0; i < stateHashes.length; i++) {
+        if (stateHashes[i] !== currentHashes[i]) {
+          if (i === 0) {
+            // Index 0 mismatch is allowed (System Prompt drift per RFC 00033)
+          } else {
+            strictMismatch = true;
+            break;
+          }
+        } else {
+          matchCount++;
+        }
+      }
+
+      if (strictMismatch) continue;
+
+      // If we got here, we matched everything except possibly index 0
+      // Case 1: Perfect match -> Return ID
+      // Case 2: System Drift (index 0 mismatch only) -> Return ID (if we have other matches)
+
+      // Ensure we matched at least one message (User inputs) to avoid empty match
+      if (matchCount > 0) {
+        return state.conversationId;
+      }
+    }
+    return undefined;
+  }
+
   private findPrefixConversation(
     currentNormalizedHashes: string[],
     modelFamily: string,
