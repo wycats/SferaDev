@@ -39,6 +39,7 @@ import { saveSuspiciousRequest } from "./debug-utils.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
+import { InvestigationLogger } from "../logger/investigation.js";
 import { writeTokenValidationEntry } from "../logger/validation-log.js";
 import { findLatestStatefulMarker } from "../utils/stateful-marker.js";
 
@@ -207,6 +208,12 @@ export async function executeOpenResponsesChat(
   let timedOut = false;
   let eventCount = 0;
 
+  // Summarization detection + timing (Experiment 2)
+  // Declared before try so they're accessible in catch for timeout logging
+  const isSummarizationRequest = detectSummarizationRequest(chatMessages);
+  const requestStartTime = performance.now();
+  let timeToFirstToken: number | null = null;
+
   const resetStreamTimeout = () => {
     if (streamTimeoutId !== null) {
       clearTimeout(streamTimeoutId);
@@ -219,6 +226,15 @@ export async function executeOpenResponsesChat(
       abortController.abort();
     }, STREAM_INACTIVITY_TIMEOUT_MS);
   };
+
+  // Investigation logging handle — declared here so it's accessible in catch
+  // eslint-disable-next-line prefer-const
+  let investigationHandle: Awaited<
+    ReturnType<InvestigationLogger["startRequest"]>
+  > | null = null;
+  // Counters — declared here so they're accessible in catch for investigation logging
+  let toolCallCount = 0;
+  let textPartCount = 0;
 
   try {
     // Translate messages to OpenResponses format
@@ -285,6 +301,14 @@ export async function executeOpenResponsesChat(
       requestBody.tool_choice = toolChoice;
     }
 
+    if (isSummarizationRequest) {
+      logger.warn(
+        `[OpenResponses] SUMMARIZATION REQUEST DETECTED for ${model.id}. ` +
+          `Messages: ${chatMessages.length}, EstTokens: ${estimatedInputTokens.toString()}, ` +
+          `Tools: ${tools.length}, Chat: ${chatId}`,
+      );
+    }
+
     logger.debug(`[OpenResponses] Starting streaming request to ${model.id}`);
 
     // DEBUG: Log the full request body for troubleshooting
@@ -297,6 +321,37 @@ export async function executeOpenResponsesChat(
       `[OpenResponses] Request: ${input.length} input items, ${tools.length} tools`,
     );
 
+    // Investigation logging — start a request handle (null when detail=off)
+    const investigationLogger = new InvestigationLogger();
+    const messageRoles = chatMessages
+      .map((m) => roleNames[m.role as number] ?? `Unknown(${m.role})`)
+      .join(",");
+    const toolNames = tools.map(
+      (t) => (t as { name?: string }).name ?? "unknown",
+    );
+    investigationHandle = investigationLogger.startRequest({
+      conversationId,
+      chatId,
+      model: model.id,
+      estimatedInputTokens,
+      messageCount: chatMessages.length,
+      messageRoles,
+      toolCount: tools.length,
+      toolNames,
+      isSummarization: isSummarizationRequest,
+      requestBody: {
+        model: model.id,
+        input,
+        instructions: requestBody.instructions ?? null,
+        tools: requestBody.tools as unknown[] | undefined,
+        tool_choice: requestBody.tool_choice,
+        temperature: requestBody.temperature ?? undefined,
+        max_output_tokens: requestBody.max_output_tokens ?? undefined,
+        prompt_cache_key: requestBody.prompt_cache_key,
+        caching: requestBody.caching,
+      },
+    });
+
     // Stream the response with inactivity timeout.
     // This prevents hangs during large-context requests like summarization,
     // where the model processes 130k+ tokens and takes minutes to respond.
@@ -305,9 +360,8 @@ export async function executeOpenResponsesChat(
     // Start the inactivity timer before entering the stream loop
     resetStreamTimeout();
 
-    let toolCallCount = 0;
-    let textPartCount = 0;
     let functionCallArgsEventsReceived = 0;
+    let firstContentTime: number | null = null;
     const eventTypeCounts = new Map<string, number>();
     // Accumulate all text output for debugging suspicious requests
     let accumulatedText = "";
@@ -320,6 +374,9 @@ export async function executeOpenResponsesChat(
       eventCount++;
       const eventType = (event as { type?: string }).type ?? "unknown";
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
+
+      // Record SSE event for investigation logging (before adaptation)
+      investigationHandle?.recorder?.recordEvent(eventCount, eventType, event);
 
       // Update agent activity timestamp for subagent selection
       statusBar?.updateAgentActivity(chatId);
@@ -405,6 +462,17 @@ export async function executeOpenResponsesChat(
             );
           }
         }
+        // Record time-to-first-content for summarization analysis
+        if (firstContentTime === null) {
+          firstContentTime = performance.now();
+          timeToFirstToken = firstContentTime - requestStartTime;
+          if (isSummarizationRequest) {
+            logger.warn(
+              `[OpenResponses] SUMMARIZATION TTFT: ${(timeToFirstToken / 1000).toFixed(1)}s ` +
+                `(${model.id}, est ${estimatedInputTokens.toString()} tokens)`,
+            );
+          }
+        }
         progress.report(part);
         responseSent = true;
       }
@@ -473,6 +541,21 @@ export async function executeOpenResponsesChat(
           markAgentComplete(adapted.usage);
         }
 
+        // Log summarization timing
+        if (isSummarizationRequest) {
+          const totalDuration = performance.now() - requestStartTime;
+          logger.warn(
+            `[OpenResponses] SUMMARIZATION COMPLETE: ` +
+              `total=${(totalDuration / 1000).toFixed(1)}s, ` +
+              `ttft=${timeToFirstToken !== null ? (timeToFirstToken / 1000).toFixed(1) + "s" : "none"}, ` +
+              `events=${eventCount.toString()}, ` +
+              `textParts=${textPartCount.toString()}, ` +
+              `input=${adapted.usage?.input_tokens.toString() ?? "?"}, ` +
+              `output=${adapted.usage?.output_tokens.toString() ?? "?"}, ` +
+              `model=${model.id}`,
+          );
+        }
+
         // Write validation log: estimate vs actual
         if (adapted.usage) {
           writeTokenValidationEntry({
@@ -485,6 +568,32 @@ export async function executeOpenResponsesChat(
             actualOutputTokens: adapted.usage.output_tokens,
           });
         }
+
+        // Investigation logging — complete with success/error/cancelled
+        void investigationHandle?.complete({
+          status: adapted.error
+            ? "error"
+            : adapted.cancelled
+              ? "cancelled"
+              : "success",
+          finishReason: adapted.finishReason ?? null,
+          responseId: adapted.responseId ?? null,
+          error: adapted.error ?? null,
+          durationMs: performance.now() - requestStartTime,
+          ttftMs: timeToFirstToken,
+          eventCount,
+          textPartCount,
+          toolCallCount,
+          usage: adapted.usage
+            ? {
+                input_tokens: adapted.usage.input_tokens,
+                output_tokens: adapted.usage.output_tokens,
+                cache_read_input_tokens:
+                  adapted.usage.input_tokens_details?.cached_tokens,
+                output_tokens_details: adapted.usage.output_tokens_details,
+              }
+            : null,
+        });
         break;
       }
     }
@@ -512,8 +621,11 @@ export async function executeOpenResponsesChat(
     ) {
       if (timedOut) {
         // Streaming inactivity timeout — report as error, not cancellation
+        const timeoutDuration = performance.now() - requestStartTime;
         logger.error(
-          `[OpenResponses] Request timed out after ${(STREAM_INACTIVITY_TIMEOUT_MS / 1000).toString()}s of inactivity (${eventCount} events received)`,
+          `[OpenResponses] Request timed out after ${(STREAM_INACTIVITY_TIMEOUT_MS / 1000).toString()}s of inactivity ` +
+            `(${eventCount} events received, total ${(timeoutDuration / 1000).toFixed(1)}s, ` +
+            `summarization=${isSummarizationRequest.toString()}, ttft=${timeToFirstToken !== null ? (timeToFirstToken / 1000).toFixed(1) + "s" : "none"})`,
         );
         if (!responseSent) {
           progress.report(
@@ -524,10 +636,40 @@ export async function executeOpenResponsesChat(
           );
         }
         markAgentError();
+
+        // Investigation logging — timeout
+        void investigationHandle?.complete({
+          status: "timeout",
+          finishReason: null,
+          responseId: null,
+          error: "Stream inactivity timeout",
+          durationMs: performance.now() - requestStartTime,
+          ttftMs: timeToFirstToken,
+          eventCount,
+          textPartCount,
+          toolCallCount,
+          usage: null,
+        });
+
         return { success: false, error: "Stream inactivity timeout" };
       }
       logger.debug(`[OpenResponses] Request was cancelled`);
       markAgentCancelled();
+
+      // Investigation logging — cancellation
+      void investigationHandle?.complete({
+        status: "cancelled",
+        finishReason: null,
+        responseId: null,
+        error: null,
+        durationMs: performance.now() - requestStartTime,
+        ttftMs: timeToFirstToken,
+        eventCount,
+        textPartCount,
+        toolCallCount,
+        usage: null,
+      });
+
       return { success: false, cancelled: true };
     }
 
@@ -574,6 +716,21 @@ export async function executeOpenResponsesChat(
     }
 
     markAgentError();
+
+    // Investigation logging — error
+    void investigationHandle?.complete({
+      status: "error",
+      finishReason: null,
+      responseId: null,
+      error: errorMessage,
+      durationMs: performance.now() - requestStartTime,
+      ttftMs: timeToFirstToken,
+      eventCount,
+      textPartCount,
+      toolCallCount,
+      usage: null,
+    });
+
     return tokenInfo
       ? { success: false, error: errorMessage, tokenInfo }
       : { success: false, error: errorMessage };
@@ -588,4 +745,69 @@ export async function executeOpenResponsesChat(
       markAgentError();
     }
   }
+}
+
+/**
+ * Detect if a request is a Copilot summarization request.
+ *
+ * Copilot's ConversationHistorySummarizer (Path B in agentIntent.ts) sends the
+ * full conversation history with a distinctive prompt. The request arrives at our
+ * provider through ExtensionContributedChatEndpoint, which drops `stream: false`
+ * and `temperature: 0`, so we detect by message content.
+ *
+ * Detection signals (any one is sufficient):
+ * 1. Last user message contains "Summarize the conversation history"
+ * 2. System message contains "<Tag name='summary'>" (SummaryPrompt template)
+ * 3. User message contains "conversation-summary" tag from prior summarization
+ */
+export function detectSummarizationRequest(
+  messages: readonly LanguageModelChatMessage[],
+): boolean {
+  // Role values: 1=User, 2=Assistant, 3=System (System is not in the public enum)
+  const ROLE_USER = 1;
+  const ROLE_SYSTEM = 3;
+
+  // Check last user message for summarization instruction
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (!msg || (msg.role as number) !== ROLE_USER) continue;
+
+    const text = extractMessageText(msg);
+    if (text.includes("Summarize the conversation history")) {
+      return true;
+    }
+    // Only check the last user message
+    break;
+  }
+
+  // Check system messages for SummaryPrompt template markers
+  for (const msg of messages) {
+    if ((msg.role as number) !== ROLE_SYSTEM) continue;
+    const text = extractMessageText(msg);
+    if (
+      text.includes("<Tag name='summary'>") ||
+      text.includes(
+        "comprehensive, detailed summary of the entire conversation",
+      )
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Extract text content from a LanguageModelChatMessage.
+ * Returns the concatenated text of all text parts (first 2000 chars for perf).
+ */
+function extractMessageText(msg: LanguageModelChatMessage): string {
+  let text = "";
+  for (const part of msg.content) {
+    if (part instanceof LanguageModelTextPart) {
+      text += part.value;
+      if (text.length > 2000) break; // Enough for detection
+    }
+  }
+  return text;
 }

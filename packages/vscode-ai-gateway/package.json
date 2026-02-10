@@ -94,6 +94,11 @@
         "command": "vercel.ai.dumpDiagnostics",
         "title": "Dump Agent Tree Diagnostics",
         "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercel.ai.testSummarizationDetection",
+        "title": "Test Summarization Detection",
+        "category": "Vercel AI Gateway"
       }
     ],
     "menus": {
@@ -158,6 +163,28 @@
           "type": "boolean",
           "default": false,
           "description": "Make all models user-selectable by default. Normally models are hidden until enabled via 'Manage Models'. Enable this for testing or if you want all models immediately available in the picker."
+        },
+        "vercel.ai.investigation.name": {
+          "type": "string",
+          "default": "default",
+          "description": "Investigation name for scoped logging. Detailed request/response data is captured to .logs/{name}/. Change the name to start a clean investigation scope."
+        },
+        "vercel.ai.investigation.detail": {
+          "type": "string",
+          "enum": [
+            "off",
+            "index",
+            "messages",
+            "full"
+          ],
+          "default": "off",
+          "description": "Investigation logging detail level. At 'messages' and 'full' levels, complete request and response bodies are captured.",
+          "enumDescriptions": [
+            "Disable investigation logging",
+            "Log index entries only (one line per request with timing, token counts, status)",
+            "Log index + per-conversation message summaries + full request/response bodies",
+            "Log everything including raw SSE event streams"
+          ]
         }
       }
     }

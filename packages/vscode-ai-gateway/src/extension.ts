@@ -11,6 +11,7 @@ import { treeDiagnostics } from "./diagnostics/tree-diagnostics";
 import { initializeOutputChannel, logger } from "./logger";
 import { migrateStorageKeys } from "./persistence/migration.js";
 import { VercelAIChatModelProvider } from "./provider";
+import { detectSummarizationRequest } from "./provider/openresponses-chat.js";
 import { TokenStatusBar } from "./status-bar";
 import { tryStringify } from "./utils/serialize.js";
 
@@ -221,6 +222,80 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
   context.subscriptions.push(dumpDiagnosticsCommand);
+
+  // Register command to test summarization detection on current chat history
+  const testSummarizationCommand = vscode.commands.registerCommand(
+    "vercel.ai.testSummarizationDetection",
+    () => {
+      // Build synthetic summarization-shaped messages to test the detection pipeline
+      const LanguageModelTextPart = (vscode as never as Record<string, new (v: string) => unknown>)["LanguageModelTextPart"];
+      if (!LanguageModelTextPart) {
+        vscode.window.showErrorMessage(
+          "LanguageModelTextPart not available in this VS Code version.",
+        );
+        return;
+      }
+
+      const ROLE_USER = 1;
+      const ROLE_SYSTEM = 3;
+      const ROLE_ASSISTANT = 2;
+
+      // Test case 1: Summarization by last-user-message pattern
+      const summMessages1 = [
+        { role: ROLE_SYSTEM, content: [new LanguageModelTextPart("You are a helpful assistant.")] },
+        { role: ROLE_USER, content: [new LanguageModelTextPart("Hello")] },
+        { role: ROLE_ASSISTANT, content: [new LanguageModelTextPart("Hi!")] },
+        { role: ROLE_USER, content: [new LanguageModelTextPart("Summarize the conversation history so far.")] },
+      ] as never;
+
+      // Test case 2: Summarization by system-message SummaryPrompt
+      const summMessages2 = [
+        { role: ROLE_SYSTEM, content: [new LanguageModelTextPart("Context: <Tag name='summary'>Previous discussion</Tag>")] },
+        { role: ROLE_USER, content: [new LanguageModelTextPart("Continue.")] },
+      ] as never;
+
+      // Test case 3: Normal chat (should NOT detect)
+      const normalMessages = [
+        { role: ROLE_SYSTEM, content: [new LanguageModelTextPart("You are a helpful assistant.")] },
+        { role: ROLE_USER, content: [new LanguageModelTextPart("What is TypeScript?")] },
+      ] as never;
+
+      const start = performance.now();
+      const result1 = detectSummarizationRequest(summMessages1);
+      const t1 = performance.now() - start;
+
+      const start2 = performance.now();
+      const result2 = detectSummarizationRequest(summMessages2);
+      const t2 = performance.now() - start2;
+
+      const start3 = performance.now();
+      const result3 = detectSummarizationRequest(normalMessages);
+      const t3 = performance.now() - start3;
+
+      const allCorrect = result1 === true && result2 === true && result3 === false;
+      const icon = allCorrect ? "$(check)" : "$(error)";
+
+      const details = [
+        `${icon} Summarization Detection Test`,
+        ``,
+        `User-message pattern: ${result1 ? "DETECTED" : "MISSED"} (${t1.toFixed(2)}ms)`,
+        `System SummaryPrompt: ${result2 ? "DETECTED" : "MISSED"} (${t2.toFixed(2)}ms)`,
+        `Normal chat (expect false): ${result3 ? "FALSE POSITIVE" : "CORRECT"} (${t3.toFixed(2)}ms)`,
+      ].join("\n");
+
+      if (allCorrect) {
+        vscode.window.showInformationMessage(
+          `Summarization detection: All 3 cases passed (${(t1 + t2 + t3).toFixed(2)}ms total)`,
+        );
+      } else {
+        vscode.window.showWarningMessage(
+          `Summarization detection: FAILURES detected. Check output channel.`,
+        );
+      }
+      logger.info(details);
+    },
+  );
+  context.subscriptions.push(testSummarizationCommand);
 
   // Register command to manage authentication
   const commandDisposable = vscode.commands.registerCommand(

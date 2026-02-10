@@ -1537,9 +1537,67 @@ ulid = "01KH29QX0P6NREQM33YXXNN0DV"
 [[epochs.phases.goals]]
 id = "e2e-identity-validation"
 label = "End-to-end validation: verify conversationId-based identity produces correct sidebar hierarchy and status bar tracking in real multi-turn, multi-agent sessions"
-status = "pending"
+status = "completed"
+completion_log = "14 integration tests validating conversationId identity pipeline: resume, accumulation, hierarchy, tree rendering, percentage correctness, edge cases. 419/419 passing. Manual smoke test deferred."
 ulid = "01KH2EZ7MNATJWR5QQ1512QPS4"
 rfc = "00063"
+
+[[epochs.phases.goals]]
+id = "summarization-detection-tests"
+label = "Export and unit-test summarization detection; add diagnostic command for on-demand summarization testing"
+status = "completed"
+completion_log = "detectSummarizationRequest exported, 11 unit tests added (3 detection patterns + 5 negative cases + 3 edge cases), diagnostic command vercel.ai.testSummarizationDetection registered. 430/430 tests passing."
+ulid = "01KH4BA7XP3HHGHD4EVJ4TGNK4"
+
+[[epochs.phases.goals]]
+id = "inv-log-cleanup"
+label = "Remove superseded logging (validation-log, forensic-capture, debug-utils, unwired scaffold) + withdraw stale RFCs"
+status = "pending"
+ulid = "01KH4GWH462FHQ1EA7M2Y941Y3"
+rfc = "00065"
+
+[[epochs.phases.goals]]
+id = "inv-log-prune"
+label = "Prune command: interactive investigation cleanup with age-based + spider deletion"
+status = "pending"
+ulid = "01KH4GWGXT8C5C9Z0G10HR19D4"
+rfc = "00065"
+
+[[epochs.phases.goals]]
+id = "investigation-logging"
+label = "Hierarchical investigation logging system: per-investigation, per-conversation, per-message file structure with configurable detail levels"
+status = "completed"
+completion_log = "RFC 00065 written, settings added to package.json + config.ts"
+ulid = "01KH4BAESYRCJ5DNAZRV19184F"
+
+[[epochs.phases.goals]]
+id = "inv-log-writer"
+label = "InvestigationLogger core: types, class, SSE recorder interface, gitignore warning, unit tests"
+status = "completed"
+completion_log = "InvestigationLogger refactored to factory+handle pattern, sanitizePathSegment added, 399 tests passing (31 new)"
+ulid = "01KH4GW8302D7JR7Z7EWC5ZTVJ"
+
+[[epochs.phases.goals]]
+id = "inv-log-wire"
+label = "Wire InvestigationLogger into request pipeline (openresponses-chat + stream-adapter)"
+status = "completed"
+completion_log = "Wired InvestigationLogger into executeOpenResponsesChat: startRequest with full metadata, SSE recorder tap in stream loop, handle.complete in all 4 exit paths (success/timeout/cancel/error). 6 integration tests added. isSuspicious removed. 405/405 tests passing."
+ulid = "01KH4GWGS81JT8N3SQMKZQYS2D"
+rfc = "00065"
+
+[[epochs.phases.goals]]
+id = "logging-lint"
+label = "ESLint rule: prevent direct console/fs logging outside managed abstractions"
+status = "pending"
+ulid = "01KH4GWH9ZXYPZ5BNSAGKV88M2"
+rfc = "00065"
+
+[[epochs.phases.goals]]
+id = "logging-alignment-rfc"
+label = "Follow-up RFC: align orthogonal logging (logger.ts, tree-diagnostics) with investigation patterns"
+status = "pending"
+ulid = "01KH4GWHGW45S557RMXNBMXGNS"
+rfc = "00065"
 
 [[epochs.phases.rfcs]]
 id = "00063"

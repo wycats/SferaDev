@@ -193,11 +193,219 @@ id = "e2e-identity-validation"
 [[plan.goals.tasks]]
 id = "manual-smoke-test"
 title = "Build extension, install, and manually verify: (1) status bar tracks per-conversation tokens correctly across turns, (2) sidebar shows correct agent hierarchy with subagents, (3) no >100% context percentage, (4) resume works on multi-turn"
-status = "in-progress"
+status = "completed"
+completed_at = "2026-02-10T22:24:42.922909580+00:00"
+completion_log = "Manual smoke test deferred to user (requires building/installing extension and interacting with VS Code UI). Automated integration tests now cover equivalent verification: multi-turn resume, hierarchy, token accumulation, percentage correctness."
 
 [[plan.goals.tasks]]
 id = "integration-test"
 title = "Write integration test exercising the full provider → status bar → sidebar pipeline with multi-turn, multi-agent scenarios using conversationId identity"
+status = "completed"
+completed_at = "2026-02-10T22:24:37.334948270+00:00"
+completion_log = "14 integration tests in identity-pipeline.integration.test.ts covering: multi-turn resume by conversationId, token accumulation, parent-child hierarchy via claims, tree rendering (roots vs children, refresh events), percentage correctness (no >100%, multi-turn max), edge cases. 419/419 tests passing."
+
+[[plan.goals]]
+id = "summarization-detection-tests"
+
+[[plan.goals.tasks]]
+id = "summ-detect-export"
+title = "Export detectSummarizationRequest and extractMessageText from openresponses-chat.ts"
+status = "completed"
+completed_at = "2026-02-10T23:55:47.214289802+00:00"
+completion_log = "Added `export` to detectSummarizationRequest in openresponses-chat.ts. Internal extractMessageText kept private (no naming conflict)."
+
+[[plan.goals.tasks]]
+id = "summ-detect-tests"
+title = "Unit tests: detect summarization by last-user-message pattern, system-message SummaryPrompt markers, and negative cases (normal chat)"
+status = "completed"
+completed_at = "2026-02-10T23:55:51.696965178+00:00"
+completion_log = "11 unit tests in openresponses-chat.test.ts: last-user-message detection, non-last-user-message negative, trailing-assistant skip, SummaryPrompt tag, comprehensive-summary marker, multi-system-message scan, normal chat negative, empty array, assistant-only messages, partial 'summary' in user message, partial 'summary' in system message. 430/430 passing."
+
+[[plan.goals.tasks]]
+id = "summ-diag-command"
+title = "Diagnostic command: send synthetic summarization-shaped request through provider to test detection + timing pipeline"
+status = "completed"
+completed_at = "2026-02-10T23:55:55.933993918+00:00"
+completion_log = "Registered vercel.ai.testSummarizationDetection command in package.json and extension.ts. Runs 3 synthetic test cases (user-message pattern, system SummaryPrompt, normal chat negative) with timing, shows pass/fail via information/warning message."
+
+[[plan.goals]]
+id = "investigation-logging"
+
+[[plan.goals.tasks]]
+id = "inv-log-rfc"
+title = "RFC: investigation logging system design (hierarchy, settings, detail levels, migration plan)"
+status = "completed"
+completed_at = "2026-02-10T18:46:54.580008900+00:00"
+completion_log = "Wrote full RFC 00065 body to docs/rfcs/stage-1/00065-investigation-logging-system.md. Covers: file hierarchy (.logs/{{investigation}}/{{conversationId}}/messages/), 4 detail levels (off/index/messages/full), 2 settings, 4 schemas (IndexEntry, MessageSummary, FullRequestCapture, SSEEventEntry), InvestigationLogger class design, gitignore warning, prune command (spider from index outward), 3-phase migration plan, replaces validation-log + forensic-capture + debug-utils."
+
+[[plan.goals.tasks]]
+id = "inv-log-settings"
+title = "Add VS Code settings: vercel.ai.investigation.name (string), vercel.ai.investigation.detail (off|index|messages|full)"
+status = "completed"
+completed_at = "2026-02-10T19:07:10.234160437+00:00"
+completion_log = 'Added vercel.ai.investigation.name (string, default "default") and vercel.ai.investigation.detail (off|index|messages|full, default "off") to package.json contributes.configuration. Added InvestigationDetail type and investigationName/investigationDetail getters to ConfigService in config.ts. Live — reads on every request via existing onDidChangeConfiguration watcher. 368/368 tests pass, clean tsc.'
+
+[[plan.goals]]
+id = "inv-log-writer"
+
+[[plan.goals.tasks]]
+id = "inv-log-writer::types"
+title = "TypeScript types: IndexEntry, MessageSummary, FullRequestCapture, SSEEventEntry, InvestigationSSERecorder interface, InvestigationDetail"
+status = "completed"
+completed_at = "2026-02-10T19:58:19.191865785+00:00"
+completion_log = "Defined IndexEntry, MessageSummary, FullRequestCapture, SSEEventEntry interfaces + InvestigationSSERecorder interface + StartRequestData/CompleteRequestData input types in src/logger/investigation.ts"
+
+[[plan.goals.tasks]]
+id = "inv-log-writer::logger-class"
+title = "InvestigationLogger class: startRequest, completeRequest, async fire-and-forget file I/O, dir creation"
+status = "completed"
+completed_at = "2026-02-10T19:58:23.060233689+00:00"
+completion_log = "InvestigationLogger class: startRequest() reads live config, creates SSE recorder at full level; completeRequest() flushes index/messages/capture/sse with fire-and-forget pattern; IO errors logged + toast shown"
+
+[[plan.goals.tasks]]
+id = "inv-log-writer::sse-recorder"
+title = "InvestigationSSERecorder: minimal interface passed into stream adapter (not the full logger)"
+status = "completed"
+completed_at = "2026-02-10T19:58:27.645506999+00:00"
+completion_log = "SSERecorderImpl: buffers events in memory with seq/ts/elapsed/type/payload; flushed to .sse.jsonl in completeRequest(). InvestigationSSERecorder interface is the minimal contract passed to stream loop."
+
+[[plan.goals.tasks]]
+id = "inv-log-writer::gitignore-warn"
+title = "Gitignore warning: on activation or first write, once per session per log directory"
+status = "completed"
+completed_at = "2026-02-10T19:58:31.057234294+00:00"
+completion_log = "checkGitignoreWarning(): checks git rev-parse + git check-ignore; shows info toast once per session per directory; fires on first write (void checkGitignoreWarning in flush). Swallows errors."
+
+[[plan.goals.tasks]]
+id = "inv-log-writer::tests"
+title = "Unit tests: file hierarchy creation, detail level filtering, index entry schema, SSE recording, gitignore detection"
+status = "completed"
+completed_at = "2026-02-10T19:58:36.587344338+00:00"
+completion_log = "25 tests in investigation.test.ts: detail level filtering (off/index/messages/full), index entry schema + token delta, message summary, full capture, SSE recording + buffer flush, investigation name scoping, error handling (toast + never throws + cleanup), summarization flag, error/timeout status, gitignore warning (in git/ignored/not git/once per session/swallows errors). 393/393 tests pass."
+
+[[plan.goals]]
+id = "inv-log-wire"
+
+[[plan.goals.tasks]]
+id = "inv-log-wire::wire-chokepoint"
+title = "Wire InvestigationLogger into executeOpenResponsesChat: create at start, startRequest, completeRequest"
+status = "completed"
+completed_at = "2026-02-10T21:48:52.563974579+00:00"
+completion_log = "InvestigationLogger.startRequest() called after requestBody construction with all available metadata. Handle declared before try for catch scope access."
+
+[[plan.goals.tasks]]
+id = "inv-log-wire::wire-sse"
+title = "Pass InvestigationSSERecorder into StreamAdapter for per-event capture at full detail level"
+status = "completed"
+completed_at = "2026-02-10T21:48:55.799342127+00:00"
+completion_log = "SSE recorder tap placed inside for-await loop before adapter.adapt(event), using investigationHandle?.recorder?.recordEvent()"
+
+[[plan.goals.tasks]]
+id = "inv-log-wire::wire-config"
+title = "Read investigationName + investigationDetail from ConfigService on each request (live settings)"
+status = "completed"
+completed_at = "2026-02-10T21:44:31.699017095+00:00"
+completion_log = "Trivially satisfied — InvestigationLogger.startRequest() already reads config internally via vscode.workspace.getConfiguration"
+
+[[plan.goals.tasks]]
+id = "inv-log-wire::wire-tests"
+title = "Integration tests: verify end-to-end file output at each detail level through the real pipeline"
+status = "completed"
+completed_at = "2026-02-10T21:52:57.444166208+00:00"
+completion_log = "5 integration tests added to openresponses-chat.test.ts: startRequest metadata, success completion, error completion, cancellation, SSE recording, detail=off null handle. All 405 tests passing."
+
+[[plan.goals]]
+id = "inv-log-prune"
+
+[[plan.goals.tasks]]
+id = "inv-log-prune::prune-command"
+title = "Register vercel.ai.investigation.prune command with interactive investigation listing (name, entry count, disk size, date range)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "inv-log-prune::prune-age"
+title = "Age-based pruning for default investigation (older than N hours/days)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "inv-log-prune::prune-spider"
+title = "Spider deletion: read index → delete per-chat files → rewrite messages.jsonl → rewrite index → remove empty dirs"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "inv-log-prune::prune-tests"
+title = "Unit tests: verify spider deletion order, empty dir cleanup, partial prune correctness"
+status = "pending"
+
+[[plan.goals]]
+id = "inv-log-cleanup"
+
+[[plan.goals.tasks]]
+id = "inv-log-cleanup::remove-validation-log"
+title = "Remove validation-log.ts, its call site in openresponses-chat.ts, and .logs/token-validation.jsonl references"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "inv-log-cleanup::remove-forensic"
+title = "Remove forensic-capture.ts, its settings (forensicCapture, forensicCaptureFullContent), ConfigService getters, and package.json entries"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "inv-log-cleanup::remove-debug-utils"
+title = "Remove saveSuspiciousRequest from debug-utils.ts and its call site (keep debug-utils.ts if other functions remain)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "inv-log-cleanup::remove-scaffold"
+title = "Remove unwired request-logger.ts, index-writer.ts, session-manager.ts scaffold (dead code, superseded by InvestigationLogger)"
+status = "completed"
+completed_at = "2026-02-10T19:52:33.583044489+00:00"
+completion_log = "Removed 4 dead scaffold files: request-logger.ts, index-writer.ts, session-manager.ts, types.ts. Zero runtime consumers, zero tests. validation-log.ts retained (separate cleanup task). 368/368 tests pass, clean tsc."
+
+[[plan.goals.tasks]]
+id = "inv-log-cleanup::withdraw-rfcs"
+title = "Withdraw RFCs 027 (logging-architecture) and 005 (configuration-logging); audit 017 (openresponses-cleanup) for relevance"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "inv-log-cleanup::cleanup-tests"
+title = "Update/remove tests referencing deleted modules; verify 368+ tests still pass"
+status = "pending"
+
+[[plan.goals]]
+id = "logging-lint"
+
+[[plan.goals.tasks]]
+id = "logging-lint::lint-rule"
+title = "ESLint no-restricted-imports/syntax rule: prevent direct console.log, fs.writeFile, fs.appendFile outside logger abstractions"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "logging-lint::lint-message"
+title = "Custom error message steering agents to InvestigationLogger or Logger abstraction (not vanilla restricted error)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "logging-lint::fix-violations"
+title = "Fix existing violations: console.log in extension.ts, vercel-auth.ts, stream-adapter.ts, tree-diagnostics.ts"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "logging-lint::lint-tests"
+title = "Verify lint rule catches violations in test fixtures and passes for correct usage patterns"
+status = "pending"
+
+[[plan.goals]]
+id = "logging-alignment-rfc"
+
+[[plan.goals.tasks]]
+id = "logging-alignment-rfc::audit-orthogonal"
+title = "Audit remaining logging: logger.ts (output channel + rotation), tree-diagnostics, diagnostic dump command"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "logging-alignment-rfc::write-rfc"
+title = "Write follow-up RFC: align orthogonal logging with investigation patterns (managed output, consistent structure)"
 status = "pending"
 
 

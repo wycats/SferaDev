@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { DEFAULT_BASE_URL } from "./constants";
 
 export type LogLevel = "off" | "error" | "warn" | "info" | "debug" | "trace";
+export type InvestigationDetail = "off" | "index" | "messages" | "full";
 
 /**
  * Inference settings based on GCMP (GitHub Copilot) research.
@@ -83,6 +84,20 @@ export class ConfigService implements vscode.Disposable {
    */
   get modelsUserSelectable(): boolean {
     return this.config.get("models.userSelectable", false);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Investigation logging (user-configurable)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Investigation name — scopes logs to .logs/{name}/ */
+  get investigationName(): string {
+    return this.config.get("investigation.name", "default");
+  }
+
+  /** Investigation detail level — controls what gets logged */
+  get investigationDetail(): InvestigationDetail {
+    return this.config.get("investigation.detail", "off");
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
