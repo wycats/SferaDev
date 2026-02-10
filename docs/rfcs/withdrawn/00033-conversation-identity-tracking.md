@@ -5,6 +5,7 @@ feature: agent-tracking
 exo:
   tool: exo rfc create
   protocol: 1
+withdrawal_reason: "References removed conversationHash/partialKey identity — replaced by conversationId from stateful marker"
 ---
 
 # RFC 00033: Conversation Identity Tracking

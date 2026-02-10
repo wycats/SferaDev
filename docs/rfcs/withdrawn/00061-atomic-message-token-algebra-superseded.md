@@ -5,6 +5,7 @@ feature: Unknown
 exo:
     tool: exo rfc create
     protocol: 1
+withdrawal_reason: "Superseded — references removed token algebra"
 ---
 
 # RFC 00061: Atomic Message Token Algebra (SUPERSEDED)

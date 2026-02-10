@@ -39,6 +39,7 @@ import { saveSuspiciousRequest } from "./debug-utils.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
+import { writeTokenValidationEntry } from "../logger/validation-log.js";
 import { findLatestStatefulMarker } from "../utils/stateful-marker.js";
 
 /**
@@ -55,12 +56,8 @@ export interface OpenResponsesChatOptions {
   estimatedInputTokens: number;
   /** Chat ID for logging/tracking */
   chatId: string;
-  /** Callback to calibrate token estimation from actual usage */
-  onUsage?: (
-    actualInputTokens: number,
-    responseMessage?: LanguageModelChatMessage,
-    actualOutputTokens?: number,
-  ) => void;
+  /** Stable conversation identity (from stateful marker sessionId or new UUID) */
+  conversationId: string;
 }
 
 /**
@@ -106,7 +103,7 @@ export async function executeOpenResponsesChat(
     apiKey,
     estimatedInputTokens,
     chatId,
-    onUsage,
+    conversationId,
   } = chatOptions;
 
   // TRACE: Log raw VS Code messages with actual role values
@@ -143,7 +140,7 @@ export async function executeOpenResponsesChat(
     },
   });
 
-  const adapter = new StreamAdapter();
+  const adapter = new StreamAdapter(chatOptions.conversationId);
 
   // Set up abort handling
   const abortController = new AbortController();
@@ -158,22 +155,18 @@ export async function executeOpenResponsesChat(
   let result: OpenResponsesChatResult = { success: false };
   let agentCompleted = false;
 
-  const markAgentComplete = (usage?: Usage, responseText?: string) => {
+  const markAgentComplete = (usage?: Usage) => {
     if (agentCompleted) return;
     agentCompleted = true;
     if (!statusBar) return;
 
     if (usage) {
-      statusBar.completeAgent(
-        chatId,
-        {
-          inputTokens: usage.input_tokens,
-          outputTokens: usage.output_tokens,
-          maxInputTokens: model.maxInputTokens,
-          modelId: model.id,
-        },
-        responseText,
-      );
+      statusBar.completeAgent(chatId, {
+        inputTokens: usage.input_tokens,
+        outputTokens: usage.output_tokens,
+        maxInputTokens: model.maxInputTokens,
+        modelId: model.id,
+      });
       return;
     }
 
@@ -182,16 +175,12 @@ export async function executeOpenResponsesChat(
       `[OpenResponses] Stream completed without usage data for chat ${chatId}. Using estimated tokens as fallback.`,
     );
 
-    statusBar.completeAgent(
-      chatId,
-      {
-        inputTokens: Math.max(estimatedInputTokens, 0),
-        outputTokens: 0,
-        maxInputTokens: model.maxInputTokens,
-        modelId: model.id,
-      },
-      responseText,
-    );
+    statusBar.completeAgent(chatId, {
+      inputTokens: Math.max(estimatedInputTokens, 0),
+      outputTokens: 0,
+      maxInputTokens: model.maxInputTokens,
+      modelId: model.id,
+    });
   };
 
   const markAgentError = () => {
@@ -209,6 +198,26 @@ export async function executeOpenResponsesChat(
       maxInputTokens: model.maxInputTokens,
       modelId: model.id,
     });
+  };
+
+  // Streaming inactivity timeout state — declared before try/catch
+  // so they're accessible in catch and finally blocks
+  const STREAM_INACTIVITY_TIMEOUT_MS = 120_000; // 2 minutes between events
+  let streamTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  let timedOut = false;
+  let eventCount = 0;
+
+  const resetStreamTimeout = () => {
+    if (streamTimeoutId !== null) {
+      clearTimeout(streamTimeoutId);
+    }
+    streamTimeoutId = setTimeout(() => {
+      timedOut = true;
+      logger.warn(
+        `[OpenResponses] Stream inactivity timeout (${(STREAM_INACTIVITY_TIMEOUT_MS / 1000).toString()}s) — aborting request for ${model.id}`,
+      );
+      abortController.abort();
+    }, STREAM_INACTIVITY_TIMEOUT_MS);
   };
 
   try {
@@ -229,24 +238,43 @@ export async function executeOpenResponsesChat(
     // temperature=0 (fully deterministic) was causing tool call issues
     // See: .reference/GCMP configManager.ts uses 0.1 default
     // max_output_tokens: Use model's full capacity (GCMP approach) - don't artificially limit
-    const requestBody: CreateResponseBody = {
+    // caching: "auto" enables server-side prompt caching (Anthropic cache_control injection)
+    // Not yet in generated OpenAPI types — accepted by gateway, see .reference/ai-gateway
+    const requestBody: CreateResponseBody & { caching?: "auto" } = {
       model: model.id,
       input,
       stream: true,
       temperature: 0.1,
       top_p: 1,
+      caching: "auto",
       max_output_tokens:
         (options.modelOptions?.["maxOutputTokens"] as number | undefined) ??
         model.maxOutputTokens,
     };
 
+    // Use prompt_cache_key (NOT previous_response_id) for session continuity.
+    //
+    // The Vercel AI Gateway does NOT implement persistence for OpenResponses —
+    // it forwards previous_response_id to the upstream provider as a passthrough
+    // (see .reference/ai-gateway convert-to-aisdk-call-options.ts). This means:
+    //
+    // - With BYOK (store=true): OpenAI honors it and loads server-side history.
+    //   Since VS Code always sends the full message history as input, this
+    //   doubles the context — causing >100% token usage and summarization hangs.
+    // - Without BYOK (store=false): OpenAI ignores it entirely — it's a no-op.
+    //
+    // Either way, previous_response_id is wrong here. VS Code owns the message
+    // history and always sends it in full.
+    //
+    // prompt_cache_key enables server-side prompt prefix caching (KV cache reuse)
+    // without loading previous conversation state. This matches GCMP's approach
+    // for non-Doubao models (see .reference/GCMP openaiResponsesHandler.ts).
     const statefulMarker = findLatestStatefulMarker(chatMessages, model.id);
-    if (statefulMarker?.responseId) {
-      requestBody.previous_response_id = statefulMarker.responseId;
-      logger.debug(
-        `[OpenResponses] Using previous_response_id=${statefulMarker.responseId} from stateful marker (model=${statefulMarker.modelId})`,
-      );
-    }
+    const sessionId = statefulMarker?.sessionId ?? conversationId;
+    requestBody.prompt_cache_key = sessionId;
+    logger.debug(
+      `[OpenResponses] Using prompt_cache_key=${sessionId} for session continuity`,
+    );
 
     if (instructions) {
       requestBody.instructions = instructions;
@@ -269,10 +297,16 @@ export async function executeOpenResponsesChat(
       `[OpenResponses] Request: ${input.length} input items, ${tools.length} tools`,
     );
 
-    // Stream the response
+    // Stream the response with inactivity timeout.
+    // This prevents hangs during large-context requests like summarization,
+    // where the model processes 130k+ tokens and takes minutes to respond.
+    // The timeout resets on each SSE event, so active streams are unaffected.
+
+    // Start the inactivity timer before entering the stream loop
+    resetStreamTimeout();
+
     let toolCallCount = 0;
     let textPartCount = 0;
-    let eventCount = 0;
     let functionCallArgsEventsReceived = 0;
     const eventTypeCounts = new Map<string, number>();
     // Accumulate all text output for debugging suspicious requests
@@ -281,6 +315,8 @@ export async function executeOpenResponsesChat(
       requestBody,
       abortController.signal,
     )) {
+      // Reset inactivity timeout on each event
+      resetStreamTimeout();
       eventCount++;
       const eventType = (event as { type?: string }).type ?? "unknown";
       eventTypeCounts.set(eventType, (eventTypeCounts.get(eventType) ?? 0) + 1);
@@ -434,24 +470,20 @@ export async function executeOpenResponsesChat(
         } else if (adapted.cancelled) {
           markAgentCancelled();
         } else {
-          markAgentComplete(adapted.usage, accumulatedText);
+          markAgentComplete(adapted.usage);
         }
 
-        // Track usage and calibrate token estimation
+        // Write validation log: estimate vs actual
         if (adapted.usage) {
-          logger.info(
-            `[OpenResponses] Response: ${adapted.usage.input_tokens} in, ${adapted.usage.output_tokens} out tokens`,
-          );
-
-          // Calibrate token estimation from actual usage (RFC 029)
-          if (onUsage) {
-            const finalMessage = adapter.getFinalMessage();
-            onUsage(
-              adapted.usage.input_tokens,
-              finalMessage,
-              adapted.usage.output_tokens,
-            );
-          }
+          writeTokenValidationEntry({
+            model: model.id,
+            chatId,
+            responseId: adapted.responseId,
+            promptCacheKey: requestBody.prompt_cache_key ?? undefined,
+            estimatedInputTokens,
+            actualInputTokens: adapted.usage.input_tokens,
+            actualOutputTokens: adapted.usage.output_tokens,
+          });
         }
         break;
       }
@@ -478,6 +510,22 @@ export async function executeOpenResponsesChat(
       error instanceof Error &&
       (error.name === "AbortError" || error.message.includes("abort"))
     ) {
+      if (timedOut) {
+        // Streaming inactivity timeout — report as error, not cancellation
+        logger.error(
+          `[OpenResponses] Request timed out after ${(STREAM_INACTIVITY_TIMEOUT_MS / 1000).toString()}s of inactivity (${eventCount} events received)`,
+        );
+        if (!responseSent) {
+          progress.report(
+            new LanguageModelTextPart(
+              `\n\n**Error:** Request timed out — the model did not respond within ${(STREAM_INACTIVITY_TIMEOUT_MS / 1000).toString()} seconds. ` +
+                `This can happen with large conversations during summarization. Try starting a new conversation.\n\n`,
+            ),
+          );
+        }
+        markAgentError();
+        return { success: false, error: "Stream inactivity timeout" };
+      }
       logger.debug(`[OpenResponses] Request was cancelled`);
       markAgentCancelled();
       return { success: false, cancelled: true };
@@ -530,6 +578,10 @@ export async function executeOpenResponsesChat(
       ? { success: false, error: errorMessage, tokenInfo }
       : { success: false, error: errorMessage };
   } finally {
+    // Clear streaming inactivity timer
+    if (streamTimeoutId !== null) {
+      clearTimeout(streamTimeoutId);
+    }
     abortSubscription.dispose();
     adapter.reset();
     if (!agentCompleted && statusBar) {

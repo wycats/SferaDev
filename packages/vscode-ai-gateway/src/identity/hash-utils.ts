@@ -22,32 +22,6 @@ export function computeAgentTypeHash(toolSetHash: string): string {
 }
 
 /**
- * Compute the conversation instance hash.
- * Called after first assistant response is received.
- */
-export function computeConversationHash(
-  agentTypeHash: string,
-  firstUserMessageHash: string,
-  firstAssistantResponseHash: string,
-): string {
-  return createHash("sha256")
-    .update(agentTypeHash + firstUserMessageHash + firstAssistantResponseHash)
-    .digest("hex")
-    .substring(0, 16);
-}
-
-/**
- * Canonicalize and hash the first assistant response.
- * - Extract first text content only
- * - Truncate to 500 characters
- * - Trim whitespace
- */
-export function hashFirstAssistantResponse(textContent: string): string {
-  const canonical = textContent.trim().substring(0, 500);
-  return createHash("sha256").update(canonical).digest("hex").substring(0, 16);
-}
-
-/**
  * Hash a user message for conversation identity.
  */
 export function hashUserMessage(text: string): string {

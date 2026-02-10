@@ -17,10 +17,6 @@
  * 8. Error events
  */
 
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
-
 import type {
   Error as ResponseError,
   ErrorPayload,
@@ -175,7 +171,7 @@ type ToolCallArguments = Record<string, unknown>;
  *
  * Usage:
  * ```ts
- * const adapter = new StreamAdapter();
+ * const adapter = new StreamAdapter(conversationId);
  * for await (const event of openResponsesStream) {
  *   const result = adapter.adapt(event);
  *   for (const part of result.parts) {
@@ -188,6 +184,9 @@ type ToolCallArguments = Record<string, unknown>;
  * ```
  */
 export class StreamAdapter {
+  /** Stable conversation identity (from stateful marker or new UUID) */
+  private readonly conversationId: string;
+
   /** All emitted response parts for the final assistant message */
   private accumulatedParts: LanguageModelResponsePart[] = [];
 
@@ -234,6 +233,10 @@ export class StreamAdapter {
   /** Response metadata captured from lifecycle events */
   private responseId: string | undefined;
   private model: string | undefined;
+
+  constructor(conversationId: string) {
+    this.conversationId = conversationId;
+  }
 
   /**
    * Adapt a single OpenResponses streaming event to VS Code format.
@@ -410,31 +413,6 @@ export class StreamAdapter {
     const response = event.response as ResponseResource;
     const usage = response.usage as Usage;
 
-    // Log response ID chain for RFC 052 delta caching investigation
-    logger.info(
-      `[OpenResponses] Response chain: id=${response.id ?? "null"}, previous_response_id=${response.previous_response_id ?? "null"}`,
-    );
-
-    // Append to response chain log for forensic analysis
-    try {
-      const logDir = path.join(os.homedir(), ".vscode-ai-gateway");
-      fs.mkdirSync(logDir, { recursive: true });
-      const logFile = path.join(logDir, "response-chain.jsonl");
-      const entry = {
-        timestamp: new Date().toISOString(),
-        responseId: response.id,
-        previousResponseId: response.previous_response_id,
-        inputTokens: usage?.input_tokens,
-        outputTokens: usage?.output_tokens,
-        model: response.model,
-      };
-      fs.appendFileSync(logFile, JSON.stringify(entry) + "\n");
-    } catch (err) {
-      logger.warn(
-        `[OpenResponses] Failed to write response chain log: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
-
     // Log the raw response for debugging stop_reason issues
     const rawResponse = response as unknown as {
       stop_reason?: string;
@@ -568,7 +546,7 @@ export class StreamAdapter {
         provider: "openresponses",
         modelId,
         sdkMode: "openai-responses",
-        sessionId: response.id, // Use response ID as session for now
+        sessionId: this.conversationId, // Stable UUID per conversation
         responseId: response.id,
       });
       parts.push(new LanguageModelDataPart(marker, STATEFUL_MARKER_MIME));
@@ -992,11 +970,12 @@ export class StreamAdapter {
     if (this.currentThinkingId) {
       const id = this.currentThinkingId;
       this.currentThinkingId = null;
-      logger.debug(
-        `[OpenResponses] Ending thinking chain: ${id}`,
-      );
+      logger.debug(`[OpenResponses] Ending thinking chain: ${id}`);
       return [
-        new LanguageModelThinkingPart("", id) as unknown as LanguageModelResponsePart,
+        new LanguageModelThinkingPart(
+          "",
+          id,
+        ) as unknown as LanguageModelResponsePart,
       ];
     }
     return [];
@@ -1391,6 +1370,6 @@ export class StreamAdapter {
 /**
  * Create a new stream adapter instance
  */
-export function createStreamAdapter(): StreamAdapter {
-  return new StreamAdapter();
+export function createStreamAdapter(conversationId: string): StreamAdapter {
+  return new StreamAdapter(conversationId);
 }

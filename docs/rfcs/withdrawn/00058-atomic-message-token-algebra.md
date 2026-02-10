@@ -1,16 +1,14 @@
 ---
-title: Atomic Message Token Algebra (SUPERSEDED)
+title: Atomic Message Token Algebra
 stage: 1
 feature: Unknown
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
+withdrawal_reason: "References removed atomic message token algebra infrastructure"
 ---
 
-# RFC 00060: Atomic Message Token Algebra (SUPERSEDED)
-
-> **Status**: Superseded by **RFC 00057: Unified Atomic Token Algebra**.
-> **Reason**: This version contained legacy "Resilient Anchor" and "Suffix Match" heuristics which were rejected in favor of the pure Inverted Index / Intersection model defined in RFC 00057.
+# RFC 00058: Atomic Message Token Algebra
 
 ## Status
 
@@ -50,7 +48,22 @@ This allows the system to learn from **any** turn, proportionalizing the error a
 
 ### 2.3 Resilient Anchor Salvaging
 
-The system explicitly allows drift at **Index 0 (System Prompt)**. If Indices $1 \dots N$ (the stable User/Assistant history) match a known state, we salvage the "Ground Truth" anchor, effectively treating the System Prompt drift as a delta.
+The system matches conversations via **set intersection**, not positional prefix matching. A known state is considered a match if a sufficient subset of its message hashes appear in the current conversation's message set, regardless of position.
+
+This explicitly tolerates several **drift patterns**, each with distinct semantics:
+
+| Pattern                 | Detection                                                                         | Semantic Action                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **System Prompt drift** | Hash at index 0 differs                                                           | Treat as "new" message; no cache invalidation                                              |
+| **User edit**           | Known hash disappears, new hash at same logical position                          | Invalidate cached tokens for that message                                                  |
+| **Summarization**       | `<conversation-summary>` tag appears + older hashes missing + newer hashes intact | Associate summary with replaced messages; sum their tokens as "compacted tokens" (RFC 047) |
+| **Reload/session**      | Metadata-only differences (`$mid`, `cache_control` data parts)                    | Normalization strips these; no semantic impact                                             |
+
+**Note**: Context window pressure (backend dropping oldest messages) is a theoretical concern but has not been observed in practice with 128k context models. If observed, log a drift event and anchor on remaining messages.
+
+The goal is not just to _tolerate_ these patterns, but to _detect_ them and apply pattern-specific logic. For summarization specifically, the presence of the summary tag combined with the "missing older / intact newer" signature allows us to precisely identify which messages were compacted and display this in the UI.
+
+When selecting among multiple candidate matches, prefer the candidate with the **fewest misses** (known hashes not found in the current set). If tied, prefer the candidate with the **most matches** (larger anchor = more ground truth).
 
 ## 3. Design Goals
 

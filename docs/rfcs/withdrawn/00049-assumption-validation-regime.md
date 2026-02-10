@@ -5,6 +5,7 @@ feature: testing
 exo:
   tool: exo rfc create
   protocol: 1
+withdrawal_reason: "References removed rolling correction and sequence tracking"
 ---
 
 # RFC 00049: Assumption Validation Regime

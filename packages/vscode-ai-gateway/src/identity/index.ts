@@ -1,8 +1,6 @@
 export {
   computeToolSetHash,
   computeAgentTypeHash,
-  computeConversationHash,
-  hashFirstAssistantResponse,
   hashUserMessage,
 } from "./hash-utils.js";
 

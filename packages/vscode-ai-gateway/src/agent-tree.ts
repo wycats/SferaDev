@@ -310,11 +310,11 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
         return [];
       }
 
-      // Build set of valid parent identifiers (conversationHash or agentTypeHash)
+      // Build set of valid parent identifiers (conversationId or agentTypeHash)
       const parentIdentifiers = new Set<string>();
       for (const agent of agents) {
-        if (agent.conversationHash) {
-          parentIdentifiers.add(agent.conversationHash);
+        if (agent.conversationId) {
+          parentIdentifiers.add(agent.conversationId);
         }
         if (agent.agentTypeHash) {
           parentIdentifiers.add(agent.agentTypeHash);
@@ -352,7 +352,6 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
     }
 
     // Get children of this element
-    // Check both conversationHash (final) and agentTypeHash (provisional)
     const childAgents = this.getChildAgents(element.agent, agents);
 
     // Sort by start time (most recent first)
@@ -364,23 +363,23 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
   }
 
   /**
-   * Check if an agent has any children (linked via conversationHash or agentTypeHash)
+   * Check if an agent has any children (linked via conversationId or agentTypeHash)
    */
   private hasChildren(agent: AgentEntry, allAgents: AgentEntry[]): boolean {
-    // Check for children linked via final conversationHash
-    if (agent.conversationHash) {
+    // Check for children linked via stable conversationId (preferred)
+    if (agent.conversationId) {
       if (
         allAgents.some(
           (a) =>
-            a.parentConversationHash === agent.conversationHash &&
+            a.parentConversationHash === agent.conversationId &&
             a.id !== agent.id,
         )
       ) {
         return true;
       }
     }
-    // Check for children linked via provisional agentTypeHash
-    // (before parent has computed its conversationHash)
+    // Check for children linked via agentTypeHash
+    // (fallback when conversationId is not yet available)
     if (agent.agentTypeHash) {
       if (
         allAgents.some(
@@ -396,7 +395,7 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
   }
 
   /**
-   * Get child agents linked to a parent (via conversationHash or agentTypeHash)
+   * Get child agents linked to a parent (via conversationId or agentTypeHash)
    */
   private getChildAgents(
     parent: AgentEntry,
@@ -405,11 +404,11 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
     const children: AgentEntry[] = [];
     const seenIds = new Set<string>();
 
-    // Children linked via final conversationHash
-    if (parent.conversationHash) {
+    // Children linked via stable conversationId (preferred)
+    if (parent.conversationId) {
       for (const agent of allAgents) {
         if (
-          agent.parentConversationHash === parent.conversationHash &&
+          agent.parentConversationHash === parent.conversationId &&
           !seenIds.has(agent.id) &&
           agent.id !== parent.id
         ) {
@@ -419,8 +418,8 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
       }
     }
 
-    // Children linked via provisional agentTypeHash
-    // (before parent has computed its conversationHash)
+    // Children linked via agentTypeHash
+    // (fallback when conversationId is not yet available)
     if (parent.agentTypeHash) {
       for (const agent of allAgents) {
         if (

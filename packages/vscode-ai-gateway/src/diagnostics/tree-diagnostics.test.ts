@@ -73,7 +73,7 @@ describe("TreeDiagnostics", () => {
             baseAgent({
               id: "parent",
               isMain: true,
-              conversationHash: "parenthash",
+              conversationId: "parenthash",
             }),
             baseAgent({
               id: "child",
@@ -116,7 +116,7 @@ describe("TreeDiagnostics", () => {
           agents: [
             baseAgent({
               id: "parent",
-              conversationHash: "parenthash",
+              conversationId: "parenthash",
               agentTypeHash: "typehash",
             }),
           ],

@@ -30,3 +30,23 @@ tags = [
     "token-estimation",
 ]
 related_tasks = []
+
+[[ideas]]
+id = "2215fd3f-21da-4e5a-900f-8b62842c9633"
+title = "Provider adapter layer: support OpenAI-compat / AI SDK backends alongside OpenResponses"
+description = "Once we have maximized what we can do with the OpenResponses API, create an adapter layer that allows using OpenAI-compat (chat completions with reasoning_details) or the AI SDK directly as alternative backends. This would capture features OpenResponses cannot handle: Anthropic thinking signatures, per-block encrypted_content, provider-specific metadata passthrough. The adapter interface would abstract over the backend choice, letting us track which features each backend supports and fall back gracefully."
+status = "new"
+created_at = "2026-02-09T19:58:40.087Z"
+source = "user"
+tags = []
+related_tasks = []
+
+[[ideas]]
+id = "4990b0a8-097b-4cdf-8f78-93990735de25"
+title = "Flag to AI Gateway team: OpenResponses reasoning_text needs signature field for Anthropic thinking block round-trip"
+description = "The OpenResponses spec's reasoning_text content type has no signature field. The AI Gateway streaming converter drops providerMetadata.anthropic.signature when converting to OpenResponses format. This breaks Anthropic extended thinking round-trip for tool-use scenarios where signatures are required. The spec needs: (1) a signature field on reasoning_text content, (2) streaming response.reasoning.delta events instead of buffering into output_item.done, (3) encrypted_content populated for redacted_thinking blocks."
+status = "new"
+created_at = "2026-02-09T19:58:48.130Z"
+source = "user"
+tags = []
+related_tasks = []

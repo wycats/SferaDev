@@ -5,6 +5,7 @@ feature: Unknown
 exo:
   tool: exo rfc create
   protocol: 1
+withdrawal_reason: "References removed digest correlation infrastructure"
 ---
 
 # RFC 00043: Transcript Digest Correlation for Token Tracking

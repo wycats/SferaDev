@@ -1429,7 +1429,7 @@ id = "00063"
 [[epochs.phases]]
 id = "01kh0qwgcqtxkpwyt8j1vdfjtj"
 title = "Thinking Block Persistence"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KH0QWGCQTXKPWYT8J1VDFJTJ"
 
@@ -1467,6 +1467,79 @@ label = "Reconstruct thinking blocks from DataPart history for API requests"
 status = "completed"
 completion_log = "findThinkingData() implemented. API reconstruction blocked: OpenResponses AssistantMessageItemParam doesn't accept ReasoningTextContent."
 ulid = "01KH0QY8907F31Y8Z1X95PHRN2"
+
+[[epochs.phases.rfcs]]
+id = "00063"
+
+[[epochs.phases]]
+id = "01kh1z5yq1f4hg8d5f959ctxv0"
+title = "Token Count Validation & Conversation Identity"
+status = "active"
+kind = "regular"
+ulid = "01KH1Z5YQ1F4HG8D5F959CTXV0"
+
+[[epochs.phases.goals]]
+id = "validate-estimate-accuracy"
+label = "Validate token estimation accuracy against server-reported usage (document -16% gap from previous_response_id server-side history)"
+status = "completed"
+completion_log = "Validated: ai-tokenizer estimates track within -16% of server-reported usage (expected gap from previous_response_id server-side thinking history). No UI change needed."
+ulid = "01KH1Z6ND5JZ8B3XTFSHFVF4NX"
+
+[[epochs.phases.goals]]
+id = "verify-conversation-identity"
+label = "Verify previous_response_id round-trip and stateful_marker sessionId persistence across turns"
+status = "completed"
+completion_log = "Verified: stateful_marker → previous_response_id round-trip confirmed for OpenAI models. Anthropic gets full message replay (no previous_response_id). Thinking blocks not reconstructed for Anthropic — known limitation, not for this phase."
+ulid = "01KH1Z6SBG9A2HNX908ZA0WRB1"
+
+[[epochs.phases.goals]]
+id = "validate-metadata-exclusion"
+label = "Verify thinking/stateful_marker DataParts are properly excluded from token estimates, digests, and message translation"
+status = "completed"
+completion_log = "Verified: isMetadataMime() correctly excludes stateful_marker and thinking DataParts from token counting and message translation. Integration tests added for mixed-content messages (text + thinking + stateful_marker). 19/19 counter tests pass."
+ulid = "01KH1Z6X3DJ9HVJSW2R6CJ02C2"
+
+[[epochs.phases.goals]]
+id = "validate-status-bar"
+label = "Verify status bar displays accurate counts (depends on wire-session-identity for correct per-conversation tracking)"
+status = "completed"
+completion_log = "Traced: provideTokenCount (per-message) and estimateTotalInputTokens (aggregate) both use the same TokenCounter methods. Status bar correctly shows estimates during streaming and actuals after completion."
+ulid = "01KH1Z71CYYHGMENT2FNFM4JKP"
+
+[[epochs.phases.goals]]
+id = "validate-sidebar"
+label = "Validate sidebar displays correct hierarchy and token counts (depends on wire-session-identity)"
+status = "completed"
+completion_log = "Verified: AgentTreeDataProvider sources from actuals after completion and shows ~ prefix during streaming. Subagent hierarchy is fully conversationId-based (agent-tree.ts). Context percentage no longer conflated across conversations — >100% bug resolved by conversationId identity."
+ulid = "01KH23638Y151CHFRDDBDFG55S"
+
+[[epochs.phases.goals]]
+id = "enable-caching"
+label = "Enable prompt caching via caching: auto on OpenResponses requests"
+status = "completed"
+completion_log = "Added caching: 'auto' to OpenResponses request body (openresponses-chat.ts). Uses intersection type since field not yet in generated OpenAPI types but accepted by upstream gateway. Enables automatic Anthropic cache_control injection. For OpenAI, caching works via previous_response_id. cached_tokens already wired in usage-tracker.ts."
+ulid = "01KH243ABH16Y0RYPVPTNM8XF5"
+
+[[epochs.phases.goals]]
+id = "wire-session-identity"
+label = "Wire stateful marker sessionId as stable conversation identity (GCMP pattern: read marker → reuse/create UUID → thread to status bar and marker emission)"
+status = "completed"
+completion_log = "Wired stateful_marker sessionId as stable conversationId: provider.ts reads marker → reuses/creates UUID → passes to startAgent() and OpenResponsesChatOptions → StreamAdapter emits in marker. Resume works via agentsByConversationId lookup. Claim registry migrated to use conversationId as parent identifier."
+ulid = "01KH29QRSFHX7Z8P472J480VA4"
+
+[[epochs.phases.goals]]
+id = "cleanup-stale-identity"
+label = "Remove stale identity infrastructure: conversationHash, partialKey, tokensSuspicious, ghost ConversationStateTracker refs"
+status = "completed"
+completion_log = "Removed: conversationHash, agentsByConversationHash, computeConversationHash, firstAssistantResponseHash, hashFirstAssistantResponse, reconcileProvisionalChildren, partialKey, agentsByPartialKey, tokensSuspicious heuristic, ghost ConversationStateTracker refs, partialKeyMap from DiagnosticDump. Kept: computeToolSetHash, computeAgentTypeHash, hashUserMessage (used by subagent detection). tree-invariants.test.ts fully rewritten for conversationId-based identity."
+ulid = "01KH29QX0P6NREQM33YXXNN0DV"
+
+[[epochs.phases.goals]]
+id = "e2e-identity-validation"
+label = "End-to-end validation: verify conversationId-based identity produces correct sidebar hierarchy and status bar tracking in real multi-turn, multi-agent sessions"
+status = "pending"
+ulid = "01KH2EZ7MNATJWR5QQ1512QPS4"
+rfc = "00063"
 
 [[epochs.phases.rfcs]]
 id = "00063"

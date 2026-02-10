@@ -5,6 +5,7 @@ feature: Token Tracking
 exo:
     tool: exo rfc create
     protocol: 1
+withdrawal_reason: "References removed token state fields and estimation lifecycle"
 ---
 
 # RFC 00040: Token State Model Simplification
@@ -72,4 +73,3 @@ interface TokenState {
 2. Update all usages
 3. Add `currentEstimate` structure
 4. Clear estimate in `completeAgent()`
-

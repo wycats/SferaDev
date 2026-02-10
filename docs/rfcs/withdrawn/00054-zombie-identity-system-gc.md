@@ -5,6 +5,7 @@ feature: Unknown
 exo:
   tool: exo rfc create
   protocol: 1
+withdrawal_reason: "Describes GC of zombie identity systems — work is complete, systems removed"
 ---
 
 # RFC 00054: Zombie Identity System GC

@@ -31,7 +31,7 @@ export interface AgentSnapshotEntry {
   status: string;
   systemPromptHash?: string;
   agentTypeHash?: string;
-  conversationHash?: string;
+  conversationId?: string;
   parentConversationHash?: string;
   inputTokens: number;
   outputTokens: number;
@@ -80,7 +80,6 @@ export interface DiagnosticDump {
   tree: TreeSnapshot;
   treeText: string;
   invariants: InvariantCheckResult;
-  partialKeyMap: Record<string, string>;
   pendingClaims: Array<{
     expectedName: string;
     parentId: string;
@@ -245,15 +244,12 @@ export class TreeDiagnostics {
         `${indent}${prefix} ${marker} (${hash}) ${status} ${tokens}${turns}`,
       );
 
-      // Render children - check both conversationHash and agentTypeHash
-      // since children may be linked via either (agentTypeHash is used provisionally
-      // before the parent completes and gets a conversationHash)
+      // Render children - check both conversationId and agentTypeHash
       const seenChildIds = new Set<string>();
       const children: AgentSnapshotEntry[] = [];
 
-      if (agent.conversationHash) {
-        for (const child of childrenByParent.get(agent.conversationHash) ??
-          []) {
+      if (agent.conversationId) {
+        for (const child of childrenByParent.get(agent.conversationId) ?? []) {
           if (!seenChildIds.has(child.id)) {
             children.push(child);
             seenChildIds.add(child.id);
@@ -310,7 +306,7 @@ export class TreeDiagnostics {
 
     const agentIds = new Set<string>();
     const duplicateIds = new Set<string>();
-    const conversationHashes = new Set<string>();
+    const conversationIds = new Set<string>();
     const agentTypeHashes = new Set<string>();
     let mainCount = 0;
 
@@ -321,8 +317,8 @@ export class TreeDiagnostics {
       } else {
         agentIds.add(agent.id);
       }
-      if (agent.conversationHash) {
-        conversationHashes.add(agent.conversationHash);
+      if (agent.conversationId) {
+        conversationIds.add(agent.conversationId);
       }
       if (agent.agentTypeHash) {
         agentTypeHashes.add(agent.agentTypeHash);
@@ -330,7 +326,7 @@ export class TreeDiagnostics {
     }
 
     const parentIdentifiers = new Set<string>([
-      ...conversationHashes,
+      ...conversationIds,
       ...agentTypeHashes,
     ]);
 
@@ -459,8 +455,8 @@ export class TreeDiagnostics {
         entry.systemPromptHash = agent.systemPromptHash.slice(0, 8);
       if (agent.agentTypeHash)
         entry.agentTypeHash = agent.agentTypeHash.slice(0, 8);
-      if (agent.conversationHash)
-        entry.conversationHash = agent.conversationHash.slice(0, 8);
+      if (agent.conversationId)
+        entry.conversationId = agent.conversationId.slice(0, 8);
       if (agent.parentConversationHash)
         entry.parentConversationHash = agent.parentConversationHash.slice(0, 8);
       agentSnapshots.push(entry);

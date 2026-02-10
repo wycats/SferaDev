@@ -124,6 +124,68 @@ Replaced ~3,000 lines of delta estimation infrastructure with direct tokenizatio
 - Removed `tokensEstimationMode`/`tokensCharsPerToken` configuration settings
 - Bundle: 9.6 MB (o200k_base 7.8 MB + claude 2.3 MB)
 
+## Conversation Identity via SessionId
+
+The `stateful_marker` DataPart contains a `sessionId` field that serves as the **stable conversation identity**. This is the mechanism both Microsoft Copilot Chat and GCMP use to track which turns belong to the same conversation — a problem that VS Code's `LanguageModelChat` API does not solve (no stable conversation ID is provided to language model providers).
+
+### The Pattern (from GCMP)
+
+```typescript
+// 1. Read marker from previous assistant message
+const markerAndIndex = getStatefulMarkerAndIndex(
+  model.id,
+  "openai-responses",
+  messages,
+);
+const statefulMarker = markerAndIndex?.statefulMarker;
+
+// 2. Reuse existing sessionId or create new one
+const sessionId = statefulMarker?.sessionId || crypto.randomUUID();
+
+// 3. Thread sessionId through to StreamReporter/Adapter
+// 4. Emit in the new stateful_marker at end of stream
+```
+
+This "just works" across summarization: if VS Code preserves the marker, `sessionId` survives. If VS Code drops the marker (full context reset), both the marker and server state reset together — a new `sessionId` is correct because it IS a new conversation.
+
+### Why This Matters
+
+Without stable identity, the token tracking system (`status-bar.ts`) cannot tell that turn N+1 belongs to the same conversation as turn N. After VS Code summarizes (changing message content), the status bar creates a **duplicate agent entry**. Server-reported tokens then accumulate on the wrong entry, producing impossible percentages (>100%) and duplicate sidebar entries. See `docs/bugs/sidebar-identity-and-estimation-bugs.md` for full analysis.
+
+### Data Flow (Our Implementation)
+
+```
+provider.ts                    → openresponses-chat.ts          → stream-adapter.ts
+findLatestStatefulMarker()        accept sessionId                 accept sessionId
+sessionId = marker?.sessionId     pass to StreamAdapter             emit in stateful_marker
+  || crypto.randomUUID()                                           at response.completed
+pass to startAgent() as
+  conversationId (9th param)
+```
+
+The `startAgent()` method already accepts `conversationId` as its 9th parameter and has an `agentsByConversationId` lookup map. It was never wired up. Once `sessionId` flows through, the existing resume logic works correctly.
+
+### Stale Infrastructure to Remove
+
+Before `sessionId`, identity relied on four overlapping heuristic systems that all break after summarization:
+
+| System                     | Location                         | Why It Breaks                                                         |
+| -------------------------- | -------------------------------- | --------------------------------------------------------------------- |
+| `conversationHash`         | `hash-utils.ts`, `status-bar.ts` | Hash of first user + assistant messages — changes after summarization |
+| `partialKey`               | `status-bar.ts`                  | Hash of first user message only — same problem                        |
+| `tokensSuspicious`         | `status-bar.ts`                  | Heuristic: "new tokens < 50% of max" — false positives                |
+| `ConversationStateTracker` | Ghost references only            | Class was deleted, comments remain                                    |
+
+These should be incrementally removed AFTER `sessionId` identity is wired and verified.
+
+### Infrastructure to KEEP
+
+| System                                 | Location                         | Why It's Needed                                                                                                                |
+| -------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `agentTypeHash` / `computeToolSetHash` | `hash-utils.ts`, `agent-tree.ts` | Distinguishes main agent from subagents by toolset — orthogonal to conversation identity                                       |
+| `ClaimRegistry`                        | `claim-registry.ts`              | Temporal parent→child linking for subagent detection — needs migration from `parentConversationHash` to `parentConversationId` |
+| `agentIdAliases`                       | `status-bar.ts`                  | Maps per-request `chatId` to canonical agent ID — still needed                                                                 |
+
 ## Proposed Work
 
 ### Phase 3: Thinking Block Persistence

@@ -2,8 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   computeToolSetHash,
   computeAgentTypeHash,
-  computeConversationHash,
-  hashFirstAssistantResponse,
   hashUserMessage,
 } from "./hash-utils.js";
 
@@ -40,39 +38,6 @@ describe("computeAgentTypeHash", () => {
     const hash1 = computeAgentTypeHash("abc123abc123abc123");
     const hash2 = computeAgentTypeHash("def456def456def456");
     expect(hash1).not.toBe(hash2);
-  });
-});
-
-describe("computeConversationHash", () => {
-  it("combines all three inputs", () => {
-    const hash = computeConversationHash("type", "user", "assistant");
-    expect(hash).toMatch(/^[a-f0-9]{16}$/);
-  });
-
-  it("is stable for same inputs", () => {
-    const hash1 = computeConversationHash("a", "b", "c");
-    const hash2 = computeConversationHash("a", "b", "c");
-    expect(hash1).toBe(hash2);
-  });
-});
-
-describe("hashFirstAssistantResponse", () => {
-  it("truncates to 500 characters", () => {
-    const longText = "a".repeat(1000);
-    const hash1 = hashFirstAssistantResponse(longText);
-    const hash2 = hashFirstAssistantResponse("a".repeat(500));
-    expect(hash1).toBe(hash2);
-  });
-
-  it("trims whitespace", () => {
-    const hash1 = hashFirstAssistantResponse("  hello  ");
-    const hash2 = hashFirstAssistantResponse("hello");
-    expect(hash1).toBe(hash2);
-  });
-
-  it("handles empty string", () => {
-    const hash = hashFirstAssistantResponse("");
-    expect(hash).toMatch(/^[a-f0-9]{16}$/);
   });
 });
 

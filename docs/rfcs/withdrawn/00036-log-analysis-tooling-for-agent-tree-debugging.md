@@ -5,20 +5,19 @@ feature: diagnostics
 exo:
     tool: exo rfc create
     protocol: 1
+withdrawal_reason: "References removed tree diagnostics tooling"
 ---
 
-# RFC 00037: Log Analysis Tooling for Agent Tree Debugging
+# RFC 00036: Log Analysis Tooling for Agent Tree Debugging
 
 ## Problem Statement
 
 Debugging agent tree issues requires manual correlation between:
-
 1. Our extension logs (AI Gateway output channel)
 2. VS Code's Copilot logs (GitHub Copilot Chat output channel)
 3. Mental model of what the tree "should" look like
 
 This is error-prone and time-consuming. An AI assistant reviewing logs cannot easily:
-
 - Determine if the tree structure is "correct"
 - Correlate our events with VS Code's request IDs
 - Identify invariant violations without manual inspection
@@ -42,19 +41,18 @@ This is error-prone and time-consuming. An AI assistant reviewing logs cannot ea
 
 This RFC builds on existing code:
 
-| File                                 | Purpose                                                                  |
-| ------------------------------------ | ------------------------------------------------------------------------ |
-| src/diagnostics/tree-diagnostics.ts  | JSON-lines flight recorder to {workspaceRoot}/.logs/tree-diagnostics.log |
-| src/identity/tree-invariants.test.ts | Property tests for tree invariants                                       |
-| src/identity/claim-registry.ts       | Parent-child claim mechanism                                             |
-| scripts/analyze-forensic-captures.ts | Pattern for analysis scripts                                             |
+| File | Purpose |
+|------|---------|
+| src/diagnostics/tree-diagnostics.ts | JSON-lines flight recorder to {workspaceRoot}/.logs/tree-diagnostics.log |
+| src/identity/tree-invariants.test.ts | Property tests for tree invariants |
+| src/identity/claim-registry.ts | Parent-child claim mechanism |
+| scripts/analyze-forensic-captures.ts | Pattern for analysis scripts |
 
 ## Implementation Status
 
 ### Phase 1: Enhanced Tree Snapshots with Invariant Checks ✅ COMPLETE
 
 Implemented snapshot-checkable invariants:
-
 1. singleMainAgent — At most one agent has isMain: true
 2. mainAgentExists — If agents exist, exactly one is main
 3. allChildrenHaveParent — Every agent with parentConversationHash has a matching parent
@@ -64,40 +62,12 @@ Implemented snapshot-checkable invariants:
 7. noExpiredClaims — No claims past expiry
 
 Files modified:
-
 - src/diagnostics/tree-diagnostics.ts — Added InvariantCheckResult, checkInvariants(), context support
 - src/diagnostics/tree-diagnostics.test.ts — 8 tests covering all invariants
 - src/status-bar.ts — All log() calls now pass vscodeSessionId
 
-### Phase 2: Analysis Script for Log Parsing ✅ COMPLETE
-
-Created standalone analysis script that parses tree-diagnostics.log and outputs structured JSON for AI review.
-
-**Script**: `scripts/analyze-agent-logs.ts`
-
-**Usage**:
-
-```bash
-node scripts/analyze-agent-logs.ts [workspace-path]
-pnpm run analyze:logs [workspace-path]
-```
-
-**Output Structure** (`LogAnalysis`):
-
-- `meta` — Log file path, event count, time range, analysis timestamp
-- `summary` — Unique agents, main agent changes, total turns, max tokens, claim stats, violation count
-- `invariants` — `allPassed` boolean + array of violation events with timestamps
-- `timeline` — Chronological event summaries for quick review
-- `finalTree` — Last tree snapshot text + counts
-- `agents` — Per-agent stats (name, isMain, turnCount, tokens, first/last seen)
-
-**Files modified**:
-
-- scripts/analyze-agent-logs.ts — Standalone script (no build required, uses Node.js native TS)
-- package.json — Added `analyze:logs` npm script
-
+### Phase 2: Analysis Script for Log Parsing (TODO)
 ### Phase 3: Diagnostic Dump Command (TODO)
-
 ### Phase 4: VS Code Log Correlation (TODO)
 
 ## References

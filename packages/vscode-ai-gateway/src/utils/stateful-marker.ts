@@ -164,9 +164,7 @@ export function encodeThinkingData(thinking: ThinkingData): Uint8Array {
  * Decode a DataPart('thinking') payload back to ThinkingData.
  * Performs type-checking on the `type` field to validate the container.
  */
-export function decodeThinkingData(
-  data: Uint8Array,
-): ThinkingData | undefined {
+export function decodeThinkingData(data: Uint8Array): ThinkingData | undefined {
   try {
     const decoded = new TextDecoder().decode(data);
     const parsed: unknown = JSON.parse(decoded);

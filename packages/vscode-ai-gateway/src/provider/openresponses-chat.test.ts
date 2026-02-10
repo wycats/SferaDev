@@ -50,6 +50,24 @@ vi.mock("vscode", () => ({
   },
 }));
 
+vi.mock("../logger.js", () => ({
+  logger: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock("../logger/validation-log.js", () => ({
+  writeTokenValidationEntry: vi.fn(),
+}));
+
+vi.mock("../utils/stateful-marker.js", () => ({
+  findLatestStatefulMarker: vi.fn(() => undefined),
+}));
+
 import { LanguageModelTextPart } from "vscode";
 import { executeOpenResponsesChat } from "./openresponses-chat";
 
@@ -76,6 +94,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
     apiKey: "test-key",
     estimatedInputTokens: 1234,
     chatId: "chat-1",
+    conversationId: "test-conv-id",
   };
 
   const options = { modelOptions: {} };

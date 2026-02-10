@@ -222,38 +222,6 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(dumpDiagnosticsCommand);
 
-  const dumpToolsCommand = vscode.commands.registerCommand(
-    "vercel.ai.dumpToolsSnapshot",
-    () => {
-      const filePath = provider.dumpLastToolsSnapshot();
-      if (!filePath) {
-        vscode.window.showInformationMessage(
-          "No tools captured yet. Send a chat request first.",
-        );
-        return;
-      }
-      vscode.window.showInformationMessage(
-        `Tool snapshot written to ${filePath}`,
-      );
-    },
-  );
-  context.subscriptions.push(dumpToolsCommand);
-
-  const captureTokenDebugCommand = vscode.commands.registerCommand(
-    "vercel.ai.captureTokenDebugBundle",
-    () => {
-      const dir = provider.startTokenDebugCapture();
-      if (!dir) {
-        vscode.window.showErrorMessage("Failed to start token debug capture.");
-        return;
-      }
-      vscode.window.showInformationMessage(
-        `Token debug capture armed. Send a chat request to write bundle in ${dir}`,
-      );
-    },
-  );
-  context.subscriptions.push(captureTokenDebugCommand);
-
   // Register command to manage authentication
   const commandDisposable = vscode.commands.registerCommand(
     `${EXTENSION_ID}.manage`,

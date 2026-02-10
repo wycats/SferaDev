@@ -4,11 +4,7 @@ import {
   treeDiagnostics,
   TreeDiagnostics,
 } from "./diagnostics/tree-diagnostics.js";
-import {
-  ClaimRegistry,
-  computeConversationHash,
-  hashFirstAssistantResponse,
-} from "./identity/index.js";
+import { ClaimRegistry } from "./identity/index.js";
 import { logger } from "./logger";
 import {
   createPersistenceManager,
@@ -82,20 +78,16 @@ export interface AgentEntry {
   // Identity tracking (RFC 00033)
   /** Computed once at conversation start from toolSetHash */
   agentTypeHash?: string | undefined;
-  /** Computed after first response; null until then */
-  conversationHash?: string | null | undefined;
-  /** Parent's conversationHash if this is a subagent */
+  /** Parent's conversation identifier if this is a subagent */
   parentConversationHash?: string | null | undefined;
   /** Conversation hashes of child agents spawned by this agent */
   childConversationHashes?: string[] | undefined;
   /** Hash of first user message (computed at conversation start) */
   firstUserMessageHash?: string | undefined;
-  /** Hash of first assistant response (computed after first response) */
-  firstAssistantResponseHash?: string | null | undefined;
 
   /** Source of the token estimate (for diagnostics/UI) */
   estimationSource?: "exact" | "delta" | "estimated" | undefined;
-  /** Stable conversation UUID from ConversationStateTracker (primary identity) */
+  /** Stable conversation UUID from stateful marker sessionId (primary identity) */
   conversationId?: string | undefined;
 }
 
@@ -154,11 +146,7 @@ export class TokenStatusBar implements vscode.Disposable {
   private readonly _onDidChangeAgents = new vscode.EventEmitter<void>();
   // Claim registry for parent-child linking (RFC 00033)
   private claimRegistry = new ClaimRegistry();
-  // Conversation hash lookup (deduplication + hierarchy)
-  private agentsByConversationHash = new Map<string, AgentEntry>();
-  // Partial identity lookup (firstUserMessageHash)
-  private agentsByPartialKey = new Map<string, AgentEntry>();
-  // Stable conversation identity lookup (ConversationStateTracker UUID)
+  // Stable conversation identity lookup (stateful marker sessionId)
   private agentsByConversationId = new Map<string, AgentEntry>();
   // Map request IDs to canonical agent IDs (for deduped conversations)
   private agentIdAliases = new Map<string, string>();
@@ -278,16 +266,6 @@ export class TokenStatusBar implements vscode.Disposable {
   }
 
   private removeIdentityMappings(agent: AgentEntry): void {
-    if (agent.conversationHash) {
-      this.agentsByConversationHash.delete(agent.conversationHash);
-    }
-    if (agent.firstUserMessageHash) {
-      const partialKey = agent.firstUserMessageHash;
-      const mapped = this.agentsByPartialKey.get(partialKey);
-      if (mapped?.id === agent.id) {
-        this.agentsByPartialKey.delete(partialKey);
-      }
-    }
     if (agent.conversationId) {
       const mapped = this.agentsByConversationId.get(agent.conversationId);
       if (mapped?.id === agent.id) {
@@ -307,7 +285,7 @@ export class TokenStatusBar implements vscode.Disposable {
   /**
    * Create a child agent that matched a pending claim.
    * This is called when we detect a subagent that has a claim waiting for it.
-   * Extracted to ensure claim-matched children are NEVER merged via partialKey.
+   * Extracted to ensure claim-matched children are never merged into an existing agent.
    */
   private createChildAgent(
     agentId: string,
@@ -318,7 +296,6 @@ export class TokenStatusBar implements vscode.Disposable {
     systemPromptHash: string | undefined,
     agentTypeHash: string,
     firstUserMessageHash: string | undefined,
-    partialKey: string | null,
     claimMatch: { parentConversationHash: string; expectedChildName: string },
     estimatedDeltaTokens: number | undefined,
     estimationSource: "exact" | "delta" | "estimated" | undefined,
@@ -351,36 +328,7 @@ export class TokenStatusBar implements vscode.Disposable {
 
     this.agents.set(agentId, agent);
     this.agentIdAliases.set(agentId, agentId);
-    if (partialKey) {
-      const existingForKey = this.agentsByPartialKey.get(partialKey);
-      if (existingForKey && existingForKey.id !== agent.id) {
-        if (existingForKey.status !== "streaming") {
-          logger.warn(
-            `[StatusBar] partialKey collision, overwriting stale agent`,
-            JSON.stringify({
-              partialKey: partialKey.slice(0, 20),
-              existingAgentId: existingForKey.id.slice(-8),
-              newAgentId: agent.id.slice(-8),
-              existingStatus: existingForKey.status,
-            }),
-          );
-          this.agentsByPartialKey.set(partialKey, agent);
-        } else {
-          logger.warn(
-            `[StatusBar] partialKey collision with active agent, not overwriting`,
-            JSON.stringify({
-              partialKey: partialKey.slice(0, 20),
-              existingAgentId: existingForKey.id.slice(-8),
-              newAgentId: agent.id.slice(-8),
-              existingStatus: existingForKey.status,
-            }),
-          );
-        }
-      } else {
-        this.agentsByPartialKey.set(partialKey, agent);
-      }
-    }
-    // Register by conversationId for stable identity (takes precedence over partialKey)
+    // Register by conversationId for stable identity
     if (conversationId) {
       this.agentsByConversationId.set(conversationId, agent);
     }
@@ -413,7 +361,7 @@ export class TokenStatusBar implements vscode.Disposable {
         parentConversationHash: claimMatch.parentConversationHash.slice(0, 8),
         claimMatched: true,
         claimExpectedName: claimMatch.expectedChildName,
-        earlyClaimMatch: true, // Indicates this was matched BEFORE partialKey check
+        earlyClaimMatch: true, // Indicates this was matched before resume checks
       },
       this.createTreeSnapshot(),
       { vscodeSessionId: vscode.env.sessionId },
@@ -432,7 +380,7 @@ export class TokenStatusBar implements vscode.Disposable {
    * @param modelId Model identifier
    * @param systemPromptHash Hash of the system prompt - diagnostics only
    * @param estimatedDeltaTokens Estimated tokens for NEW messages only (delta)
-   * @param conversationId Stable conversation UUID from ConversationStateTracker
+   * @param conversationId Stable conversation UUID from stateful_marker sessionId (GCMP pattern)
    */
   startAgent(
     agentId: string,
@@ -447,12 +395,6 @@ export class TokenStatusBar implements vscode.Disposable {
   ): string {
     const now = Date.now();
 
-    // Use only firstUserMessageHash for partialKey - VS Code dynamically injects
-    // content (like <agents> blocks) into the system prompt, causing systemPromptHash
-    // to change between turns of the same conversation. System prompt hash is
-    // diagnostics-only and not used for identity decisions.
-    const partialKey = firstUserMessageHash ?? null;
-
     const hasPendingClaims = this.claimRegistry.getPendingClaimCount() > 0;
 
     // Log subagent detection context for debugging
@@ -464,16 +406,11 @@ export class TokenStatusBar implements vscode.Disposable {
       agentTypeHash !== undefined &&
       agentTypeHash !== mainAgent.agentTypeHash;
 
-    // Check for conversation identity match (prefer conversationId over partialKey)
-    // conversationId is a stable UUID from ConversationStateTracker that survives across turns
-    // partialKey is a hash of first user message (fallback for first turn before API response)
+    // Check for conversation identity match (conversationId is a stable UUID)
     const existingByConversationId = conversationId
       ? this.agentsByConversationId.get(conversationId)
       : undefined;
-    const existingByPartialKey = partialKey
-      ? this.agentsByPartialKey.get(partialKey)
-      : undefined;
-    const existingAgent = existingByConversationId ?? existingByPartialKey;
+    const existingAgent = existingByConversationId;
 
     logger.info(
       `[StatusBar] Subagent detection check`,
@@ -487,32 +424,16 @@ export class TokenStatusBar implements vscode.Disposable {
         existingAgentMaxTokens: existingAgent?.maxObservedInputTokens,
         thisEstimatedTokens: estimatedTokens,
         conversationId: conversationId?.slice(0, 8),
-        matchedBy: existingByConversationId
-          ? "conversationId"
-          : existingByPartialKey
-            ? "partialKey"
-            : "none",
+        matchedBy: existingByConversationId ? "conversationId" : "none",
       }),
     );
 
-    // Token-based heuristic: If the new request has dramatically fewer tokens than
-    // the existing agent's max observed, it's likely a NEW agent (subagent), not a
-    // resume. A subagent starting fresh will have ~10-20k tokens, while a main agent
-    // mid-conversation might have 50-100k. Threshold: new < 50% of existing max.
-    const tokensSuspicious =
-      estimatedTokens !== undefined &&
-      existingAgent?.maxObservedInputTokens !== undefined &&
-      (existingAgent.maxObservedInputTokens === 0 ||
-        estimatedTokens < existingAgent.maxObservedInputTokens * 0.5);
-
-    // FIRST: Check claims for ALL agents when pending claims exist.
-    // This must happen before partialKey resume (including main agent resumes).
-    if (hasPendingClaims && agentTypeHash) {
-      const claimNameIsMain = existingAgent?.isMain && !tokensSuspicious;
+    // FIRST: Check claims only when there's no conversationId match.
+    if (!existingAgent && hasPendingClaims && agentTypeHash) {
       const extractedName = this.extractAgentName(
         agentId,
         modelId,
-        claimNameIsMain,
+        this.mainAgentId === null,
       );
       const claimMatch = this.matchChildClaim(extractedName, agentTypeHash);
 
@@ -523,7 +444,6 @@ export class TokenStatusBar implements vscode.Disposable {
           agentTypeHash: agentTypeHash.slice(0, 8),
           claimMatched: claimMatch !== null,
           claimExpectedName: claimMatch?.expectedChildName,
-          claimNameIsMain,
         }),
       );
 
@@ -538,7 +458,6 @@ export class TokenStatusBar implements vscode.Disposable {
           systemPromptHash,
           agentTypeHash,
           firstUserMessageHash,
-          partialKey,
           claimMatch,
           estimatedDeltaTokens,
           undefined, // estimationSource not passed from provider
@@ -547,11 +466,9 @@ export class TokenStatusBar implements vscode.Disposable {
       }
     }
 
-    // Resume main agent if partialKey matches and tokens aren't suspicious.
-    // NOTE: agentTypeHash is NOT checked here - it's diagnostics only and can
-    // change between turns when VS Code adds/removes MCP tools.
-    if (existingAgent?.isMain && !tokensSuspicious) {
-      // Resume the main agent
+    // Resume any agent when conversationId matches.
+    // NOTE: agentTypeHash is diagnostics only and can change between turns.
+    if (existingAgent) {
       this.agentIdAliases.set(agentId, existingAgent.id);
       existingAgent.status = "streaming";
       existingAgent.lastUpdateTime = now;
@@ -576,23 +493,24 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.dimmed = false;
       existingAgent.completionOrder = undefined;
 
-      this.mainAgentId = existingAgent.id;
+      if (existingAgent.isMain) {
+        this.mainAgentId = existingAgent.id;
+      }
       this.activeAgentId = existingAgent.id;
 
       logger.info(
-        `[StatusBar] Main Agent RESUMED (partialKey match)`,
+        `[StatusBar] Agent RESUMED (conversationId match)`,
         JSON.stringify({
           timestamp: now,
           agentId: agentId.slice(-8),
           canonicalAgentId: existingAgent.id.slice(-8),
-          isMain: true,
+          isMain: existingAgent.isMain,
           modelId: existingAgent.modelId,
           estimatedTokens,
           maxTokens,
           name: existingAgent.name,
           systemPromptHash: systemPromptHash?.slice(0, 8),
           agentTypeHash: existingAgent.agentTypeHash?.slice(0, 8),
-          partialKey: partialKey?.slice(0, 20),
           conversationId: existingAgent.conversationId?.slice(0, 8),
           totalAgents: this.agents.size,
           pendingClaimsPresent: hasPendingClaims,
@@ -604,90 +522,11 @@ export class TokenStatusBar implements vscode.Disposable {
         {
           agentId: agentId.slice(-8),
           canonicalAgentId: existingAgent.id.slice(-8),
-          isMain: true,
+          isMain: existingAgent.isMain,
           name: existingAgent.name,
-          partialKey: partialKey?.slice(0, 20),
+          conversationId: existingAgent.conversationId?.slice(0, 8),
           systemPromptHash: systemPromptHash?.slice(0, 8),
           pendingClaimsPresent: hasPendingClaims,
-        },
-        this.createTreeSnapshot(),
-        { vscodeSessionId: vscode.env.sessionId },
-      );
-
-      this.updateDisplay();
-      this._onDidChangeAgents.fire();
-      return existingAgent.id;
-    }
-
-    // Check for partialKey match for non-main agents
-    // (We already handled main agent resume above)
-    //
-    // NOTE: agentTypeHash is NOT checked - it's diagnostics only.
-    // Resume is based on partialKey (firstUserMessageHash) only.
-    const canResumeExisting = existingAgent && !existingAgent.isMain;
-
-    if (canResumeExisting) {
-      this.agentIdAliases.set(agentId, existingAgent.id);
-      existingAgent.status = "streaming";
-      existingAgent.lastUpdateTime = now;
-      existingAgent.estimatedInputTokens = estimatedTokens;
-      existingAgent.estimatedDeltaTokens = estimatedDeltaTokens;
-      // Note: estimationSource is not passed from provider.ts, so we don't update it
-      existingAgent.maxInputTokens =
-        maxTokens ?? existingAgent.maxInputTokens ?? undefined;
-      existingAgent.modelId = modelId ?? existingAgent.modelId;
-      existingAgent.systemPromptHash =
-        systemPromptHash ?? existingAgent.systemPromptHash;
-      existingAgent.agentTypeHash =
-        agentTypeHash ?? existingAgent.agentTypeHash;
-      existingAgent.firstUserMessageHash =
-        firstUserMessageHash ?? existingAgent.firstUserMessageHash;
-      // Update conversationId if a new one is provided (may not have been available on first turn)
-      if (conversationId && !existingAgent.conversationId) {
-        existingAgent.conversationId = conversationId;
-        this.agentsByConversationId.set(conversationId, existingAgent);
-      }
-      // Don't reset inputTokens/outputTokens - they'll be updated in completeAgent
-      // Keep maxObservedInputTokens/totalOutputTokens for accumulation
-      existingAgent.contextManagement = undefined;
-      existingAgent.dimmed = false;
-      existingAgent.completionOrder = undefined;
-
-      if (existingAgent.isMain) {
-        this.mainAgentId = existingAgent.id;
-      }
-
-      this.activeAgentId = existingAgent.id;
-
-      logger.info(
-        `[StatusBar] Agent RESUMED (partialKey match)`,
-        JSON.stringify({
-          timestamp: now,
-          agentId: agentId.slice(-8),
-          canonicalAgentId: existingAgent.id.slice(-8),
-          isMain: existingAgent.isMain,
-          modelId: existingAgent.modelId,
-          estimatedTokens,
-          maxTokens,
-          name: existingAgent.name,
-          systemPromptHash: systemPromptHash?.slice(0, 8),
-          agentTypeHash: existingAgent.agentTypeHash?.slice(0, 8),
-          firstUserMessageHash: existingAgent.firstUserMessageHash?.slice(0, 8),
-          partialKey: partialKey?.slice(0, 20),
-          totalAgents: this.agents.size,
-        }),
-      );
-
-      // Tree diagnostics
-      treeDiagnostics.log(
-        "AGENT_RESUMED",
-        {
-          agentId: agentId.slice(-8),
-          canonicalAgentId: existingAgent.id.slice(-8),
-          isMain: existingAgent.isMain,
-          name: existingAgent.name,
-          partialKey: partialKey?.slice(0, 20),
-          systemPromptHash: systemPromptHash?.slice(0, 8),
         },
         this.createTreeSnapshot(),
         { vscodeSessionId: vscode.env.sessionId },
@@ -709,7 +548,7 @@ export class TokenStatusBar implements vscode.Disposable {
 
     // CRITICAL: Don't do claim matching if this looks like the main agent.
     // This prevents the main agent's turns from being incorrectly attributed to
-    // pending subagent claims when there's no partialKey to identify it as a resume.
+    // pending subagent claims when there's no conversationId match to identify a resume.
     //
     // We consider this "likely main" if there's no main agent yet.
     const likelyMainAgent = this.mainAgentId === null;
@@ -795,36 +634,7 @@ export class TokenStatusBar implements vscode.Disposable {
 
     this.agents.set(agentId, agent);
     this.agentIdAliases.set(agentId, agentId);
-    if (partialKey) {
-      const existingForKey = this.agentsByPartialKey.get(partialKey);
-      if (existingForKey && existingForKey.id !== agent.id) {
-        if (existingForKey.status !== "streaming") {
-          logger.warn(
-            `[StatusBar] partialKey collision, overwriting stale agent`,
-            JSON.stringify({
-              partialKey: partialKey.slice(0, 20),
-              existingAgentId: existingForKey.id.slice(-8),
-              newAgentId: agent.id.slice(-8),
-              existingStatus: existingForKey.status,
-            }),
-          );
-          this.agentsByPartialKey.set(partialKey, agent);
-        } else {
-          logger.warn(
-            `[StatusBar] partialKey collision with active agent, not overwriting`,
-            JSON.stringify({
-              partialKey: partialKey.slice(0, 20),
-              existingAgentId: existingForKey.id.slice(-8),
-              newAgentId: agent.id.slice(-8),
-              existingStatus: existingForKey.status,
-            }),
-          );
-        }
-      } else {
-        this.agentsByPartialKey.set(partialKey, agent);
-      }
-    }
-    // Register by conversationId for stable identity (takes precedence over partialKey)
+    // Register by conversationId for stable identity
     if (conversationId) {
       this.agentsByConversationId.set(conversationId, agent);
     }
@@ -889,11 +699,7 @@ export class TokenStatusBar implements vscode.Disposable {
   /**
    * Update agent with completed usage
    */
-  completeAgent(
-    agentId: string,
-    usage: TokenUsage,
-    firstAssistantResponseText?: string,
-  ): void {
+  completeAgent(agentId: string, usage: TokenUsage): void {
     const resolvedId = this.resolveAgentId(agentId);
     const agent = this.agents.get(resolvedId);
     if (!agent) {
@@ -920,33 +726,6 @@ export class TokenStatusBar implements vscode.Disposable {
     agent.lastUpdateTime = Date.now();
     agent.contextManagement = usage.contextManagement;
     agent.completionOrder = this.completedAgentCount;
-
-    if (
-      !agent.conversationHash &&
-      agent.agentTypeHash &&
-      agent.firstUserMessageHash &&
-      firstAssistantResponseText
-    ) {
-      const firstAssistantResponseHash = hashFirstAssistantResponse(
-        firstAssistantResponseText,
-      );
-      agent.firstAssistantResponseHash = firstAssistantResponseHash;
-      const newConversationHash = computeConversationHash(
-        agent.agentTypeHash,
-        agent.firstUserMessageHash,
-        firstAssistantResponseHash,
-      );
-      agent.conversationHash = newConversationHash;
-      this.agentsByConversationHash.set(newConversationHash, agent);
-
-      // Update any children that were linked via provisional agentTypeHash
-      // This handles first-turn subagent calls where the parent didn't have
-      // a conversationHash yet when the claim was created
-      this.reconcileProvisionalChildren(
-        agent.agentTypeHash,
-        newConversationHash,
-      );
-    }
 
     this.completedAgentCount++;
     this.currentUsage = usage;
@@ -1007,7 +786,7 @@ export class TokenStatusBar implements vscode.Disposable {
         inputTokens: usage.inputTokens,
         outputTokens: usage.outputTokens,
         turnCount: agent.turnCount,
-        conversationHash: agent.conversationHash?.slice(0, 8),
+        conversationId: agent.conversationId?.slice(0, 8),
       },
       this.createTreeSnapshot(),
       { vscodeSessionId: vscode.env.sessionId },
@@ -1448,14 +1227,8 @@ export class TokenStatusBar implements vscode.Disposable {
    * Check if an agent has children still in the tree or pending claims
    */
   private hasChildrenInTree(agent: AgentEntry): boolean {
-    // WARNING: agentTypeHash is NOT unique per parent - it's shared across agents
-    // with the same toolset/model. This fallback is intentional for first-turn
-    // provisional linking before conversationHash is computed, but can cause
-    // false positives. The non-uniqueness risk is acceptable because:
-    // 1. It only affects the first turn before conversationHash is available
-    // 2. reconcileProvisionalChildren() fixes linkage once conversationHash is computed
-    // An agent is a parent if other agents reference its conversationHash or agentTypeHash
-    const parentHash = agent.conversationHash ?? agent.agentTypeHash;
+    // An agent is a parent if other agents reference its conversationId or agentTypeHash
+    const parentHash = agent.conversationId ?? agent.agentTypeHash;
     if (!parentHash) return false;
 
     // Check for existing children
@@ -1627,8 +1400,6 @@ export class TokenStatusBar implements vscode.Disposable {
     const previousCount = this.agents.size;
     const previousClaimCount = this.claimRegistry.getPendingClaimCount();
     this.agents.clear();
-    this.agentsByConversationHash.clear();
-    this.agentsByPartialKey.clear();
     this.agentsByConversationId.clear();
     this.agentIdAliases.clear();
     this.claimRegistry.clearAll();
@@ -1677,10 +1448,6 @@ export class TokenStatusBar implements vscode.Disposable {
     return Array.from(this.agents.values());
   }
 
-  getPartialKeyMap(): ReadonlyMap<string, AgentEntry> {
-    return this.agentsByPartialKey;
-  }
-
   getMainAgentId(): string | null {
     return this.mainAgentId;
   }
@@ -1694,12 +1461,6 @@ export class TokenStatusBar implements vscode.Disposable {
     const tree = this.createTreeSnapshot();
     const invariants = treeDiagnostics.checkInvariants(tree);
     const treeText = treeDiagnostics.createTreeText(tree);
-    const partialKeyMap = Object.fromEntries(
-      Array.from(this.agentsByPartialKey.entries()).map(([key, agent]) => [
-        key,
-        agent.id,
-      ]),
-    );
     const pendingClaims = this.claimRegistry.getClaims().map((claim) => ({
       expectedName: claim.expectedChildAgentName,
       parentId: claim.parentConversationHash,
@@ -1712,7 +1473,6 @@ export class TokenStatusBar implements vscode.Disposable {
       tree,
       treeText,
       invariants,
-      partialKeyMap,
       pendingClaims,
     };
   }
@@ -1745,10 +1505,11 @@ export class TokenStatusBar implements vscode.Disposable {
       return;
     }
 
-    // Use conversationHash if available, otherwise use agentTypeHash as provisional identifier
-    // This allows first-turn subagent calls to still create claims
+    // Use conversationId if available (stable UUID from stateful marker),
+    // otherwise fall back to agentTypeHash as provisional identifier.
+    // This allows first-turn subagent calls to still create claims.
     const parentIdentifier =
-      parentAgent.conversationHash ?? parentAgent.agentTypeHash;
+      parentAgent.conversationId ?? parentAgent.agentTypeHash;
 
     this.claimRegistry.createClaim(
       parentIdentifier,
@@ -1761,7 +1522,7 @@ export class TokenStatusBar implements vscode.Disposable {
       JSON.stringify({
         parentAgentId: parentAgentId.slice(-8),
         expectedChildAgentName,
-        usingConversationHash: !!parentAgent.conversationHash,
+        usingConversationId: !!parentAgent.conversationId,
         parentIdentifier: parentIdentifier.slice(0, 8),
       }),
     );
@@ -1774,7 +1535,7 @@ export class TokenStatusBar implements vscode.Disposable {
         parentName: parentAgent.name,
         expectedChildAgentName,
         parentIdentifier: parentIdentifier.slice(0, 8),
-        usingConversationHash: !!parentAgent.conversationHash,
+        usingConversationId: !!parentAgent.conversationId,
       },
       this.createTreeSnapshot(),
       { vscodeSessionId: vscode.env.sessionId },
@@ -1790,34 +1551,6 @@ export class TokenStatusBar implements vscode.Disposable {
     agentTypeHash: string,
   ): { parentConversationHash: string; expectedChildName: string } | null {
     return this.claimRegistry.matchClaim(agentName, agentTypeHash);
-  }
-
-  /**
-   * Reconcile children that were linked via provisional agentTypeHash.
-   * Called when a parent computes its real conversationHash.
-   * Updates children's parentConversationHash from the provisional ID to the real one.
-   */
-  private reconcileProvisionalChildren(
-    provisionalId: string,
-    realConversationHash: string,
-  ): void {
-    let reconciledCount = 0;
-    for (const agent of this.agents.values()) {
-      if (agent.parentConversationHash === provisionalId) {
-        agent.parentConversationHash = realConversationHash;
-        reconciledCount++;
-      }
-    }
-    if (reconciledCount > 0) {
-      logger.info(
-        `[StatusBar] Reconciled ${reconciledCount} children from provisional ID`,
-        JSON.stringify({
-          provisionalId: provisionalId.slice(0, 8),
-          realConversationHash: realConversationHash.slice(0, 8),
-        }),
-      );
-      this._onDidChangeAgents.fire();
-    }
   }
 
   dispose(): void {

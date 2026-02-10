@@ -106,6 +106,48 @@ describe("TokenCounter", () => {
     expect(tokens).toBe(3); // MESSAGE_OVERHEAD only
   });
 
+  it("ignores thinking data parts", () => {
+    const counter = new TokenCounter();
+    const thinkingContent = new TextEncoder().encode(
+      "Let me think about this step by step...",
+    );
+    const message = {
+      role: vscode.LanguageModelChatMessageRole.Assistant,
+      content: [new vscode.LanguageModelDataPart(thinkingContent, "thinking")],
+    } as vscode.LanguageModelChatMessage;
+
+    // Only MESSAGE_OVERHEAD (3) should be counted, thinking content excluded
+    const tokens = counter.estimateMessageTokens(message, "claude-sonnet-4");
+    expect(tokens).toBe(3); // MESSAGE_OVERHEAD only
+  });
+
+  it("mixed content: text counted, thinking+stateful_marker excluded", () => {
+    const counter = new TokenCounter();
+    const textContent = "Hello, this is visible text content.";
+    const thinkingContent = new TextEncoder().encode(
+      "Internal reasoning that should not be counted...",
+    );
+    const markerContent = new Uint8Array([1, 2, 3]);
+
+    const message = {
+      role: vscode.LanguageModelChatMessageRole.Assistant,
+      content: [
+        new vscode.LanguageModelTextPart(textContent),
+        new vscode.LanguageModelDataPart(thinkingContent, "thinking"),
+        new vscode.LanguageModelDataPart(markerContent, STATEFUL_MARKER_MIME),
+      ],
+    } as vscode.LanguageModelChatMessage;
+
+    // Only text tokens + MESSAGE_OVERHEAD should be counted
+    const textOnlyTokens = counter.estimateTextTokens(textContent, "gpt-4o");
+    const totalTokens = counter.estimateMessageTokens(message, "gpt-4o");
+
+    // Total = text tokens + overhead, metadata DataParts excluded
+    expect(totalTokens).toBe(textOnlyTokens + 3); // 3 = MESSAGE_OVERHEAD
+    // Verify the metadata didn't add tokens (thinking content is ~10 tokens)
+    expect(totalTokens).toBeLessThan(textOnlyTokens + 10);
+  });
+
   it("adds per-message overhead", () => {
     const counter = new TokenCounter();
     const emptyMessage = {

@@ -5,6 +5,7 @@ feature: testing
 exo:
   tool: exo rfc create
   protocol: 1
+withdrawal_reason: "References removed forensic capture integration tests"
 ---
 
 # RFC 00032: Integration Test Harness

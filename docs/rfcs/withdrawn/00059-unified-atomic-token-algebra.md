@@ -5,6 +5,7 @@ feature: Unknown
 exo:
     tool: exo rfc create
     protocol: 1
+withdrawal_reason: "References removed unified atomic token algebra infrastructure"
 ---
 
 # RFC 00059: Unified Atomic Token Algebra

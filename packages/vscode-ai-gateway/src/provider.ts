@@ -1,7 +1,4 @@
-import { createHash } from "node:crypto";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
+import { createHash, randomUUID } from "node:crypto";
 import * as vscode from "vscode";
 import {
   authentication,
@@ -75,7 +72,6 @@ import {
 } from "./logger";
 import { ModelsClient } from "./models";
 import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
-import { captureForensicData } from "./provider/forensic-capture.js";
 import { executeOpenResponsesChat } from "./provider/openresponses-chat.js";
 import { extractSystemPrompt } from "./provider/system-prompt.js";
 import {
@@ -83,6 +79,7 @@ import {
   computeToolSetHash,
   hashUserMessage,
 } from "./identity";
+import { findLatestStatefulMarker } from "./utils/stateful-marker.js";
 import type { TokenStatusBar } from "./status-bar";
 import { TokenCounter } from "./tokens/counter";
 
@@ -129,15 +126,6 @@ export class VercelAIChatModelProvider
   private statusBar: TokenStatusBar | null = null;
   /** Current agent ID for status bar tracking */
   private currentAgentId: string | null = null;
-  /** Most recent tool definitions received from VS Code */
-  private lastTools: ProvideLanguageModelChatResponseOptions["tools"] | null =
-    null;
-  /** Pending token debug capture bundle */
-  private pendingTokenCapture: {
-    dir: string;
-    startedAt: string;
-    sessionId: string;
-  } | null = null;
 
   constructor(
     context: ExtensionContext,
@@ -303,12 +291,20 @@ export class VercelAIChatModelProvider
       .substring(0, 8);
     const chatId = `chat-${chatHash}-${Date.now().toString()}`;
 
+    // Derive stable conversation identity from stateful marker (GCMP pattern)
+    // If a marker exists in previous assistant messages, reuse its sessionId.
+    // Otherwise, generate a new UUID for this conversation.
+    const statefulMarker = findLatestStatefulMarker(chatMessages, model.id);
+    const conversationId = statefulMarker?.sessionId ?? randomUUID();
+
     // Log session ID at entry point to identify which window handles each request
-    const sessionId = vscode.env.sessionId.substring(0, 8);
+    const vsCodeSessionId = vscode.env.sessionId.substring(0, 8);
     logger.info(
-      `[${sessionId}] Chat request to ${model.id} with ${chatMessages.length.toString()} messages`,
+      `[${vsCodeSessionId}] Chat request to ${model.id} with ${chatMessages.length.toString()} messages`,
     );
-    logger.debug(`[${sessionId}] Chat ID: ${chatId}`);
+    logger.debug(
+      `[${vsCodeSessionId}] Chat ID: ${chatId}, conversationId: ${conversationId}`,
+    );
 
     const abortController = new AbortController();
     const abortSubscription = token.onCancellationRequested(() => {
@@ -318,7 +314,6 @@ export class VercelAIChatModelProvider
     let responseSent = false;
 
     try {
-      this.lastTools = options.tools ?? null;
       // Extract system prompt for diagnostics logging
       // NOTE: systemPromptHash is for diagnostics ONLY - not used for identity
       const systemPrompt = extractSystemPrompt(chatMessages);
@@ -337,26 +332,10 @@ export class VercelAIChatModelProvider
         options.tools ? { tools: options.tools } : {},
       );
       const estimatedTokens = tokenEstimate.total;
-      const tokenBreakdown = tokenEstimate.breakdown;
       const maxInputTokens = model.maxInputTokens;
       logger.debug(
         `Token estimate: ${estimatedTokens.toString()}/${String(maxInputTokens)} (${Math.round((estimatedTokens / maxInputTokens) * 100).toString()}%)`,
       );
-
-      // Forensic capture for debugging conversation identifiers
-      if (this.configService.forensicCaptureEnabled) {
-        await captureForensicData({
-          model,
-          chatMessages,
-          options,
-          systemPrompt,
-          systemPromptHash,
-          estimatedTokens,
-          tokenBreakdown,
-          chatId,
-          currentAgentId: this.currentAgentId,
-        });
-      }
 
       // Pre-flight check: warn if estimated tokens exceed model limit
       // Let the API handle the actual error - estimation may be imprecise
@@ -434,6 +413,8 @@ export class VercelAIChatModelProvider
         systemPromptHash,
         agentTypeHash,
         firstUserMessageHash,
+        undefined, // estimatedDeltaTokens
+        conversationId,
       );
 
       const apiKey = await this.getApiKey(false);
@@ -461,18 +442,14 @@ export class VercelAIChatModelProvider
           apiKey,
           estimatedInputTokens: estimatedTokens,
           chatId,
-          onUsage: () => {
-            // Usage data from API responses is available here.
-            // With stateful markers (previous_response_id), server-side usage
-            // provides ground truth — no client-side delta tracking needed.
-          },
+          conversationId,
         },
       );
 
       if (result.cancelled) {
         responseSent = true;
         logger.debug(`[OpenResponses] Chat request cancelled for ${model.id}`);
-        return;
+        throw new vscode.CancellationError();
       }
 
       // Track if we sent a response (for error handling)
@@ -487,10 +464,13 @@ export class VercelAIChatModelProvider
         logger.info(`[OpenResponses] Chat request completed for ${model.id}`);
       }
     } catch (error) {
-      // Don't report abort/cancellation as an error - it's expected behavior
-      if (this.isAbortError(error)) {
+      // Propagate cancellation errors to VS Code (GCMP pattern)
+      if (
+        error instanceof vscode.CancellationError ||
+        this.isAbortError(error)
+      ) {
         logger.debug("Request was cancelled");
-        return;
+        throw new vscode.CancellationError();
       }
 
       logError("Exception during streaming", error);
@@ -523,129 +503,9 @@ export class VercelAIChatModelProvider
         );
       }
     } finally {
-      this.finalizeTokenDebugCapture(model.id, chatId, model.maxInputTokens);
       // Clear current request tracking
       this.currentAgentId = null;
       abortSubscription.dispose();
-    }
-  }
-
-  /**
-   * Arm a token debug capture bundle for the next request.
-   */
-  startTokenDebugCapture(): string | null {
-    const dir = path.join(
-      os.homedir(),
-      ".vscode-ai-gateway",
-      "captures",
-      `token-debug-${Date.now().toString()}`,
-    );
-    try {
-      fs.mkdirSync(dir, { recursive: true });
-      const logPath = path.join(
-        os.homedir(),
-        ".vscode-ai-gateway",
-        "token-count-calls.jsonl",
-      );
-      fs.writeFileSync(logPath, "");
-      this.pendingTokenCapture = {
-        dir,
-        startedAt: new Date().toISOString(),
-        sessionId: vscode.env.sessionId,
-      };
-      return dir;
-    } catch (err) {
-      logger.error(`[Token Debug] Failed to start capture: ${String(err)}`);
-      return null;
-    }
-  }
-
-  private finalizeTokenDebugCapture(
-    modelId: string,
-    chatId: string,
-    maxInputTokens: number,
-  ): void {
-    if (!this.pendingTokenCapture) {
-      return;
-    }
-
-    const { dir, startedAt, sessionId } = this.pendingTokenCapture;
-    this.pendingTokenCapture = null;
-
-    try {
-      const logPath = path.join(
-        os.homedir(),
-        ".vscode-ai-gateway",
-        "token-count-calls.jsonl",
-      );
-      const bundleLogPath = path.join(dir, "token-count-calls.jsonl");
-      if (fs.existsSync(logPath)) {
-        fs.copyFileSync(logPath, bundleLogPath);
-      } else {
-        fs.writeFileSync(bundleLogPath, "");
-      }
-
-      const toolsPath = path.join(dir, "tools-snapshot.json");
-      if (this.lastTools) {
-        const payload = {
-          capturedAt: new Date().toISOString(),
-          toolCount: this.lastTools.length,
-          tools: this.lastTools,
-        };
-        fs.writeFileSync(toolsPath, JSON.stringify(payload, null, 2));
-      } else {
-        fs.writeFileSync(toolsPath, JSON.stringify({ tools: [] }, null, 2));
-      }
-
-      const metaPath = path.join(dir, "bundle-metadata.json");
-      fs.writeFileSync(
-        metaPath,
-        JSON.stringify(
-          {
-            startedAt,
-            completedAt: new Date().toISOString(),
-            sessionId,
-            chatId,
-            modelId,
-            maxInputTokens,
-          },
-          null,
-          2,
-        ),
-      );
-
-      window.showInformationMessage(`Token debug bundle written to ${dir}`);
-    } catch (err) {
-      logger.error(`[Token Debug] Failed to finalize capture: ${String(err)}`);
-    }
-  }
-
-  /**
-   * Write the most recent tool definitions to a JSON file for analysis.
-   */
-  dumpLastToolsSnapshot(): string | null {
-    if (!this.lastTools) {
-      return null;
-    }
-    const dir = path.join(os.homedir(), ".vscode-ai-gateway");
-    const filePath = path.join(
-      dir,
-      `tools-snapshot-${Date.now().toString()}.json`,
-    );
-    try {
-      fs.mkdirSync(dir, { recursive: true });
-      const payload = {
-        capturedAt: new Date().toISOString(),
-        toolCount: this.lastTools.length,
-        tools: this.lastTools,
-      };
-      fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
-      return filePath;
-    } catch (err) {
-      logger.error(
-        `[Tools Snapshot] Failed to write tool snapshot: ${String(err)}`,
-      );
-      return null;
     }
   }
 

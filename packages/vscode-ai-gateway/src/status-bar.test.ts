@@ -498,12 +498,11 @@ describe("TokenStatusBar", () => {
     it("main agent resumes correctly when pending claims exist (regression: claim misattribution)", () => {
       // This is a regression test for the bug where main agent's subsequent turns
       // were incorrectly attributed to pending subagent claims.
-      // The bug occurred because:
-      // 1. extractAgentName returns "sub" when isMain=false
-      // 2. Claim matching has a FIFO fallback for "sub" agents
-      // 3. Main agent's turn would match the first pending claim
+      // With conversationId-based identity, the main agent's turns share a
+      // conversationId, so they always resume correctly regardless of claims.
       const mainHash = "main-system-hash";
       const mainTypeHash = "main-type-hash";
+      const mainConversationId = "main-conv-id";
 
       // Main agent starts
       statusBar.startAgent(
@@ -514,6 +513,8 @@ describe("TokenStatusBar", () => {
         mainHash,
         mainTypeHash,
         "first-user-msg",
+        undefined, // estimatedDeltaTokens
+        mainConversationId,
       );
       statusBar.completeAgent("main-agent", {
         inputTokens: 52000,
@@ -524,7 +525,7 @@ describe("TokenStatusBar", () => {
       // Create a claim for a subagent (e.g., "recon")
       statusBar.createChildClaim("main-agent", "recon");
 
-      // Main agent makes another turn (same hashes = resume)
+      // Main agent makes another turn (same conversationId = resume)
       // This should NOT match the "recon" claim
       const resumedId = statusBar.startAgent(
         "main-agent-turn2",
@@ -534,6 +535,8 @@ describe("TokenStatusBar", () => {
         mainHash,
         mainTypeHash,
         "first-user-msg",
+        undefined, // estimatedDeltaTokens
+        mainConversationId, // same conversationId = resume
       );
 
       const agents = statusBar.getAgents();
@@ -558,6 +561,9 @@ describe("TokenStatusBar", () => {
         "recon",
         "different-hash",
         "different-type",
+        undefined, // firstUserMessageHash
+        undefined, // estimatedDeltaTokens
+        "recon-conv-id", // different conversationId = new agent
       );
 
       const agentsAfter = statusBar.getAgents();

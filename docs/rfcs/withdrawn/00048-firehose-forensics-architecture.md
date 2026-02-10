@@ -5,6 +5,7 @@ feature: observability
 exo:
     tool: exo rfc create
     protocol: 1
+withdrawal_reason: "References removed firehose/forensic capture infrastructure"
 ---
 
 # RFC 00048: Firehose Forensics Architecture

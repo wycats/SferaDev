@@ -413,15 +413,16 @@ describe("decodeThinkingData", () => {
 
   it("returns undefined for wrong type field", () => {
     const data = new TextEncoder().encode(
-      JSON.stringify({ type: "stateful_marker", thinking: { id: "x", text: "y" } }),
+      JSON.stringify({
+        type: "stateful_marker",
+        thinking: { id: "x", text: "y" },
+      }),
     );
     expect(decodeThinkingData(data)).toBeUndefined();
   });
 
   it("returns undefined for missing thinking field", () => {
-    const data = new TextEncoder().encode(
-      JSON.stringify({ type: "thinking" }),
-    );
+    const data = new TextEncoder().encode(JSON.stringify({ type: "thinking" }));
     expect(decodeThinkingData(data)).toBeUndefined();
   });
 

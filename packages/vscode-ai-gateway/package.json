@@ -94,16 +94,6 @@
         "command": "vercel.ai.dumpDiagnostics",
         "title": "Dump Agent Tree Diagnostics",
         "category": "Vercel AI Gateway"
-      },
-      {
-        "command": "vercel.ai.dumpToolsSnapshot",
-        "title": "Dump Tools Snapshot",
-        "category": "Vercel AI Gateway"
-      },
-      {
-        "command": "vercel.ai.captureTokenDebugBundle",
-        "title": "Capture Token Debug Bundle",
-        "category": "Vercel AI Gateway"
       }
     ],
     "menus": {

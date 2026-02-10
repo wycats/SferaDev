@@ -5,6 +5,7 @@ feature: token-estimation
 exo:
   tool: exo rfc create
   protocol: 1
+withdrawal_reason: "References removed rolling correction infrastructure"
 ---
 
 # RFC 00047: Rolling Correction for provideTokenCount
