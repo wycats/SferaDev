@@ -228,7 +228,9 @@ export function activate(context: vscode.ExtensionContext) {
     "vercel.ai.testSummarizationDetection",
     () => {
       // Build synthetic summarization-shaped messages to test the detection pipeline
-      const LanguageModelTextPart = (vscode as never as Record<string, new (v: string) => unknown>)["LanguageModelTextPart"];
+      const LanguageModelTextPart = (
+        vscode as never as Record<string, new (v: string) => unknown>
+      )["LanguageModelTextPart"];
       if (!LanguageModelTextPart) {
         vscode.window.showErrorMessage(
           "LanguageModelTextPart not available in this VS Code version.",
@@ -242,22 +244,45 @@ export function activate(context: vscode.ExtensionContext) {
 
       // Test case 1: Summarization by last-user-message pattern
       const summMessages1 = [
-        { role: ROLE_SYSTEM, content: [new LanguageModelTextPart("You are a helpful assistant.")] },
+        {
+          role: ROLE_SYSTEM,
+          content: [new LanguageModelTextPart("You are a helpful assistant.")],
+        },
         { role: ROLE_USER, content: [new LanguageModelTextPart("Hello")] },
         { role: ROLE_ASSISTANT, content: [new LanguageModelTextPart("Hi!")] },
-        { role: ROLE_USER, content: [new LanguageModelTextPart("Summarize the conversation history so far.")] },
+        {
+          role: ROLE_USER,
+          content: [
+            new LanguageModelTextPart(
+              "Summarize the conversation history so far.",
+            ),
+          ],
+        },
       ] as never;
 
       // Test case 2: Summarization by system-message SummaryPrompt
       const summMessages2 = [
-        { role: ROLE_SYSTEM, content: [new LanguageModelTextPart("Context: <Tag name='summary'>Previous discussion</Tag>")] },
+        {
+          role: ROLE_SYSTEM,
+          content: [
+            new LanguageModelTextPart(
+              "Context: <Tag name='summary'>Previous discussion</Tag>",
+            ),
+          ],
+        },
         { role: ROLE_USER, content: [new LanguageModelTextPart("Continue.")] },
       ] as never;
 
       // Test case 3: Normal chat (should NOT detect)
       const normalMessages = [
-        { role: ROLE_SYSTEM, content: [new LanguageModelTextPart("You are a helpful assistant.")] },
-        { role: ROLE_USER, content: [new LanguageModelTextPart("What is TypeScript?")] },
+        {
+          role: ROLE_SYSTEM,
+          content: [new LanguageModelTextPart("You are a helpful assistant.")],
+        },
+        {
+          role: ROLE_USER,
+          content: [new LanguageModelTextPart("What is TypeScript?")],
+        },
       ] as never;
 
       const start = performance.now();
@@ -272,7 +297,8 @@ export function activate(context: vscode.ExtensionContext) {
       const result3 = detectSummarizationRequest(normalMessages);
       const t3 = performance.now() - start3;
 
-      const allCorrect = result1 === true && result2 === true && result3 === false;
+      const allCorrect =
+        result1 === true && result2 === true && result3 === false;
       const icon = allCorrect ? "$(check)" : "$(error)";
 
       const details = [

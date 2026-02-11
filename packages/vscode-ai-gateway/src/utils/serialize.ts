@@ -19,7 +19,7 @@ import stringify from "safe-stable-stringify";
  * Returns "null" if the value cannot be stringified.
  *
  * Use this for:
- * - JSONL log files (tree-diagnostics, forensic-capture)
+ * - JSONL log files (tree-diagnostics)
  * - Any output that must be valid JSON
  *
  * @param value - The value to stringify

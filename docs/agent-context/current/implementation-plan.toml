@@ -343,17 +343,23 @@ id = "inv-log-cleanup"
 [[plan.goals.tasks]]
 id = "inv-log-cleanup::remove-validation-log"
 title = "Remove validation-log.ts, its call site in openresponses-chat.ts, and .logs/token-validation.jsonl references"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:27:42.390224738+00:00"
+completion_log = "Deleted validation-log.ts, removed import + call site in openresponses-chat.ts, removed mock in test"
 
 [[plan.goals.tasks]]
 id = "inv-log-cleanup::remove-forensic"
 title = "Remove forensic-capture.ts, its settings (forensicCapture, forensicCaptureFullContent), ConfigService getters, and package.json entries"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:27:48.094902664+00:00"
+completion_log = "Deleted forensic-capture.ts + test + .bak, removed 2 settings from package.json, ConfigService getter from config.ts, .vscode/settings.json entries, test/runTest.ts + suite/index.ts refs, 4 scripts in packages/ + 6 scripts in root scripts/, quarantine doc, VERIFICATION_WORKFLOW.md, INTEGRATION_TEST_INVESTIGATION.md, AGENTS.md forensic section, refs in SIDEBAR_ARCHITECTURE/SESSION_HANDOFF/PARENT_CHILD_SIGNAL_INVENTORY"
 
 [[plan.goals.tasks]]
 id = "inv-log-cleanup::remove-debug-utils"
 title = "Remove saveSuspiciousRequest from debug-utils.ts and its call site (keep debug-utils.ts if other functions remain)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:27:51.172014861+00:00"
+completion_log = "Deleted debug-utils.ts (contained only saveSuspiciousRequest) + debug-utils.test.ts, removed import + call site in openresponses-chat.ts"
 
 [[plan.goals.tasks]]
 id = "inv-log-cleanup::remove-scaffold"
@@ -365,12 +371,16 @@ completion_log = "Removed 4 dead scaffold files: request-logger.ts, index-writer
 [[plan.goals.tasks]]
 id = "inv-log-cleanup::withdraw-rfcs"
 title = "Withdraw RFCs 027 (logging-architecture) and 005 (configuration-logging); audit 017 (openresponses-cleanup) for relevance"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:27:54.499387847+00:00"
+completion_log = "Moved RFC 027 to withdrawn/. Added supersession notes to RFC 005 (logging sections superseded by RFC 00065) and RFC 017 (Phase 3 superseded by InvestigationLogger)"
 
 [[plan.goals.tasks]]
 id = "inv-log-cleanup::cleanup-tests"
 title = "Update/remove tests referencing deleted modules; verify 368+ tests still pass"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:27:57.798146028+00:00"
+completion_log = "Deleted debug-utils.test.ts (91 lines) + forensic-capture.test.ts (192 lines). Removed validation-log mock from openresponses-chat.test.ts. Net: 430→421 tests passing across 29 files. tsc clean."
 
 [[plan.goals]]
 id = "logging-lint"

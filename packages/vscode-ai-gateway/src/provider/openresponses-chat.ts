@@ -35,12 +35,10 @@ import {
   logger,
 } from "../logger.js";
 import type { TokenStatusBar } from "../status-bar.js";
-import { saveSuspiciousRequest } from "./debug-utils.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
 import { InvestigationLogger } from "../logger/investigation.js";
-import { writeTokenValidationEntry } from "../logger/validation-log.js";
 import { findLatestStatefulMarker } from "../utils/stateful-marker.js";
 
 /**
@@ -496,28 +494,6 @@ export async function executeOpenResponsesChat(
           );
         }
 
-        // Save suspicious request if tools were provided but model stopped without calling any
-        if (
-          textPartCount > 0 &&
-          toolCallCount === 0 &&
-          adapted.finishReason === "stop" &&
-          tools.length > 0
-        ) {
-          const textPreview = accumulatedText.substring(0, 500);
-          logger.warn(
-            `[OpenResponses] SUSPICIOUS: Tools provided but model stopped without calling any. Preview: "${textPreview.substring(0, 100)}..."`,
-          );
-          saveSuspiciousRequest(requestBody, {
-            timestamp: new Date().toISOString(),
-            finishReason: adapted.finishReason,
-            textPartCount,
-            toolCallCount,
-            toolsProvided: tools.length,
-            textPreview,
-            usage: adapted.usage,
-          });
-        }
-
         result = {
           success: !adapted.error && !adapted.cancelled,
           ...(adapted.usage !== undefined && { usage: adapted.usage }),
@@ -554,19 +530,6 @@ export async function executeOpenResponsesChat(
               `output=${adapted.usage?.output_tokens.toString() ?? "?"}, ` +
               `model=${model.id}`,
           );
-        }
-
-        // Write validation log: estimate vs actual
-        if (adapted.usage) {
-          writeTokenValidationEntry({
-            model: model.id,
-            chatId,
-            responseId: adapted.responseId,
-            promptCacheKey: requestBody.prompt_cache_key ?? undefined,
-            estimatedInputTokens,
-            actualInputTokens: adapted.usage.input_tokens,
-            actualOutputTokens: adapted.usage.output_tokens,
-          });
         }
 
         // Investigation logging — complete with success/error/cancelled

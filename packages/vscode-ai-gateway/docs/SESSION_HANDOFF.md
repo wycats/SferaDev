@@ -27,36 +27,17 @@ For a child to appear:
 Evidence:
 
 - `CLAIM_CREATED` fires (parent side works)
-- Child runs successfully (forensic capture exists)
 - No `AGENT_STARTED` with `claimMatched: true` (child never enters our code)
 - Claim expires after 90 seconds
 
-### 4. Timing Anomaly
-
-```
-Child forensic capture: 05:33:19.386Z
-Parent AGENT_STARTED:   05:33:19.391Z (5ms later)
-```
-
-The child's capture happened **before** the parent even registered as started. This suggests parallel execution, not sequential.
-
-### 5. Signal Inventory (What's Available)
+### 4. Signal Inventory (What's Available)
 
 **Parent side** (tree-diagnostics.log):
 
 - `agentId`, `systemPromptHash`, `agentTypeHash`, `conversationHash`
 - `expectedChildAgentName` from CLAIM_CREATED
 
-**Child side** (forensic-captures.jsonl):
-
-- `chatId`, `systemPromptHash` (full), `messageCount`, `timestamp`
-
-**Not useful as join keys**:
-
-- `chatId` suffix matching `agentId` = timestamp coincidence
-- `systemPromptHash` = same for all agent-mode sessions (26 sessions share it)
-
-### 6. The Designed Solution (Claims) Isn't Working
+### 5. The Designed Solution (Claims) Isn't Working
 
 The claim mechanism is correct in design:
 
@@ -98,6 +79,6 @@ But the child **never reaches the matching code** because it doesn't call `start
 
 1. **`gpt-5.2-codex` is NOT a fallback model** - It appeared in logs because it was a completely separate chat session where that model was selected, not because of any fallback mechanism.
 
-2. **`systemPromptHash` prefix match is NOT a hash property** - It's just truncation (`.slice(0, 8)`) in the tree-diagnostics log vs full hash in forensic captures.
+2. **`systemPromptHash` prefix match is NOT a hash property** - It's just truncation (`.slice(0, 8)`) in the tree-diagnostics log vs the full hash elsewhere.
 
 3. **`chatId` suffix does NOT embed parent `agentId`** - Both are derived from `Date.now()`, so timestamps naturally overlap. Not an intentional link.

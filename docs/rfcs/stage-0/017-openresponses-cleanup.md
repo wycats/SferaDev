@@ -4,6 +4,8 @@
 **Created**: 2026-01-29  
 **Author**: Agent
 
+**Note:** Phase 3 (Logging Audit) is superseded by RFC 00065 / InvestigationLogger.
+
 ## Summary
 
 Clean up the vscode-ai-gateway extension to remove dead code from the legacy Vercel AI SDK implementation and establish a coherent, principled logging strategy designed to enable efficient debugging of API issues like 400 errors.

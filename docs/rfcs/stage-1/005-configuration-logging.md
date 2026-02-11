@@ -9,6 +9,8 @@ stage: 1
 **Created:** 2026-01-27  
 **Updated:** 2026-01-27
 
+**Note:** Logging sections are superseded by RFC 00065 (Investigation Logging System).
+
 ## Summary
 
 Define the configuration schema for the Vercel VS Code extension, along with model filtering and structured logging. This RFC provides the foundation that authentication and telemetry features build upon.

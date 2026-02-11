@@ -71,11 +71,6 @@ export class ConfigService implements vscode.Disposable {
     return this.config.get("logging.level", "warn");
   }
 
-  /** Enable forensic capture mode */
-  get forensicCaptureEnabled(): boolean {
-    return this.config.get("debug.forensicCapture", false);
-  }
-
   /**
    * Make all models user-selectable by default.
    * When false (default), models are hidden from the picker until users enable them

@@ -101,8 +101,6 @@ async function main(): Promise<void> {
     const testSettings = {
       // Make all models user-selectable so they appear in the chat model picker
       "vercel.ai.models.userSelectable": true,
-      // Enable forensic capture for debugging
-      "vercel.ai.debug.forensicCapture": true,
       // Set logging to debug level for test visibility
       "vercel.ai.logging.level": "debug",
     };
@@ -112,9 +110,7 @@ async function main(): Promise<void> {
     );
     console.log(`Created test settings: ${JSON.stringify(testSettings)}`);
   } else {
-    console.log(
-      "Using existing system settings (forensic capture should be enabled in your VS Code settings)",
-    );
+    console.log("Using existing system settings");
   }
 
   await runTests({

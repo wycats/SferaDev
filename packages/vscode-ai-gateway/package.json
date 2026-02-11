@@ -147,17 +147,7 @@
         "vercel.ai.logging.fileDirectory": {
           "type": "string",
           "default": ".logs",
-          "description": "Directory to write log files (e.g., token-validation.jsonl). Relative paths are resolved against the workspace root."
-        },
-        "vercel.ai.debug.forensicCapture": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable forensic capture mode. Writes detailed request data to ~/.vscode-ai-gateway/forensic-captures.jsonl for debugging conversation identifiers."
-        },
-        "vercel.ai.debug.forensicCaptureFullContent": {
-          "type": "boolean",
-          "default": false,
-          "description": "⚠️ SENSITIVE: Capture FULL message content including system prompts and user messages. Only enable for debugging - captures may contain sensitive data."
+          "description": "Directory to write log files. Relative paths are resolved against the workspace root."
         },
         "vercel.ai.models.userSelectable": {
           "type": "boolean",

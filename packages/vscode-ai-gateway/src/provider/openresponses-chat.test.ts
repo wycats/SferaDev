@@ -74,10 +74,6 @@ vi.mock("../logger.js", () => ({
   extractTokenCountFromError: vi.fn(() => undefined),
 }));
 
-vi.mock("../logger/validation-log.js", () => ({
-  writeTokenValidationEntry: vi.fn(),
-}));
-
 vi.mock("../logger/investigation.js", () => ({
   InvestigationLogger: hoisted.MockInvestigationLogger,
 }));

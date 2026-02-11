@@ -59,7 +59,6 @@ For a child to appear, this sequence must succeed:
 ### Observed Behavior
 
 - `CLAIM_CREATED` event fires when parent calls `runSubagent`
-- Child agent runs successfully (visible in forensic-captures.jsonl)
 - No `AGENT_STARTED` with `claimMatched: true` ever appears
 - Claim expires after 90 seconds
 
@@ -79,11 +78,6 @@ Parent side (tree-diagnostics.log):
   05:33:24.625Z - CLAIM_CREATED for "recon"
   05:33:25.423Z - AGENT_COMPLETED (parent)
 
-Child side (forensic-captures.jsonl):
-  05:33:19.386Z - Child capture exists (chatId: chat-6fd1e1cf-1770528799370)
-
-Note: Child forensic capture is 5ms BEFORE parent's AGENT_STARTED.
-This suggests they're running in parallel, not sequentially.
 ```
 
 ## Claim Matching Logic

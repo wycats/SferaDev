@@ -4,7 +4,5 @@
   },
   "files.trimTrailingWhitespace": true,
   "vercel.ai.logging.fileDirectory": "/tmp/ai-gateway-logs",
-  "vercel.ai.logging.level": "trace",
-  "vercel.ai.debug.forensicCapture": true,
-  "vercel.ai.debug.forensicCaptureFullContent": true
+  "vercel.ai.logging.level": "trace"
 }
