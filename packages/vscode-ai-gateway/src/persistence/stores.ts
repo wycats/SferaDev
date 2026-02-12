@@ -37,3 +37,37 @@ export const SESSION_STATS_STORE: StoreConfig<SessionStats> = {
   // Legacy key from pre-rebrand extension (SferaDev -> Vercel)
   legacyKeys: ["vercelAiGateway.sessionStats"],
 };
+
+/**
+ * Per-conversation agent state for delta token estimation.
+ * Persisted to enable accurate token display across VS Code reloads.
+ */
+export interface PersistedAgentState {
+  /** Actual input tokens from last completed turn (from API response) */
+  lastActualInputTokens: number;
+  /** Number of messages in last completed request */
+  lastMessageCount: number;
+  /** Number of completed turns in this conversation */
+  turnCount: number;
+  /** Model used (for diagnostics) */
+  modelId?: string;
+  /** Timestamp for LRU eviction (named fetchedAt for store.ts compatibility) */
+  fetchedAt: number;
+}
+
+/**
+ * Wrapper for per-conversation agent state store.
+ * Keyed by conversationId (stable UUID from stateful marker sessionId).
+ */
+export interface PersistedAgentStateMap {
+  entries: Record<string, PersistedAgentState>;
+}
+
+export const AGENT_STATE_STORE: StoreConfig<PersistedAgentStateMap> = {
+  key: "vercel.ai.agentState",
+  version: 1,
+  scope: "global",
+  defaultValue: { entries: {} },
+  maxEntries: 100,
+  ttlMs: 7 * 24 * 60 * 60 * 1000, // 7 days
+};

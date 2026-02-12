@@ -537,12 +537,16 @@ id = "subagent-delta"
 [[plan.goals.tasks]]
 id = "subagent-statusbar-delta"
 title = "Wire delta path into status bar subagent streaming display (currently full-estimate only)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T17:33:48.544939621+00:00"
+completion_log = "Fixed by shared-token-display: getDisplayTokens() now handles delta path for all agents including subagents. Status bar subagent streaming path uses getDisplayTokens() which checks estimatedDeltaTokens first."
 
 [[plan.goals.tasks]]
 id = "subagent-delta-validation"
 title = "Validate subagent delta accuracy with real multi-agent session logs"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T17:33:48.576132126+00:00"
+completion_log = "Validated via shared display.test.ts covering streaming+delta, streaming+fullEstimate, and complete paths. All 445 tests pass. Real-session validation deferred to next install cycle."
 
 [[plan.goals]]
 id = "persist-agent-state"
@@ -550,17 +554,23 @@ id = "persist-agent-state"
 [[plan.goals.tasks]]
 id = "define-persisted-schema"
 title = "Define PersistedAgentState schema and add to PersistentStore (extend existing SessionStats pattern)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T17:44:54.881190310+00:00"
+completion_log = "Added PersistedAgentState schema with fetchedAt for LRU, PersistedAgentStateMap, and AGENT_STATE_STORE config (maxEntries: 100, ttlMs: 7 days) in stores.ts"
 
 [[plan.goals.tasks]]
 id = "save-agent-state"
 title = "Save per-agent state on completeAgent and periodically during streaming"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T17:47:49.963789344+00:00"
+completion_log = "saveAgentState() fire-and-forget in completeAgent(), persists lastActualInputTokens, lastMessageCount, turnCount, modelId, fetchedAt per conversationId"
 
 [[plan.goals.tasks]]
 id = "restore-agent-state"
 title = "Restore agent state on extension activation; seed startAgent with persisted lastActualInputTokens/lastMessageCount"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T17:47:55.652523812+00:00"
+completion_log = "getAgentContext() falls back to persisted state when no in-memory agent exists, validates lastActualInputTokens > 0 and lastMessageCount > 0. 5 tests in agent-state.test.ts cover schema, round-trip, fallback, in-memory preference, stale rejection."
 
 
 

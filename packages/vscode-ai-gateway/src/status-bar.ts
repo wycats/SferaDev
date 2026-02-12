@@ -8,7 +8,9 @@ import { ClaimRegistry } from "./identity/index.js";
 import { logger } from "./logger";
 import {
   createPersistenceManager,
+  AGENT_STATE_STORE,
   SESSION_STATS_STORE,
+  type PersistedAgentStateMap,
   type SessionStats,
 } from "./persistence/index.js";
 import type {
@@ -148,6 +150,7 @@ export class TokenStatusBar implements vscode.Disposable {
 
   private persistenceManager: PersistenceManager | null = null;
   private sessionStatsStore: PersistentStore<SessionStats> | null = null;
+  private agentStateStore: PersistentStore<PersistedAgentStateMap> | null = null;
 
   // Event emitter for agent tree updates
   private readonly _onDidChangeAgents = new vscode.EventEmitter<void>();
@@ -182,6 +185,7 @@ export class TokenStatusBar implements vscode.Disposable {
     this.persistenceManager = createPersistenceManager(context);
     this.sessionStatsStore =
       this.persistenceManager.getStore(SESSION_STATS_STORE);
+    this.agentStateStore = this.persistenceManager.getStore(AGENT_STATE_STORE);
   }
 
   /**
@@ -235,14 +239,48 @@ export class TokenStatusBar implements vscode.Disposable {
   getAgentContext(
     conversationId: string,
   ): { lastActualInputTokens: number; lastMessageCount: number } | undefined {
+    // First check in-memory agents (current session)
     const agent = this.agentsByConversationId.get(conversationId);
-    if (!agent || agent.lastActualInputTokens <= 0 || !agent.lastMessageCount) {
-      return undefined;
+    if (agent && agent.lastActualInputTokens > 0 && agent.lastMessageCount) {
+      return {
+        lastActualInputTokens: agent.lastActualInputTokens,
+        lastMessageCount: agent.lastMessageCount,
+      };
     }
-    return {
-      lastActualInputTokens: agent.lastActualInputTokens,
-      lastMessageCount: agent.lastMessageCount,
-    };
+
+    // Fallback to persisted state (cross-reload)
+    if (this.agentStateStore) {
+      const persisted = this.agentStateStore.get().entries[conversationId];
+      if (
+        persisted &&
+        persisted.lastActualInputTokens > 0 &&
+        persisted.lastMessageCount > 0
+      ) {
+        return {
+          lastActualInputTokens: persisted.lastActualInputTokens,
+          lastMessageCount: persisted.lastMessageCount,
+        };
+      }
+    }
+
+    return undefined;
+  }
+
+  private saveAgentState(agent: AgentEntry): void {
+    if (!this.agentStateStore || !agent.conversationId) return;
+    const conversationId = agent.conversationId;
+    void this.agentStateStore.update((current) => ({
+      entries: {
+        ...current.entries,
+        [conversationId]: {
+          lastActualInputTokens: agent.lastActualInputTokens,
+          lastMessageCount: agent.lastMessageCount ?? 0,
+          turnCount: agent.turnCount,
+          ...(agent.modelId != null ? { modelId: agent.modelId } : {}),
+          fetchedAt: Date.now(),
+        },
+      },
+    }));
   }
 
   /**
@@ -761,6 +799,7 @@ export class TokenStatusBar implements vscode.Disposable {
 
     // Save session stats
     this.saveSessionStats();
+    this.saveAgentState(agent);
 
     // If this was the active agent, clear it
     if (this.activeAgentId === resolvedId) {
