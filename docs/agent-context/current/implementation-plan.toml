@@ -9,20 +9,155 @@ id = "01kha0kpfx47pkebr4d2bvm3b0"
 [[plan.goals]]
 id = "enumerate-proposals"
 
+[[plan.goals.tasks]]
+id = "enumerate-proposals::verify-scanner"
+title = "Verify vscode-api-horizon.ts can run (check .reference/vscode exists or document setup)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "enumerate-proposals::run-scan"
+title = "Run horizon scanner with --filter for AI-related proposals"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "enumerate-proposals::extract-inventory"
+title = "Extract structured proposal list (name, version, exports, stability signals)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "enumerate-proposals::cross-reference-028"
+title = "Cross-reference with RFC 028 existing inventory to identify gaps"
+status = "pending"
+
 [[plan.goals]]
 id = "triage-proposals"
+
+[[plan.goals.tasks]]
+id = "triage-proposals::define-criteria"
+title = "Document triage criteria (adopt soon/design toward/watch) with concrete thresholds"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "triage-proposals::map-current-code"
+title = "For each proposal, identify current extension code that relates to it"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "triage-proposals::assess-maturity"
+title = "Assess each proposal's maturity using horizon scanner signals (readinessScore, milestone, consumers)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "triage-proposals::classify-proposals"
+title = "Apply triage classification to each proposal and produce triage table"
+status = "pending"
 
 [[plan.goals]]
 id = "update-rfc"
 
+[[plan.goals.tasks]]
+id = "update-rfc::add-inventory"
+title = "Add full proposal inventory section to RFC 00066"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-rfc::add-triage-results"
+title = "Add triage results table with classifications to RFC 00066"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-rfc::add-design-questions"
+title = "Add interface design questions section for each interface candidate"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-rfc::promote-stage-1"
+title = "Promote RFC 00066 from stage-0 to stage-1 if ready"
+status = "pending"
+
 [[plan.goals]]
 id = "design-identity-interface"
+
+[[plan.goals.tasks]]
+id = "design-identity-interface::audit-workaround"
+title = "Audit stateful-marker.ts: document current behavior, edge cases, limitations"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-identity-interface::audit-proposal"
+title = "Audit chatRequest.conversationId proposal: document API shape, stability signals"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-identity-interface::surface-questions"
+title = "Document design questions (first turn, UUID generation, restart stability)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-identity-interface::draft-interface"
+title = "Draft ConversationIdentityProvider interface in TypeScript"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-identity-interface::map-implementations"
+title = "Map interface methods to workaround code and proposal API"
+status = "pending"
 
 [[plan.goals]]
 id = "design-token-interface"
 
+[[plan.goals.tasks]]
+id = "design-token-interface::audit-workaround"
+title = "Audit counter.ts and ai-tokenizer usage: document estimation approach, accuracy"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-token-interface::audit-proposal"
+title = "Audit proposed token counting API: document API shape, stability signals"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-token-interface::surface-questions"
+title = "Document design questions (per-message vs context, streaming, delta composition)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-token-interface::draft-interface"
+title = "Draft TokenCountProvider interface in TypeScript"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-token-interface::map-implementations"
+title = "Map interface methods to counter.ts and proposal API"
+status = "pending"
+
 [[plan.goals]]
 id = "design-thinking-interface"
+
+[[plan.goals.tasks]]
+id = "design-thinking-interface::audit-workaround"
+title = "Audit synthetic-parts.ts and ThinkingData: document current DataPart approach"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-thinking-interface::audit-proposal"
+title = "Audit LanguageModelThinkingPart proposal: document API shape, stability signals"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-thinking-interface::surface-questions"
+title = "Document design questions (streaming vs complete, opt-in, token counting interaction)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-thinking-interface::draft-interface"
+title = "Draft ThinkingContentProvider interface in TypeScript"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "design-thinking-interface::map-implementations"
+title = "Map interface methods to synthetic-parts.ts and proposal API"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
