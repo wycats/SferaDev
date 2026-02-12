@@ -227,6 +227,7 @@ export async function activate(context: vscode.ExtensionContext) {
       );
 
       try {
+        // eslint-disable-next-line no-restricted-syntax -- User-triggered diagnostic export, not logging
         fs.writeFileSync(filePath, JSON.stringify(dump, null, 2));
       } catch (err) {
         logger.error(

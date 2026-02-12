@@ -104,6 +104,7 @@ async function main(): Promise<void> {
       // Set logging to debug level for test visibility
       "vercel.ai.logging.level": "debug",
     };
+    // eslint-disable-next-line no-restricted-syntax -- Test harness: writing VS Code settings for integration test
     fs.writeFileSync(
       path.join(userSettingsDir, "settings.json"),
       JSON.stringify(testSettings, null, 2),
