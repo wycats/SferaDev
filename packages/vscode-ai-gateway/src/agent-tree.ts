@@ -291,7 +291,23 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
       return [];
     }
 
-    const agents = this.statusBar.getAgents();
+    const allAgents = this.statusBar.getAgents();
+
+    // When idle (no active streaming), filter to only the most recent
+    // conversation's agents. This prevents showing a composite of agents
+    // from all past conversations. Applied to both root and child lookups.
+    const isIdle = this.statusBar.getActiveAgentId() === null;
+    const lastConversationId =
+      this.statusBar.getLastActiveConversationId();
+
+    const agents =
+      isIdle && lastConversationId
+        ? allAgents.filter(
+            (a) =>
+              a.conversationId === lastConversationId ||
+              a.parentConversationHash === lastConversationId,
+          )
+        : allAgents;
 
     if (!element) {
       if (agents.length === 0) {
@@ -344,7 +360,7 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
       return [];
     }
 
-    // Get children of this element
+    // Get children of this element (use filtered agents to prevent cross-conversation leaks)
     const childAgents = this.getChildAgents(element.agent, agents);
 
     // Sort by start time (most recent first)

@@ -805,4 +805,236 @@ describe("conversationId identity pipeline (integration)", () => {
       expect(recon?.name).toBe("recon");
     });
   });
+
+  describe("sidebar conversation filtering (fix-sidebar-composite)", () => {
+    it("shows only the most recent conversation when idle", () => {
+      // Conversation A
+      statusBar.startAgent(
+        "req-a1",
+        50000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-a",
+        "type-a",
+        "msg-a",
+        undefined,
+        "conv-aaa",
+      );
+      statusBar.completeAgent("req-a1", {
+        inputTokens: 52000,
+        outputTokens: 1000,
+        maxInputTokens: 128000,
+      });
+
+      // Conversation B (becomes the most recent)
+      statusBar.startAgent(
+        "req-b1",
+        30000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-b",
+        "type-b",
+        "msg-b",
+        undefined,
+        "conv-bbb",
+      );
+      statusBar.completeAgent("req-b1", {
+        inputTokens: 32000,
+        outputTokens: 500,
+        maxInputTokens: 128000,
+      });
+
+      // Now idle — sidebar should show only conv-bbb
+      expect(statusBar.getActiveAgentId()).toBeNull();
+      expect(statusBar.getLastActiveConversationId()).toBe("conv-bbb");
+
+      const roots = treeProvider.getChildren();
+      expect(roots).toHaveLength(1);
+      expect(roots[0]).toBeInstanceOf(AgentTreeItem);
+      expect((roots[0] as AgentTreeItem).agent.conversationId).toBe("conv-bbb");
+    });
+
+    it("shows all agents during streaming (not filtered)", () => {
+      // Conversation A (completed)
+      statusBar.startAgent(
+        "req-a1",
+        50000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-a",
+        "type-a",
+        "msg-a",
+        undefined,
+        "conv-aaa",
+      );
+      statusBar.completeAgent("req-a1", {
+        inputTokens: 52000,
+        outputTokens: 1000,
+        maxInputTokens: 128000,
+      });
+
+      // Conversation B (still streaming)
+      statusBar.startAgent(
+        "req-b1",
+        30000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-b",
+        "type-b",
+        "msg-b",
+        undefined,
+        "conv-bbb",
+      );
+
+      // During streaming — sidebar should show all agents
+      expect(statusBar.getActiveAgentId()).not.toBeNull();
+
+      const roots = treeProvider.getChildren();
+      // Both conversations visible during streaming
+      expect(roots.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("updates filtered view when conversation switches", () => {
+      // Conversation A
+      statusBar.startAgent(
+        "req-a1",
+        50000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-a",
+        "type-a",
+        "msg-a",
+        undefined,
+        "conv-aaa",
+      );
+      statusBar.completeAgent("req-a1", {
+        inputTokens: 52000,
+        outputTokens: 1000,
+        maxInputTokens: 128000,
+      });
+
+      // Idle — should show conv-aaa
+      let roots = treeProvider.getChildren();
+      expect(roots).toHaveLength(1);
+      expect((roots[0] as AgentTreeItem).agent.conversationId).toBe("conv-aaa");
+
+      // Conversation B starts and completes
+      statusBar.startAgent(
+        "req-b1",
+        30000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-b",
+        "type-b",
+        "msg-b",
+        undefined,
+        "conv-bbb",
+      );
+      statusBar.completeAgent("req-b1", {
+        inputTokens: 32000,
+        outputTokens: 500,
+        maxInputTokens: 128000,
+      });
+
+      // Idle again — should now show conv-bbb (not conv-aaa)
+      roots = treeProvider.getChildren();
+      expect(roots).toHaveLength(1);
+      expect((roots[0] as AgentTreeItem).agent.conversationId).toBe("conv-bbb");
+    });
+
+    it("includes subagents of the active conversation when idle", () => {
+      const parentConvId = "conv-parent";
+
+      // Start main agent
+      statusBar.startAgent(
+        "req-main",
+        50000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-main",
+        "type-main",
+        "msg-main",
+        undefined,
+        parentConvId,
+      );
+
+      // Register a subagent claim via the public API
+      statusBar.createChildClaim("req-main", "recon");
+
+      // Start subagent (matches claim — different agentTypeHash triggers claim path)
+      statusBar.startAgent(
+        "req-sub",
+        10000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-sub",
+        "type-sub",
+        "msg-sub",
+        undefined,
+        "conv-sub",
+      );
+
+      // Complete both
+      statusBar.completeAgent("req-sub", {
+        inputTokens: 12000,
+        outputTokens: 200,
+        maxInputTokens: 128000,
+      });
+      statusBar.completeAgent("req-main", {
+        inputTokens: 55000,
+        outputTokens: 1500,
+        maxInputTokens: 128000,
+      });
+
+      // Idle — should show main agent with subagent as child
+      expect(statusBar.getActiveAgentId()).toBeNull();
+      expect(statusBar.getLastActiveConversationId()).toBe(parentConvId);
+
+      const roots = treeProvider.getChildren();
+
+      // Root should have the main agent
+      const mainItems = roots.filter(
+        (r) => r instanceof AgentTreeItem,
+      ) as AgentTreeItem[];
+      expect(mainItems.length).toBeGreaterThanOrEqual(1);
+
+      const mainItem = mainItems.find(
+        (r) => r.agent.conversationId === parentConvId,
+      );
+      expect(mainItem).toBeDefined();
+
+      // The subagent should be accessible as a child
+      if (mainItem) {
+        const children = treeProvider.getChildren(mainItem);
+        const subItems = children.filter(
+          (c) => c instanceof AgentTreeItem,
+        ) as AgentTreeItem[];
+        expect(subItems).toHaveLength(1);
+        expect(subItems[0]?.agent.id).toBe("req-sub");
+      }
+    });
+
+    it("falls back to showing all agents when no conversationId is available", () => {
+      // Agent without conversationId
+      statusBar.startAgent(
+        "req-noconv",
+        50000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        "sys-a",
+        "type-a",
+        "msg-a",
+      );
+      statusBar.completeAgent("req-noconv", {
+        inputTokens: 52000,
+        outputTokens: 1000,
+        maxInputTokens: 128000,
+      });
+
+      // Idle, no lastActiveConversationId → show all
+      expect(statusBar.getLastActiveConversationId()).toBeNull();
+      const roots = treeProvider.getChildren();
+      expect(roots).toHaveLength(1);
+    });
+  });
 });

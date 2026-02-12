@@ -144,6 +144,8 @@ export class TokenStatusBar implements vscode.Disposable {
   private agents = new Map<string, AgentEntry>();
   private mainAgentId: string | null = null;
   private activeAgentId: string | null = null;
+  /** The conversationId of the most recently active agent (survives idle transitions) */
+  private lastActiveConversationId: string | null = null;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private completedAgentCount = 0;
   /** Peak input tokens observed across all agents in this session (for session stats) */
@@ -154,7 +156,8 @@ export class TokenStatusBar implements vscode.Disposable {
 
   private persistenceManager: PersistenceManager | null = null;
   private sessionStatsStore: PersistentStore<SessionStats> | null = null;
-  private agentStateStore: PersistentStore<PersistedAgentStateMap> | null = null;
+  private agentStateStore: PersistentStore<PersistedAgentStateMap> | null =
+    null;
 
   // Event emitter for agent tree updates
   private readonly _onDidChangeAgents = new vscode.EventEmitter<void>();
@@ -406,6 +409,7 @@ export class TokenStatusBar implements vscode.Disposable {
       this.agentsByConversationId.set(conversationId, agent);
     }
     this.activeAgentId = agentId;
+    this.trackActiveConversation(agent);
 
     logger.info(
       `[StatusBar] Child Agent STARTED (claim matched)`,
@@ -570,6 +574,7 @@ export class TokenStatusBar implements vscode.Disposable {
         this.mainAgentId = existingAgent.id;
       }
       this.activeAgentId = existingAgent.id;
+      this.trackActiveConversation(existingAgent);
 
       logger.info(
         `[StatusBar] Agent RESUMED (conversationId match)`,
@@ -712,6 +717,7 @@ export class TokenStatusBar implements vscode.Disposable {
       this.agentsByConversationId.set(conversationId, agent);
     }
     this.activeAgentId = agentId;
+    this.trackActiveConversation(agent);
 
     logger.info(
       `[StatusBar] Agent STARTED`,
@@ -1488,6 +1494,7 @@ export class TokenStatusBar implements vscode.Disposable {
     this.claimRegistry.clearAll();
     this.mainAgentId = null;
     this.activeAgentId = null;
+    this.lastActiveConversationId = null;
     this.completedAgentCount = 0;
     this.sessionPeakInputTokens = 0;
     logger.debug(
@@ -1535,6 +1542,26 @@ export class TokenStatusBar implements vscode.Disposable {
 
   getActiveAgentId(): string | null {
     return this.activeAgentId;
+  }
+
+  /**
+   * Get the conversationId of the most recently active conversation.
+   * Survives idle transitions — returns the last conversation that was streaming,
+   * even after it completes. Returns null only if no agent has ever had a conversationId.
+   */
+  getLastActiveConversationId(): string | null {
+    return this.lastActiveConversationId;
+  }
+
+  /**
+   * Update lastActiveConversationId when an agent becomes active.
+   * Only updates for root-level agents (not subagents) to avoid
+   * the sidebar flickering to a subagent's conversation.
+   */
+  private trackActiveConversation(agent: AgentEntry): void {
+    if (agent.conversationId && !agent.parentConversationHash) {
+      this.lastActiveConversationId = agent.conversationId;
+    }
   }
 
   createDiagnosticDump(vscodeSessionId: string): DiagnosticDump {
