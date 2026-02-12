@@ -1598,7 +1598,8 @@ rfc = "00065"
 [[epochs.phases.goals]]
 id = "logging-alignment-rfc"
 label = "Follow-up RFC: align orthogonal logging (logger.ts, tree-diagnostics) with investigation patterns"
-status = "pending"
+status = "completed"
+completion_log = "Audited 3 orthogonal logging systems (narrative logger, tree diagnostics, diagnostic dump). Created RFC 00067 with 3-phase alignment plan: request ID correlation, tree diagnostics bridge, diagnostic dump integration."
 ulid = "01KH4GWHGW45S557RMXNBMXGNS"
 rfc = "00065"
 
