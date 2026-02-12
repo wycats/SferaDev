@@ -121,7 +121,7 @@ export class AgentTreeItem extends vscode.TreeItem {
       );
     }
 
-    // Context management info
+    // Context management info (server-side compaction)
     if (this.agent.contextManagement?.appliedEdits.length) {
       const edits = this.agent.contextManagement.appliedEdits;
       const freedTokens = edits.reduce(
@@ -130,6 +130,13 @@ export class AgentTreeItem extends vscode.TreeItem {
       );
       md.appendMarkdown(
         `**Context Compaction:** ${edits.length} edit(s), freed ${freedTokens.toLocaleString()} tokens\n\n`,
+      );
+    }
+
+    // Summarization compaction (VS Code client-side)
+    if (this.agent.summarizationDetected && this.agent.summarizationReduction) {
+      md.appendMarkdown(
+        `**Summarized:** Context reduced by ${this.agent.summarizationReduction.toLocaleString()} tokens\n\n`,
       );
     }
 
@@ -157,6 +164,12 @@ export class AgentTreeItem extends vscode.TreeItem {
           new vscode.ThemeColor("errorForeground"),
         );
       case "complete": {
+        // Show fold icon if context was compacted (server or summarization)
+        const hasCompaction =
+          (this.agent.contextManagement?.appliedEdits.length ?? 0) > 0 ||
+          this.agent.summarizationDetected === true;
+        const iconName = hasCompaction ? "fold" : "check";
+
         // Check context utilization for color
         const display = getDisplayTokens(this.agent);
         const inputTokens = display?.value ?? 0;
@@ -164,19 +177,19 @@ export class AgentTreeItem extends vscode.TreeItem {
           const pct = inputTokens / this.agent.maxInputTokens;
           if (pct > 0.9) {
             return new vscode.ThemeIcon(
-              "check",
+              iconName,
               new vscode.ThemeColor("charts.red"),
             );
           }
           if (pct > 0.7) {
             return new vscode.ThemeIcon(
-              "check",
+              iconName,
               new vscode.ThemeColor("charts.orange"),
             );
           }
         }
         return new vscode.ThemeIcon(
-          "check",
+          iconName,
           new vscode.ThemeColor("charts.green"),
         );
       }

@@ -524,12 +524,16 @@ id = "summarization-visibility"
 [[plan.goals.tasks]]
 id = "detect-summarization-compaction"
 title = "Detect summarization-induced token drops in completeAgent and record as contextManagement entry"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T18:54:18.034439730+00:00"
+completion_log = "Detect 30%+ token drop between turns in completeAgent(). Sets summarizationDetected=true and accumulates summarizationReduction. 4 tests: detection, no-flag-growth, no-flag-moderate-drop, accumulation."
 
 [[plan.goals.tasks]]
 id = "display-summarization-compaction"
 title = "Display summarization compaction in status bar (↓Xk suffix) and sidebar tooltip alongside existing context edit entries"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T18:54:27.260784876+00:00"
+completion_log = "Display summarization as context compaction: $(fold) icon + ↓Xk suffix in status bar, 📋 Summarized line in tooltip, **Summarized** in sidebar tooltip, fold icon in sidebar tree. Persisted via PersistedAgentState for cross-reload."
 
 [[plan.goals]]
 id = "subagent-delta"

@@ -96,6 +96,10 @@ export interface AgentEntry {
   estimationSource?: "exact" | "delta" | "estimated" | undefined;
   /** Stable conversation UUID from stateful marker sessionId (primary identity) */
   conversationId?: string | undefined;
+  /** Whether VS Code summarization was detected (token drop ≥30%) */
+  summarizationDetected?: boolean | undefined;
+  /** Tokens freed by summarization (previous - current input tokens) */
+  summarizationReduction?: number | undefined;
 }
 
 /** Agent aging configuration */
@@ -277,6 +281,12 @@ export class TokenStatusBar implements vscode.Disposable {
           lastMessageCount: agent.lastMessageCount ?? 0,
           turnCount: agent.turnCount,
           ...(agent.modelId != null ? { modelId: agent.modelId } : {}),
+          ...(agent.summarizationDetected && agent.summarizationReduction
+            ? {
+                summarizationDetected: true,
+                summarizationReduction: agent.summarizationReduction,
+              }
+            : {}),
           fetchedAt: Date.now(),
         },
       },
@@ -773,6 +783,32 @@ export class TokenStatusBar implements vscode.Disposable {
     // Store this turn's tokens
     agent.inputTokens = usage.inputTokens;
     agent.outputTokens = usage.outputTokens;
+
+    // Detect VS Code summarization: a significant token drop between turns
+    // indicates the conversation history was summarized/compacted.
+    // Only check after the first turn (need a baseline to compare against).
+    if (
+      agent.turnCount > 0 &&
+      agent.lastActualInputTokens > 0 &&
+      usage.inputTokens < agent.lastActualInputTokens * 0.7
+    ) {
+      const reduction = agent.lastActualInputTokens - usage.inputTokens;
+      agent.summarizationDetected = true;
+      // Accumulate if multiple summarizations occur
+      agent.summarizationReduction =
+        (agent.summarizationReduction ?? 0) + reduction;
+      logger.info(
+        `[StatusBar] Summarization detected`,
+        JSON.stringify({
+          agentId: agent.id,
+          previousTokens: agent.lastActualInputTokens,
+          currentTokens: usage.inputTokens,
+          reduction,
+          totalReduction: agent.summarizationReduction,
+        }),
+      );
+    }
+
     // Use latest actual input tokens (not historical peak).
     // After summarization, context shrinks — the display should reflect that.
     // Accumulate output (each turn generates new tokens)
@@ -970,8 +1006,10 @@ export class TokenStatusBar implements vscode.Disposable {
     let icon = "$(triangle-up)";
 
     if (mainAgent) {
-      const hasCompaction =
+      const hasServerCompaction =
         (mainAgent.contextManagement?.appliedEdits.length ?? 0) > 0;
+      const hasSummarization = mainAgent.summarizationDetected === true;
+      const hasCompaction = hasServerCompaction || hasSummarization;
       if (hasCompaction) {
         icon = "$(fold)";
       }
@@ -993,15 +1031,19 @@ export class TokenStatusBar implements vscode.Disposable {
         mainText = this.formatAgentUsage(mainAgent);
       }
 
-      // Add compaction suffix
+      // Add compaction suffix (server-side edits + summarization)
       if (hasCompaction) {
-        const freed =
+        const serverFreed =
           mainAgent.contextManagement?.appliedEdits.reduce(
             (t, e) => t + e.clearedInputTokens,
             0,
           ) ?? 0;
-        // Use unpadded format for compaction suffix since it's less critical
-        mainText += ` ↓${this.formatTokenCount(freed, false)}`;
+        const summarizationFreed = mainAgent.summarizationReduction ?? 0;
+        const totalFreed = serverFreed + summarizationFreed;
+        if (totalFreed > 0) {
+          // Use unpadded format for compaction suffix since it's less critical
+          mainText += ` ↓${this.formatTokenCount(totalFreed, false)}`;
+        }
       }
     }
 
@@ -1221,13 +1263,20 @@ export class TokenStatusBar implements vscode.Disposable {
         }
       }
 
-      // Context compaction
+      // Context compaction (server-side)
       const edits = agent.contextManagement?.appliedEdits ?? [];
       if (edits.length > 0) {
         lines.push("   ⚡ Context compacted:");
         for (const edit of edits) {
           lines.push(`      ${this.formatContextEdit(edit)}`);
         }
+      }
+
+      // Summarization compaction (VS Code client-side)
+      if (agent.summarizationDetected && agent.summarizationReduction) {
+        lines.push(
+          `   📋 Summarized: ${agent.summarizationReduction.toLocaleString()} tokens freed`,
+        );
       }
 
       lines.push("");

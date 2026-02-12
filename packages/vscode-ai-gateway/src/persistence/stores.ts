@@ -51,6 +51,10 @@ export interface PersistedAgentState {
   turnCount: number;
   /** Model used (for diagnostics) */
   modelId?: string;
+  /** Whether VS Code summarization was detected */
+  summarizationDetected?: boolean;
+  /** Total tokens freed by summarization */
+  summarizationReduction?: number;
   /** Timestamp for LRU eviction (named fetchedAt for store.ts compatibility) */
   fetchedAt: number;
 }
