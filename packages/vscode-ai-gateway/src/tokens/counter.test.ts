@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const vscodeHoisted = vi.hoisted(() => {
   const LanguageModelChatMessageRole = {
@@ -46,6 +46,11 @@ vi.mock("vscode", () => vscodeHoisted);
 import * as vscode from "vscode";
 import { TokenCounter } from "./counter";
 import { STATEFUL_MARKER_MIME } from "../utils/stateful-marker";
+
+beforeAll(async () => {
+  const counter = new TokenCounter();
+  await counter.initialize();
+}, 30_000);
 
 describe("TokenCounter", () => {
   it("uses claude encoding for Anthropic models", () => {

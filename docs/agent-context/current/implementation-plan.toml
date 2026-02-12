@@ -320,22 +320,30 @@ id = "inv-log-prune"
 [[plan.goals.tasks]]
 id = "inv-log-prune::prune-command"
 title = "Register vercel.ai.investigation.prune command with interactive investigation listing (name, entry count, disk size, date range)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:48:37.543142235+00:00"
+completion_log = "Registered vercel.ai.investigation.prune command in package.json + extension.ts. Interactive handler with QuickPick (investigation selection → prune mode → confirmation dialog)."
 
 [[plan.goals.tasks]]
 id = "inv-log-prune::prune-age"
 title = "Age-based pruning for default investigation (older than N hours/days)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:48:41.538137484+00:00"
+completion_log = "Age-based pruning via QuickPick modes: older than 1 day, 7 days, 30 days. Uses IndexEntry ts field (not mtime). Cutoff calculated from Date.now()."
 
 [[plan.goals.tasks]]
 id = "inv-log-prune::prune-spider"
 title = "Spider deletion: read index → delete per-chat files → rewrite messages.jsonl → rewrite index → remove empty dirs"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:48:45.483910934+00:00"
+completion_log = "Spider deletion following RFC 00065 order: read index → delete per-chat .json/.sse.jsonl → rewrite messages.jsonl → rewrite index.jsonl → rmdir empty conversation/messages dirs. Order verified by test assertion."
 
 [[plan.goals.tasks]]
 id = "inv-log-prune::prune-tests"
 title = "Unit tests: verify spider deletion order, empty dir cleanup, partial prune correctness"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-11T00:48:50.777417951+00:00"
+completion_log = "15 unit tests: parseIndexEntries (4), listInvestigations (4), pruneInvestigation (6 + 1 order assertion), deleteInvestigation (1). Mock filesystem with path-aware readdir/readFile/unlink/rmdir."
 
 [[plan.goals]]
 id = "inv-log-cleanup"
@@ -344,8 +352,8 @@ id = "inv-log-cleanup"
 id = "inv-log-cleanup::remove-validation-log"
 title = "Remove validation-log.ts, its call site in openresponses-chat.ts, and .logs/token-validation.jsonl references"
 status = "completed"
-completed_at = "2026-02-11T00:27:42.390224738+00:00"
-completion_log = "Deleted validation-log.ts, removed import + call site in openresponses-chat.ts, removed mock in test"
+completed_at = "2026-02-12T04:54:20.162861888+00:00"
+completion_log = "validation-log.ts and all references removed in prior session"
 
 [[plan.goals.tasks]]
 id = "inv-log-cleanup::remove-forensic"
@@ -416,6 +424,142 @@ status = "pending"
 [[plan.goals.tasks]]
 id = "logging-alignment-rfc::write-rfc"
 title = "Write follow-up RFC: align orthogonal logging with investigation patterns (managed output, consistent structure)"
+status = "pending"
+
+[[plan.goals]]
+id = "fix-token-estimation"
+
+[[plan.goals]]
+id = "fix-sidebar-composite"
+
+[[plan.goals]]
+id = "lazy-load-extension-deps"
+
+[[plan.goals.tasks]]
+id = "lazy-load-extension-deps::refactor-extension"
+title = "Refactor extension activation to lazy load heavy dependencies in extension.ts"
+status = "completed"
+completed_at = "2026-02-11T22:17:41.897821425+00:00"
+completion_log = "Refactored extension.ts to use dynamic imports for auth, config, provider, tree view, status bar, diagnostics, migration, and command handlers; made activate async and added cached lazy import for serialize utility."
+
+[[plan.goals]]
+id = "narrative-logger-overhaul"
+
+[[plan.goals.tasks]]
+id = "narrative-logger-overhaul::audit-logger-ts"
+title = "Audit logger.ts: catalog all features (output channel, file rotation, chat logger, api-error log, log levels) and map consumers"
+status = "completed"
+completed_at = "2026-02-12T04:57:28.365349+00:00"
+completion_log = "Audited logger.ts (623 lines). Features: output channel, file rotation (current.log/previous.log/errors.log), api-errors.log JSONL, per-chat logger, log levels, error extraction. Dead code: logApiError (no callers), createChatLogger (no callers). Config: logLevel (keep), logOutputChannel (hardcoded true), logFileDirectory (remove). 8 consumer files import logger. tree-diagnostics.ts uses direct fs.appendFileSync. 3 analysis scripts read old log formats."
+
+[[plan.goals.tasks]]
+id = "narrative-logger-overhaul::remove-file-logging"
+title = "Remove file-based logging from logger.ts (current.log, previous.log, errors.log, api-errors.log, chat logs) — investigation logger replaces this"
+status = "completed"
+completed_at = "2026-02-12T05:00:08.454640318+00:00"
+completion_log = "Removed from logger.ts: file rotation (current.log/previous.log), errors.log, api-errors.log JSONL, per-chat logger, logApiError (dead code), createChatLogger (dead code), fs/path imports, logFileDirectory config, logOutputChannel config. Removed logging.fileDirectory from package.json. Cleaned test mock. Logger is now output-channel-only. 435/435 tests pass."
+
+[[plan.goals.tasks]]
+id = "narrative-logger-overhaul::migrate-tree-diagnostics"
+title = "Migrate tree-diagnostics.ts from direct fs.appendFileSync to investigation logger (or remove if superseded)"
+status = "completed"
+completed_at = "2026-02-12T05:05:08.756212438+00:00"
+completion_log = "Migrated tree-diagnostics.ts from direct fs.appendFileSync to narrative logger (output channel). Removed fs/path imports, file rotation, archive directory creation. Events now logged at debug level via logger.debug('[TreeDiag] EVENT', json). Invariant violations logged at warn level. Updated test to verify logger.debug calls instead of fs.appendFileSync. Fixed pre-existing Array<T> lint issue. 435/435 tests pass."
+
+[[plan.goals.tasks]]
+id = "narrative-logger-overhaul::remove-analysis-scripts"
+title = "Remove or migrate analysis scripts (analyze-agent-logs.ts, analyze-error-log.cjs, analyze-tool-schema-overcount.ts) that read old log formats"
+status = "completed"
+completed_at = "2026-02-12T05:07:45.310976654+00:00"
+completion_log = "Removed 3 stale analysis scripts: analyze-agent-logs.ts (read tree-diagnostics.log), analyze-error-log.cjs (read api-errors.log), analyze-tool-schema-overcount.ts (read token-count-calls.jsonl). These read log formats that no longer exist. Remaining scripts (test-openresponses.ts, validate-openresponses-request.ts, etc.) are standalone dev tools. 435/435 tests pass."
+
+[[plan.goals.tasks]]
+id = "narrative-logger-overhaul::remove-stale-config"
+title = "Remove stale config keys (logFileDirectory, logOutputChannel) and settings from package.json; keep logLevel for output channel filtering"
+status = "completed"
+completed_at = "2026-02-12T05:07:53.850253449+00:00"
+completion_log = "Removed logOutputChannel (hardcoded true) and logFileDirectory getter from config.ts. Removed vercel.ai.logging.fileDirectory setting from package.json. Kept logLevel for output channel filtering. Investigation logger still reads logging.fileDirectory with .logs default via direct config access."
+
+[[plan.goals.tasks]]
+id = "narrative-logger-overhaul::fix-console-leaks"
+title = "Replace remaining console.log/warn in vercel-auth.ts, stream-adapter.ts, tree-diagnostics.ts with logger calls"
+status = "completed"
+completed_at = "2026-02-12T05:10:28.505667201+00:00"
+completion_log = "Replaced 2 console.log calls in vercel-auth.ts with logger.debug, 1 console.warn in stream-adapter.ts with logger.warn. Zero console.* calls remain in production code (excluding logger.ts itself and test files). 435/435 tests pass."
+
+[[plan.goals.tasks]]
+id = "narrative-logger-overhaul::update-tests"
+title = "Update/remove tests referencing deleted logger features; verify all tests pass"
+status = "completed"
+completed_at = "2026-02-12T05:10:52.638208921+00:00"
+completion_log = "All tests pass (435/435), build succeeds. Updated tree-diagnostics test to mock logger instead of fs. Removed logApiError from message-translation test mock. No other test changes needed."
+
+[[plan.goals]]
+id = "shared-token-display"
+
+[[plan.goals.tasks]]
+id = "extract-display-fn"
+title = "Extract getDisplayTokens(agent): { value, isEstimate } pure function encapsulating delta-vs-full-vs-actual logic"
+status = "completed"
+completed_at = "2026-02-12T06:19:55.584998429+00:00"
+completion_log = "Created src/tokens/display.ts with getDisplayTokens() and formatTokens(). Pure functions encapsulating delta-vs-full-vs-actual logic and unified formatting with optional padding."
+
+[[plan.goals.tasks]]
+id = "unify-format-tokens"
+title = "Unify formatTokenCount (status-bar) and formatTokens (agent-tree) into single shared formatter with optional padding flag"
+status = "completed"
+completed_at = "2026-02-12T06:19:55.633745185+00:00"
+completion_log = "Unified formatTokenCount (status-bar) and formatTokens (agent-tree) into shared formatTokens(count, {padded}) in tokens/display.ts. Status bar's formatTokenCount now delegates to shared function. Agent-tree's private formatTokens removed."
+
+[[plan.goals.tasks]]
+id = "wire-shared-display"
+title = "Wire shared getDisplayTokens into all 7 display paths: status bar streaming/complete, sidebar desc/tooltip, status bar tooltip, diagnostics tree, error display"
+status = "completed"
+completed_at = "2026-02-12T06:19:55.665209062+00:00"
+completion_log = "Wired getDisplayTokens into 9 display paths: status bar main streaming, subagent streaming (fixed delta bug), formatAgentUsage, setBackgroundColor, buildTooltip streaming (fixed delta bug), sidebar formatDescription, formatTooltip, getIcon, LastSessionTreeItem. All 445 tests pass."
+
+[[plan.goals]]
+id = "summarization-visibility"
+
+[[plan.goals.tasks]]
+id = "detect-summarization-compaction"
+title = "Detect summarization-induced token drops in completeAgent and record as contextManagement entry"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "display-summarization-compaction"
+title = "Display summarization compaction in status bar (↓Xk suffix) and sidebar tooltip alongside existing context edit entries"
+status = "pending"
+
+[[plan.goals]]
+id = "subagent-delta"
+
+[[plan.goals.tasks]]
+id = "subagent-statusbar-delta"
+title = "Wire delta path into status bar subagent streaming display (currently full-estimate only)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "subagent-delta-validation"
+title = "Validate subagent delta accuracy with real multi-agent session logs"
+status = "pending"
+
+[[plan.goals]]
+id = "persist-agent-state"
+
+[[plan.goals.tasks]]
+id = "define-persisted-schema"
+title = "Define PersistedAgentState schema and add to PersistentStore (extend existing SessionStats pattern)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "save-agent-state"
+title = "Save per-agent state on completeAgent and periodically during streaming"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "restore-agent-state"
+title = "Restore agent state on extension activation; seed startAgent with persisted lastActualInputTokens/lastMessageCount"
 status = "pending"
 
 

@@ -194,8 +194,8 @@ describe("conversationId identity pipeline (integration)", () => {
 
       // turnCount should be 2
       expect(agent.turnCount).toBe(2);
-      // maxObservedInputTokens should be the max of both turns
-      expect(agent.maxObservedInputTokens).toBe(58000);
+      // lastActualInputTokens should be the LATEST turn's actual (not historical peak)
+      expect(agent.lastActualInputTokens).toBe(58000);
       // totalOutputTokens should accumulate
       expect(agent.totalOutputTokens).toBe(2500);
       // inputTokens/outputTokens are from the LAST turn
@@ -454,7 +454,7 @@ describe("conversationId identity pipeline (integration)", () => {
       const agent = agents[0]!;
       const pct = Math.round(
         ((agent.turnCount > 1
-          ? agent.maxObservedInputTokens
+          ? agent.lastActualInputTokens
           : agent.inputTokens) /
           (agent.maxInputTokens ?? 1)) *
           100,
@@ -520,7 +520,7 @@ describe("conversationId identity pipeline (integration)", () => {
       expect(subPct).toBe(7); // 8500/128000 = 6.6%
     });
 
-    it("multi-turn percentage uses maxObservedInputTokens, not last turn", () => {
+    it("multi-turn percentage uses latest actual tokens (reflects summarization reductions)", () => {
       const convId = "conv-multiturn-pct";
 
       // Turn 1: high input
@@ -541,7 +541,7 @@ describe("conversationId identity pipeline (integration)", () => {
         maxInputTokens: 128000,
       });
 
-      // Turn 2: lower input (e.g., after compaction)
+      // Turn 2: lower input (e.g., after summarization/compaction)
       statusBar.startAgent(
         "req-2",
         60000,
@@ -561,14 +561,135 @@ describe("conversationId identity pipeline (integration)", () => {
 
       const agent = statusBar.getAgents()[0]!;
       expect(agent.turnCount).toBe(2);
-      // maxObservedInputTokens should be 100000 (turn 1 peak), not 60000
-      expect(agent.maxObservedInputTokens).toBe(100000);
+      // lastActualInputTokens should be 60000 (latest turn), not 100000 (peak)
+      // After summarization, context shrinks and the display should reflect that
+      expect(agent.lastActualInputTokens).toBe(60000);
 
-      // Tree description should use maxObservedInputTokens for percentage
+      // Tree description should use latest actual for percentage
       const roots = treeProvider.getChildren(undefined);
       const treeItem = roots[0] as AgentTreeItem;
-      // Description should contain percentage based on 100k/128k = 78%
-      expect(treeItem.description).toContain("78%");
+      // Description should contain percentage based on 60k/128k = 47%
+      expect(treeItem.description).toContain("47%");
+    });
+
+    it("summarization boundary: tokens drop sharply and display reflects reduction", () => {
+      const convId = "conv-summarization-boundary";
+
+      // Turn 1: near context limit (120k/128k = 94%)
+      statusBar.startAgent(
+        "req-pre-summ",
+        120000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        convId,
+      );
+      statusBar.completeAgent("req-pre-summ", {
+        inputTokens: 120000,
+        outputTokens: 2000,
+        maxInputTokens: 128000,
+      });
+
+      // Verify pre-summarization state
+      let agent = statusBar.getAgents()[0]!;
+      expect(agent.lastActualInputTokens).toBe(120000);
+
+      // Turn 2: VS Code summarizes → context drops to 30k (77% reduction)
+      statusBar.startAgent(
+        "req-post-summ",
+        30000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        convId,
+      );
+      statusBar.completeAgent("req-post-summ", {
+        inputTokens: 30000,
+        outputTokens: 500,
+        maxInputTokens: 128000,
+      });
+
+      agent = statusBar.getAgents()[0]!;
+      expect(agent.turnCount).toBe(2);
+      // After summarization, display should show 30k (not stuck at 120k)
+      expect(agent.lastActualInputTokens).toBe(30000);
+      // Percentage should be 30k/128k = 23%, not 94%
+      const pct = Math.round(
+        (agent.lastActualInputTokens / agent.maxInputTokens!) * 100,
+      );
+      expect(pct).toBe(23);
+
+      // Tree should also reflect the reduction
+      const roots = treeProvider.getChildren(undefined);
+      const treeItem = roots[0] as AgentTreeItem;
+      expect(treeItem.description).toContain("23%");
+    });
+
+    it("streaming delta uses latest actual as base, not stale peak", () => {
+      const convId = "conv-delta-base";
+
+      // Turn 1: 100k input
+      statusBar.startAgent(
+        "req-t1",
+        100000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        convId,
+      );
+      statusBar.completeAgent("req-t1", {
+        inputTokens: 100000,
+        outputTokens: 1000,
+        maxInputTokens: 128000,
+      });
+
+      // Turn 2: after summarization, context drops to 40k
+      statusBar.startAgent(
+        "req-t2",
+        40000,
+        128000,
+        "anthropic:claude-sonnet-4",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        convId,
+      );
+      statusBar.completeAgent("req-t2", {
+        inputTokens: 40000,
+        outputTokens: 800,
+        maxInputTokens: 128000,
+      });
+
+      // Turn 3: streaming with delta — base should be 40k (latest), not 100k (peak)
+      statusBar.startAgent(
+        "req-t3",
+        45000, // full estimate
+        128000,
+        "anthropic:claude-sonnet-4",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        convId,
+      );
+
+      const agent = statusBar.getAgents()[0]!;
+      expect(agent.status).toBe("streaming");
+      // lastActualInputTokens should be 40k (from turn 2 completion)
+      expect(agent.lastActualInputTokens).toBe(40000);
+      // If estimatedDeltaTokens is set, the streaming display would compute:
+      // lastActualInputTokens + estimatedDeltaTokens = 40k + delta
+      // NOT 100k + delta (which would be wrong after summarization)
     });
   });
 

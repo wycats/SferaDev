@@ -15,6 +15,7 @@ import type {
   PersistentStore,
   PersistenceManager,
 } from "./persistence/index.js";
+import { formatTokens, getDisplayTokens } from "./tokens/display.js";
 
 /**
  * Context management edit from Anthropic's API
@@ -39,6 +40,8 @@ export interface TokenUsage {
   maxInputTokens?: number | undefined;
   modelId?: string | undefined;
   contextManagement?: ContextManagementInfo | undefined;
+  /** Number of messages in this request (for delta estimation on next turn) */
+  messageCount?: number | undefined;
 }
 
 /**
@@ -54,12 +57,14 @@ export interface AgentEntry {
   inputTokens: number;
   /** Output tokens from the most recent turn */
   outputTokens: number;
-  /** Maximum observed input tokens across all turns (each turn includes full context) */
-  maxObservedInputTokens: number;
+  /** Most recent actual input tokens (updated each turn, reflects post-summarization reductions) */
+  lastActualInputTokens: number;
   /** Cumulative output tokens across all turns in this conversation */
   totalOutputTokens: number;
   /** Number of turns (request/response cycles) in this conversation */
   turnCount: number;
+  /** Number of messages in the last completed request (for delta estimation) */
+  lastMessageCount?: number | undefined;
   maxInputTokens?: number | undefined;
   estimatedInputTokens?: number | undefined;
   /** Estimated tokens for NEW messages only (delta from previous state) */
@@ -135,6 +140,8 @@ export class TokenStatusBar implements vscode.Disposable {
   private activeAgentId: string | null = null;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private completedAgentCount = 0;
+  /** Peak input tokens observed across all agents in this session (for session stats) */
+  private sessionPeakInputTokens = 0;
 
   // Estimation state tracking
   private estimationStates = new Map<string, EstimationState>();
@@ -218,6 +225,24 @@ export class TokenStatusBar implements vscode.Disposable {
    */
   getAllEstimationStates(): EstimationState[] {
     return Array.from(this.estimationStates.values());
+  }
+
+  /**
+   * Get the previous turn's context for a conversation.
+   * Used by the provider to compute delta token estimates for resumed agents.
+   * Returns undefined if the conversation has no completed turns.
+   */
+  getAgentContext(
+    conversationId: string,
+  ): { lastActualInputTokens: number; lastMessageCount: number } | undefined {
+    const agent = this.agentsByConversationId.get(conversationId);
+    if (!agent || agent.lastActualInputTokens <= 0 || !agent.lastMessageCount) {
+      return undefined;
+    }
+    return {
+      lastActualInputTokens: agent.lastActualInputTokens,
+      lastMessageCount: agent.lastMessageCount,
+    };
   }
 
   /**
@@ -308,7 +333,7 @@ export class TokenStatusBar implements vscode.Disposable {
       lastUpdateTime: now,
       inputTokens: 0,
       outputTokens: 0,
-      maxObservedInputTokens: 0,
+      lastActualInputTokens: 0,
       totalOutputTokens: 0,
       turnCount: 0,
       maxInputTokens: maxTokens,
@@ -421,7 +446,7 @@ export class TokenStatusBar implements vscode.Disposable {
         mainAgentTypeHash: mainAgent?.agentTypeHash?.slice(0, 8),
         thisAgentTypeHash: agentTypeHash?.slice(0, 8),
         thisSystemPromptHash: systemPromptHash?.slice(0, 8),
-        existingAgentMaxTokens: existingAgent?.maxObservedInputTokens,
+        existingAgentMaxTokens: existingAgent?.lastActualInputTokens,
         thisEstimatedTokens: estimatedTokens,
         conversationId: conversationId?.slice(0, 8),
         matchedBy: existingByConversationId ? "conversationId" : "none",
@@ -614,7 +639,7 @@ export class TokenStatusBar implements vscode.Disposable {
       lastUpdateTime: now,
       inputTokens: 0,
       outputTokens: 0,
-      maxObservedInputTokens: 0,
+      lastActualInputTokens: 0,
       totalOutputTokens: 0,
       turnCount: 0,
       maxInputTokens: maxTokens,
@@ -710,10 +735,13 @@ export class TokenStatusBar implements vscode.Disposable {
     // Store this turn's tokens
     agent.inputTokens = usage.inputTokens;
     agent.outputTokens = usage.outputTokens;
-    // Track max input (each turn's input includes full context, so max = current context size)
+    // Use latest actual input tokens (not historical peak).
+    // After summarization, context shrinks — the display should reflect that.
     // Accumulate output (each turn generates new tokens)
-    agent.maxObservedInputTokens = Math.max(
-      agent.maxObservedInputTokens,
+    agent.lastActualInputTokens = usage.inputTokens;
+    // Track session peak for session stats (this IS a max — survives summarization)
+    this.sessionPeakInputTokens = Math.max(
+      this.sessionPeakInputTokens,
       usage.inputTokens,
     );
     agent.totalOutputTokens += usage.outputTokens;
@@ -725,6 +753,7 @@ export class TokenStatusBar implements vscode.Disposable {
     agent.estimatedInputTokens = undefined;
     agent.lastUpdateTime = Date.now();
     agent.contextManagement = usage.contextManagement;
+    agent.lastMessageCount = usage.messageCount;
     agent.completionOrder = this.completedAgentCount;
 
     this.completedAgentCount++;
@@ -910,20 +939,14 @@ export class TokenStatusBar implements vscode.Disposable {
 
       if (mainAgent.status === "streaming") {
         icon = "$(loading~spin)";
-        if (mainAgent.estimatedInputTokens && mainAgent.maxInputTokens) {
-          // Display the estimate during streaming
-          // - With delta: previousActual + estimatedDelta (smooth progression)
-          // - Without delta: full estimate (best available)
-          const displayTokens =
-            mainAgent.estimatedDeltaTokens !== undefined
-              ? mainAgent.maxObservedInputTokens +
-                mainAgent.estimatedDeltaTokens
-              : mainAgent.estimatedInputTokens;
+        const display = getDisplayTokens(mainAgent);
+        if (display && mainAgent.maxInputTokens) {
           const pct = this.formatPercentage(
-            displayTokens,
+            display.value,
             mainAgent.maxInputTokens,
           );
-          mainText = `~${this.formatTokenCount(displayTokens)}/${this.formatTokenCount(mainAgent.maxInputTokens)} (${pct})`;
+          const prefix = display.isEstimate ? "~" : "";
+          mainText = `${prefix}${this.formatTokenCount(display.value)}/${this.formatTokenCount(mainAgent.maxInputTokens)} (${pct})`;
         } else {
           mainText = "streaming...";
         }
@@ -995,16 +1018,14 @@ export class TokenStatusBar implements vscode.Disposable {
 
     if (subagentToShow) {
       if (subagentToShow.status === "streaming") {
-        // Streaming: show estimate with ~ prefix
-        if (
-          subagentToShow.estimatedInputTokens &&
-          subagentToShow.maxInputTokens
-        ) {
+        const subDisplay = getDisplayTokens(subagentToShow);
+        if (subDisplay && subagentToShow.maxInputTokens) {
           const pct = this.formatPercentage(
-            subagentToShow.estimatedInputTokens,
+            subDisplay.value,
             subagentToShow.maxInputTokens,
           );
-          subagentText = `▸ ${subagentToShow.name} ~${this.formatTokenCount(subagentToShow.estimatedInputTokens)}/${this.formatTokenCount(subagentToShow.maxInputTokens)} (${pct})`;
+          const prefix = subDisplay.isEstimate ? "~" : "";
+          subagentText = `▸ ${subagentToShow.name} ${prefix}${this.formatTokenCount(subDisplay.value)}/${this.formatTokenCount(subagentToShow.maxInputTokens)} (${pct})`;
         } else {
           subagentText = `▸ ${subagentToShow.name}...`;
         }
@@ -1042,9 +1063,8 @@ export class TokenStatusBar implements vscode.Disposable {
    * Format usage for a single agent
    */
   private formatAgentUsage(agent: AgentEntry): string {
-    // Use accumulated totals for multi-turn conversations
-    const inputTokens =
-      agent.turnCount > 1 ? agent.maxObservedInputTokens : agent.inputTokens;
+    const display = getDisplayTokens(agent);
+    const inputTokens = display?.value ?? 0;
     // Note: outputTokens available for future use:
     // agent.turnCount > 1 ? agent.totalOutputTokens : agent.outputTokens
     const input = this.formatTokenCount(inputTokens);
@@ -1066,13 +1086,8 @@ export class TokenStatusBar implements vscode.Disposable {
       return;
     }
 
-    // During streaming: use delta if available, otherwise full estimate
-    const tokens =
-      agent.status === "streaming"
-        ? agent.estimatedDeltaTokens !== undefined
-          ? agent.maxObservedInputTokens + agent.estimatedDeltaTokens
-          : (agent.estimatedInputTokens ?? 0)
-        : agent.inputTokens;
+    const display = getDisplayTokens(agent);
+    const tokens = display?.value ?? 0;
     const percentage = Math.round((tokens / agent.maxInputTokens) * 100);
 
     if (percentage >= 90) {
@@ -1136,7 +1151,7 @@ export class TokenStatusBar implements vscode.Disposable {
         if (agent.turnCount > 1) {
           lines.push(`   Turns: ${agent.turnCount.toString()}`);
           lines.push(
-            `   Max Input: ${agent.maxObservedInputTokens.toLocaleString()}`,
+            `   Input: ${agent.lastActualInputTokens.toLocaleString()}`,
           );
           lines.push(
             `   Last Turn: ${agent.inputTokens.toLocaleString()} in, ${agent.outputTokens.toLocaleString()} out`,
@@ -1147,20 +1162,24 @@ export class TokenStatusBar implements vscode.Disposable {
         if (agent.maxInputTokens) {
           const tokensForPct =
             agent.turnCount > 1
-              ? agent.maxObservedInputTokens
+              ? agent.lastActualInputTokens
               : agent.inputTokens;
           const pct = Math.round((tokensForPct / agent.maxInputTokens) * 100);
           lines.push(
             `   Context: ${pct.toString()}% of ${agent.maxInputTokens.toLocaleString()}`,
           );
         }
-      } else if (agent.estimatedInputTokens) {
-        const sourceLabel = agent.estimationSource
-          ? `(${agent.estimationSource})`
-          : "";
-        lines.push(
-          `   Estimated: ~${agent.estimatedInputTokens.toLocaleString()} ${sourceLabel}`,
-        );
+      } else {
+        const display = getDisplayTokens(agent);
+        if (display) {
+          const sourceLabel = agent.estimationSource
+            ? `(${agent.estimationSource})`
+            : "";
+          const prefix = display.isEstimate ? "~" : "";
+          lines.push(
+            `   Input: ${prefix}${display.value.toLocaleString()} ${sourceLabel}`,
+          );
+        }
       }
 
       // Context compaction
@@ -1326,31 +1345,7 @@ export class TokenStatusBar implements vscode.Disposable {
    * Target widths: "XXX.Xk" (6 chars) for k values, "X.XM" (4 chars) for M values.
    */
   private formatTokenCount(count: number, padded = true): string {
-    // Figure space has the same width as digits in most fonts
-    const figureSpace = "\u2007";
-
-    if (count >= 1000000) {
-      const formatted = `${(count / 1000000).toFixed(1)}M`;
-      // Pad to 5 chars: "X.XM" or "XX.XM"
-      if (padded) {
-        return formatted.padStart(5, figureSpace);
-      }
-      return formatted;
-    }
-    if (count >= 1000) {
-      const formatted = `${(count / 1000).toFixed(1)}k`;
-      // Pad to 6 chars: "X.Xk" → "XXX.Xk"
-      if (padded) {
-        return formatted.padStart(6, figureSpace);
-      }
-      return formatted;
-    }
-    // Small numbers: pad to 3 chars
-    const formatted = count.toString();
-    if (padded) {
-      return formatted.padStart(3, figureSpace);
-    }
-    return formatted;
+    return formatTokens(count, { padded });
   }
 
   /**
@@ -1406,6 +1401,7 @@ export class TokenStatusBar implements vscode.Disposable {
     this.mainAgentId = null;
     this.activeAgentId = null;
     this.completedAgentCount = 0;
+    this.sessionPeakInputTokens = 0;
     logger.debug(
       `[StatusBar] All agents CLEARED`,
       JSON.stringify({
@@ -1426,10 +1422,7 @@ export class TokenStatusBar implements vscode.Disposable {
       timestamp: Date.now(),
       agentCount: agents.length,
       mainAgentTurns: mainAgent?.turnCount ?? 0,
-      maxObservedInputTokens: Math.max(
-        ...agents.map((a) => a.maxObservedInputTokens),
-        0,
-      ),
+      maxObservedInputTokens: this.sessionPeakInputTokens,
       totalOutputTokens: agents.reduce(
         (sum, a) => sum + a.totalOutputTokens,
         0,

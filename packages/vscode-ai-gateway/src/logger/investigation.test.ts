@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +79,29 @@ import {
   sanitizePathSegment,
   type StartRequestData,
   type CompleteRequestData,
+  type InvestigationRequestHandle,
+  type InvestigationSSERecorder,
 } from "./investigation.js";
+import {
+  parseIndexEntry,
+  parseMessageSummary,
+  parseFullRequestCapture,
+  parseSSEEventEntry,
+} from "./investigation-schemas.js";
+
+/** Assert handle is non-null (narrows type). */
+function assertHandle(
+  handle: InvestigationRequestHandle | null,
+): asserts handle is InvestigationRequestHandle {
+  assert(handle !== null, "Expected handle to be non-null");
+}
+
+/** Assert recorder is non-null (narrows type). */
+function assertRecorder(
+  recorder: InvestigationSSERecorder | null,
+): asserts recorder is InvestigationSSERecorder {
+  assert(recorder !== null, "Expected recorder to be non-null");
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -178,14 +201,14 @@ describe("InvestigationLogger", () => {
 
     it("startRequest returns handle with null recorder (no SSE at index level)", () => {
       const handle = investigationLogger.startRequest(makeStartData());
-      expect(handle).not.toBeNull();
-      expect(handle!.recorder).toBeNull();
+      assertHandle(handle);
+      expect(handle.recorder).toBeNull();
     });
 
     it("writes only index.jsonl", async () => {
       const handle = investigationLogger.startRequest(makeStartData());
-      expect(handle).not.toBeNull();
-      await handle!.complete(makeCompleteData());
+      assertHandle(handle);
+      await handle.complete(makeCompleteData());
 
       // Should create investigation directory
       expect(hoisted.mockMkdir).toHaveBeenCalledWith(
@@ -202,7 +225,7 @@ describe("InvestigationLogger", () => {
       ];
       expect(filePath).toBe("/workspace/.logs/default/index.jsonl");
 
-      const entry = JSON.parse(content.trim());
+      const entry = parseIndexEntry(content.trim());
       expect(entry.conversationId).toBe("conv-123");
       expect(entry.chatId).toBe("chat-abc-1234");
       expect(entry.model).toBe("anthropic/claude-sonnet-4");
@@ -223,22 +246,28 @@ describe("InvestigationLogger", () => {
       const handle = investigationLogger.startRequest(
         makeStartData({ estimatedInputTokens: 5000 }),
       );
-      await handle!.complete(
+      assertHandle(handle);
+      await handle.complete(
         makeCompleteData({ usage: { input_tokens: 5500, output_tokens: 200 } }),
       );
 
-      const content = hoisted.mockAppendFile.mock.calls[0]![1] as string;
-      const entry = JSON.parse(content.trim());
+      const call = hoisted.mockAppendFile.mock.calls[0];
+      assert(call);
+      const content = call[1] as string;
+      const entry = parseIndexEntry(content.trim());
       expect(entry.tokenDelta).toBe(-500); // 5000 - 5500
       expect(entry.tokenDeltaPct).toBeCloseTo(-9.09, 1); // -500/5500 * 100
     });
 
     it("handles null usage gracefully", async () => {
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(makeCompleteData({ usage: null }));
+      assertHandle(handle);
+      await handle.complete(makeCompleteData({ usage: null }));
 
-      const content = hoisted.mockAppendFile.mock.calls[0]![1] as string;
-      const entry = JSON.parse(content.trim());
+      const call = hoisted.mockAppendFile.mock.calls[0];
+      assert(call);
+      const content = call[1] as string;
+      const entry = parseIndexEntry(content.trim());
       expect(entry.actualInputTokens).toBeNull();
       expect(entry.actualOutputTokens).toBeNull();
       expect(entry.tokenDelta).toBeNull();
@@ -253,7 +282,8 @@ describe("InvestigationLogger", () => {
 
     it("writes index + messages.jsonl + per-chat JSON", async () => {
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(makeCompleteData());
+      assertHandle(handle);
+      await handle.complete(makeCompleteData());
 
       // Creates investigation dir + messages dir
       expect(hoisted.mockMkdir).toHaveBeenCalledWith(
@@ -283,7 +313,7 @@ describe("InvestigationLogger", () => {
       expect(messagesCall[0]).toBe(
         "/workspace/.logs/default/conv-123/messages.jsonl",
       );
-      const msgEntry = JSON.parse((messagesCall[1] as string).trim());
+      const msgEntry = parseMessageSummary(messagesCall[1].trim());
       expect(msgEntry.messageRoles).toBe("User,Assistant,User,Assistant");
       expect(msgEntry.toolNames).toEqual(["read_file", "write_file"]);
       expect(msgEntry.systemPromptLength).toBe(
@@ -300,7 +330,7 @@ describe("InvestigationLogger", () => {
       expect(writeCall[0]).toBe(
         "/workspace/.logs/default/conv-123/messages/chat-abc-1234.json",
       );
-      const capture = JSON.parse(writeCall[1] as string);
+      const capture = parseFullRequestCapture(writeCall[1]);
       expect(capture.request.model).toBe("anthropic/claude-sonnet-4");
       expect(capture.request.instructions).toBe("You are a helpful assistant.");
       expect(capture.response.status).toBe("success");
@@ -309,7 +339,8 @@ describe("InvestigationLogger", () => {
 
     it("does NOT write SSE events at messages level", async () => {
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(makeCompleteData());
+      assertHandle(handle);
+      await handle.complete(makeCompleteData());
 
       // Only one writeFile call (the full capture JSON), no SSE file
       expect(hoisted.mockWriteFile).toHaveBeenCalledTimes(1);
@@ -329,23 +360,25 @@ describe("InvestigationLogger", () => {
 
     it("startRequest returns handle with SSE recorder", () => {
       const handle = investigationLogger.startRequest(makeStartData());
-      expect(handle).not.toBeNull();
-      expect(handle!.recorder).not.toBeNull();
-      expect(typeof handle!.recorder!.recordEvent).toBe("function");
+      assertHandle(handle);
+      expect(handle.recorder).not.toBeNull();
+      assertRecorder(handle.recorder);
+      expect(typeof handle.recorder.recordEvent).toBe("function");
     });
 
     it("writes all files including SSE events", async () => {
       const handle = investigationLogger.startRequest(makeStartData());
-      expect(handle).not.toBeNull();
+      assertHandle(handle);
+      assertRecorder(handle.recorder);
 
       // Record some SSE events
-      handle!.recorder!.recordEvent(1, "response.created", { id: "resp-1" });
-      handle!.recorder!.recordEvent(2, "response.output_text.delta", {
+      handle.recorder.recordEvent(1, "response.created", { id: "resp-1" });
+      handle.recorder.recordEvent(2, "response.output_text.delta", {
         delta: "Hello",
       });
-      handle!.recorder!.recordEvent(3, "response.completed", { id: "resp-1" });
+      handle.recorder.recordEvent(3, "response.completed", { id: "resp-1" });
 
-      await handle!.complete(makeCompleteData());
+      await handle.complete(makeCompleteData());
 
       // index.jsonl + messages.jsonl
       expect(hoisted.mockAppendFile).toHaveBeenCalledTimes(2);
@@ -362,25 +395,30 @@ describe("InvestigationLogger", () => {
         "/workspace/.logs/default/conv-123/messages/chat-abc-1234.sse.jsonl",
       );
 
-      const sseLines = (sseCall[1] as string).trim().split("\n");
+      const sseLines = sseCall[1].trim().split("\n");
       expect(sseLines).toHaveLength(3);
 
-      const event1 = JSON.parse(sseLines[0]!);
+      const line0 = sseLines[0];
+      assert(line0);
+      const event1 = parseSSEEventEntry(line0);
       expect(event1.seq).toBe(1);
       expect(event1.type).toBe("response.created");
       expect(event1.payload).toEqual({ id: "resp-1" });
       expect(typeof event1.elapsed).toBe("number");
       expect(typeof event1.ts).toBe("string");
 
-      const event2 = JSON.parse(sseLines[1]!);
+      const line1 = sseLines[1];
+      assert(line1);
+      const event2 = parseSSEEventEntry(line1);
       expect(event2.seq).toBe(2);
       expect(event2.type).toBe("response.output_text.delta");
     });
 
     it("does not write SSE file when no events recorded", async () => {
       const handle = investigationLogger.startRequest(makeStartData());
+      assertHandle(handle);
       // Don't record any events
-      await handle!.complete(makeCompleteData());
+      await handle.complete(makeCompleteData());
 
       // Only full capture JSON, no SSE file
       expect(hoisted.mockWriteFile).toHaveBeenCalledTimes(1);
@@ -397,7 +435,8 @@ describe("InvestigationLogger", () => {
     it("uses configured investigation name in file paths", async () => {
       mockConfig("my-investigation", "index");
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(makeCompleteData());
+      assertHandle(handle);
+      await handle.complete(makeCompleteData());
 
       expect(hoisted.mockMkdir).toHaveBeenCalledWith(
         "/workspace/.logs/my-investigation",
@@ -413,7 +452,8 @@ describe("InvestigationLogger", () => {
     it("uses default name when not configured", async () => {
       mockConfig("default", "index");
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(makeCompleteData());
+      assertHandle(handle);
+      await handle.complete(makeCompleteData());
 
       expect(hoisted.mockMkdir).toHaveBeenCalledWith(
         "/workspace/.logs/default",
@@ -433,18 +473,21 @@ describe("InvestigationLogger", () => {
         makeStartData({ chatId: "chat-2", conversationId: "conv-2" }),
       );
 
+      assertHandle(handle1);
+      assertHandle(handle2);
+
       // Complete in reverse order
-      await handle2!.complete(makeCompleteData({ responseId: "resp-2" }));
-      await handle1!.complete(makeCompleteData({ responseId: "resp-1" }));
+      await handle2.complete(makeCompleteData({ responseId: "resp-2" }));
+      await handle1.complete(makeCompleteData({ responseId: "resp-1" }));
 
       expect(hoisted.mockAppendFile).toHaveBeenCalledTimes(2);
 
-      const entry1 = JSON.parse(
-        (hoisted.mockAppendFile.mock.calls[0]![1] as string).trim(),
-      );
-      const entry2 = JSON.parse(
-        (hoisted.mockAppendFile.mock.calls[1]![1] as string).trim(),
-      );
+      const call0 = hoisted.mockAppendFile.mock.calls[0];
+      assert(call0);
+      const entry1 = parseIndexEntry((call0[1] as string).trim());
+      const call1 = hoisted.mockAppendFile.mock.calls[1];
+      assert(call1);
+      const entry2 = parseIndexEntry((call1[1] as string).trim());
 
       // handle2 completed first
       expect(entry1.chatId).toBe("chat-2");
@@ -462,9 +505,11 @@ describe("InvestigationLogger", () => {
       mockConfig("default", "messages");
       const handle = investigationLogger.startRequest(makeStartData());
 
+      assertHandle(handle);
+
       // Switch to off before completing
       mockConfig("default", "off");
-      await handle!.complete(makeCompleteData());
+      await handle.complete(makeCompleteData());
 
       // Should still write at messages level (snapshotted at start)
       expect(hoisted.mockAppendFile).toHaveBeenCalledTimes(2); // index + messages
@@ -478,7 +523,8 @@ describe("InvestigationLogger", () => {
       hoisted.mockMkdir.mockRejectedValueOnce(new Error("Permission denied"));
 
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(makeCompleteData());
+      assertHandle(handle);
+      await handle.complete(makeCompleteData());
 
       expect(hoisted.mockLoggerError).toHaveBeenCalledWith(
         expect.stringContaining("Permission denied"),
@@ -493,9 +539,10 @@ describe("InvestigationLogger", () => {
       hoisted.mockMkdir.mockRejectedValueOnce(new Error("Disk full"));
 
       const handle = investigationLogger.startRequest(makeStartData());
+      assertHandle(handle);
       // Should not throw
       await expect(
-        handle!.complete(makeCompleteData()),
+        handle.complete(makeCompleteData()),
       ).resolves.toBeUndefined();
     });
   });
@@ -506,10 +553,13 @@ describe("InvestigationLogger", () => {
       const handle = investigationLogger.startRequest(
         makeStartData({ isSummarization: true }),
       );
-      await handle!.complete(makeCompleteData());
+      assertHandle(handle);
+      await handle.complete(makeCompleteData());
 
-      const content = hoisted.mockAppendFile.mock.calls[0]![1] as string;
-      const entry = JSON.parse(content.trim());
+      const call = hoisted.mockAppendFile.mock.calls[0];
+      assert(call);
+      const content = call[1] as string;
+      const entry = parseIndexEntry(content.trim());
       expect(entry.isSummarization).toBe(true);
     });
   });
@@ -518,7 +568,8 @@ describe("InvestigationLogger", () => {
     it("records error status with error message", async () => {
       mockConfig("default", "messages");
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(
+      assertHandle(handle);
+      await handle.complete(
         makeCompleteData({
           status: "error",
           error: "Model returned 500",
@@ -527,13 +578,15 @@ describe("InvestigationLogger", () => {
       );
 
       // Check index entry
-      const indexContent = hoisted.mockAppendFile.mock.calls[0]![1] as string;
-      const indexEntry = JSON.parse(indexContent.trim());
+      const indexCall = hoisted.mockAppendFile.mock.calls[0];
+      assert(indexCall);
+      const indexEntry = parseIndexEntry((indexCall[1] as string).trim());
       expect(indexEntry.status).toBe("error");
 
       // Check message summary
-      const msgContent = hoisted.mockAppendFile.mock.calls[1]![1] as string;
-      const msgEntry = JSON.parse(msgContent.trim());
+      const msgCall = hoisted.mockAppendFile.mock.calls[1];
+      assert(msgCall);
+      const msgEntry = parseMessageSummary((msgCall[1] as string).trim());
       expect(msgEntry.error).toBe("Model returned 500");
       expect(msgEntry.status).toBe("error");
     });
@@ -541,10 +594,13 @@ describe("InvestigationLogger", () => {
     it("records timeout status", async () => {
       mockConfig("default", "index");
       const handle = investigationLogger.startRequest(makeStartData());
-      await handle!.complete(makeCompleteData({ status: "timeout" }));
+      assertHandle(handle);
+      await handle.complete(makeCompleteData({ status: "timeout" }));
 
-      const content = hoisted.mockAppendFile.mock.calls[0]![1] as string;
-      const entry = JSON.parse(content.trim());
+      const call = hoisted.mockAppendFile.mock.calls[0];
+      assert(call);
+      const content = call[1] as string;
+      const entry = parseIndexEntry(content.trim());
       expect(entry.status).toBe("timeout");
     });
   });

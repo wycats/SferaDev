@@ -1,33 +1,44 @@
-console.log("[DIAG] extension.ts: TOP OF FILE - module loading");
-
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { createAgentTreeView } from "./agent-tree";
-import { VercelAIAuthenticationProvider } from "./auth";
-import { ConfigService, INFERENCE_DEFAULTS } from "./config";
 import { EXTENSION_ID, VENDOR_ID, VSCODE_EXTENSION_ID } from "./constants";
-import { treeDiagnostics } from "./diagnostics/tree-diagnostics";
 import { initializeOutputChannel, logger } from "./logger";
-import { migrateStorageKeys } from "./persistence/migration.js";
-import { VercelAIChatModelProvider } from "./provider";
-import { detectSummarizationRequest } from "./provider/openresponses-chat.js";
-import { TokenStatusBar } from "./status-bar";
-import { tryStringify } from "./utils/serialize.js";
+import { StubProvider } from "./provider-stub";
 
-console.log("[DIAG] extension.ts: imports complete");
+const loadSerialize = (() => {
+  let cached: Promise<{ tryStringify: (value: unknown) => string }> | undefined;
+  return () => (cached ??= import("./utils/serialize.js"));
+})();
 
-// Build timestamp for reload detection - generated at build time
-const BUILD_TIMESTAMP = new Date().toISOString();
-// Build signature - change this when making significant changes to verify deployment
-const BUILD_SIGNATURE = "storage-key-migration";
-
-export function activate(context: vscode.ExtensionContext) {
-  console.log("[DIAG] extension.ts: activate() called");
+export async function activate(context: vscode.ExtensionContext) {
   // Initialize the shared output channel FIRST - before any logging
   // This ensures there's exactly one output channel per VS Code window
   const outputChannelDisposable = initializeOutputChannel();
   context.subscriptions.push(outputChannelDisposable);
+
+  // =====================================================================
+  // Phase 1: Register stub provider IMMEDIATELY (before any await).
+  //
+  // The stub reads cached models from globalState synchronously, so VS Code's
+  // model picker has our models available instantly on reload. Without this,
+  // models wouldn't appear until the heavy async imports below complete.
+  // =====================================================================
+  const stubProvider = new StubProvider(context);
+  context.subscriptions.push(stubProvider);
+
+  const providerDisposable = vscode.lm.registerLanguageModelChatProvider(
+    VENDOR_ID,
+    stubProvider,
+  );
+  context.subscriptions.push(providerDisposable);
+
+  // Signal models available immediately so VS Code resolves our cached models
+  // into its live model cache before other providers' handlers run.
+  stubProvider.notifyModelsAvailable();
+
+  // =====================================================================
+  // Phase 2: Load heavy modules asynchronously, then wire up the real provider.
+  // =====================================================================
 
   // Get extension version from package.json
   const extension = vscode.extensions.getExtension(VSCODE_EXTENSION_ID);
@@ -36,9 +47,26 @@ export function activate(context: vscode.ExtensionContext) {
     | undefined;
   const version = packageJson?.version ?? "unknown";
 
-  logger.info(
-    `Vercel AI Gateway extension activating - v${version} [${BUILD_SIGNATURE}] (built: ${BUILD_TIMESTAMP})`,
-  );
+  logger.info(`Vercel AI Gateway extension activating - v${version}`);
+
+  const [
+    { VercelAIAuthenticationProvider },
+    { ConfigService, INFERENCE_DEFAULTS },
+    { treeDiagnostics },
+    { migrateStorageKeys },
+    { VercelAIChatModelProvider },
+    { TokenStatusBar },
+    { createAgentTreeView },
+  ] = await Promise.all([
+    import("./auth"),
+    import("./config"),
+    import("./diagnostics/tree-diagnostics"),
+    import("./persistence/migration.js"),
+    import("./provider"),
+    import("./status-bar"),
+    import("./agent-tree"),
+  ]);
+
   logger.info(
     `Inference defaults: temperature=${INFERENCE_DEFAULTS.temperature.toString()}, topP=${INFERENCE_DEFAULTS.topP.toString()}, maxOutput=${INFERENCE_DEFAULTS.maxOutputTokens.toString()}`,
   );
@@ -50,7 +78,6 @@ export function activate(context: vscode.ExtensionContext) {
   // Register the authentication provider
   const authProvider = new VercelAIAuthenticationProvider(context);
   context.subscriptions.push(authProvider);
-  logger.debug("Authentication provider registered");
 
   const configService = new ConfigService();
   context.subscriptions.push(configService);
@@ -59,22 +86,17 @@ export function activate(context: vscode.ExtensionContext) {
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (workspaceRoot) {
     treeDiagnostics.initialize(workspaceRoot);
-    logger.debug(
-      `Tree diagnostics initialized at ${workspaceRoot}/.logs/tree-diagnostics.log`,
-    );
   }
 
   // Create the token status bar
   const statusBar = new TokenStatusBar();
   statusBar.initializePersistence(context);
   context.subscriptions.push(statusBar);
-  logger.debug("Token status bar created");
 
   // Create the agent tree view
   const { treeView, provider: treeProvider } = createAgentTreeView(statusBar);
   context.subscriptions.push(treeView);
   context.subscriptions.push(treeProvider);
-  logger.debug("Agent tree view created");
 
   // Register refresh command for agent tree
   context.subscriptions.push(
@@ -83,16 +105,13 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-  // Register the language model chat provider
+  // Create the full provider and connect it to the stub.
+  // The stub was already registered to win the boot-speed race.
   const provider = new VercelAIChatModelProvider(context, configService);
   provider.setStatusBar(statusBar);
   context.subscriptions.push(provider);
-  const providerDisposable = vscode.lm.registerLanguageModelChatProvider(
-    VENDOR_ID,
-    provider,
-  );
-  context.subscriptions.push(providerDisposable);
-  logger.debug("Language model chat provider registered");
+
+  stubProvider.setRealProvider(provider);
 
   // Register the chat participant (allows @vercel mentions in chat)
   const chatParticipant = vscode.chat.createChatParticipant(
@@ -115,6 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       try {
         // Use the model selected in the chat (could be ours or another)
+        const { tryStringify } = await loadSerialize();
         const lmResponse = await request.model.sendRequest(messages, {}, token);
 
         // Stream the response back to the chat
@@ -226,7 +246,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Register command to test summarization detection on current chat history
   const testSummarizationCommand = vscode.commands.registerCommand(
     "vercel.ai.testSummarizationDetection",
-    () => {
+    async () => {
+      const { detectSummarizationRequest } =
+        await import("./provider/openresponses-chat.js");
       // Build synthetic summarization-shaped messages to test the detection pipeline
       const LanguageModelTextPart = (
         vscode as never as Record<string, new (v: string) => unknown>
@@ -322,6 +344,17 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
   context.subscriptions.push(testSummarizationCommand);
+
+  // Register command to prune investigation logs
+  const pruneCommand = vscode.commands.registerCommand(
+    "vercel.ai.investigation.prune",
+    async () => {
+      const { handlePruneCommand } =
+        await import("./logger/investigation-prune-command.js");
+      await handlePruneCommand();
+    },
+  );
+  context.subscriptions.push(pruneCommand);
 
   // Register command to manage authentication
   const commandDisposable = vscode.commands.registerCommand(

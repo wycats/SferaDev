@@ -138,7 +138,7 @@ export interface FullRequestCapture {
   response: {
     status: string;
     finishReason: string | null;
-    usage: unknown | null;
+    usage: unknown;
     error: string | null;
   };
 
@@ -343,6 +343,7 @@ export function sanitizePathSegment(segment: string): string {
     // Remove parent directory traversals
     .replace(/\.\./g, "_")
     // Remove filesystem-unsafe characters (: * ? " < > |)
+    // eslint-disable-next-line no-control-regex -- Intentional: sanitizing filesystem-unsafe control characters
     .replace(/[:<>"|?*\x00-\x1f]/g, "_")
     // Collapse multiple underscores
     .replace(/_+/g, "_")

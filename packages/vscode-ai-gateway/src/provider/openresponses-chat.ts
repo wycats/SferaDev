@@ -40,6 +40,7 @@ import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
 import { InvestigationLogger } from "../logger/investigation.js";
 import { findLatestStatefulMarker } from "../utils/stateful-marker.js";
+import { decodeVsCodeModelId } from "../models/vscode-model-id";
 
 /**
  * Options for the OpenResponses chat implementation
@@ -165,6 +166,7 @@ export async function executeOpenResponsesChat(
         outputTokens: usage.output_tokens,
         maxInputTokens: model.maxInputTokens,
         modelId: model.id,
+        messageCount: chatMessages.length,
       });
       return;
     }
@@ -179,6 +181,7 @@ export async function executeOpenResponsesChat(
       outputTokens: 0,
       maxInputTokens: model.maxInputTokens,
       modelId: model.id,
+      messageCount: chatMessages.length,
     });
   };
 
@@ -196,6 +199,7 @@ export async function executeOpenResponsesChat(
       outputTokens: 0,
       maxInputTokens: model.maxInputTokens,
       modelId: model.id,
+      messageCount: chatMessages.length,
     });
   };
 
@@ -255,7 +259,7 @@ export async function executeOpenResponsesChat(
     // caching: "auto" enables server-side prompt caching (Anthropic cache_control injection)
     // Not yet in generated OpenAPI types — accepted by gateway, see .reference/ai-gateway
     const requestBody: CreateResponseBody & { caching?: "auto" } = {
-      model: model.id,
+      model: decodeVsCodeModelId(model.id),
       input,
       stream: true,
       temperature: 0.1,
@@ -294,17 +298,23 @@ export async function executeOpenResponsesChat(
       requestBody.instructions = instructions;
     }
 
-    if (tools.length > 0) {
-      requestBody.tools = tools;
-      requestBody.tool_choice = toolChoice;
-    }
-
     if (isSummarizationRequest) {
+      // CRITICAL FIX: Strip tools from summarization requests.
+      // VS Code Copilot sends all tools (71+) even for summarization with
+      // tool_choice="auto". The model sometimes produces a tool call (~38 tokens)
+      // instead of a text summary. Copilot treats this as the "summary" (useless),
+      // the conversation grows, and another summarization triggers — creating a
+      // loop that repeats 2-4 times until one attempt finally produces text.
+      // Evidence: .logs/summ-debug shows textPartCount=0, toolCallCount=1 for
+      // every failed 38-token summarization attempt.
       logger.warn(
         `[OpenResponses] SUMMARIZATION REQUEST DETECTED for ${model.id}. ` +
           `Messages: ${chatMessages.length}, EstTokens: ${estimatedInputTokens.toString()}, ` +
-          `Tools: ${tools.length}, Chat: ${chatId}`,
+          `Tools: ${tools.length} (stripped), Chat: ${chatId}`,
       );
+    } else if (tools.length > 0) {
+      requestBody.tools = tools;
+      requestBody.tool_choice = toolChoice;
     }
 
     logger.debug(`[OpenResponses] Starting streaming request to ${model.id}`);

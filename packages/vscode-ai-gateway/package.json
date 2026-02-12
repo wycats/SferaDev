@@ -34,11 +34,6 @@
     "url": "https://github.com/vercel-labs/vscode-ai-gateway/issues"
   },
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onStartupFinished",
-    "onLanguageModelChatProvider:vercel",
-    "onView:vercel.ai.agentTree"
-  ],
   "contributes": {
     "languageModelChatProviders": [
       {
@@ -99,6 +94,11 @@
         "command": "vercel.ai.testSummarizationDetection",
         "title": "Test Summarization Detection",
         "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercel.ai.investigation.prune",
+        "title": "Prune Investigation Logs",
+        "category": "Vercel AI Gateway"
       }
     ],
     "menus": {
@@ -144,11 +144,6 @@
             "Log everything including trace-level diagnostic messages"
           ]
         },
-        "vercel.ai.logging.fileDirectory": {
-          "type": "string",
-          "default": ".logs",
-          "description": "Directory to write log files. Relative paths are resolved against the workspace root."
-        },
         "vercel.ai.models.userSelectable": {
           "type": "boolean",
           "default": false,
@@ -180,8 +175,8 @@
     }
   },
   "scripts": {
-    "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --minify",
-    "dev": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=esm --platform=node --watch",
+    "build": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --format=esm --platform=node --minify --splitting",
+    "dev": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --format=esm --platform=node --watch --splitting",
     "compile": "tsc -p ./",
     "tsc": "tsc --noEmit",
     "test": "vitest run",
@@ -209,7 +204,8 @@
     "glob": "^10.4.5",
     "mocha": "^10.8.2",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "catalog:"
   },
   "dependencies": {
     "ai-tokenizer": "^1.0.6",

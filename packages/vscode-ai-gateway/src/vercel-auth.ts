@@ -96,6 +96,14 @@ function getVercelCliToken(): string | null {
   }
 }
 
+/**
+ * Read Vercel CLI auth token from local CLI storage, if available.
+ * Used as a non-interactive fallback when VS Code auth sessions are not yet initialized.
+ */
+export function getVercelCliTokenFromStorage(): string | undefined {
+  return getVercelCliToken() ?? undefined;
+}
+
 function getTokenPayload(token: string): TokenPayload {
   try {
     const parts = token.split(".");
@@ -255,7 +263,7 @@ async function selectProject(
   team: Team | null,
 ): Promise<{ id: string; name: string }> {
   try {
-    console.log(
+    logger.debug(
       "Loading projects...",
       team ? `for team ${team.slug}` : "for personal account",
     );
@@ -275,7 +283,7 @@ async function selectProject(
     }
 
     const data = (await response.json()) as ProjectsResponse;
-    console.log(
+    logger.debug(
       `Loaded ${data.projects.length.toString()} projects`,
       data.projects.map((p) => p.name).join(", "),
     );

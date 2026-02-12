@@ -117,20 +117,6 @@ export class ConfigService implements vscode.Disposable {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Logging infrastructure (always-on, no config needed)
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /** Always show output channel */
-  get logOutputChannel(): boolean {
-    return true;
-  }
-
-  /** Directory for file logging (relative to workspace or absolute) */
-  get logFileDirectory(): string {
-    return this.config.get("logging.fileDirectory", "");
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
   // Deprecated/removed settings - kept for compatibility
   // These return sensible defaults; the settings no longer exist
   // ─────────────────────────────────────────────────────────────────────────────

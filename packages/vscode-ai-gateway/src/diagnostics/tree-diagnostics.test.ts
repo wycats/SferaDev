@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("fs", () => ({
-  mkdirSync: vi.fn(),
-  existsSync: vi.fn(() => false),
-  renameSync: vi.fn(),
-  writeFileSync: vi.fn(),
-  appendFileSync: vi.fn(),
+vi.mock("../logger.js", () => ({
+  logger: {
+    debug: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
-import * as fs from "fs";
+import { logger } from "../logger.js";
 import { TreeDiagnostics, type TreeSnapshot } from "./tree-diagnostics.js";
 
 const baseAgent = (
@@ -20,7 +21,7 @@ const baseAgent = (
   status: "complete",
   inputTokens: 0,
   outputTokens: 0,
-  maxObservedInputTokens: 0,
+  lastActualInputTokens: 0,
   totalOutputTokens: 0,
   turnCount: 0,
   ...overrides,
@@ -222,12 +223,12 @@ describe("TreeDiagnostics", () => {
     });
   });
 
-  it("logs without context for backward compatibility", () => {
+  it("logs to output channel via narrative logger", () => {
+    const mockDebug = vi.mocked(logger.debug);
     const diagnostics = new TreeDiagnostics();
-    const appendFileSync = vi.mocked(fs.appendFileSync);
 
     diagnostics.initialize("/tmp/test-workspace");
-    appendFileSync.mockClear();
+    mockDebug.mockClear();
 
     diagnostics.log(
       "AGENT_STARTED",
@@ -237,9 +238,15 @@ describe("TreeDiagnostics", () => {
       }),
     );
 
-    expect(appendFileSync).toHaveBeenCalledTimes(1);
-    const logged = JSON.parse(appendFileSync.mock.calls[0]?.[1] as string);
-    expect(logged.context).toBeUndefined();
-    expect(logged.invariants).toBeDefined();
+    expect(mockDebug).toHaveBeenCalledTimes(1);
+    expect(mockDebug).toHaveBeenCalledWith(
+      "[TreeDiag] AGENT_STARTED",
+      expect.any(String),
+    );
+
+    // Verify the logged JSON contains invariants but no context
+    const loggedJson = JSON.parse(mockDebug.mock.calls[0]?.[1] as string);
+    expect(loggedJson.context).toBeUndefined();
+    expect(loggedJson.invariants).toBeDefined();
   });
 });

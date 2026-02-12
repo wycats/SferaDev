@@ -1,5 +1,6 @@
 import fc from "fast-check";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { encodeVsCodeModelId } from "./models/vscode-model-id";
 
 const hoisted = vi.hoisted(() => {
   const mockGetConfiguration = vi.fn();
@@ -206,8 +207,8 @@ describe("ModelsClient", () => {
 
     expect(result).toHaveLength(2);
     expect(result.map((model) => model.id)).toEqual([
-      "openai:gpt-4o-2024-11-20",
-      "anthropic:claude-3-opus-20240229",
+      encodeVsCodeModelId("openai:gpt-4o-2024-11-20"),
+      encodeVsCodeModelId("anthropic:claude-3-opus-20240229"),
     ]);
   });
 
@@ -297,8 +298,8 @@ describe("ModelsClient", () => {
 
     expect(result).toHaveLength(2);
     expect(result.map((model) => model.id)).toEqual([
-      "openai:gpt-4o-2024-11-20",
-      "anthropic:claude-3-opus-20240229",
+      encodeVsCodeModelId("openai:gpt-4o-2024-11-20"),
+      encodeVsCodeModelId("anthropic:claude-3-opus-20240229"),
     ]);
   });
 

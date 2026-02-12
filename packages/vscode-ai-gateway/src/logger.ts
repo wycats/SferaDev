@@ -2,11 +2,9 @@
  * Logging utilities for the Vercel AI Gateway extension.
  *
  * Provides configurable logging with level filtering and VS Code output channel support.
- * Optionally writes to log files when log level is debug/trace and a file directory is configured.
+ * File-based logging is handled by the InvestigationLogger (see logger/investigation.ts).
  */
 
-import * as fs from "node:fs";
-import * as path from "node:path";
 import * as vscode from "vscode";
 import { ConfigService, type LogLevel } from "./config";
 import { safeJsonStringify } from "./utils/serialize.js";
@@ -22,10 +20,7 @@ export const LOG_LEVELS: Record<LogLevel, number> = {
   trace: 5,
 };
 
-type LoggerConfigSource = Pick<
-  ConfigService,
-  "logLevel" | "logOutputChannel" | "logFileDirectory" | "onDidChange"
->;
+type LoggerConfigSource = Pick<ConfigService, "logLevel" | "onDidChange">;
 
 interface GatewayRoutingAttempt {
   error?: string;
@@ -47,8 +42,6 @@ interface GatewayErrorResponse {
 function createFallbackConfigService(): LoggerConfigSource {
   return {
     logLevel: "info",
-    logOutputChannel: false,
-    logFileDirectory: "",
     onDidChange: () => ({ dispose: () => undefined }),
   };
 }
@@ -141,9 +134,6 @@ export class Logger {
   private level: LogLevel = "info"; // Default to info for better visibility
   private configService: LoggerConfigSource;
   private readonly disposable: { dispose: () => void };
-  private logFileDirectory = "";
-  private fileLoggingInitialized = false;
-  private fileLoggingOverridePath: string | undefined;
 
   constructor(configService?: LoggerConfigSource) {
     this.configService = configService ?? createConfigServiceSafely();
@@ -156,103 +146,12 @@ export class Logger {
 
   private loadConfig(): void {
     this.level = this.configService.logLevel;
-    this.logFileDirectory = this.configService.logFileDirectory;
 
-    const useOutputChannel = this.configService.logOutputChannel;
     const canUseOutputChannel = canCreateOutputChannel();
-    if (useOutputChannel && canUseOutputChannel && !this.outputChannel) {
+    if (canUseOutputChannel && !this.outputChannel) {
       // Use the shared output channel initialized during extension activation
       this.outputChannel = getSharedOutputChannel();
-    } else if (!useOutputChannel && this.outputChannel) {
-      // Don't dispose the shared channel - just stop using it
-      this.outputChannel = null;
     }
-
-    // Initialize file logging directory if configured and level is debug/trace
-    if (this.shouldUseFileLogging() && !this.fileLoggingInitialized) {
-      this.initializeFileLogging();
-    }
-  }
-
-  private shouldUseFileLogging(): boolean {
-    return (
-      this.logFileDirectory !== "" &&
-      (this.level === "debug" || this.level === "trace")
-    );
-  }
-
-  private getResolvedLogDirectory(): string | null {
-    if (!this.logFileDirectory) return null;
-
-    // If absolute path, use as-is
-    if (path.isAbsolute(this.logFileDirectory)) {
-      return this.logFileDirectory;
-    }
-
-    // Relative path: resolve against workspace root
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    const firstFolder = workspaceFolders?.[0];
-    if (firstFolder) {
-      return path.join(firstFolder.uri.fsPath, this.logFileDirectory);
-    }
-
-    return null;
-  }
-
-  private initializeFileLogging(): void {
-    const logDir = this.getResolvedLogDirectory();
-    if (!logDir) return;
-
-    try {
-      // Create directory if it doesn't exist
-      if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true });
-      }
-
-      // Rotate previous.log <- current.log
-      const currentLogPath = path.join(logDir, "current.log");
-      const previousLogPath = path.join(logDir, "previous.log");
-
-      if (fs.existsSync(currentLogPath)) {
-        // Move current to previous (overwrite previous)
-        fs.renameSync(currentLogPath, previousLogPath);
-      }
-
-      // Write session start marker
-      const sessionStart = `\n${"=".repeat(80)}\nSession started: ${new Date().toISOString()}\n${"=".repeat(80)}\n\n`;
-      fs.writeFileSync(currentLogPath, sessionStart);
-
-      this.fileLoggingInitialized = true;
-    } catch {
-      // Silently fail - file logging is optional
-      this.fileLoggingInitialized = false;
-    }
-  }
-
-  private writeToFile(level: LogLevel, formatted: string): void {
-    if (!this.shouldUseFileLogging()) return;
-
-    const logDir = this.getResolvedLogDirectory();
-    if (!logDir) return;
-
-    try {
-      // Use override path if set (per-chat logging), otherwise default to current.log
-      const fileName = this.fileLoggingOverridePath ?? "current.log";
-      const currentLogPath = path.join(logDir, fileName);
-      fs.appendFileSync(currentLogPath, `${formatted}\n`);
-
-      // Also write errors to errors.log for quick access
-      if (level === "error") {
-        const errorsLogPath = path.join(logDir, "errors.log");
-        fs.appendFileSync(errorsLogPath, `${formatted}\n`);
-      }
-    } catch {
-      // Silently fail - don't let file logging errors break the extension
-    }
-  }
-
-  private setFileLoggingPath(fileName: string): void {
-    this.fileLoggingOverridePath = fileName;
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -290,9 +189,6 @@ export class Logger {
     if (this.outputChannel) {
       this.outputChannel.appendLine(fullFormatted);
     }
-
-    // Write to file if file logging is enabled
-    this.writeToFile(level, fullFormatted);
   }
 
   error(message: string, ...args: unknown[]): void {
@@ -315,64 +211,6 @@ export class Logger {
     this.log("trace", message, ...args);
   }
 
-  /**
-   * Log an API error with full request/response as proper JSON (not string-encoded).
-   * Writes JSONL to api-errors.log for easy parsing.
-   *
-   * @param context - Short description of what was being attempted
-   * @param request - The full request body (will be logged as JSON object)
-   * @param response - The API error response (will be logged as JSON object)
-   * @param metadata - Additional context like URL, status code, etc.
-   */
-  logApiError(
-    context: string,
-    request: unknown,
-    response: unknown,
-    metadata?: {
-      url?: string;
-      status?: number;
-      code?: string;
-      chatId?: string;
-    },
-  ): void {
-    const logDir = this.getResolvedLogDirectory();
-    if (!logDir) {
-      // Fall back to regular error logging if no file directory configured
-      this.error(`[API Error] ${context}`, { request, response, metadata });
-      return;
-    }
-
-    try {
-      const apiErrorsPath = path.join(logDir, "api-errors.log");
-      const timestamp = new Date().toISOString();
-
-      const errorEntry = {
-        timestamp,
-        context,
-        metadata: metadata ?? {},
-        request,
-        response,
-      };
-
-      // JSONL line for easy parsing
-      fs.appendFileSync(apiErrorsPath, `${safeJsonStringify(errorEntry)}\n`);
-
-      // Also log a summary to the main log
-      this.error(
-        `[API Error] ${context} - Full details written to api-errors.log`,
-        metadata,
-      );
-    } catch (writeError) {
-      // Fall back to regular error logging if file write fails
-      this.error(`[API Error] ${context} (file write failed)`, {
-        request,
-        response,
-        metadata,
-        writeError: String(writeError),
-      });
-    }
-  }
-
   show(): void {
     this.outputChannel?.show();
   }
@@ -382,18 +220,6 @@ export class Logger {
     // Don't dispose the shared output channel here - it's managed by context.subscriptions
     // via initializeOutputChannel(). Just clear our reference.
     this.outputChannel = null;
-  }
-
-  /**
-   * Create a per-chat logger for debugging individual conversations.
-   * Useful for diagnosing issues in specific chats.
-   */
-  createChatLogger(chatId: string): Logger {
-    const chatLogger = new Logger(this.configService);
-    // Set the same directory but override the file path to per-chat log
-    chatLogger.logFileDirectory = this.logFileDirectory;
-    chatLogger.setFileLoggingPath(`${chatId}.log`);
-    return chatLogger;
   }
 }
 
@@ -424,19 +250,6 @@ export const logger = {
   },
   trace(message: string, ...args: unknown[]): void {
     getLogger().trace(message, ...args);
-  },
-  logApiError(
-    context: string,
-    request: unknown,
-    response: unknown,
-    metadata?: {
-      url?: string;
-      status?: number;
-      code?: string;
-      chatId?: string;
-    },
-  ): void {
-    getLogger().logApiError(context, request, response, metadata);
   },
   show(): void {
     getLogger().show();

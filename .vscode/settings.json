@@ -13,8 +13,7 @@
   "search.exclude": {
     "**/node_modules": true,
     "**/bower_components": true,
-    "**/*.code-search": true,
-    ".reference": true
+    "**/*.code-search": true
   },
   "files.watcherExclude": {
     "**/.git/objects/**": true,
@@ -25,9 +24,9 @@
   },
 
   "vercel.ai.logging.fileDirectory": ".logs",
-  "vercel.ai.logging.level": "trace",
+  "vercel.ai.logging.level": "debug",
 
-  // Forensic capture - capture full Copilot prompts for analysis
-  "vercel.ai.debug.forensicCapture": true,
-  "vercel.ai.debug.forensicCaptureFullContent": true
+  // Investigation logging — captures request/response data for debugging
+  "vercel.ai.investigation.detail": "messages",
+  "vercel.ai.investigation.name": "summ-debug"
 }

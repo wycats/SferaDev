@@ -4,18 +4,14 @@
  * Captures every event affecting the agent tree with full decision context
  * and a text snapshot of the tree state after each event.
  *
- * Output: .logs/tree-diagnostics.log (JSON lines with embedded tree snapshot)
+ * Events are logged to the VS Code output channel via the narrative logger.
+ * For persistent file-based capture, use the InvestigationLogger.
  */
 
-import * as fs from "fs";
-import * as path from "path";
 import type { AgentEntry } from "../status-bar.js";
+import { logger } from "../logger.js";
 import { safeJsonStringify } from "../utils/serialize.js";
 import type { PendingChildClaim } from "../identity/claim-registry.js";
-
-const LOG_DIR = ".logs";
-const LOG_FILE = "tree-diagnostics.log";
-const ARCHIVE_DIR = "tree-diagnostics";
 
 export interface TreeSnapshot {
   agents: AgentSnapshotEntry[];
@@ -35,7 +31,7 @@ export interface AgentSnapshotEntry {
   parentConversationHash?: string;
   inputTokens: number;
   outputTokens: number;
-  maxObservedInputTokens: number;
+  lastActualInputTokens: number;
   totalOutputTokens: number;
   turnCount: number;
   /** Estimated input tokens (before API response) */
@@ -80,11 +76,11 @@ export interface DiagnosticDump {
   tree: TreeSnapshot;
   treeText: string;
   invariants: InvariantCheckResult;
-  pendingClaims: Array<{
+  pendingClaims: {
     expectedName: string;
     parentId: string;
     expiresAt: string;
-  }>;
+  }[];
 }
 
 export type DiagnosticEventType =
@@ -112,47 +108,15 @@ export interface DiagnosticEvent {
 
 /**
  * Tree diagnostics logger.
- * Writes to workspace .logs/tree-diagnostics.log
+ * Logs events to the VS Code output channel at debug level.
  */
 export class TreeDiagnostics {
-  private logPath: string | null = null;
   private enabled = false;
 
   /**
    * Initialize diagnostics for a workspace.
-   * Rotates existing log file to archive.
    */
-  initialize(workspaceRoot: string): void {
-    const logDir = path.join(workspaceRoot, LOG_DIR);
-    const archiveDir = path.join(logDir, ARCHIVE_DIR);
-
-    // Ensure directories exist
-    try {
-      fs.mkdirSync(logDir, { recursive: true });
-      fs.mkdirSync(archiveDir, { recursive: true });
-    } catch {
-      // Directory creation failed - disable diagnostics
-      console.error("[TreeDiagnostics] Failed to create log directories");
-      return;
-    }
-
-    this.logPath = path.join(logDir, LOG_FILE);
-
-    // Rotate existing log if present
-    if (fs.existsSync(this.logPath)) {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const archivePath = path.join(
-        archiveDir,
-        `tree-diagnostics-${timestamp}.log`,
-      );
-      try {
-        fs.renameSync(this.logPath, archivePath);
-      } catch {
-        // Rotation failed - just truncate
-        fs.writeFileSync(this.logPath, "");
-      }
-    }
-
+  initialize(_workspaceRoot: string): void {
     this.enabled = true;
     this.log(
       "EXTENSION_ACTIVATED",
@@ -170,7 +134,7 @@ export class TreeDiagnostics {
     tree: TreeSnapshot,
     context?: { vscodeSessionId?: string },
   ): void {
-    if (!this.enabled || !this.logPath) return;
+    if (!this.enabled) return;
 
     const invariants = this.checkInvariants(tree);
 
@@ -184,11 +148,14 @@ export class TreeDiagnostics {
       ...(context && { context }),
     };
 
-    try {
-      fs.appendFileSync(this.logPath, safeJsonStringify(entry) + "\n");
-    } catch {
-      // Log write failed - disable to avoid repeated errors
-      this.enabled = false;
+    // Log to output channel at debug level
+    logger.debug(`[TreeDiag] ${event}`, safeJsonStringify(entry));
+
+    // Log invariant violations at warn level for visibility
+    if (invariants.violations.length > 0) {
+      logger.warn(
+        `[TreeDiag] Invariant violations: ${invariants.violations.join("; ")}`,
+      );
     }
   }
 
@@ -237,7 +204,7 @@ export class TreeDiagnostics {
           : agent.status === "complete"
             ? "✓"
             : "✗";
-      const tokens = `${(agent.maxObservedInputTokens / 1000).toFixed(1)}k→${(agent.totalOutputTokens / 1000).toFixed(1)}k`;
+      const tokens = `${(agent.lastActualInputTokens / 1000).toFixed(1)}k→${(agent.totalOutputTokens / 1000).toFixed(1)}k`;
       const turns = agent.turnCount > 0 ? ` [${agent.turnCount}]` : "";
 
       lines.push(
@@ -439,7 +406,7 @@ export class TreeDiagnostics {
         status: agent.status,
         inputTokens: agent.inputTokens,
         outputTokens: agent.outputTokens,
-        maxObservedInputTokens: agent.maxObservedInputTokens,
+        lastActualInputTokens: agent.lastActualInputTokens,
         totalOutputTokens: agent.totalOutputTokens,
         turnCount: agent.turnCount,
       };

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ExtensionContext, LanguageModelChatInformation } from "vscode";
+
 import { ENRICHMENT_CACHE_TTL_MS } from "../constants";
 
 const hoisted = vi.hoisted(() => {
@@ -101,8 +101,7 @@ vi.mock("vscode", () => ({
   },
 }));
 
-import { VercelAIChatModelProvider } from "../provider";
-import { type EnrichedModelData, ModelEnricher } from "./enrichment";
+import { ModelEnricher } from "./enrichment";
 
 describe("ModelEnricher", () => {
   let originalFetch: typeof fetch;
@@ -341,136 +340,4 @@ describe("ModelEnricher", () => {
 
     expect(storage.size).toBe(0);
   });
-});
-
-describe("Enrichment-based capability refinement", () => {
-  function createProvider() {
-    const context = {
-      workspaceState: {
-        get: vi.fn(),
-        update: vi.fn(),
-      },
-      globalState: {
-        get: vi.fn(),
-        update: vi.fn(),
-      },
-    } as unknown as ExtensionContext;
-
-    return new VercelAIChatModelProvider(context);
-  }
-
-  function setEnriched(
-    provider: VercelAIChatModelProvider,
-    modelId: string,
-    overrides: Partial<EnrichedModelData>,
-  ) {
-    const enriched: EnrichedModelData = {
-      context_length: null,
-      max_completion_tokens: null,
-      supported_parameters: [],
-      supports_implicit_caching: false,
-      input_modalities: [],
-      ...overrides,
-    };
-    (
-      provider as unknown as {
-        enrichedModels: Map<string, EnrichedModelData>;
-      }
-    ).enrichedModels.set(modelId, enriched);
-  }
-
-  it("sets imageInput when input_modalities includes image", () => {
-    const provider = createProvider();
-    setEnriched(provider, "openai/gpt-4o", {
-      input_modalities: ["text", "image"],
-    });
-
-    const models = [
-      {
-        id: "openai/gpt-4o",
-        maxInputTokens: 8000,
-        capabilities: { imageInput: false },
-      } as LanguageModelChatInformation,
-    ];
-
-    const refined = (
-      provider as unknown as {
-        applyEnrichmentToModels: (
-          models: LanguageModelChatInformation[],
-        ) => LanguageModelChatInformation[];
-      }
-    ).applyEnrichmentToModels(models);
-
-    expect(refined).toHaveLength(1);
-    const refinedModel = refined[0];
-    expect(refinedModel).toBeDefined();
-    if (!refinedModel) {
-      throw new Error("Expected refined model to be defined");
-    }
-    expect(refinedModel.capabilities.imageInput).toBe(true);
-  });
-
-  it("does not modify capabilities when input_modalities is missing", () => {
-    const provider = createProvider();
-    setEnriched(provider, "openai/gpt-4o", {
-      input_modalities: [],
-    });
-
-    const models = [
-      {
-        id: "openai/gpt-4o",
-        maxInputTokens: 8000,
-        capabilities: { imageInput: false },
-      } as LanguageModelChatInformation,
-    ];
-
-    const refined = (
-      provider as unknown as {
-        applyEnrichmentToModels: (
-          models: LanguageModelChatInformation[],
-        ) => LanguageModelChatInformation[];
-      }
-    ).applyEnrichmentToModels(models);
-
-    expect(refined).toHaveLength(1);
-    const refinedModel = refined[0];
-    expect(refinedModel).toBeDefined();
-    if (!refinedModel) {
-      throw new Error("Expected refined model to be defined");
-    }
-    expect(refinedModel.capabilities.imageInput).toBe(false);
-  });
-
-  it("overrides maxInputTokens when context_length differs", () => {
-    const provider = createProvider();
-    setEnriched(provider, "openai/gpt-4o", {
-      context_length: 128000,
-    });
-
-    const models = [
-      {
-        id: "openai/gpt-4o",
-        maxInputTokens: 8000,
-      } as LanguageModelChatInformation,
-    ];
-
-    const refined = (
-      provider as unknown as {
-        applyEnrichmentToModels: (
-          models: LanguageModelChatInformation[],
-        ) => LanguageModelChatInformation[];
-      }
-    ).applyEnrichmentToModels(models);
-
-    expect(refined).toHaveLength(1);
-    const refinedModel = refined[0];
-    expect(refinedModel).toBeDefined();
-    if (!refinedModel) {
-      throw new Error("Expected refined model to be defined");
-    }
-    expect(refinedModel.maxInputTokens).toBe(128000);
-  });
-
-  // NOTE: "skips refinement when enrichment is disabled" test removed
-  // Enrichment is now always enabled (modelsEnrichmentEnabled always returns true)
 });

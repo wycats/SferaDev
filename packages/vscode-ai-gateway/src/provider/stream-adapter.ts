@@ -356,7 +356,7 @@ export class StreamAdapter {
         // If we get here, a new event type was added to OpenResponses
         const _exhaustive: never = event;
         void _exhaustive;
-        console.warn(
+        logger.warn(
           `Unhandled streaming event type: ${(event as StreamingEvent).type}`,
         );
         result = { parts: [], done: false };

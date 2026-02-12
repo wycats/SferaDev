@@ -1,31 +1,15 @@
 import type { LanguageModelChatInformation, Memento } from "vscode";
 import { ConfigService } from "./config";
 import {
-  CONSERVATIVE_MAX_INPUT_TOKENS,
-  CONSERVATIVE_MAX_OUTPUT_TOKENS,
   MODELS_CACHE_TTL_MS,
   MODELS_ENDPOINT,
 } from "./constants";
 import { logger } from "./logger";
 import { ModelFilter } from "./models/filter";
-import { parseModelIdentity } from "./models/identity";
+import type { Model } from "./models/types";
+import { transformRawModelsToChatInfo } from "./models/transform";
 
-export interface Model {
-  id: string;
-  object: string;
-  created: number;
-  owned_by: string;
-  name: string;
-  description: string;
-  context_window: number;
-  max_tokens: number;
-  type?: string;
-  tags?: string[];
-  pricing: {
-    input: string;
-    output: string;
-  };
-}
+export type { Model } from "./models/types";
 
 interface ModelsResponse {
   data: Model[];
@@ -47,6 +31,7 @@ interface PersistentModelsCache {
 }
 
 const MODELS_CACHE_KEY = "vercel.ai.modelsCache";
+const USER_ENABLED_MODELS_KEY = "vercel.ai.userEnabledModels";
 
 export class ModelsClient {
   /** In-memory cache for fast access during the session */
@@ -59,6 +44,8 @@ export class ModelsClient {
   private configService: ConfigService;
   /** Event callback for when models are updated */
   private onModelsUpdated: (() => void) | null = null;
+  /** Set of model IDs that the user has explicitly used (sticky selection) */
+  private userEnabledModels: Set<string> = new Set();
 
   constructor(configService: ConfigService = new ConfigService()) {
     this.configService = configService;
@@ -75,6 +62,17 @@ export class ModelsClient {
   ): void {
     this.globalState = globalState;
     this.onModelsUpdated = onModelsUpdated ?? null;
+
+    // Restore user-enabled models from persistent storage
+    const savedEnabledModels = globalState.get<string[]>(
+      USER_ENABLED_MODELS_KEY,
+    );
+    if (savedEnabledModels && savedEnabledModels.length > 0) {
+      this.userEnabledModels = new Set(savedEnabledModels);
+      logger.debug(
+        `[Models] Restored ${savedEnabledModels.length.toString()} user-enabled models: [${savedEnabledModels.join(", ")}]`,
+      );
+    }
 
     // Restore cache from persistent storage
     // IMPORTANT: We re-transform from rawModels instead of using the serialized
@@ -101,6 +99,55 @@ export class ModelsClient {
         `Restored ${cached.models.length.toString()} models from legacy persistent cache`,
       );
     }
+  }
+
+  /**
+   * Mark a model as user-enabled (sticky selection).
+   * Called when a model is actually used in a chat request.
+   * This ensures the model has isUserSelectable: true and won't be
+   * reset when VS Code's onDidChangeLanguageModels fires.
+   *
+   * @returns true if this was a newly enabled model (triggers model refresh)
+   */
+  enableModel(modelId: string): boolean {
+    if (this.userEnabledModels.has(modelId)) {
+      return false; // Already enabled
+    }
+
+    this.userEnabledModels.add(modelId);
+    logger.info(`[Models] User-enabled model: ${modelId}`);
+
+    // Persist to storage
+    if (this.globalState) {
+      void this.globalState.update(
+        USER_ENABLED_MODELS_KEY,
+        Array.from(this.userEnabledModels),
+      );
+    }
+
+    // Re-transform models to update isUserSelectable for this model
+    if (this.memoryCache?.rawModels) {
+      this.memoryCache = {
+        ...this.memoryCache,
+        models: this.transformToVSCodeModels(this.memoryCache.rawModels),
+      };
+      // Persist updated models
+      if (this.globalState) {
+        void this.globalState.update(MODELS_CACHE_KEY, this.memoryCache);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if a model is user-enabled (has been used before).
+   */
+  isModelEnabled(modelId: string): boolean {
+    return (
+      this.configService.modelsUserSelectable ||
+      this.userEnabledModels.has(modelId)
+    );
   }
 
   /**
@@ -345,102 +392,8 @@ export class ModelsClient {
   private transformToVSCodeModels(
     data: Model[],
   ): LanguageModelChatInformation[] {
-    const imageInputTags = new Set([
-      "vision",
-      "image",
-      "image-input",
-      "file-input",
-      "multimodal",
-    ]);
-    const toolCallingTags = new Set([
-      "tool-use",
-      "tool_use",
-      "tool-calling",
-      "function_calling",
-      "function-calling",
-      "function_call",
-      "tools",
-      "json_mode",
-      "json-mode",
-    ]);
-    const reasoningTags = new Set([
-      "reasoning",
-      "o1",
-      "o3",
-      "extended-thinking",
-      "extended_thinking",
-    ]);
-    const webSearchTags = new Set([
-      "web-search",
-      "web_search",
-      "search",
-      "grounding",
-    ]);
-
-    const filteredModels = data.filter(
-      (model) =>
-        model.type === "chat" ||
-        model.type === "language" ||
-        model.type === undefined,
-    );
-
-    return filteredModels.map((model, index) => {
-      const identity = parseModelIdentity(model.id);
-      const tags = (model.tags ?? []).map((tag) => tag.toLowerCase());
-      const hasImageInput = tags.some((tag) => imageInputTags.has(tag));
-      const hasToolCalling = tags.some((tag) => toolCallingTags.has(tag));
-      const hasReasoning = tags.some((tag) => reasoningTags.has(tag));
-      const hasWebSearch = tags.some((tag) => webSearchTags.has(tag));
-
-      const maxInputTokens = Math.min(
-        model.context_window,
-        CONSERVATIVE_MAX_INPUT_TOKENS,
-      );
-      const maxOutputTokens = Math.min(
-        model.max_tokens,
-        CONSERVATIVE_MAX_OUTPUT_TOKENS,
-      );
-
-      const modelInfo = {
-        id: model.id,
-        name: model.name,
-        detail: "Vercel AI Gateway",
-        family: identity.family,
-        version: identity.version,
-        // Apply conservative limits to prevent high-context degradation
-        // See CONSERVATIVE_MAX_INPUT_TOKENS documentation for details
-        maxInputTokens,
-        maxOutputTokens,
-        tooltip: model.description || "No description available.",
-        // Models are hidden from picker by default - users enable specific models via
-        // VS Code's "Manage Models" UI (gear icon in model picker). This prevents
-        // overwhelming users with 150+ models. User preferences persist in VS Code storage.
-        // For testing/development, set vercel.ai.models.userSelectable to true.
-        isUserSelectable: this.configService.modelsUserSelectable,
-        // VS Code requires at least one model to have isDefault set, otherwise it falls back
-        // to cached models. Me,
-        // VS Code requires at least one model to have isDefault set, otherwise it falls back
-        // to cached models. Mark the first model as default for all locations.
-        isDefault: index === 0,
-        capabilities: {
-          // Check tags array for capabilities - only advertise what the model actually supports
-          imageInput: hasImageInput || false,
-          // Only advertise tool calling if explicitly supported via tags
-          // Defaulting to true could cause issues with models that don't support tools
-          toolCalling: hasToolCalling || false,
-          reasoning: hasReasoning || false,
-          webSearch: hasWebSearch || false,
-        },
-      };
-
-      logger.debug("[Models] Created model info", {
-        id: model.id,
-        maxInputTokens,
-        rawContextWindow: model.context_window,
-        cappedAt: CONSERVATIVE_MAX_INPUT_TOKENS,
-      });
-
-      return modelInfo;
-    });
+    // NOTE: This is intentionally a pure transform and should not depend on auth/network.
+    // Tests reach into this private method, so we keep it as a stable seam.
+    return transformRawModelsToChatInfo(data);
   }
 }

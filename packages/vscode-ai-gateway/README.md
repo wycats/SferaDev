@@ -17,6 +17,18 @@ A VS Code extension that provides [Vercel AI Gateway](https://vercel.com/docs/ai
 3. Run "Vercel AI Gateway: Manage Authentication"
 4. Enter your API key (starts with `vck_`)
 
+## Diagnostics (Activation Timing)
+
+If the Extensions view shows a large activation time, use VS Code's built-in tools to see where the time is spent:
+
+1. Open Command Palette (`Cmd/Ctrl + Shift + P`).
+2. Run `Developer: Startup Performance`.
+3. Find **Vercel AI** and note `Load Code`, `Call Activate`, and `Finish Activate`.
+
+`Load Code + Call Activate` is the number shown in the Extensions view. A large `Finish Activate` means `activate()` returned a promise that took time to resolve.
+
+You can also run `Developer: Show Running Extensions` and sort by activation time for a live view.
+
 ## Architecture
 
 This extension uses two API modes:

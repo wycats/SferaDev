@@ -8,6 +8,7 @@
 import * as vscode from "vscode";
 import type { AgentEntry, TokenStatusBar } from "./status-bar.js";
 import type { SessionStats } from "./persistence/index.js";
+import { formatTokens, getDisplayTokens } from "./tokens/display.js";
 
 /**
  * Union type for all tree items in the agent tree
@@ -47,23 +48,15 @@ export class AgentTreeItem extends vscode.TreeItem {
     // INVARIANT: displayedTokens is used for both display and percentage calculation
     let displayedTokens: number | null = null;
 
-    if (this.agent.status === "streaming") {
-      if (this.agent.estimatedInputTokens) {
-        displayedTokens = this.agent.estimatedInputTokens;
-        parts.push(`~${this.formatTokens(displayedTokens)}`);
-      } else {
-        parts.push("streaming...");
-      }
-    } else if (this.agent.status === "complete") {
-      // Use accumulated totals for multi-turn conversations
-      displayedTokens =
-        this.agent.turnCount > 1
-          ? this.agent.maxObservedInputTokens
-          : this.agent.inputTokens;
-      parts.push(this.formatTokens(displayedTokens));
-    } else {
-      // status === "error"
+    const display = getDisplayTokens(this.agent);
+    if (this.agent.status === "error") {
       parts.push("error");
+    } else if (display) {
+      displayedTokens = display.value;
+      const prefix = display.isEstimate ? "~" : "";
+      parts.push(`${prefix}${formatTokens(displayedTokens)}`);
+    } else {
+      parts.push("streaming...");
     }
 
     // Percentage uses the SAME value as display (invariant)
@@ -92,9 +85,11 @@ export class AgentTreeItem extends vscode.TreeItem {
     }
 
     if (this.agent.status === "streaming") {
-      if (this.agent.estimatedInputTokens) {
+      const display = getDisplayTokens(this.agent);
+      if (display) {
+        const label = display.isEstimate ? "Estimated Input" : "Input";
         md.appendMarkdown(
-          `**Estimated Input:** ${this.agent.estimatedInputTokens.toLocaleString()} tokens\n\n`,
+          `**${label}:** ${display.value.toLocaleString()} tokens\n\n`,
         );
       }
     } else {
@@ -102,7 +97,7 @@ export class AgentTreeItem extends vscode.TreeItem {
       if (this.agent.turnCount > 1) {
         md.appendMarkdown(`**Turns:** ${this.agent.turnCount}\n\n`);
         md.appendMarkdown(
-          `**Max Input:** ${this.agent.maxObservedInputTokens.toLocaleString()}\n\n`,
+          `**Input:** ${this.agent.lastActualInputTokens.toLocaleString()}\n\n`,
         );
         md.appendMarkdown(
           `**Total Output:** ${this.agent.totalOutputTokens.toLocaleString()}\n\n`,
@@ -163,10 +158,8 @@ export class AgentTreeItem extends vscode.TreeItem {
         );
       case "complete": {
         // Check context utilization for color
-        const inputTokens =
-          this.agent.turnCount > 1
-            ? this.agent.maxObservedInputTokens
-            : this.agent.inputTokens;
+        const display = getDisplayTokens(this.agent);
+        const inputTokens = display?.value ?? 0;
         if (this.agent.maxInputTokens && inputTokens) {
           const pct = inputTokens / this.agent.maxInputTokens;
           if (pct > 0.9) {
@@ -190,16 +183,6 @@ export class AgentTreeItem extends vscode.TreeItem {
     }
   }
 
-  private formatTokens(count: number): string {
-    if (count >= 1000000) {
-      return `${(count / 1000000).toFixed(1)}M`;
-    }
-    if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}k`;
-    }
-    return count.toString();
-  }
-
   private formatDuration(ms: number): string {
     if (ms < 1000) {
       return `${ms}ms`;
@@ -220,10 +203,7 @@ class LastSessionTreeItem extends vscode.TreeItem {
   constructor(stats: SessionStats) {
     super("Last Session", vscode.TreeItemCollapsibleState.None);
 
-    const tokens =
-      stats.maxObservedInputTokens >= 1000
-        ? `${(stats.maxObservedInputTokens / 1000).toFixed(1)}k`
-        : stats.maxObservedInputTokens.toString();
+    const tokens = formatTokens(stats.maxObservedInputTokens);
 
     this.description = `${stats.agentCount} agent${stats.agentCount !== 1 ? "s" : ""}, ${tokens} context tokens`;
     this.tooltip = this.formatTooltip(stats);

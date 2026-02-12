@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import * as vscode from "vscode";
+import { getVercelCliTokenFromStorage } from "./vercel-auth.js";
 import {
   authentication,
   type CancellationToken,
@@ -18,8 +19,6 @@ import {
   type ProvideLanguageModelChatResponseOptions,
   window,
 } from "vscode";
-
-import { CONSERVATIVE_MAX_INPUT_TOKENS } from "./constants";
 
 /**
  * VS Code may serialize message content parts as plain objects.
@@ -135,6 +134,7 @@ export class VercelAIChatModelProvider
     this.configService = configService;
     this.modelsClient = new ModelsClient(configService);
     this.tokenCounter = new TokenCounter();
+    void this.tokenCounter.initialize();
     this.enricher = new ModelEnricher(configService);
     // Initialize enricher persistence for faster startup
     this.enricher.initializePersistence(context.globalState);
@@ -155,50 +155,6 @@ export class VercelAIChatModelProvider
    */
   setStatusBar(statusBar: TokenStatusBar): void {
     this.statusBar = statusBar;
-  }
-
-  private applyEnrichmentToModels(
-    models: LanguageModelChatInformation[],
-  ): LanguageModelChatInformation[] {
-    return models.map((model) => {
-      const enriched = this.enrichedModels.get(model.id);
-      if (!enriched) {
-        return model;
-      }
-
-      // Check if we need to apply any enrichment
-      // Only apply context_length if it's a positive number (not null)
-      // BUT cap it at CONSERVATIVE_MAX_INPUT_TOKENS to prevent high-context degradation
-      const enrichedContextLength = enriched.context_length;
-      const cappedContextLength =
-        typeof enrichedContextLength === "number" && enrichedContextLength > 0
-          ? Math.min(enrichedContextLength, CONSERVATIVE_MAX_INPUT_TOKENS)
-          : null;
-      const needsContextLength =
-        cappedContextLength !== null &&
-        cappedContextLength !== model.maxInputTokens;
-      const needsImageInput =
-        enriched.input_modalities.includes("image") &&
-        !model.capabilities.imageInput;
-
-      if (!needsContextLength && !needsImageInput) {
-        return model;
-      }
-
-      // Create a new object with enriched properties (properties are readonly)
-      return {
-        ...model,
-        ...(needsContextLength ? { maxInputTokens: cappedContextLength } : {}),
-        ...(needsImageInput
-          ? {
-              capabilities: {
-                ...model.capabilities,
-                imageInput: true,
-              },
-            }
-          : {}),
-      };
-    });
   }
 
   async provideLanguageModelChatInformation(
@@ -224,9 +180,6 @@ export class VercelAIChatModelProvider
         void this.modelsClient.getModels(apiKey);
       });
 
-      if (this.configService.modelsEnrichmentEnabled) {
-        return this.applyEnrichmentToModels(cachedModels);
-      }
       return cachedModels;
     }
 
@@ -237,11 +190,6 @@ export class VercelAIChatModelProvider
         logger.debug(
           `No API key available, returning ${cachedModels.length.toString()} cached models`,
         );
-        // Apply any enrichment we have from the previous session
-        if (this.configService.modelsEnrichmentEnabled) {
-          logger.debug("Applying cached model enrichment during auth gap");
-          return this.applyEnrichmentToModels(cachedModels);
-        }
         return cachedModels;
       }
       logger.debug(
@@ -259,18 +207,20 @@ export class VercelAIChatModelProvider
         "Available models",
         models.map((m) => m.id),
       );
-      if (this.configService.modelsEnrichmentEnabled) {
-        // Avoid background enrichment + forced refresh events here: VS Code appears
-        // to briefly clear the model picker UI on `onDidChangeLanguageModelChatInformation`.
-        // We still apply any already-known enrichment, and do lazy enrichment on first use.
-        return this.applyEnrichmentToModels(models);
-      }
-
       return models;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       logger.error(ERROR_MESSAGES.MODELS_FETCH_FAILED, { error: errorMessage });
+      // Fall back to cached models to prevent the model picker from switching
+      // to a Copilot default. VS Code persists the fallback selection, so
+      // returning empty even once causes a sticky regression.
+      if (cachedModels.length > 0) {
+        logger.debug(
+          `Returning ${cachedModels.length.toString()} cached models after fetch error`,
+        );
+        return cachedModels;
+      }
       return [];
     }
   }
@@ -305,6 +255,15 @@ export class VercelAIChatModelProvider
     logger.debug(
       `[${vsCodeSessionId}] Chat ID: ${chatId}, conversationId: ${conversationId}`,
     );
+
+    // Mark this model as user-enabled (sticky selection).
+    // This ensures the model has isUserSelectable: true and won't be reset
+    // when VS Code's onDidChangeLanguageModels fires from other vendors.
+    const wasNewlyEnabled = this.modelsClient.enableModel(model.id);
+    if (wasNewlyEnabled) {
+      // Fire model change event so VS Code picks up the updated isUserSelectable
+      this.modelInfoChangeEmitter.fire();
+    }
 
     const abortController = new AbortController();
     const abortSubscription = token.onCancellationRequested(() => {
@@ -404,6 +363,31 @@ export class VercelAIChatModelProvider
       const firstUserMessageHash = firstUserMessageText
         ? hashUserMessage(firstUserMessageText)
         : undefined;
+      // Compute delta token estimate for resumed conversations.
+      // Instead of showing the full re-estimate during streaming (which has
+      // systematic error from tool schema multipliers etc.), we estimate only
+      // the NEW messages and add that to the last actual from the API.
+      // This keeps the display anchored to the accurate API count.
+      let estimatedDeltaTokens: number | undefined;
+      const prevContext = this.statusBar?.getAgentContext(conversationId);
+      if (prevContext) {
+        const newMessages = chatMessages.slice(prevContext.lastMessageCount);
+        let deltaTokens = 0;
+        for (const msg of newMessages) {
+          deltaTokens += this.tokenCounter.estimateMessageTokens(
+            msg,
+            model.family,
+          );
+        }
+        estimatedDeltaTokens = deltaTokens;
+        logger.debug(
+          `[TokenDelta] Resumed conversation: lastActual=${prevContext.lastActualInputTokens}, ` +
+            `newMessages=${newMessages.length}/${chatMessages.length}, ` +
+            `estimatedDelta=${deltaTokens}, ` +
+            `fullEstimate=${estimatedTokens}`,
+        );
+      }
+
       this.currentAgentId = chatId;
       this.statusBar?.startAgent(
         chatId,
@@ -413,7 +397,7 @@ export class VercelAIChatModelProvider
         systemPromptHash,
         agentTypeHash,
         firstUserMessageHash,
-        undefined, // estimatedDeltaTokens
+        estimatedDeltaTokens,
         conversationId,
       );
 
@@ -656,7 +640,19 @@ export class VercelAIChatModelProvider
           silent,
         },
       );
-      return session?.accessToken;
+      if (session?.accessToken) {
+        return session.accessToken;
+      }
+
+      // Fallback for first-run/clean profiles: user may already be authenticated
+      // with Vercel CLI, but no VS Code auth session exists yet for our provider.
+      const cliToken = getVercelCliTokenFromStorage();
+      if (cliToken) {
+        logger.debug("Using Vercel CLI token fallback");
+        return cliToken;
+      }
+
+      return undefined;
     } catch (error) {
       if (!silent) {
         logger.error("Failed to get authentication session:", error);
@@ -689,7 +685,6 @@ export class VercelAIChatModelProvider
       const enriched = await this.enricher.enrichModel(modelId, apiKey);
       if (enriched) {
         this.enrichedModels.set(modelId, enriched);
-        this.modelInfoChangeEmitter.fire();
         logger.debug(`Enriched model ${modelId}:`, {
           context_length: enriched.context_length,
           input_modalities: enriched.input_modalities,
@@ -703,12 +698,5 @@ export class VercelAIChatModelProvider
     }
 
     return false;
-  }
-
-  /**
-   * Get enriched data for a model, if available.
-   */
-  public getEnrichedModelData(modelId: string): EnrichedModelData | undefined {
-    return this.enrichedModels.get(modelId);
   }
 }
