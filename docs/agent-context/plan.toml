@@ -1552,14 +1552,16 @@ ulid = "01KH4BA7XP3HHGHD4EVJ4TGNK4"
 [[epochs.phases.goals]]
 id = "inv-log-cleanup"
 label = "Remove superseded logging (validation-log, forensic-capture, debug-utils, unwired scaffold) + withdraw stale RFCs"
-status = "pending"
+status = "completed"
+completion_log = "Investigation logger replaced validation-log, forensic-capture, debug-utils, scaffold. Stale RFCs withdrawn. All 6 tasks complete."
 ulid = "01KH4GWH462FHQ1EA7M2Y941Y3"
 rfc = "00065"
 
 [[epochs.phases.goals]]
 id = "inv-log-prune"
 label = "Prune command: interactive investigation cleanup with age-based + spider deletion"
-status = "pending"
+status = "completed"
+completion_log = "Prune command + spider deletion + age-based pruning already implemented in investigation-prune-command.ts and investigation-prune.ts"
 ulid = "01KH4GWGXT8C5C9Z0G10HR19D4"
 rfc = "00065"
 
@@ -1588,7 +1590,8 @@ rfc = "00065"
 [[epochs.phases.goals]]
 id = "logging-lint"
 label = "ESLint rule: prevent direct console/fs logging outside managed abstractions"
-status = "pending"
+status = "completed"
+completion_log = "no-restricted-syntax rules in eslint.config.js: 3 scopes (production error, logger exempt, test warn), clear rationale+action messages, 2 violations fixed with justified eslint-disable. Committed ba0b572."
 ulid = "01KH4GWH9ZXYPZ5BNSAGKV88M2"
 rfc = "00065"
 
@@ -1602,52 +1605,60 @@ rfc = "00065"
 [[epochs.phases.goals]]
 id = "fix-token-estimation"
 label = "Fix Anthropic tool call/result XML overhead in token estimation (14% undercount at 170 msgs)"
-status = "pending"
+status = "completed"
+completion_log = "Anthropic XML overhead multipliers already implemented in counter.ts"
 ulid = "01KH59X5TGDA0390JCBQN51DEB"
 
 [[epochs.phases.goals]]
 id = "fix-sidebar-composite"
 label = "Fix sidebar showing composite of multiple conversations when idle (correct during streaming)"
-status = "pending"
+status = "completed"
+completion_log = "Sidebar now filters to active conversation when idle. lastActiveConversationId tracking in status-bar, conversation filter in agent-tree getChildren(). 5 integration tests. Committed 68b489d."
 ulid = "01KH59X5ZEQH8PKKY15MCKWYSV"
 
 [[epochs.phases.goals]]
 id = "lazy-load-extension-deps"
 label = "Lazy load extension dependencies in extension.ts"
-status = "pending"
+status = "completed"
+completion_log = "Stub provider + async Promise.all lazy loading already in extension.ts"
 ulid = "01KH7CEBT42NFWJ0JZTJX0Y1X7"
 
 [[epochs.phases.goals]]
 id = "narrative-logger-overhaul"
 label = "Overhaul narrative logger (logger.ts) to use investigation infrastructure; make it the sole remaining logging tool/script system"
-status = "pending"
+status = "completed"
+completion_log = "All 7 tasks complete: file logging removed, tree-diagnostics migrated, analysis scripts removed, stale config removed, console leaks fixed"
 ulid = "01KH838VSG870ET1JYD36FGXC9"
 
 [[epochs.phases.goals]]
 id = "shared-token-display"
 label = "Extract shared token display computation: single getDisplayTokens() + unified formatTokens() across status bar, sidebar, and tooltips"
-status = "pending"
+status = "completed"
+completion_log = "getDisplayTokens() + formatTokens() in src/tokens/display.ts, wired into all display paths"
 ulid = "01KH87BD6GTWB4RKZ7BKN04SAK"
 rfc = "00063"
 
 [[epochs.phases.goals]]
 id = "summarization-visibility"
 label = "Show summarization as visible context compaction event in status bar and sidebar (not just a silent number drop)"
-status = "pending"
+status = "completed"
+completion_log = "Detection in completeAgent(), fold icon + freed-tokens suffix, tooltip in status bar and sidebar"
 ulid = "01KH87C38WEHKBXB2B66CMPA2R"
 rfc = "00063"
 
 [[epochs.phases.goals]]
 id = "subagent-delta"
 label = "Fix subagent streaming display: use delta-based estimation (status bar subagent path still uses full estimate with ~)"
-status = "pending"
+status = "completed"
+completion_log = "Delta path is shared via getDisplayTokens(), no more ~ prefix on delta"
 ulid = "01KH87CFXK4VH9Q7PQE40DRR83"
 rfc = "00063"
 
 [[epochs.phases.goals]]
 id = "persist-agent-state"
 label = "Persist per-agent token state (lastActualInputTokens, turnCount, conversationId, lastMessageCount) via Memento so delta path works across reloads"
-status = "pending"
+status = "completed"
+completion_log = "PersistedAgentState + AGENT_STATE_STORE, saveAgentState/getAgentContext fallback across reloads"
 ulid = "01KH87CTVWTHSSE958ZB4ZYVTV"
 rfc = "00063"
 

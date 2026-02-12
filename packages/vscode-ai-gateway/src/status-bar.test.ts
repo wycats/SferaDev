@@ -577,14 +577,34 @@ describe("TokenStatusBar", () => {
   describe("Summarization detection", () => {
     it("detects summarization when tokens drop by 30%+", () => {
       // Use conversationId so second startAgent resumes the same agent
-      statusBar.startAgent("req-1", 80000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-summ");
+      statusBar.startAgent(
+        "req-1",
+        80000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-summ",
+      );
       statusBar.completeAgent("req-1", {
         inputTokens: 80000,
         outputTokens: 500,
       });
 
       // Second turn: tokens drop from 80k to 40k (50% drop)
-      statusBar.startAgent("req-2", 85000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-summ");
+      statusBar.startAgent(
+        "req-2",
+        85000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-summ",
+      );
       statusBar.completeAgent("req-2", {
         inputTokens: 40000,
         outputTokens: 600,
@@ -597,14 +617,34 @@ describe("TokenStatusBar", () => {
     });
 
     it("does not flag summarization for small token changes", () => {
-      statusBar.startAgent("req-1", 50000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-grow");
+      statusBar.startAgent(
+        "req-1",
+        50000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-grow",
+      );
       statusBar.completeAgent("req-1", {
         inputTokens: 50000,
         outputTokens: 500,
       });
 
       // Second turn: tokens increase slightly (normal growth)
-      statusBar.startAgent("req-2", 55000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-grow");
+      statusBar.startAgent(
+        "req-2",
+        55000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-grow",
+      );
       statusBar.completeAgent("req-2", {
         inputTokens: 55000,
         outputTokens: 600,
@@ -616,14 +656,34 @@ describe("TokenStatusBar", () => {
     });
 
     it("does not flag summarization for moderate drops (<30%)", () => {
-      statusBar.startAgent("req-1", 80000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-mod");
+      statusBar.startAgent(
+        "req-1",
+        80000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-mod",
+      );
       statusBar.completeAgent("req-1", {
         inputTokens: 80000,
         outputTokens: 500,
       });
 
       // Second turn: 20% drop (not enough to trigger)
-      statusBar.startAgent("req-2", 70000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-mod");
+      statusBar.startAgent(
+        "req-2",
+        70000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-mod",
+      );
       statusBar.completeAgent("req-2", {
         inputTokens: 64000,
         outputTokens: 600,
@@ -635,28 +695,68 @@ describe("TokenStatusBar", () => {
     });
 
     it("accumulates multiple summarization reductions", () => {
-      statusBar.startAgent("req-1", 80000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-multi");
+      statusBar.startAgent(
+        "req-1",
+        80000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-multi",
+      );
       statusBar.completeAgent("req-1", {
         inputTokens: 80000,
         outputTokens: 500,
       });
 
       // First summarization: 80k -> 30k
-      statusBar.startAgent("req-2", 35000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-multi");
+      statusBar.startAgent(
+        "req-2",
+        35000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-multi",
+      );
       statusBar.completeAgent("req-2", {
         inputTokens: 30000,
         outputTokens: 600,
       });
 
       // Context grows back up
-      statusBar.startAgent("req-3", 70000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-multi");
+      statusBar.startAgent(
+        "req-3",
+        70000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-multi",
+      );
       statusBar.completeAgent("req-3", {
         inputTokens: 70000,
         outputTokens: 700,
       });
 
       // Second summarization: 70k -> 25k
-      statusBar.startAgent("req-4", 30000, 128000, undefined, undefined, undefined, undefined, undefined, "conv-multi");
+      statusBar.startAgent(
+        "req-4",
+        30000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-multi",
+      );
       statusBar.completeAgent("req-4", {
         inputTokens: 25000,
         outputTokens: 800,

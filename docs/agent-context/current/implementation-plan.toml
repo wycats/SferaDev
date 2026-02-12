@@ -396,41 +396,74 @@ id = "logging-lint"
 [[plan.goals.tasks]]
 id = "logging-lint::lint-rule"
 title = "ESLint no-restricted-imports/syntax rule: prevent direct console.log, fs.writeFile, fs.appendFile outside logger abstractions"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T20:58:25.617141925+00:00"
+completion_log = "Added no-restricted-syntax rules in eslint.config.js with three scopes: production (error for console.* and fs.write*), logger internals (exempt), test files (warn for fs.write* only, console.* allowed)"
 
 [[plan.goals.tasks]]
 id = "logging-lint::lint-message"
 title = "Custom error message steering agents to InvestigationLogger or Logger abstraction (not vanilla restricted error)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T20:58:30.903124048+00:00"
+completion_log = "Each rule has a clear two-part message: rationale (why it's banned) + action (what to use instead). Production messages point to logger.* or InvestigationLogger. Test messages explain that eslint-disable with justification is acceptable."
 
 [[plan.goals.tasks]]
 id = "logging-lint::fix-violations"
-title = "Fix existing violations: console.log in extension.ts, vercel-auth.ts, stream-adapter.ts, tree-diagnostics.ts"
-status = "pending"
+title = "Fix any violations surfaced by the new lint rule (previous targets already cleaned up by narrative-logger-overhaul)"
+status = "completed"
+completed_at = "2026-02-12T20:58:37.324114380+00:00"
+completion_log = "Two violations found and fixed: extension.ts diagnostic dump (eslint-disable with 'User-triggered diagnostic export, not logging') and test/runTest.ts harness setup (eslint-disable with 'Test harness: writing VS Code settings for integration test')"
 
 [[plan.goals.tasks]]
 id = "logging-lint::lint-tests"
 title = "Verify lint rule catches violations in test fixtures and passes for correct usage patterns"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T20:58:45.283242172+00:00"
+completion_log = "Verified by real violations: extension.ts:230 triggered production error for fs.writeFileSync, test/runTest.ts:107 triggered test warning. Logger internals (logger.ts, logger/**) produced zero violations. All 454 unit tests pass."
 
 [[plan.goals]]
 id = "logging-alignment-rfc"
 
 [[plan.goals.tasks]]
 id = "logging-alignment-rfc::audit-orthogonal"
-title = "Audit remaining logging: logger.ts (output channel + rotation), tree-diagnostics, diagnostic dump command"
-status = "pending"
+title = "Audit remaining logging: logger.ts (output channel, no file rotation), tree-diagnostics, diagnostic dump command (fs.writeFileSync to .logs)"
+status = "completed"
+completed_at = "2026-02-12T22:26:32.416337616+00:00"
+completion_log = "Audited 3 orthogonal logging systems: (1) narrative logger (logger.ts) — level-filtered output channel + console, widely used, live/unstructured; (2) tree-diagnostics — flight recorder for agent tree state/invariants, uses narrative logger at debug/warn level, live-only; (3) diagnostic dump command — on-demand JSON snapshot to .logs/. InvestigationLogger is the only persistent structured system. Overlap is in content (errors, request lifecycle) but not format or persistence."
 
 [[plan.goals.tasks]]
 id = "logging-alignment-rfc::write-rfc"
 title = "Write follow-up RFC: align orthogonal logging with investigation patterns (managed output, consistent structure)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T22:27:38.741085299+00:00"
+completion_log = "Created RFC 00067: Logging Alignment — Unify Orthogonal Logging with Investigation Patterns. Covers 3-phase alignment plan: (1) request ID correlation in narrative logger, (2) tree diagnostics → investigation bridge, (3) diagnostic dump integration. Includes audit table, design principles, and open questions."
 
 [[plan.goals]]
 id = "fix-token-estimation"
 
 [[plan.goals]]
 id = "fix-sidebar-composite"
+
+[[plan.goals.tasks]]
+id = "diagnose-composite"
+title = "Diagnose: trace getAgents() → getChildren() path to confirm idle composite bug (all conversations shown, not just active)"
+status = "completed"
+completed_at = "2026-02-12T22:08:36.690133442+00:00"
+completion_log = "Confirmed: getAgents() returns all agents from all conversations. getChildren() builds root list from all agents with no conversation filtering. When idle (activeAgentId=null), sidebar shows composite of all conversations. Fix: track lastActiveConversationId, filter in getChildren() when idle."
+
+[[plan.goals.tasks]]
+id = "filter-idle-sidebar"
+title = "Filter sidebar to show only the most recent conversation's agents when idle (preserve full view during streaming)"
+status = "completed"
+completed_at = "2026-02-12T22:11:54.576816492+00:00"
+completion_log = "Added lastActiveConversationId tracking in status-bar.ts (updated via trackActiveConversation helper at all 3 activeAgentId set points). agent-tree.ts getChildren() now filters to lastActiveConversationId when idle. Build passes, 454 tests pass."
+
+[[plan.goals.tasks]]
+id = "sidebar-composite-tests"
+title = "Tests: verify sidebar shows only active conversation when idle, all agents during streaming, and handles conversation switch"
+status = "completed"
+completed_at = "2026-02-12T22:14:50.006817061+00:00"
+completion_log = "5 tests in identity-pipeline.integration.test.ts: idle shows only recent conversation, streaming shows all, conversation switch updates view, subagents included via parentConversationHash filter, fallback to all when no conversationId. 459 tests pass."
 
 [[plan.goals]]
 id = "lazy-load-extension-deps"

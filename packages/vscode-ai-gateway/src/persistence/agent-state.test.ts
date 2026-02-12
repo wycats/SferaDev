@@ -34,7 +34,9 @@ vi.mock("vscode", () => ({
       return { dispose: vi.fn() };
     };
     fire(data: T) {
-      this.listeners.forEach((l) => { l(data); });
+      this.listeners.forEach((l) => {
+        l(data);
+      });
     }
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     dispose() {}
@@ -65,7 +67,10 @@ describe("Agent state persistence", () => {
 
   it("round-trips persisted agent state", async () => {
     const globalState = createMockMemento();
-    const manager = new PersistenceManagerImpl(globalState, createMockMemento());
+    const manager = new PersistenceManagerImpl(
+      globalState,
+      createMockMemento(),
+    );
     const store = manager.getStore(AGENT_STATE_STORE);
 
     await store.update((current) => ({
@@ -130,7 +135,17 @@ describe("Agent state persistence", () => {
       workspaceState,
     } as ExtensionContext);
 
-    statusBar.startAgent("agent-1", 1000, 8000, undefined, undefined, undefined, undefined, undefined, "conv-1");
+    statusBar.startAgent(
+      "agent-1",
+      1000,
+      8000,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      "conv-1",
+    );
     statusBar.completeAgent("agent-1", {
       inputTokens: 1500,
       outputTokens: 200,

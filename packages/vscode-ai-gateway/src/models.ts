@@ -1,9 +1,6 @@
 import type { LanguageModelChatInformation, Memento } from "vscode";
 import { ConfigService } from "./config";
-import {
-  MODELS_CACHE_TTL_MS,
-  MODELS_ENDPOINT,
-} from "./constants";
+import { MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
 import { logger } from "./logger";
 import { ModelFilter } from "./models/filter";
 import type { Model } from "./models/types";
