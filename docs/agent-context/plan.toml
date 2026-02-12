@@ -1474,7 +1474,7 @@ id = "00063"
 [[epochs.phases]]
 id = "01kh1z5yq1f4hg8d5f959ctxv0"
 title = "Token Count Validation & Conversation Identity"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KH1Z5YQ1F4HG8D5F959CTXV0"
 
@@ -1704,3 +1704,52 @@ ulid = "01KH1NEZXQM9S822H5SZW3GBK3"
 
 [[epochs.phases.rfcs]]
 id = "00063"
+
+[[epochs]]
+id = "01kha0khyfas843fhsryyks0s8"
+title = "Interface-First API Alignment (RFC 00066)"
+status = "active"
+ulid = "01KHA0KHYFAS843FHSRYYKS0S8"
+
+[[epochs.phases]]
+id = "01kha0kpfx47pkebr4d2bvm3b0"
+title = "Proposal Audit & Interface Design"
+status = "active"
+kind = "regular"
+ulid = "01KHA0KPFX47PKEBR4D2BVM3B0"
+
+[[epochs.phases.goals]]
+id = "enumerate-proposals"
+label = "Enumerate AI-related VS Code proposed APIs using vscode-proposal-signals infrastructure"
+status = "pending"
+ulid = "01KHA0M9RK6836FYVWHJ6SR9GR"
+
+[[epochs.phases.goals]]
+id = "triage-proposals"
+label = "For each proposal: document what it does, current code mapping, and triage classification (adopt soon/design toward/watch)"
+status = "pending"
+ulid = "01KHA0ME8QH80XJND6AJP824CD"
+
+[[epochs.phases.goals]]
+id = "update-rfc"
+label = "Update RFC 00066 with full proposal inventory, triage results, and interface design questions"
+status = "pending"
+ulid = "01KHA0MJ74N41VKMPM64EMSEEQ"
+
+[[epochs.phases.goals]]
+id = "design-identity-interface"
+label = "Design ConversationIdentityProvider interface (co-design with stateful_marker workaround + chatRequest.conversationId proposal)"
+status = "pending"
+ulid = "01KHA0MQ5N7HG96WRRMEJHPBCK"
+
+[[epochs.phases.goals]]
+id = "design-token-interface"
+label = "Design TokenCountProvider interface (co-design with ai-tokenizer estimation + proposed token counting API)"
+status = "pending"
+ulid = "01KHA0MWCE4ZTN8T9AQS1TS3HC"
+
+[[epochs.phases.goals]]
+id = "design-thinking-interface"
+label = "Design ThinkingContentProvider interface (co-design with custom DataPart + LanguageModelThinkingPart proposal)"
+status = "pending"
+ulid = "01KHA0MWDADE22SR9KA122PWQ0"
