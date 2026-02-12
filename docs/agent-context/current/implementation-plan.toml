@@ -12,22 +12,30 @@ id = "enumerate-proposals"
 [[plan.goals.tasks]]
 id = "enumerate-proposals::verify-scanner"
 title = "Verify vscode-api-horizon.ts can run (check .reference/vscode exists or document setup)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T23:06:20.529420152+00:00"
+completion_log = "Scanner runs successfully. Node 22+ native TS support confirmed. --help output shows all expected flags: --filter, --json, --no-github, --sort."
 
 [[plan.goals.tasks]]
 id = "enumerate-proposals::run-scan"
 title = "Run horizon scanner with --filter for AI-related proposals"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T23:07:17.719582901+00:00"
+completion_log = "Scanned 162 total proposals, identified 31 AI-related. Full JSON at /tmp/full-scan.json. Used --no-github (offline mode) to avoid rate limits. All proposals have readiness scores, version info, exports, consumer data, and git activity."
 
 [[plan.goals.tasks]]
 id = "enumerate-proposals::extract-inventory"
 title = "Extract structured proposal list (name, version, exports, stability signals)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T23:09:34.924807661+00:00"
+completion_log = "Extracted 31 AI-related proposals from 162 total, organized into 7 themes: Language Model (6), MCP (2), Chat Core (10), Chat Participant (3), Agent (3), AI Editor (5), Contribution Points (2). Structured JSON inventory at /tmp/ai-proposal-inventory.json with readiness scores, versions, exports, consumer data, and git activity."
 
 [[plan.goals.tasks]]
 id = "enumerate-proposals::cross-reference-028"
 title = "Cross-reference with RFC 028 existing inventory to identify gaps"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-12T23:09:41.825466670+00:00"
+completion_log = "RFC 028 lists 6 proposals, scanner found 31 AI-related. Gap: 25 new proposals not in RFC 028. Biggest gaps: Chat Core (9 new), AI Editor (5 new), Chat Participant (3 new), Agent (2 new), MCP (2 new), Language Model (2 new), Contribution Points (2 new). Highest-scoring new proposals: agentSessionsWorkspace (65), contribChatEditorInlineGutterMenu (65), chatContextProvider (60, 8 commits), chatPromptFiles (60, 4 commits)."
 
 [[plan.goals]]
 id = "triage-proposals"
