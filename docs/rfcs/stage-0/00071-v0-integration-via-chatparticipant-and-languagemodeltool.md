@@ -2,8 +2,8 @@
 title: v0 Integration via ChatParticipant and LanguageModelTool
 feature: architecture
 exo:
-    tool: exo rfc create
-    protocol: 1
+  tool: exo rfc create
+  protocol: 1
 ---
 
 # RFC 00071: v0 Integration via ChatParticipant and LanguageModelTool
@@ -22,19 +22,20 @@ Today the extension is a **provider** (`LanguageModelChat`). Becoming a **partic
 
 Registering as a `ChatParticipant` is a prerequisite for:
 
-| API | What it enables |
-|-----|----------------|
+| API                        | What it enables                                                                                                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `chatParticipantAdditions` | Tool rendering (`ChatToolInvocationPart`, terminal/todo/subagent renderers), `ChatResultUsage` (native token widget), `ChatResponseThinkingProgressPart` (participant-side thinking), question carousels, confirmations, multi-diff viewer |
-| `chatSessionsProvider` | Full session persistence (`ChatSessionItemProvider`, `ChatSessionItemController`, `ChatSessionContentProvider`) — replaces stateful-marker identity hack |
-| `toolProgress` | `ToolProgressStep` with message + increment progress bars for tool execution |
-| `chatHooks` | `PreToolUse`/`PostToolUse` safety hooks for tool execution governance |
-| `chatOutputRenderer` | Custom webview renderers for tool result MIME types |
+| `chatSessionsProvider`     | Full session persistence (`ChatSessionItemProvider`, `ChatSessionItemController`, `ChatSessionContentProvider`) — replaces stateful-marker identity hack                                                                                   |
+| `toolProgress`             | `ToolProgressStep` with message + increment progress bars for tool execution                                                                                                                                                               |
+| `chatHooks`                | `PreToolUse`/`PostToolUse` safety hooks for tool execution governance                                                                                                                                                                      |
+| `chatOutputRenderer`       | Custom webview renderers for tool result MIME types                                                                                                                                                                                        |
 
 ## v0 Tool Integration Sketch
 
 ### Tool Registration
 
 Each v0 tool becomes a `LanguageModelTool` with:
+
 - A tool definition (name, description, input schema)
 - An invocation handler that calls the v0 backend
 - A result renderer using `chatParticipantAdditions` specialized renderers
@@ -53,6 +54,7 @@ v0 tool safety → chatHooks governance
 ### Rendering Pipeline
 
 `chatParticipantAdditions` provides specialized renderers for common tool patterns:
+
 - `ChatTerminalToolInvocationData` — terminal command execution
 - `ChatTodoToolInvocationData` — task list management
 - `ChatResponseQuestionCarouselPart` — interactive questions
@@ -80,12 +82,13 @@ This is a **big scope increase** relative to the current extension architecture:
 - Should participant registration be behind a feature flag (Insiders-only)?
 - How do tool-specific data types map to v0 tool output formats?
 - What governance model do `chatHooks` enable for tool execution safety?
-- Does the extension need to be *both* provider and participant simultaneously, or would it transition fully?
+- Does the extension need to be _both_ provider and participant simultaneously, or would it transition fully?
 
 ## Relationship to RFC 00066
 
 RFC 00066's interface designs are **already compatible** with this future. Each interface has:
+
 - A current provider-side implementation (works today)
 - A future participant-side implementation (activates with ChatParticipant registration)
 
-This RFC captures the *motivation* for why participant registration might happen. RFC 00066 captures the *architectural readiness* for it.
+This RFC captures the _motivation_ for why participant registration might happen. RFC 00066 captures the _architectural readiness_ for it.

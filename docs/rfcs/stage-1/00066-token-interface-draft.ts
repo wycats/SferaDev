@@ -105,7 +105,11 @@ export interface TokenEstimator {
     messages: readonly unknown[], // LanguageModelChatMessage[]
     modelFamily: string,
     options?: {
-      tools?: readonly { name: string; description?: string; inputSchema?: unknown }[];
+      tools?: readonly {
+        name: string;
+        description?: string;
+        inputSchema?: unknown;
+      }[];
       systemPrompt?: string;
     },
   ): TokenEstimate;

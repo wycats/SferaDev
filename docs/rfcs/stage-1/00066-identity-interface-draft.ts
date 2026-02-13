@@ -42,9 +42,9 @@ export interface IdentityResolution {
 
   /** How the identity was obtained */
   readonly source:
-    | "marker"              // Recovered from a stateful marker in message history
-    | "session-provider"    // Provided by chatSessionsProvider API
-    | "generated";          // Freshly generated (first turn, no prior context)
+    | "marker" // Recovered from a stateful marker in message history
+    | "session-provider" // Provided by chatSessionsProvider API
+    | "generated"; // Freshly generated (first turn, no prior context)
 
   /** The response ID from the last turn (if recovered from marker) */
   readonly lastResponseId?: string;
@@ -135,8 +135,7 @@ export interface IdentityMarkerEmitter {
  * Combined identity service that provides both resolution and emission.
  * This is what most consumers will use.
  */
-export interface ConversationIdentityService
-  extends ConversationIdentityProvider {
+export interface ConversationIdentityService extends ConversationIdentityProvider {
   /**
    * The marker emitter, if this implementation uses markers.
    * Undefined for implementations that don't need markers (e.g., chatSessionsProvider).

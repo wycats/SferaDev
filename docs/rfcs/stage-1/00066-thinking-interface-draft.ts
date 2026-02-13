@@ -76,10 +76,7 @@ export interface ThinkingContentProvider {
    * @param id - Unique identifier for this thinking sequence
    * @returns The part to emit, or undefined if not supported
    */
-  createStreamingPart(
-    text: string,
-    id: string,
-  ): unknown | undefined; // LanguageModelThinkingPart at runtime
+  createStreamingPart(text: string, id: string): unknown | undefined; // LanguageModelThinkingPart at runtime
 
   /**
    * Create a persistence part for encoding thinking data in message history.
