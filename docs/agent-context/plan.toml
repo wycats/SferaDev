@@ -1737,25 +1737,29 @@ ulid = "01KHC3GC5X730GG3SR2W85HD3E"
 [[epochs.phases.goals]]
 id = "diagnose-no-response"
 label = "Diagnose 'No response received from model' error: instrument the safety check path to capture what the stream actually delivered (event types, counts, timing) before declaring no-content"
-status = "pending"
+status = "completed"
+completion_log = "Committed e2a10be: NoResponseDiagnostic interface + structured JSON logging at safety check. MockStreamAdapter fixed. 460 tests pass."
 ulid = "01KHC667GN8YX4RSQBKKMTGHX7"
 
 [[epochs.phases.goals]]
 id = "sse-buffer-always-on"
 label = "SSE buffer always-on: populate SSE recorder buffer in-memory at all investigation detail levels (not just full), so error capture can flush it on failure"
-status = "pending"
+status = "completed"
+completion_log = "Committed d31485b: SSE recorder created at all non-off detail levels. Added getEvents() method. 462 tests pass."
 ulid = "01KHC7WTAN7S4N9WAKH7P2NV1C"
 
 [[epochs.phases.goals]]
 id = "error-capture-core"
 label = "ErrorCaptureLogger core: types (ErrorIndexEntry, ErrorCapture), write index.jsonl + per-error JSON + SSE flush to globalStorageUri/errors/"
-status = "pending"
+status = "completed"
+completion_log = "Committed 631fe38: ErrorCaptureLogger + writeError + types + 12 tests. Hierarchical file structure: index.jsonl + per-error JSON + SSE JSONL. 474/474 tests pass."
 ulid = "01KHC7WN2X2NNK6J75H9CZJWKZ"
 
 [[epochs.phases.goals]]
 id = "audit-auth-flow"
 label = "Audit current auth flow: what happens when key is missing, invalid, or expired? Map all error paths."
-status = "pending"
+status = "completed"
+completion_log = "Full auth flow audit complete. Traced getApiKey (3 fallback paths), createSession (api-key vs oidc), refreshOidcSession (15min margin, silent failure), and all error surfaces (toasts, chat responses, silent paths). No code changes — pure documentation."
 ulid = "01KHC3HVNS1VK38HG43652S5R7"
 
 [[epochs.phases.goals]]

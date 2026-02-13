@@ -26,6 +26,7 @@ import {
   LanguageModelToolCallPart,
   type Progress,
   type ProvideLanguageModelChatResponseOptions,
+  type Uri,
 } from "vscode";
 import type { ConfigService } from "../config.js";
 import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
@@ -34,6 +35,10 @@ import {
   type ExtractedTokenInfo,
   logger,
 } from "../logger.js";
+import {
+  ErrorCaptureLogger,
+  type ErrorCaptureData,
+} from "../logger/error-capture.js";
 import type { TokenStatusBar } from "../status-bar.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
@@ -78,6 +83,8 @@ export interface OpenResponsesChatOptions {
   chatId: string;
   /** Stable conversation identity (from stateful marker sessionId or new UUID) */
   conversationId: string;
+  /** Global storage location for persistent logs */
+  globalStorageUri: Uri;
 }
 
 /**
@@ -124,7 +131,10 @@ export async function executeOpenResponsesChat(
     estimatedInputTokens,
     chatId,
     conversationId,
+    globalStorageUri,
   } = chatOptions;
+
+  const errorCaptureLogger = new ErrorCaptureLogger(globalStorageUri);
 
   // TRACE: Log raw VS Code messages with actual role values
   const roleNames: Record<number, string> = {
@@ -138,6 +148,10 @@ export async function executeOpenResponsesChat(
   logger.debug(
     `[OpenResponses] Estimated input tokens: ${estimatedInputTokens.toString()}`,
   );
+
+  const messageRoles = chatMessages
+    .map((m) => roleNames[m.role as number] ?? `Unknown(${m.role})`)
+    .join(",");
 
   // Create client with trace logging
   const client = createClient({
@@ -257,6 +271,73 @@ export async function executeOpenResponsesChat(
   // Counters — declared here so they're accessible in catch for investigation logging
   let toolCallCount = 0;
   let textPartCount = 0;
+  let toolsForCapture: unknown[] = [];
+  let toolNames: string[] = [];
+  let requestBody:
+    | (CreateResponseBody & { caching?: "auto" })
+    | undefined;
+
+  const buildErrorCaptureData = (
+    errorType: ErrorCaptureData["errorType"],
+    errorMessage: string,
+  ): ErrorCaptureData => {
+    const usage = result.usage
+      ? {
+          input_tokens: result.usage.input_tokens,
+          output_tokens: result.usage.output_tokens,
+          cache_read_input_tokens:
+            result.usage.input_tokens_details?.cached_tokens,
+          output_tokens_details: result.usage.output_tokens_details,
+        }
+      : null;
+    const requestBodyData = requestBody
+      ? {
+          model: requestBody.model ?? decodeVsCodeModelId(model.id),
+          input: (Array.isArray(requestBody.input) ? requestBody.input : []) as unknown[],
+          instructions: requestBody.instructions,
+          tools: requestBody.tools as unknown[] | undefined,
+          tool_choice: requestBody.tool_choice,
+          temperature: requestBody.temperature ?? undefined,
+          max_output_tokens: requestBody.max_output_tokens ?? undefined,
+          prompt_cache_key: requestBody.prompt_cache_key ?? undefined,
+          caching: requestBody.caching ?? undefined,
+        }
+      : {
+          model: decodeVsCodeModelId(model.id),
+          input: [] as unknown[],
+          instructions: undefined,
+          tools: undefined,
+          tool_choice: undefined,
+          temperature: undefined,
+          max_output_tokens: undefined,
+          prompt_cache_key: undefined,
+          caching: undefined,
+        };
+
+    return {
+      chatId,
+      conversationId,
+      errorType,
+      errorMessage,
+      model: model.id,
+      estimatedInputTokens,
+      messageCount: chatMessages.length,
+      messageRoles,
+      toolCount: toolsForCapture.length,
+      toolNames,
+      isSummarization: isSummarizationRequest,
+      requestBody: requestBodyData,
+      eventCount,
+      textPartCount,
+      toolCallCount,
+      responseId: adapter.getResponseId(),
+      finishReason: result.finishReason,
+      usage,
+      requestStartMs: requestStartTime,
+      ttftMs: timeToFirstToken,
+      durationMs: performance.now() - requestStartTime,
+    };
+  };
 
   try {
     // Translate messages to OpenResponses format
@@ -278,7 +359,7 @@ export async function executeOpenResponsesChat(
     // max_output_tokens: Use model's full capacity (GCMP approach) - don't artificially limit
     // caching: "auto" enables server-side prompt caching (Anthropic cache_control injection)
     // Not yet in generated OpenAPI types — accepted by gateway, see .reference/ai-gateway
-    const requestBody: CreateResponseBody & { caching?: "auto" } = {
+    requestBody = {
       model: decodeVsCodeModelId(model.id),
       input,
       stream: true,
@@ -351,10 +432,8 @@ export async function executeOpenResponsesChat(
 
     // Investigation logging — start a request handle (null when detail=off)
     const investigationLogger = new InvestigationLogger();
-    const messageRoles = chatMessages
-      .map((m) => roleNames[m.role as number] ?? `Unknown(${m.role})`)
-      .join(",");
-    const toolNames = tools.map(
+    toolsForCapture = tools as unknown[];
+    toolNames = tools.map(
       (t) => (t as { name?: string }).name ?? "unknown",
     );
     investigationHandle = investigationLogger.startRequest({
@@ -614,6 +693,30 @@ export async function executeOpenResponsesChat(
       logger.error(
         `[NoResponse] Stream completed with no content:\n${JSON.stringify(diagnostic, null, 2)}`,
       );
+      void errorCaptureLogger.captureError(
+        buildErrorCaptureData("no-response", "No content received"),
+        investigationHandle?.getEvents() ?? [],
+      );
+      void investigationHandle?.complete({
+        status: "error",
+        finishReason: result.finishReason ?? null,
+        responseId: adapter.getResponseId() ?? null,
+        error: "No content received",
+        durationMs: performance.now() - requestStartTime,
+        ttftMs: timeToFirstToken,
+        eventCount,
+        textPartCount,
+        toolCallCount,
+        usage: result.usage
+          ? {
+              input_tokens: result.usage.input_tokens,
+              output_tokens: result.usage.output_tokens,
+              cache_read_input_tokens:
+                result.usage.input_tokens_details?.cached_tokens,
+              output_tokens_details: result.usage.output_tokens_details,
+            }
+          : null,
+      });
       progress.report(
         new LanguageModelTextPart(
           `**Error**: No response received from model. Please try again.`,
@@ -661,6 +764,10 @@ export async function executeOpenResponsesChat(
           toolCallCount,
           usage: null,
         });
+        void errorCaptureLogger.captureError(
+          buildErrorCaptureData("timeout", "Stream inactivity timeout"),
+          investigationHandle?.getEvents() ?? [],
+        );
 
         return { success: false, error: "Stream inactivity timeout" };
       }
@@ -741,6 +848,10 @@ export async function executeOpenResponsesChat(
       toolCallCount,
       usage: null,
     });
+    void errorCaptureLogger.captureError(
+      buildErrorCaptureData("api-error", errorMessage),
+      investigationHandle?.getEvents() ?? [],
+    );
 
     return tokenInfo
       ? { success: false, error: errorMessage, tokenInfo }

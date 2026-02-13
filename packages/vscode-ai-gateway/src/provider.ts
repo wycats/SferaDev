@@ -427,6 +427,7 @@ export class VercelAIChatModelProvider
           estimatedInputTokens: estimatedTokens,
           chatId,
           conversationId,
+          globalStorageUri: this.context.globalStorageUri,
         },
       );
 

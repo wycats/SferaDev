@@ -80,6 +80,13 @@ vi.mock("../logger/investigation.js", () => ({
   InvestigationLogger: hoisted.MockInvestigationLogger,
 }));
 
+vi.mock("../logger/error-capture.js", () => ({
+  ErrorCaptureLogger: class MockErrorCaptureLogger {
+    captureError = vi.fn().mockResolvedValue(undefined);
+    getErrorsDir = vi.fn(() => "/mock/errors");
+  },
+}));
+
 vi.mock("../utils/stateful-marker.js", () => ({
   findLatestStatefulMarker: vi.fn(() => undefined),
 }));
@@ -114,8 +121,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
     apiKey: "test-key",
     estimatedInputTokens: 1234,
     chatId: "chat-1",
-    conversationId: "test-conv-id",
-  };
+    conversationId: "test-conv-id",    globalStorageUri: { fsPath: "/tmp/test-global-storage" },  };
 
   const options = { modelOptions: {} };
   const chatMessages: unknown[] = [];
@@ -336,6 +342,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
     estimatedInputTokens: 1234,
     chatId: "chat-1",
     conversationId: "test-conv-id",
+    globalStorageUri: { fsPath: "/tmp/test-global-storage" },
   };
 
   const options = { modelOptions: {} };
@@ -398,6 +405,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
     const mockHandle = {
       recorder: null,
       complete: hoisted.mockComplete,
+      getEvents: vi.fn(() => []),
     };
     hoisted.mockStartRequest.mockReturnValue(mockHandle);
 
@@ -443,6 +451,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
     const mockHandle = {
       recorder: null,
       complete: hoisted.mockComplete,
+      getEvents: vi.fn(() => []),
     };
     hoisted.mockStartRequest.mockReturnValue(mockHandle);
 
@@ -472,6 +481,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
     const mockHandle = {
       recorder: null,
       complete: hoisted.mockComplete,
+      getEvents: vi.fn(() => []),
     };
     hoisted.mockStartRequest.mockReturnValue(mockHandle);
 
@@ -502,6 +512,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
     const mockHandle = {
       recorder: { recordEvent: hoisted.mockRecordEvent },
       complete: hoisted.mockComplete,
+      getEvents: vi.fn(() => []),
     };
     hoisted.mockStartRequest.mockReturnValue(mockHandle);
 

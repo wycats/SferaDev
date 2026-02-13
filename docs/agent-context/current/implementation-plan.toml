@@ -12,22 +12,30 @@ id = "audit-auth-flow"
 [[plan.goals.tasks]]
 id = "audit-auth-flow::trace-getapikey-paths"
 title = "Trace getApiKey() in provider.ts: document env var check, getSession() call, CLI token fallback, and error handling"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:01:32.464901686+00:00"
+completion_log = "getApiKey(silent): env var check (VERCEL_API_KEY/OPENRESPONSES_API_KEY) → getSession() → CLI token fallback → undefined. Non-silent shows AUTH_FAILED toast on getSession error. Silent returns undefined. Non-silent undefined throws API_KEY_NOT_FOUND in chat."
 
 [[plan.goals.tasks]]
 id = "audit-auth-flow::trace-session-creation"
 title = "Trace createSession() in auth.ts: document promptForAuthMethod, createApiKeySession vs createOidcSession paths, error propagation"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:01:38.949777325+00:00"
+completion_log = "createSession → promptForAuthMethod (api-key always, oidc if CLI available) → createApiKeySession (name+key prompt) or createOidcSession (CLI auth + interactive team/project). Cancellation throws 'Authentication method required'. Errors propagate to manageAuthentication toast."
 
 [[plan.goals.tasks]]
 id = "audit-auth-flow::trace-oidc-refresh"
 title = "Trace refreshOidcSession() in auth.ts: document token expiry check, refreshOidcToken call, error handling when refresh fails"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:01:44.401555319+00:00"
+completion_log = "refreshOidcSession: if no oidcData returns unchanged. Otherwise calls refreshOidcToken which checks isExpired(expiresAt) with 15min TOKEN_REFRESH_MARGIN. Throws on CLI auth missing or refresh failure. Callers (getSessions, getActiveSession) catch and log, keep old session — no UI."
 
 [[plan.goals.tasks]]
 id = "audit-auth-flow::document-error-surfaces"
 title = "Document where auth errors surface to users: showErrorMessage calls, ERROR_MESSAGES constants, silent vs non-silent getApiKey"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:01:50.625990066+00:00"
+completion_log = "Error surfaces: AUTH_FAILED toast (non-silent getApiKey), API_KEY_NOT_FOUND in chat response, VERCEL_CLI_NOT_LOGGED_IN toast (OIDC), 'Authentication management failed' toast, 'Failed to {action} session' toast (except OIDC errors silenced). Silent paths: getApiKey(true) never shows UI, OIDC refresh failures only logged."
 
 [[plan.goals]]
 id = "friendly-auth-errors"
@@ -180,22 +188,30 @@ id = "error-capture-core"
 [[plan.goals.tasks]]
 id = "error-capture-core::define-types"
 title = "Create src/logger/error-capture.ts with ErrorIndexEntry and ErrorCapture types (ts, chatId, conversationId, errorType, errorMessage, model, eventCount, full request/response/timing/sse)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T21:57:48.843312508+00:00"
+completion_log = "ErrorIndexEntry, ErrorCapture, ErrorCaptureData, ErrorType interfaces defined in error-capture.ts"
 
 [[plan.goals.tasks]]
 id = "error-capture-core::implement-write-error"
 title = "Implement writeError(errorsDir, capture) that writes index.jsonl + {YYYY-MM-DD}/{chatId}.json + {chatId}.sse.jsonl"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T21:57:54.307661945+00:00"
+completion_log = "writeError() writes index.jsonl + {YYYY-MM-DD}/{chatId}.json + {chatId}.sse.jsonl with sanitized paths"
 
 [[plan.goals.tasks]]
 id = "error-capture-core::implement-logger-class"
 title = "Implement ErrorCaptureLogger class with captureError(data, sseBuffer) that builds ErrorCapture and calls writeError"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T21:57:58.885797851+00:00"
+completion_log = "ErrorCaptureLogger class with captureError(data, sseBuffer) — fire-and-forget, builds ErrorCapture and calls writeError"
 
 [[plan.goals.tasks]]
 id = "error-capture-core::add-tests"
 title = "Unit tests for ErrorCaptureLogger: verify index.jsonl append, per-error JSON write, SSE buffer flush"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T21:58:29.339152431+00:00"
+completion_log = "12 unit tests: index.jsonl append, per-error JSON write, SSE buffer flush, error handling, field mapping, summarization. 474/474 pass."
 
 [[plan.goals]]
 id = "sse-buffer-always-on"
