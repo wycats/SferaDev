@@ -1293,7 +1293,7 @@ ulid = "01KGXZDVV4XY1AWAKWKAJZRGMH"
 [[epochs]]
 id = "01kh0qw5jrpj129msr33sdkajj"
 title = "DataPart Persistence & Token Simplification (RFC 00063)"
-status = "active"
+status = "completed"
 ulid = "01KH0QW5JRPJ129MSR33SDKAJJ"
 
 [[epochs.phases]]
@@ -1666,45 +1666,6 @@ rfc = "00063"
 [[epochs.phases.rfcs]]
 id = "00063"
 
-[[epochs.phases]]
-id = "01kh0qwmfa5hbdstkne6g6hdga"
-title = "Prompt Caching Integration (cache_control DataPart)"
-status = "pending"
-kind = "regular"
-ulid = "01KH0QWMFA5HBDSTKNE6G6HDGA"
-
-[[epochs.phases.goals]]
-id = "translate-cache-control"
-label = "Translate cache_control DataParts to Anthropic cache_control on preceding content block"
-status = "pending"
-ulid = "01KH0QYE1J97C7WTDQ2PFN6PT0"
-
-[[epochs.phases.goals]]
-id = "emit-cache-control"
-label = "Emit cache_control breakpoints on outgoing assistant messages"
-status = "pending"
-ulid = "01KH0QYE5RXYQQB1S60EZ2GEEZ"
-
-[[epochs.phases.goals]]
-id = "verify-server-support"
-label = "Verify OpenResponses server supports per-message cache_control passthrough"
-status = "pending"
-ulid = "01KH0QYEBAMYCCA583MCFA55QR"
-
-[[epochs.phases.rfcs]]
-id = "00063"
-
-[[epochs.phases]]
-id = "01kh1nezxqm9s822h5szw3gbk3"
-title = "CI Monitoring for Upstream DataPart Changes"
-status = "pending"
-goals = []
-kind = "regular"
-ulid = "01KH1NEZXQM9S822H5SZW3GBK3"
-
-[[epochs.phases.rfcs]]
-id = "00063"
-
 [[epochs]]
 id = "01kha0khyfas843fhsryyks0s8"
 title = "Interface-First API Alignment (RFC 00066)"
@@ -1759,3 +1720,103 @@ label = "Design ThinkingContentProvider interface (co-design with synthetic-part
 status = "completed"
 completion_log = "ThinkingContentProvider interface designed: thin wrapper formalizing streaming/persistence duality. ThinkingBlock, createStreamingPart/createPersistencePart/recoverFromHistory. 3 implementations mapped (ThinkingPartEmitter, ChatResponseThinkingEmitter, Stable ThinkingPart), 5 consumers, 3-phase adoption."
 ulid = "01KHA0MWDADE22SR9KA122PWQ0"
+
+[[epochs]]
+id = "01khc3fjazww6ghx1gdnsjd3jy"
+title = "Internal Release Readiness"
+status = "active"
+ulid = "01KHC3FJAZWW6GHX1GDNSJD3JY"
+
+[[epochs.phases]]
+id = "01khc3gc5x730gg3sr2w85hd3e"
+title = "Auth & Onboarding"
+status = "active"
+kind = "regular"
+ulid = "01KHC3GC5X730GG3SR2W85HD3E"
+
+[[epochs.phases.goals]]
+id = "audit-auth-flow"
+label = "Audit current auth flow: what happens when key is missing, invalid, or expired? Map all error paths."
+status = "pending"
+ulid = "01KHC3HVNS1VK38HG43652S5R7"
+
+[[epochs.phases.goals]]
+id = "friendly-auth-errors"
+label = "Surface clear, actionable errors when auth fails: missing key → prompt to run Manage Authentication; invalid key → show specific error; expired → guide to refresh"
+status = "pending"
+ulid = "01KHC3J3G424TNCAZEVEH1B6CN"
+
+[[epochs.phases.goals]]
+id = "first-run-experience"
+label = "First-run experience: detect no-auth state on activation, show welcome notification with setup steps"
+status = "pending"
+ulid = "01KHC3J3H0TD4ZXGPHKCQRC39Z"
+
+[[epochs.phases]]
+id = "01khc3gkfxqf829czsgj1xtdtc"
+title = "Error UX & Resilience"
+status = "pending"
+kind = "regular"
+ulid = "01KHC3GKFXQF829CZSGJ1XTDTC"
+
+[[epochs.phases.goals]]
+id = "error-audit"
+label = "Audit all error paths in provider.ts and openresponses-chat.ts: what does the user see when the endpoint is unreachable, returns 500, returns 429 (rate limit), or streams malformed SSE?"
+status = "pending"
+ulid = "01KHC3JJF624NYQ700KDTN1XGP"
+
+[[epochs.phases.goals]]
+id = "user-facing-errors"
+label = "Implement user-friendly error messages with actionable guidance for common failure modes (network, auth, rate limit, model not found)"
+status = "pending"
+ulid = "01KHC3JSMKZBCFX1RNH8M3JMMJ"
+
+[[epochs.phases.goals]]
+id = "retry-resilience"
+label = "Add retry logic for transient failures (network timeouts, 502/503) with exponential backoff"
+status = "pending"
+ulid = "01KHC3JSNFBM6DNAFSASCW0H4D"
+
+[[epochs.phases]]
+id = "01khc3gkgdbgzr4pybs1rakarb"
+title = "Model Discovery & Selection"
+status = "pending"
+kind = "regular"
+ulid = "01KHC3GKGDBGZR4PYBS1RAKARB"
+
+[[epochs.phases.goals]]
+id = "model-list-ux"
+label = "Audit model discovery UX: how does a user know which models are available? Ensure Manage Models command is discoverable and model list is current."
+status = "pending"
+ulid = "01KHC3K3FAVTWDHM0TM3BXKX2R"
+
+[[epochs.phases.goals]]
+id = "default-model-selection"
+label = "Sensible default model selection: pick a good default so users can start chatting immediately after auth"
+status = "pending"
+ulid = "01KHC3K3G6VZMAT9Z3Q6FCHXJP"
+
+[[epochs.phases]]
+id = "01khc3gkgyasf7p25m518w3fxr"
+title = "Distribution & Documentation"
+status = "pending"
+kind = "regular"
+ulid = "01KHC3GKGYASF7P25M518W3FXR"
+
+[[epochs.phases.goals]]
+id = "vsix-distribution"
+label = "VSIX build + internal distribution workflow: document how to build, share, and install the extension for Vercel employees"
+status = "pending"
+ulid = "01KHC3KDNTVWBYFCNTQ8NMCN84"
+
+[[epochs.phases.goals]]
+id = "internal-readme"
+label = "Internal README: setup guide for Vercel employees (where to get API key, install VSIX, configure endpoint, pick models)"
+status = "pending"
+ulid = "01KHC3KDPP6JMZTJBBKKD7KGBF"
+
+[[epochs.phases.goals]]
+id = "changelog-release"
+label = "CHANGELOG update: summarize current capabilities for internal release announcement"
+status = "pending"
+ulid = "01KHC3KDQ8E4DDDKYPTSCA40KT"

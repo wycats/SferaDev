@@ -2,216 +2,42 @@
 # Implementation Plan
 
 [phase]
-id = "01kha0kpfx47pkebr4d2bvm3b0"
+id = "01khc3gc5x730gg3sr2w85hd3e"
 
 [plan]
 
 [[plan.goals]]
-id = "enumerate-proposals"
-
-[[plan.goals.tasks]]
-id = "enumerate-proposals::verify-scanner"
-title = "Verify vscode-api-horizon.ts can run (check .reference/vscode exists or document setup)"
-status = "completed"
-completed_at = "2026-02-12T23:06:20.529420152+00:00"
-completion_log = "Scanner runs successfully. Node 22+ native TS support confirmed. --help output shows all expected flags: --filter, --json, --no-github, --sort."
-
-[[plan.goals.tasks]]
-id = "enumerate-proposals::run-scan"
-title = "Run horizon scanner with --filter for AI-related proposals"
-status = "completed"
-completed_at = "2026-02-12T23:07:17.719582901+00:00"
-completion_log = "Scanned 162 total proposals, identified 31 AI-related. Full JSON at /tmp/full-scan.json. Used --no-github (offline mode) to avoid rate limits. All proposals have readiness scores, version info, exports, consumer data, and git activity."
-
-[[plan.goals.tasks]]
-id = "enumerate-proposals::extract-inventory"
-title = "Extract structured proposal list (name, version, exports, stability signals)"
-status = "completed"
-completed_at = "2026-02-12T23:09:34.924807661+00:00"
-completion_log = "Extracted 31 AI-related proposals from 162 total, organized into 7 themes: Language Model (6), MCP (2), Chat Core (10), Chat Participant (3), Agent (3), AI Editor (5), Contribution Points (2). Structured JSON inventory at /tmp/ai-proposal-inventory.json with readiness scores, versions, exports, consumer data, and git activity."
-
-[[plan.goals.tasks]]
-id = "enumerate-proposals::cross-reference-028"
-title = "Cross-reference with RFC 028 existing inventory to identify gaps"
-status = "completed"
-completed_at = "2026-02-12T23:09:41.825466670+00:00"
-completion_log = "RFC 028 lists 6 proposals, scanner found 31 AI-related. Gap: 25 new proposals not in RFC 028. Biggest gaps: Chat Core (9 new), AI Editor (5 new), Chat Participant (3 new), Agent (2 new), MCP (2 new), Language Model (2 new), Contribution Points (2 new). Highest-scoring new proposals: agentSessionsWorkspace (65), contribChatEditorInlineGutterMenu (65), chatContextProvider (60, 8 commits), chatPromptFiles (60, 4 commits)."
+id = "audit-auth-flow"
 
 [[plan.goals]]
-id = "triage-proposals"
-
-[[plan.goals.tasks]]
-id = "triage-proposals::define-criteria"
-title = "Document triage criteria (adopt soon/design toward/watch) with concrete thresholds"
-status = "completed"
-completed_at = "2026-02-13T06:06:09.595789003+00:00"
-completion_log = "Decision function defined in proposal-priority-model.md: 4 value types (Integration, Correctness, Feature, Streamline), 2 entanglement levels, fragility split, 5 action categories (PREPARE NOW, EXPERIMENTAL, DESIGN AWARENESS, WATCH, IGNORE)"
-
-[[plan.goals.tasks]]
-id = "triage-proposals::map-current-code"
-title = "For each proposal, identify current extension code that relates to it"
-status = "completed"
-completed_at = "2026-02-13T06:06:14.950791533+00:00"
-completion_log = "Deep-read of system-prompt.ts (role=3 hardcode, regex heuristics), synthetic-parts.ts (ThinkingPart runtime probe), stateful-marker.ts (DataPart MIME persistence), transform.ts (capabilities already set), status-bar.ts (1676 lines), counter.ts (token estimation). Mapped in graded inventory rationales."
-
-[[plan.goals.tasks]]
-id = "triage-proposals::assess-maturity"
-title = "Assess each proposal's maturity using horizon scanner signals (readinessScore, milestone, consumers)"
-status = "completed"
-completed_at = "2026-02-13T06:06:20.995667923+00:00"
-completion_log = "Scanner v3 signals assessed for all 31 proposals: readiness scores (40-80), stable-API overlap ratios, version churn, consumer counts, milestone/finalization labels. Manual overrides applied for 5 grab-bag proposals. Data in /tmp/full-scan-v3.json and /tmp/ai-proposal-inventory-v3.json."
-
-[[plan.goals.tasks]]
-id = "triage-proposals::classify-proposals"
-title = "Apply triage classification to each proposal and produce triage table"
-status = "completed"
-completed_at = "2026-02-13T06:06:27.735353906+00:00"
-completion_log = "Full graded inventory in proposal-priority-model.md: 8 PREPARE NOW, 9 EXPERIMENTAL, 5 DESIGN AWARENESS, 7 WATCH, 2 IGNORE. Three corrections applied per user review (languageModelCapabilities, chatStatusItem, toolProgress). V0 tools context applied (chatParticipantAdditions expanded, toolProgress+chatHooks promoted to EXPERIMENTAL)."
+id = "friendly-auth-errors"
 
 [[plan.goals]]
-id = "update-rfc"
-
-[[plan.goals.tasks]]
-id = "update-rfc::add-inventory"
-title = "Add full proposal inventory section to RFC 00066"
-status = "completed"
-completed_at = "2026-02-13T06:08:34.910447178+00:00"
-completion_log = "Added full proposal inventory to RFC 00066: 31 AI proposals across 5 triage categories, with PREPARE NOW detail table (8 proposals with scores, value types, current code mapping, and what changes)."
-
-[[plan.goals.tasks]]
-id = "update-rfc::add-triage-results"
-title = "Add triage results table with classifications to RFC 00066"
-status = "completed"
-completed_at = "2026-02-13T06:08:39.956332821+00:00"
-completion_log = "Added triage results: decision function, summary table (8/9/5/7/2), PREPARE NOW detail table with current code mapping, DESIGN AWARENESS detail table with design signals."
-
-[[plan.goals.tasks]]
-id = "update-rfc::add-design-questions"
-title = "Add interface design questions section for each interface candidate"
-status = "completed"
-completed_at = "2026-02-13T06:08:46.735156938+00:00"
-completion_log = "Revised all 3 interface candidates with expanded scope (new design questions from audit). Added Interface Candidate 4: Tool Rendering Layer (future, v0 tools context). Each candidate now lists multiple proposed APIs and new design questions surfaced by the audit."
-
-[[plan.goals.tasks]]
-id = "update-rfc::promote-stage-1"
-title = "Promote RFC 00066 from stage-0 to stage-1 if ready"
-status = "completed"
-completed_at = "2026-02-13T06:08:51.602976135+00:00"
-completion_log = 'Promoted RFC 00066 from stage-0 to stage-1. Moved file to docs/rfcs/stage-1/. Updated status header to "Stage 1 (Proposal)".'
+id = "first-run-experience"
 
 [[plan.goals]]
-id = "design-identity-interface"
-
-[[plan.goals.tasks]]
-id = "design-identity-interface::audit-workaround"
-title = "Audit stateful-marker.ts: document current behavior, edge cases, limitations"
-status = "completed"
-completed_at = "2026-02-13T06:43:22.540452331+00:00"
-completion_log = 'Full audit of stateful-marker.ts identity workaround complete. Documented: (1) Emission site in stream-adapter.ts:545 — encodes {provider, modelId, sdkMode, sessionId=conversationId, responseId} as DataPart("stateful_marker") on response.completed. (2) Recovery in provider.ts:247-248 — findLatestStatefulMarker scans backward through assistant messages, falls back to randomUUID(). (3) Consumption: conversationId flows to openresponses-chat (prompt_cache_key), status-bar (agentsByConversationId map), persistence/stores (PersistedAgentState, 7-day TTL), investigation logger (directory structure), tree-diagnostics, agent-tree (filtering). Edge cases: first turn gets new UUID (identity unstable until first response), expireAt defined but never set (dead code), relies on undocumented DataPart MIME allowlist, extension ID hardcoded, _modelId param unused in search, no workspace scoping.'
-
-[[plan.goals.tasks]]
-id = "design-identity-interface::audit-proposal"
-title = "Audit identity proposals: agentSessionsWorkspace (80) + chatSessionsProvider (55) — API shapes, stability, workspace vs conversation scope"
-status = "completed"
-completed_at = "2026-02-13T06:45:17.483704040+00:00"
-completion_log = "Audited both identity proposals. (1) agentSessionsWorkspace (readiness 80): Trivial — single boolean `workspace.isAgentSessionsWorkspace`. Only 1 commit. Indicates whether the window is a dedicated agent session workspace. NOT a conversation identity API — it's a workspace-type flag. Enabled by copilot-chat. Relevance to our identity problem: minimal. It tells us IF we're in an agent workspace, not WHO the conversation is. (2) chatSessionsProvider (readiness 55, version 3): Rich API — ChatSessionItemProvider, ChatSessionItemController, ChatSessionContentProvider, ChatSessionItem (with resource URI, label, status, timing, changes, metadata), ChatSession (with history, options, activeResponseCallback, requestHandler). 15+ commits, very active development. Enabled by copilot-chat@v3. This is a FULL session management API — it provides session identity (resource URI), persistence (provider/controller pattern), history access, and session lifecycle. Key shapes: ChatSessionItem.resource (Uri) is the identity, ChatSessionItem.timing has created/lastRequestStarted/lastRequestEnded, ChatSessionItem.metadata is arbitrary JSON. ChatSessionContext in ChatContext gives access to the current session item. This is the real identity replacement — our conversationId maps to ChatSessionItem.resource, our PersistedAgentState maps to ChatSessionItem.metadata."
-
-[[plan.goals.tasks]]
-id = "design-identity-interface::surface-questions"
-title = "Document design questions (first turn, UUID gen, restart stability, workspace vs per-conversation, persistence vs identity-only)"
-status = "completed"
-completed_at = "2026-02-13T06:45:54.692154798+00:00"
-completion_log = "Surfaced 7 design questions: (1) First-turn identity gap — current workaround has unstable identity until first response, chatSessionsProvider provides identity before first turn via ChatSessionItem.resource. (2) Identity type — UUID string vs Uri vs opaque ConversationId. (3) Workspace scoping — current has none, agentSessionsWorkspace is just a boolean, chatSessionsProvider uses Uri. (4) Persistence boundary — should identity include persistence (like chatSessionsProvider metadata) or be separate? (5) Session vs conversation vs request — three identity levels, which does the interface provide? (6) Provider-side vs participant-side — our extension is an LM provider, chatSessionsProvider requires ChatParticipant. Can providers use it? (7) prompt_cache_key coupling — identity currently doubles as cache key, should these be decoupled?"
-
-[[plan.goals.tasks]]
-id = "design-identity-interface::draft-interface"
-title = "Draft ConversationIdentityProvider interface in TypeScript"
-status = "completed"
-completed_at = "2026-02-13T06:47:01.364180170+00:00"
-completion_log = "Drafted ConversationIdentityProvider interface at docs/rfcs/stage-1/00066-identity-interface-draft.ts. Key types: ConversationId (branded string), IdentityResolution (conversationId + source + isNew), ConversationIdentityProvider (resolve method), IdentityMarkerEmitter (workaround-specific marker creation), ConversationIdentityService (composite). Design decisions: (1) string not Uri for testability and common denominator, (2) persistence excluded — orthogonal concern, (3) marker emission separated from resolution, (4) chatSessionsProvider impl would have no markerEmitter, (5) first-turn identity is valid but marked isNew=true. Extensive design notes documenting rationale for each decision."
-
-[[plan.goals.tasks]]
-id = "design-identity-interface::map-implementations"
-title = "Map interface to stateful-marker.ts workaround + agentSessionsWorkspace + chatSessionsProvider APIs"
-status = "completed"
-completed_at = "2026-02-13T06:47:55.252011477+00:00"
-completion_log = "Created implementation map at docs/rfcs/stage-1/00066-identity-implementation-map.md. Maps interface to 3 implementations: (1) StatefulMarkerIdentityProvider — wraps existing findLatestStatefulMarker + encodeStatefulMarker, touches provider.ts:247-248 and stream-adapter.ts:545-556. (2) ChatSessionIdentityProvider — delegates to ChatContext.chatSessionContext.chatSessionItem.resource, requires participant registration (significant architectural change). (3) agentSessionsWorkspace — orthogonal, not an identity provider, just a workspace-type flag. Consumer migration map shows all 7 consumers (provider.ts, openresponses-chat.ts, status-bar.ts, persistence/stores.ts, investigation.ts, tree-diagnostics.ts, agent-tree.ts) work unchanged because ConversationId is a branded string. 3-phase adoption strategy: Extract → Prepare → Switch."
+id = "error-audit"
 
 [[plan.goals]]
-id = "design-token-interface"
-
-[[plan.goals.tasks]]
-id = "design-token-interface::audit-workaround"
-title = "Audit counter.ts and ai-tokenizer usage: document estimation approach, accuracy"
-status = "completed"
-completed_at = "2026-02-13T06:50:55.332220121+00:00"
-completion_log = "Full audit of token counting workaround. TokenCounter class (counter.ts, 583 lines): uses ai-tokenizer with model-family encoding dispatch (o200k_base for OpenAI, claude for Anthropic). Methods: estimateTextTokens (LRU cached), estimateMessageTokens (handles all part types, skips metadata MIMEs), countToolsTokens (GCMP formula: 16 base + 8/tool + content × multiplier), countSystemPromptTokens (text + 28 overhead). Multipliers: 1.1 general, 1.4 Anthropic schema, 1.25 Anthropic tool calls. TokenUsage interface (status-bar.ts:39): {inputTokens, outputTokens, maxInputTokens?, modelId?, contextManagement?, messageCount?}. AgentEntry tracks: inputTokens, outputTokens, lastActualInputTokens, totalOutputTokens, turnCount, estimatedInputTokens, estimatedDeltaTokens, estimationSource. Display logic (display.ts): streaming shows delta-anchored or full estimate; complete shows actuals. Summarization detection: 30% token drop between turns. Token flow: counter.ts estimates pre-flight → openresponses-chat.ts gets API usage → status-bar.ts completeAgent stores actuals → display.ts computes what to show."
-
-[[plan.goals.tasks]]
-id = "design-token-interface::audit-proposal"
-title = "Audit token proposals: ChatResultUsage + promptTokenDetails[] from chatParticipantAdditions — native token widget shape, category breakdowns"
-status = "completed"
-completed_at = "2026-02-13T06:51:19.971984925+00:00"
-completion_log = """Audited token proposals. ChatResultUsage (chatParticipantAdditions): {promptTokens: number, completionTokens: number, promptTokenDetails?: ChatResultPromptTokenDetail[]}. ChatResultPromptTokenDetail: {category: string, label: string, percentageOfPrompt: number}. Reported via ChatResponseStream.usage() — participant-side only. Categories are strings like "System", "Context", "Conversation". Our TokenUsage maps: inputTokens→promptTokens, outputTokens→completionTokens. NEW capability: promptTokenDetails provides category breakdown (system prompt, context, conversation) as percentages. Our counter.ts already computes these separately (countSystemPromptTokens, countToolsTokens, estimateMessageTokens) but doesn't expose them as a unified breakdown. languageModelCapabilities has no token-related types (only supportsToolCalling, supportsImageToText, editToolsHint). Key gap: ChatResultUsage is participant-side (ChatResponseStream), not provider-side. We'd need participant registration to use it natively."""
-
-[[plan.goals.tasks]]
-id = "design-token-interface::surface-questions"
-title = "Document design questions (per-message vs context, streaming, delta composition, ChatResultUsage shape alignment, promptTokenDetails categories)"
-status = "completed"
-completed_at = "2026-02-13T06:51:45.094765493+00:00"
-completion_log = "Surfaced 7 design questions: (1) Estimation vs actuals — interface should cover both phases or just actuals? (2) Category breakdown shape — percentages (ChatResultUsage) vs absolute counts (our counter.ts). (3) Streaming vs complete — support streaming updates or just final? (4) Delta estimation — include estimatedDeltaTokens or treat as impl detail? (5) Provider-side vs participant-side — push (reporter) vs pull (provider) model. (6) Tool schema tokens — first-class concept or just a category? (7) maxInputTokens — part of token interface or model metadata?"
-
-[[plan.goals.tasks]]
-id = "design-token-interface::draft-interface"
-title = "Draft TokenCountProvider interface in TypeScript"
-status = "completed"
-completed_at = "2026-02-13T06:52:44.308069174+00:00"
-completion_log = "Drafted TokenCountProvider interface at docs/rfcs/stage-1/00066-token-interface-draft.ts. Key types: TokenUsageReport (promptTokens + completionTokens + promptBreakdown), TokenCategoryDetail (category + label + absolute tokens), TokenEstimate (total + isAnchored + breakdown). Two provider interfaces: TokenEstimator (pre-flight estimation from messages) and TokenUsageReporter (post-response actuals from API). TokenCountService composite. Design decisions: absolute counts not percentages, separate estimator/reporter, maxInputTokens excluded (model metadata), delta estimation abstracted via isAnchored flag."
-
-[[plan.goals.tasks]]
-id = "design-token-interface::map-implementations"
-title = "Map interface to counter.ts + usage-tracker.ts workarounds + ChatResultUsage/promptTokenDetails API"
-status = "completed"
-completed_at = "2026-02-13T06:53:33.212528983+00:00"
-completion_log = "Created token implementation map at docs/rfcs/stage-1/00066-token-implementation-map.md. Maps: AiTokenizerEstimator wraps TokenCounter (counter.ts) with 3 categories (System, Tools, Conversation). OpenResponsesUsageReporter wraps API Usage → TokenUsageReport with derived breakdown from estimate proportions. ChatResultUsageReporter (future) converts ChatResultUsage percentages to absolute counts. Consumer migration: 6 consumers, main cost is field renaming (inputTokens→promptTokens, outputTokens→completionTokens). 3-phase adoption: Extract → Add breakdown → Switch to native ChatResultUsage."
+id = "user-facing-errors"
 
 [[plan.goals]]
-id = "design-thinking-interface"
+id = "retry-resilience"
 
-[[plan.goals.tasks]]
-id = "design-thinking-interface::audit-workaround"
-title = "Audit synthetic-parts.ts and ThinkingData: document current DataPart approach"
-status = "completed"
-completed_at = "2026-02-13T06:55:17.193305802+00:00"
-completion_log = """Full audit of thinking workaround. Two layers: (1) Provider-side: stream-adapter.ts emits LanguageModelThinkingPart (proposed API, available at runtime without enabledApiProposals) during reasoning deltas. Buffers 20+ chars before flushing. On reasoning done, emits DataPart('thinking') with ThinkingDataContainer for persistence. (2) Synthetic parts: synthetic-parts.ts defines ThinkingPart {kind: "thinking", content, id?}, converts to LanguageModelThinkingPart when available, falls back to TextPart. Runtime detection via VSCodeThinkingPart = vscode.LanguageModelThinkingPart. (3) Persistence: ThinkingData {id, text, metadata?, tokens?} encoded as ThinkingDataContainer {type: "thinking", thinking: ThinkingData} in DataPart. Survives round-trips via undocumented MIME allowlist. findThinkingData() recovers from message history. (4) Token counting: isMetadataMime() excludes thinking DataParts from token estimation."""
+[[plan.goals]]
+id = "model-list-ux"
 
-[[plan.goals.tasks]]
-id = "design-thinking-interface::audit-proposal"
-title = "Audit thinking proposals: languageModelThinkingPart (provider-side) + ChatResponseThinkingProgressPart/ThinkingDelta (participant-side)"
-status = "completed"
-completed_at = "2026-02-13T06:55:37.889139129+00:00"
-completion_log = "Audited thinking proposals. (1) languageModelThinkingPart (version 1, provider-side): LanguageModelThinkingPart class {value: string|string[], id?: string, metadata?: Record}. Added to LanguageModelChatResponse.stream union. Also adds LanguageModelChatMessage2 with ThinkingPart in content array. This is what we ALREADY USE at runtime — the class exists on vscode namespace without enabledApiProposals. Our stream-adapter.ts creates instances directly. Key: this is the provider-side API for emitting thinking content. (2) chatParticipantAdditions (participant-side): ChatResponseThinkingProgressPart class {value: string|string[], id?, metadata?, task?} — wraps LanguageModelThinkingPart with a task callback for streaming. ThinkingDelta type = {text?, id, metadata?} | {text?, id?, metadata} | {text, id?, metadata?} — union requiring at least one of text/id/metadata. ChatResponseStream.thinkingProgress(thinkingDelta) — participant-side streaming method. Key difference: provider-side emits LanguageModelThinkingPart directly in the response stream; participant-side wraps it in ChatResponseThinkingProgressPart with a task callback pattern. Our extension uses provider-side (correct for LM provider)."
+[[plan.goals]]
+id = "default-model-selection"
 
-[[plan.goals.tasks]]
-id = "design-thinking-interface::surface-questions"
-title = "Document design questions (streaming vs complete, opt-in, token counting interaction, provider-side vs participant-side rendering)"
-status = "completed"
-completed_at = "2026-02-13T06:56:21.120585194+00:00"
-completion_log = "Surfaced 6 design questions: (1) Already using proposal API — LanguageModelThinkingPart exists at runtime, is there a workaround to abstract? (2) Streaming vs persistence duality — ThinkingPart for streaming, DataPart('thinking') for persistence. (3) Buffering strategy — 20-char threshold, interface-level or impl detail? (4) Provider-side vs participant-side rendering — LanguageModelThinkingPart vs ChatResponseThinkingProgressPart. (5) Thinking token counting — excluded from estimation but real tokens, expose separately? (6) Opt-in thinking — capability detection for models that support it."
+[[plan.goals]]
+id = "vsix-distribution"
 
-[[plan.goals.tasks]]
-id = "design-thinking-interface::draft-interface"
-title = "Draft ThinkingContentProvider interface in TypeScript"
-status = "completed"
-completed_at = "2026-02-13T06:57:38.811484936+00:00"
-completion_log = "Drafted ThinkingContentProvider interface at docs/rfcs/stage-1/00066-thinking-interface-draft.ts. Key types: ThinkingBlock {id, text, metadata?, tokens?}. ThinkingContentProvider with: isSupported (runtime detection), createStreamingPart (LanguageModelThinkingPart), createPersistencePart (DataPart encoding, returns undefined when native persistence available), recoverFromHistory (scan message history). Thinner than identity/tokens because we already use the proposed API directly. Main value: formalizes streaming/persistence duality and prepares for stable API transition."
+[[plan.goals]]
+id = "internal-readme"
 
-[[plan.goals.tasks]]
-id = "design-thinking-interface::map-implementations"
-title = "Map interface to synthetic-parts.ts workaround + languageModelThinkingPart + ChatResponseThinkingProgressPart APIs"
-status = "completed"
-completed_at = "2026-02-13T06:58:46.977643614+00:00"
-completion_log = "Created thinking implementation map at docs/rfcs/stage-1/00066-thinking-implementation-map.md. Maps 3 implementations: (1) ThinkingPartEmitter (current) — dual emission: LanguageModelThinkingPart for streaming + DataPart('thinking') for persistence. Touches stream-adapter.ts, synthetic-parts.ts, stateful-marker.ts. (2) ChatResponseThinkingEmitter (future participant-side) — uses ChatResponseStream.thinkingProgress() with ThinkingDelta. (3) Stable ThinkingPart (future) — no casts, no DataPart hack, native persistence. 5 consumers mapped. 3-phase adoption: Extract → Simplify when stable → Optional participant-side."
+[[plan.goals]]
+id = "changelog-release"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
