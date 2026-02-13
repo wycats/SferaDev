@@ -113,6 +113,50 @@ export async function activate(context: vscode.ExtensionContext) {
 
   stubProvider.setRealProvider(provider);
 
+  // First-run experience: detect no-auth and show welcome notification
+  void (async () => {
+    try {
+      const WELCOME_SHOWN_KEY = "vercel.ai.welcomeShown";
+      const alreadyShown = context.globalState.get<boolean>(WELCOME_SHOWN_KEY);
+      if (alreadyShown) {
+        return;
+      }
+
+      const envApiKey =
+        process.env["VERCEL_API_KEY"] ?? process.env["OPENRESPONSES_API_KEY"];
+      if (envApiKey) {
+        await context.globalState.update(WELCOME_SHOWN_KEY, true);
+        return;
+      }
+
+      const sessions = await authProvider.getSessions();
+      if (sessions.length > 0) {
+        await context.globalState.update(WELCOME_SHOWN_KEY, true);
+        return;
+      }
+
+      const { getVercelCliTokenFromStorage } = await import("./vercel-auth");
+      const cliToken = getVercelCliTokenFromStorage();
+      if (cliToken) {
+        await context.globalState.update(WELCOME_SHOWN_KEY, true);
+        return;
+      }
+
+      const selection = await vscode.window.showInformationMessage(
+        "Welcome to Vercel AI Gateway! Set up authentication to start using AI models in VS Code.",
+        "Set Up Authentication",
+      );
+
+      if (selection === "Set Up Authentication") {
+        void vscode.commands.executeCommand(`${EXTENSION_ID}.manage`);
+      }
+
+      await context.globalState.update(WELCOME_SHOWN_KEY, true);
+    } catch (err) {
+      logger.warn(`[FirstRun] Error checking first-run state: ${String(err)}`);
+    }
+  })();
+
   // Register the chat participant (allows @vercel mentions in chat)
   const chatParticipant = vscode.chat.createChatParticipant(
     "vercel.ai.chat",

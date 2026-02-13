@@ -1786,7 +1786,8 @@ ulid = "01KHC3J3G424TNCAZEVEH1B6CN"
 [[epochs.phases.goals]]
 id = "export-error-logs"
 label = "Export Error Logs command: zip up globalStorageUri/errors/ into a timestamped archive and open a save dialog, so users can send error logs for triage"
-status = "pending"
+status = "completed"
+completion_log = "Commit 0a37843. Export Error Logs command with tar.gz archive, save dialog, empty state handling. 480/480 tests pass."
 ulid = "01KHC7QX92HR3RR3JA83TT45SD"
 
 [[epochs.phases.goals]]

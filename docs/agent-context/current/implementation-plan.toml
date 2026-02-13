@@ -74,22 +74,30 @@ id = "first-run-experience"
 [[plan.goals.tasks]]
 id = "first-run-experience::detect-no-auth"
 title = "In extension.ts after provider creation, check if getApiKey(true) returns undefined AND no sessions exist"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:56:56.188801786+00:00"
+completion_log = "Added first-run auth check on activation using env var, sessions, and CLI token."
 
 [[plan.goals.tasks]]
 id = "first-run-experience::show-welcome-notification"
 title = "When no-auth detected, show showInformationMessage with welcome text and Set Up Authentication button"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:56:56.213349021+00:00"
+completion_log = "Show welcome info message when no auth configured."
 
 [[plan.goals.tasks]]
 id = "first-run-experience::track-first-run"
 title = "Use context.globalState to track vercel.ai.welcomeShown so notification only appears once per profile"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:56:56.228676705+00:00"
+completion_log = "Persist welcome shown flag in globalState."
 
 [[plan.goals.tasks]]
 id = "first-run-experience::wire-setup-button"
 title = "Button click runs vercel.ai.manageAuthentication command to start auth flow"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:56:56.243340579+00:00"
+completion_log = "Wire Set Up Authentication button to vercel.ai.manage command."
 
 [[plan.goals]]
 id = "error-audit"
@@ -183,22 +191,30 @@ id = "export-error-logs"
 [[plan.goals.tasks]]
 id = "export-error-logs::implement-zip"
 title = "Create src/logger/error-export.ts with createErrorLogsArchive(errorsDir): Promise<Buffer> using built-in zlib"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:54:51.796981018+00:00"
+completion_log = "createErrorLogsArchive() with minimal tar + gzip in error-export.ts"
 
 [[plan.goals.tasks]]
 id = "export-error-logs::register-command"
 title = "Register vercel.ai.exportErrorLogs command that calls createErrorLogsArchive and opens showSaveDialog"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:54:57.372735751+00:00"
+completion_log = "vercel.ai.exportErrorLogs command registered in extension.ts with save dialog"
 
 [[plan.goals.tasks]]
 id = "export-error-logs::add-to-package-json"
 title = "Add vercel.ai.exportErrorLogs to package.json contributes.commands with title Export Error Logs"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:55:02.894080103+00:00"
+completion_log = "Added vercel.ai.exportErrorLogs to package.json contributes.commands"
 
 [[plan.goals.tasks]]
 id = "export-error-logs::handle-empty-state"
 title = "Show informational message if errors/ directory is empty or does not exist"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:55:08.135260002+00:00"
+completion_log = "ErrorExportEmpty class thrown when no files, caught in command handler with informational message"
 
 [[plan.goals]]
 id = "error-capture-core"
