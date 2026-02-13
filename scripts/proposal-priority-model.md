@@ -114,7 +114,7 @@ issues, or are landing soon enough that we should be ready.
 | 72 | **languageModelSystem** | Correctness (fragile) | We hardcode `role=3` and run regex heuristics to detect disguised system prompts in `system-prompt.ts`. The fallback (`extractDisguisedSystemPrompt`) pattern-matches on "You are a" etc. — fragile and wrong for non-English prompts. Stable System role eliminates all of this. |
 | 72 | **languageModelCapabilities** | Streamline | Adds `capabilities: { supportsToolCalling, supportsImageToText, editToolsHint }` to consumer-side `LanguageModelChat`. On the provider side, our `transform.ts` already sets `imageInput`/`toolCalling` and the runtime accepts them — this is types catching up to reality, not a fragile hack. Main new value: `editToolsHint` lets consumers know which edit tools our models prefer. Low urgency but near-term timeline. |
 | 60 | **languageModelThinkingPart** | Integration + Correctness (fragile) | We probe for `LanguageModelThinkingPart` at runtime via `VSCodeThinkingPart` in `synthetic-parts.ts` and use module augmentation in `vscode-thinking.d.ts`. Works today but relies on undocumented runtime availability without `enabledApiProposals`. Stable API = native thinking display in chat UI for free. |
-| 55 | **chatParticipantAdditions** | Integration | Contains `ChatResultUsage` (`promptTokens`, `completionTokens`, `promptTokenDetails[]`) — this is how token counts show up in VS Code's native token widget. We already track tokens in our custom status bar; wiring up `ChatResultUsage` would make them visible in the standard UI too. Also contains `ChatToolInvocationPart` for native tool-call rendering. |
+| 55 | **chatParticipantAdditions** | Integration | 1060-line grab bag (v3, copilot-chat@3) containing several independently significant feature clusters: **Token reporting** — `ChatResultUsage` with `promptTokenDetails[]` category breakdowns powers the native token widget. **Tool rendering pipeline** — `ChatToolInvocationPart` + `beginToolInvocation()`/`updateToolInvocation()` streaming, plus specialized renderers: `ChatTerminalToolInvocationData` (terminal command UI with output/exit code), `ChatTodoToolInvocationData` (checkbox todo lists), `ChatSubagentToolInvocationData` (collapsible subagent cards), `ChatSimpleToolResultData` (input/output collapsibles), `ChatToolResourcesInvocationData` (file lists). **Interactive UI** — `ChatResponseQuestionCarouselPart` (single/multi-select questions inline), `ChatResponseConfirmationPart` (accept/reject dialogs). **Edit application** — `ChatResponseTextEditPart`, `ChatResponseMultiDiffPart` (inline diff viewer), `ChatResponseExternalEditPart`. This is the entire native rendering layer for tool-based interactions — critical if porting v0 tools to VS Code `LanguageModelTool` instances. |
 | 55 | **chatStatusItem** | Integration | `window.createChatStatusItem()` — a small status widget *inside the chat panel* (title + description + detail). Complementary to our status bar, not a replacement — our 1,676-line `status-bar.ts` does far more (agent hierarchy, subagent tracking, context management, token breakdowns). Value: surface a summary line where users are actually looking (the chat view). |
 | 60 | **mcpToolDefinitions** | Feature (orthogonal) | Has Feb 2026 milestone. Static MCP tool manifests let us declare tools without starting servers. Orthogonal to core provider — can adopt independently. |
 | 65 | **mcpServerDefinitions** | Feature (orthogonal) | `McpGateway` + `lm.startMcpGateway` — register MCP servers programmatically. Pairs with mcpToolDefinitions. We could expose Vercel AI Gateway as an MCP server. |
@@ -133,6 +133,8 @@ Orthogonal features at mid-term timeline. Prototype behind a flag.
 | 60 | **contribLanguageModelToolSets** | Feature (orthogonal) | Contribution point for tool sets. Package.json declarative tool registration. |
 | 60 | **chatTab** | Feature (orthogonal) | `TabInputChat` — programmatic access to chat tabs. Could enable "open chat with Vercel AI" commands. |
 | 55 | **remoteCodingAgents** | Feature (orthogonal) | Remote agent infrastructure. Could position Vercel AI as a remote coding agent provider. No exports yet (score 55), but strategically interesting. |
+| 60 | **toolProgress** | Feature (orthogonal) | `ToolProgressStep` adds progress bars (message + increment) inside tool invocation UI. Zero consumers today (not even copilot-chat), no version tag. But if we register v0 tools as `LanguageModelTool` instances, this is how they'd report incremental progress ("Deploying... 40%"). The tool invocation UI from chatParticipantAdditions already covers non-progress-bar messaging via `invocationMessage`/`pastTenseMessage`; this adds the discrete progress bar specifically. |
+| 60 | **chatHooks** | Feature (orthogonal) | Shell command hooks at chat lifecycle points: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PreCompact`, `SubagentStart`, `SubagentStop`, `Stop`. Version 6, copilot-chat@6 = actively iterated. If v0 tools run shell commands or modify state, `PreToolUse`/`PostToolUse` hooks provide a user-configurable safety/governance layer. `ChatResponseHookPart` renders hook results (including `stopReason` for blocking) in the stream. |
 
 ### DESIGN AWARENESS
 
@@ -158,10 +160,8 @@ Track in scanner output, revisit next quarter.
 | 65 | **contribChatEditorInlineGutterMenu** | Streamline | Contribution point for inline gutter menu in chat editor. UI chrome, not core. |
 | 65 | **aiTextSearchProvider** | Feature (orthogonal) | AI-powered text search. Interesting but not aligned with our value prop (LM provider, not search). |
 | 60 | **aiSettingsSearch** | Feature (orthogonal) | AI-powered settings search. Same — search, not our lane. |
-| 60 | **chatHooks** | Feature (orthogonal) | Shell command hooks at chat lifecycle points (SessionStart, PreToolUse, etc.). Interesting for power users but niche. |
 | 60 | **languageModelProxy** | Streamline | `getModelProxy()` — proxy to Copilot's model endpoint. We provide our own models, so this is irrelevant (we'd be the proxy target, not the consumer). |
-| 60 | **toolProgress** | N/A (irrelevant) | `ToolProgressStep` adds progress bars inside tool invocation UI. We're a *provider*, not a tool implementor — we don't register `LanguageModelTool` instances. Tool progress is rendered by VS Code's chat UI for tools that *other* extensions register. |
-| 51 | **chatOutputRenderer** | Feature (orthogonal) | Custom output renderers for tool results. Could be useful eventually but 3 TODOs and no consumers. |
+| 51 | **chatOutputRenderer** | Feature (orthogonal) | Custom webview renderers for tool result MIME types via `registerChatOutputRenderer()`. If v0 tools produce rich output (deployment dashboards, preview screenshots, etc.), this is how they'd render natively instead of as plain text. Still has 3 TODOs, zero consumers, and long-term horizon — genuinely early. But worth watching given v0 tools roadmap. |
 
 ### IGNORE
 
@@ -178,8 +178,8 @@ Not worth attention at current timeline.
 
 | Action | Count | Key items |
 |--------|-------|-----------|
-| **PREPARE NOW** | 8 | languageModelSystem, languageModelCapabilities, languageModelThinkingPart, chatParticipantAdditions (token widget), chatStatusItem, codeActionAI, MCP pair |
-| **EXPERIMENTAL** | 7 | chatProvider, chatContextProvider, chatPromptFiles, chatTab, remoteCodingAgents |
+| **PREPARE NOW** | 8 | languageModelSystem, languageModelCapabilities, languageModelThinkingPart, chatParticipantAdditions (tool rendering + token widget), chatStatusItem, codeActionAI, MCP pair |
+| **EXPERIMENTAL** | 9 | chatProvider, chatContextProvider, chatPromptFiles, chatTab, remoteCodingAgents, toolProgress, chatHooks, contribLanguageModelToolSets, languageModelToolSupportsModel |
 | **DESIGN AWARENESS** | 5 | agentSessionsWorkspace, chatSessionsProvider, chatParticipantPrivate, defaultChatParticipant, languageModelToolResultAudience |
-| **WATCH** | 9 | chatReferenceBinaryData, chatHooks, languageModelProxy, toolProgress, etc. |
+| **WATCH** | 7 | chatReferenceBinaryData, chatReferenceDiagnostic, contribChatEditorInlineGutterMenu, aiTextSearchProvider, aiSettingsSearch, languageModelProxy, chatOutputRenderer |
 | **IGNORE** | 2 | inlineCompletionsAdditions, aiRelatedInformation |
