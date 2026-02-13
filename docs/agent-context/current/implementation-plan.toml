@@ -203,17 +203,23 @@ id = "sse-buffer-always-on"
 [[plan.goals.tasks]]
 id = "sse-buffer-always-on::create-recorder-at-all-levels"
 title = "In InvestigationRequestHandle constructor, create SSERecorderImpl for all detail levels except off, not just full"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T19:53:27.122800787+00:00"
+completion_log = "SSE recorder now created at all non-off detail levels"
 
 [[plan.goals.tasks]]
 id = "sse-buffer-always-on::skip-disk-write-below-full"
 title = "Keep guard in flush() that only writes SSE to disk at full detail level — buffer exists but only persists at full"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T19:53:27.146764251+00:00"
+completion_log = "No-op: guard already exists at investigation.ts:587"
 
 [[plan.goals.tasks]]
 id = "sse-buffer-always-on::add-getbuffer-method"
 title = "Add getBuffer(): readonly SSEEventEntry[] method to InvestigationRequestHandle returning sseRecorder?.getEvents() ?? []"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T19:53:27.160848172+00:00"
+completion_log = "Added getEvents() method to InvestigationRequestHandle"
 
 [[plan.goals]]
 id = "error-capture-prune"

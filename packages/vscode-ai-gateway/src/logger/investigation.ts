@@ -413,9 +413,14 @@ export class InvestigationRequestHandle {
     this.sseRecorder = sseRecorder;
   }
 
-  /** The SSE recorder for this request, or null if detail < full. */
+  /** The SSE recorder for this request (always present at non-off detail levels). */
   get recorder(): InvestigationSSERecorder | null {
     return this.sseRecorder;
+  }
+
+  /** Get buffered SSE events for error capture. Returns empty array if no recorder. */
+  getEvents(): readonly SSEEventEntry[] {
+    return this.sseRecorder?.getEvents() ?? [];
   }
 
   /**
@@ -627,8 +632,10 @@ export class InvestigationLogger {
     const investigationName =
       config.get<string>("investigation.name") ?? "default";
     const requestStartMs = performance.now();
-    const sseRecorder =
-      detail === "full" ? new SSERecorderImpl(requestStartMs) : null;
+    // Always create SSE recorder (at all non-off levels) so error capture
+    // can flush buffered events on failure, even at index/messages detail.
+    // Disk writes are still gated by detail === "full" in complete().
+    const sseRecorder = new SSERecorderImpl(requestStartMs);
 
     return new InvestigationRequestHandle(
       data,

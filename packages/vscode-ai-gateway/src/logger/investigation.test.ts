@@ -199,10 +199,27 @@ describe("InvestigationLogger", () => {
       mockConfig("default", "index");
     });
 
-    it("startRequest returns handle with null recorder (no SSE at index level)", () => {
+    it("startRequest returns handle with SSE recorder at index level", () => {
       const handle = investigationLogger.startRequest(makeStartData());
       assertHandle(handle);
-      expect(handle.recorder).toBeNull();
+      expect(handle.recorder).not.toBeNull();
+    });
+
+    it("getEvents returns empty array when no events recorded", () => {
+      const handle = investigationLogger.startRequest(makeStartData());
+      assertHandle(handle);
+      expect(handle.getEvents()).toEqual([]);
+    });
+
+    it("getEvents returns buffered events at index level", () => {
+      const handle = investigationLogger.startRequest(makeStartData());
+      assertHandle(handle);
+      handle.recorder!.recordEvent(1, "response.created", { id: "r-1" });
+      handle.recorder!.recordEvent(2, "response.completed", { id: "r-1" });
+      const events = handle.getEvents();
+      expect(events).toHaveLength(2);
+      expect(events[0]!.type).toBe("response.created");
+      expect(events[1]!.type).toBe("response.completed");
     });
 
     it("writes only index.jsonl", async () => {
