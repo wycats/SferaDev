@@ -42,6 +42,26 @@ import { InvestigationLogger } from "../logger/investigation.js";
 import { findLatestStatefulMarker } from "../utils/stateful-marker.js";
 import { decodeVsCodeModelId } from "../models/vscode-model-id";
 
+/** Diagnostic state captured when stream completes with no content parts. */
+interface NoResponseDiagnostic {
+  chatId: string;
+  conversationId: string;
+  model: string;
+  isSummarization: boolean;
+  eventCount: number;
+  textPartCount: number;
+  toolCallCount: number;
+  eventTypeCounts: Record<string, number>;
+  accumulatedTextLength: number;
+  responseId: string | undefined;
+  finishReason: string | undefined;
+  streamError: string | undefined;
+  streamCancelled: boolean | undefined;
+  timeToFirstTokenMs: number | null;
+  totalDurationMs: number;
+  resultState: string;
+}
+
 /**
  * Options for the OpenResponses chat implementation
  */
@@ -573,8 +593,26 @@ export async function executeOpenResponsesChat(
 
     // Safety check: emit something if no response was sent
     if (!responseSent && !result.cancelled) {
+      const diagnostic: NoResponseDiagnostic = {
+        chatId,
+        conversationId: chatOptions.conversationId,
+        model: model.id,
+        isSummarization: isSummarizationRequest,
+        eventCount,
+        textPartCount,
+        toolCallCount,
+        eventTypeCounts: Object.fromEntries(eventTypeCounts),
+        accumulatedTextLength: accumulatedText.length,
+        responseId: adapter.getResponseId(),
+        finishReason: result.finishReason,
+        streamError: result.error,
+        streamCancelled: result.cancelled,
+        timeToFirstTokenMs: timeToFirstToken,
+        totalDurationMs: performance.now() - requestStartTime,
+        resultState: JSON.stringify(result),
+      };
       logger.error(
-        `[OpenResponses] Stream completed with no content for chat ${chatId}`,
+        `[NoResponse] Stream completed with no content:\n${JSON.stringify(diagnostic, null, 2)}`,
       );
       progress.report(
         new LanguageModelTextPart(

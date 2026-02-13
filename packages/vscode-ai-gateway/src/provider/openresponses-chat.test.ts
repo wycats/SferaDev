@@ -7,6 +7,8 @@ const hoisted = vi.hoisted(() => {
   class MockStreamAdapter {
     adapt = adaptMock;
     reset = vi.fn();
+    getResponseId = vi.fn(() => undefined);
+    getModel = vi.fn(() => undefined);
   }
 
   // Investigation logger mock — configurable per test
@@ -83,6 +85,7 @@ vi.mock("../utils/stateful-marker.js", () => ({
 }));
 
 import { LanguageModelTextPart } from "vscode";
+import { logger } from "../logger.js";
 import {
   detectSummarizationRequest,
   executeOpenResponsesChat,
@@ -281,6 +284,39 @@ describe("executeOpenResponsesChat terminal completion", () => {
     expect(progress.report).toHaveBeenCalledTimes(1);
     expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
     expect(statusBar.completeAgent).not.toHaveBeenCalled();
+  });
+
+  it("logs a diagnostic on no-content response", async () => {
+    const statusBar = {
+      updateAgentActivity: vi.fn(),
+      completeAgent: vi.fn(),
+      errorAgent: vi.fn(),
+    };
+
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: createEmptyStream,
+    });
+
+    await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      {
+        ...baseChatOptions,
+        statusBar,
+      } as never,
+    );
+
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    const logMessage = (logger.error as unknown as { mock: { calls: string[][] } })
+      .mock.calls[0]?.[0];
+    expect(logMessage).toContain("[NoResponse]");
+    expect(logMessage).toContain("\"chatId\": \"chat-1\"");
+    expect(logMessage).toContain("\"conversationId\": \"test-conv-id\"");
+    expect(logMessage).toContain("\"eventCount\": 0");
+    expect(logMessage).toContain("\"textPartCount\": 0");
   });
 });
 

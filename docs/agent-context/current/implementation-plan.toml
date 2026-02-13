@@ -9,11 +9,71 @@ id = "01khc3gc5x730gg3sr2w85hd3e"
 [[plan.goals]]
 id = "audit-auth-flow"
 
+[[plan.goals.tasks]]
+id = "audit-auth-flow::trace-getapikey-paths"
+title = "Trace getApiKey() in provider.ts: document env var check, getSession() call, CLI token fallback, and error handling"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "audit-auth-flow::trace-session-creation"
+title = "Trace createSession() in auth.ts: document promptForAuthMethod, createApiKeySession vs createOidcSession paths, error propagation"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "audit-auth-flow::trace-oidc-refresh"
+title = "Trace refreshOidcSession() in auth.ts: document token expiry check, refreshOidcToken call, error handling when refresh fails"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "audit-auth-flow::document-error-surfaces"
+title = "Document where auth errors surface to users: showErrorMessage calls, ERROR_MESSAGES constants, silent vs non-silent getApiKey"
+status = "pending"
+
 [[plan.goals]]
 id = "friendly-auth-errors"
 
+[[plan.goals.tasks]]
+id = "friendly-auth-errors::add-error-message-constants"
+title = "Add AUTH_KEY_MISSING, AUTH_KEY_INVALID, AUTH_KEY_EXPIRED constants with actionable guidance text"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "friendly-auth-errors::detect-error-type"
+title = "In getApiKey() catch block, detect error type from message/code and show appropriate error constant"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "friendly-auth-errors::add-manage-auth-button"
+title = "For AUTH_KEY_MISSING, use showErrorMessage with Manage Authentication button that runs vercel.ai.manageAuthentication"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "friendly-auth-errors::handle-api-401-errors"
+title = "In openresponses-chat.ts API error catch, detect 401 status and show AUTH_KEY_INVALID or AUTH_KEY_EXPIRED"
+status = "pending"
+
 [[plan.goals]]
 id = "first-run-experience"
+
+[[plan.goals.tasks]]
+id = "first-run-experience::detect-no-auth"
+title = "In extension.ts after provider creation, check if getApiKey(true) returns undefined AND no sessions exist"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "first-run-experience::show-welcome-notification"
+title = "When no-auth detected, show showInformationMessage with welcome text and Set Up Authentication button"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "first-run-experience::track-first-run"
+title = "Use context.globalState to track vercel.ai.welcomeShown so notification only appears once per profile"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "first-run-experience::wire-setup-button"
+title = "Button click runs vercel.ai.manageAuthentication command to start auth flow"
+status = "pending"
 
 [[plan.goals]]
 id = "error-audit"
@@ -38,6 +98,145 @@ id = "internal-readme"
 
 [[plan.goals]]
 id = "changelog-release"
+
+[[plan.goals]]
+id = "diagnose-no-response"
+
+[[plan.goals.tasks]]
+id = "diagnose-no-response::define-stream-state-type"
+title = "Define StreamDiagnosticState type: eventTypeCounts, eventCount, textPartCount, toolCallCount, accumulatedText length, adapter state (responseId, finishReason), timing"
+status = "completed"
+completed_at = "2026-02-13T19:45:07.683426740+00:00"
+completion_log = "Added NoResponseDiagnostic interface to capture no-content stream diagnostics."
+
+[[plan.goals.tasks]]
+id = "diagnose-no-response::capture-state-at-safety-check"
+title = "At line 574 safety check, build StreamDiagnosticState from existing variables and log structured JSON via logger.error with [NoResponse] prefix"
+status = "completed"
+completed_at = "2026-02-13T19:45:09.469558503+00:00"
+completion_log = "Replaced no-content error log with structured [NoResponse] diagnostic JSON at the safety check."
+
+[[plan.goals.tasks]]
+id = "diagnose-no-response::test-diagnostic-output"
+title = "Add unit test verifying StreamDiagnosticState is logged when responseSent=false and result.cancelled=false"
+status = "completed"
+completed_at = "2026-02-13T19:45:11.069016718+00:00"
+completion_log = "Added unit test asserting [NoResponse] diagnostic log for no-content response."
+
+[[plan.goals]]
+id = "wire-error-capture"
+
+[[plan.goals.tasks]]
+id = "wire-error-capture::pass-context-to-chat"
+title = "Add ExtensionContext to OpenResponsesChatOptions and pass from provider.ts provideLanguageModelChatResponse"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "wire-error-capture::capture-at-no-response"
+title = "At safety check, call ErrorCaptureLogger.captureError with errorType=no-response, include investigationHandle.getBuffer() for SSE"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "wire-error-capture::capture-at-timeout"
+title = "At timeout block, call ErrorCaptureLogger.captureError with errorType=timeout, include SSE buffer"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "wire-error-capture::capture-at-api-error"
+title = "At API error catch, call ErrorCaptureLogger.captureError with errorType=api-error, include SSE buffer and parsed error details"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "wire-error-capture::fix-investigation-complete-gap"
+title = "Add investigationHandle.complete() with status=error at the no-response safety check path (currently only called inside stream loop)"
+status = "pending"
+
+[[plan.goals]]
+id = "export-error-logs"
+
+[[plan.goals.tasks]]
+id = "export-error-logs::implement-zip"
+title = "Create src/logger/error-export.ts with createErrorLogsArchive(errorsDir): Promise<Buffer> using built-in zlib"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "export-error-logs::register-command"
+title = "Register vercel.ai.exportErrorLogs command that calls createErrorLogsArchive and opens showSaveDialog"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "export-error-logs::add-to-package-json"
+title = "Add vercel.ai.exportErrorLogs to package.json contributes.commands with title Export Error Logs"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "export-error-logs::handle-empty-state"
+title = "Show informational message if errors/ directory is empty or does not exist"
+status = "pending"
+
+[[plan.goals]]
+id = "error-capture-core"
+
+[[plan.goals.tasks]]
+id = "error-capture-core::define-types"
+title = "Create src/logger/error-capture.ts with ErrorIndexEntry and ErrorCapture types (ts, chatId, conversationId, errorType, errorMessage, model, eventCount, full request/response/timing/sse)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "error-capture-core::implement-write-error"
+title = "Implement writeError(errorsDir, capture) that writes index.jsonl + {YYYY-MM-DD}/{chatId}.json + {chatId}.sse.jsonl"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "error-capture-core::implement-logger-class"
+title = "Implement ErrorCaptureLogger class with captureError(data, sseBuffer) that builds ErrorCapture and calls writeError"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "error-capture-core::add-tests"
+title = "Unit tests for ErrorCaptureLogger: verify index.jsonl append, per-error JSON write, SSE buffer flush"
+status = "pending"
+
+[[plan.goals]]
+id = "sse-buffer-always-on"
+
+[[plan.goals.tasks]]
+id = "sse-buffer-always-on::create-recorder-at-all-levels"
+title = "In InvestigationRequestHandle constructor, create SSERecorderImpl for all detail levels except off, not just full"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sse-buffer-always-on::skip-disk-write-below-full"
+title = "Keep guard in flush() that only writes SSE to disk at full detail level — buffer exists but only persists at full"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "sse-buffer-always-on::add-getbuffer-method"
+title = "Add getBuffer(): readonly SSEEventEntry[] method to InvestigationRequestHandle returning sseRecorder?.getEvents() ?? []"
+status = "pending"
+
+[[plan.goals]]
+id = "error-capture-prune"
+
+[[plan.goals.tasks]]
+id = "error-capture-prune::implement-prune-function"
+title = "Create src/logger/error-capture-prune.ts with pruneErrorLogs(errorsDir, maxAgeDays=90, maxSizeBytes=50MB) oldest-first eviction"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "error-capture-prune::implement-size-calc"
+title = "Implement calculateDirectorySize(dir) helper that sums file sizes for cap enforcement"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "error-capture-prune::wire-to-activation"
+title = "In extension.ts activate(), call pruneErrorLogs(globalStorageUri/errors/) after provider initialization"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "error-capture-prune::add-tests"
+title = "Unit tests: verify 90-day age pruning, 50MB cap eviction, oldest-first order"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
