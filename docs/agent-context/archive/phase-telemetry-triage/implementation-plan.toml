@@ -2,11 +2,11 @@
 # Implementation Plan
 
 [phase]
-id = "phase-openresponses-triage"
+id = "phase-telemetry-triage"
 
 [plan]
 [[plan.goals]]
-id = "wait-for-sdk"
+id = "telemetry-decision"
 
 
 
