@@ -113,9 +113,122 @@ interface StabilizationSignals {
   hasTodos: boolean;
   todoCount: number;
   isGrabBag: boolean;
+  /** Fraction of proposal exports that already exist in stable vscode.d.ts (0-1) */
+  stableOverlapRatio: number;
+  /** Number of proposal exports found in stable API */
+  stableOverlapCount: number;
   /** Approximate score 0-100 where higher = closer to stable */
   readinessScore: number;
+  /** Manual override applied, if any */
+  override: ScoreOverride | null;
 }
+
+/** Manual score override with auditable justification */
+interface ScoreOverride {
+  /** Overridden readiness score */
+  score: number;
+  /** Readiness tier label */
+  tier: string;
+  /** Human-readable reason for the override */
+  reason: string;
+  /** Evidence supporting the override (URLs, observations) */
+  evidence: string[];
+  /** Original scanner score before override */
+  originalScore: number;
+}
+
+/**
+ * Manual overrides for proposals where the scanner's heuristics produce
+ * inaccurate scores. Each override includes auditable justification.
+ *
+ * Override policy:
+ * - Only override when scanner score is demonstrably wrong (>15 points off)
+ * - Always include evidence (GitHub URLs, code observations)
+ * - Prefer scanner improvements over overrides when feasible
+ * - Review overrides quarterly as scanner improves
+ */
+const OVERRIDES: Record<string, Omit<ScoreOverride, "originalScore">> = {
+  // ── Grab-bag files: scanner penalizes size/version/TODOs but these contain
+  //    independently-mature sub-features actively used by Copilot Chat ──
+  chatParticipantAdditions: {
+    score: 55,
+    tier: "Mid-term (3-6 months)",
+    reason:
+      "Grab-bag (86 exports, 1060 lines) containing independently-mature features: " +
+      "ChatToolInvocationPart, LanguageModelToolExtensionSource, ChatResponseStream extensions, " +
+      "ChatRequestModeInstructions. Actively used by Copilot Chat (@3). Scanner penalizes " +
+      "size/version/TODOs but individual features are shipping.",
+    evidence: [
+      "Used by vscode-copilot-chat as chatParticipantAdditions@3",
+      "87 exports across ~15 distinct feature areas",
+      "Last commit: 2026-02-09 (actively maintained)",
+      "20% stable overlap (17 symbols already in vscode.d.ts)",
+      "Contains ChatToolInvocationPart — core to tool-use flow already shipping",
+    ],
+  },
+  chatSessionsProvider: {
+    score: 55,
+    tier: "Mid-term (3-6 months)",
+    reason:
+      "Grab-bag (22 exports, 557 lines) for chat session persistence. " +
+      "Actively used by Copilot Chat (@3). Scanner penalizes size/version/TODOs " +
+      "but this is the foundation for chat history — a shipped feature.",
+    evidence: [
+      "Used by vscode-copilot-chat as chatSessionsProvider@3",
+      "Last commit: 2026-02-10 (actively maintained)",
+      "ChatSessionStatus, ChatSessionsProvider — core to chat persistence",
+      "14% stable overlap (3 symbols)",
+    ],
+  },
+  chatParticipantPrivate: {
+    score: 55,
+    tier: "Mid-term (3-6 months)",
+    reason:
+      "Grab-bag (34 exports, 386 lines, v13) containing ChatLocation, " +
+      "registerLanguageModelProxyProvider, and other Copilot-internal APIs. " +
+      "High version churn (v13) indicates active iteration, not instability. " +
+      "Scanner penalizes version≥3 and grab-bag flags.",
+    evidence: [
+      "Used by vscode-copilot-chat as chatParticipantPrivate@13",
+      "Last commit: 2026-02-10 (actively maintained)",
+      "35% stable overlap (12 symbols already in vscode.d.ts)",
+      "ChatLocation enum — fundamental to chat UI, unlikely to be removed",
+      "v13 = 13 iterations of refinement, not churn",
+    ],
+  },
+  // ── MCP: scanner misses milestone signal in offline mode ──
+  mcpToolDefinitions: {
+    score: 60,
+    tier: "Mid-term (3-6 months)",
+    reason:
+      "Has February 2026 milestone (scanner misses this in --no-github mode). " +
+      "Actively developed by connor4312. Clean API (5 exports, 99 lines, 0 TODOs). " +
+      "MCP is a strategic priority for VS Code.",
+    evidence: [
+      "GitHub issue #272000: milestone February 2026",
+      "Bumped through Oct→Nov→Dec→Jan→Feb milestones (active prioritization)",
+      "connor4312 self-assigned and actively developing",
+      "Clean proposal: 0 TODOs, 5 exports, well-scoped",
+    ],
+  },
+  // ── Internal-use API: scanner scores it as mid-range but it's VS Code internal ──
+  aiRelatedInformation: {
+    score: 40,
+    tier: "Long-term (6-12 months)",
+    reason:
+      "Internal-use API for VS Code's own AI features (command palette NL search, " +
+      "settings search). Issue #190909 closed as completed Aug 2023 — implemented " +
+      "for internal use but never intended for external finalization. " +
+      "No stable overlap, 1 TODO. Unlikely to be finalized for extensions.",
+    evidence: [
+      "GitHub issue #190909: closed as completed Aug 2023",
+      "Milestone: August 2023 (implemented, not finalized)",
+      "Used by Copilot Chat for internal AI features",
+      "0% stable overlap — no types promoted to stable API",
+      "Contains EmbeddingVectorProvider — internal ML infrastructure",
+    ],
+  },
+};
 
 // ─── CLI Argument Parsing ────────────────────────────────────────────────────
 
@@ -245,6 +358,49 @@ function scanProposals(vscodePath: string): ProposalInfo[] {
       exports,
     };
   });
+}
+
+// ─── Step 1b: Scan Stable API Surface ────────────────────────────────────────
+
+/**
+ * Reads the stable vscode.d.ts and extracts all exported symbol names.
+ * Used to detect when a proposal's exports already have stable counterparts,
+ * which is a strong signal that the proposal is near finalization.
+ */
+function scanStableApiSymbols(vscodePath: string): Set<string> {
+  const stableDts = path.join(vscodePath, "src", "vscode-dts", "vscode.d.ts");
+  if (!fs.existsSync(stableDts)) {
+    console.error(`Warning: Stable vscode.d.ts not found at ${stableDts}`);
+    return new Set();
+  }
+
+  const content = fs.readFileSync(stableDts, "utf-8");
+  const exportPattern =
+    /export\s+(?:interface|class|enum|type|function|namespace|const)\s+(\w+)/g;
+  const symbols = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = exportPattern.exec(content)) !== null) {
+    symbols.add(match[1]!);
+  }
+
+  return symbols;
+}
+
+/**
+ * For a proposal, compute what fraction of its exports already exist in the
+ * stable API surface. A high ratio means the proposal is extending/augmenting
+ * types that are already shipped, which is a strong near-finalization signal.
+ */
+function computeStableOverlap(
+  proposal: ProposalInfo,
+  stableSymbols: Set<string>,
+): { ratio: number; count: number } {
+  if (proposal.exports.length === 0) return { ratio: 0, count: 0 };
+  const overlapping = proposal.exports.filter((e) => stableSymbols.has(e));
+  return {
+    ratio: overlapping.length / proposal.exports.length,
+    count: overlapping.length,
+  };
 }
 
 // ─── Step 2: Parse Consumer Extensions ───────────────────────────────────────
@@ -769,6 +925,7 @@ function analyzeSignals(
   iterationPlanCurrent: GitHubIssue[],
   iterationPlanPrevious: GitHubIssue[],
   consumers: ConsumerInfo[],
+  stableOverlap: { ratio: number; count: number },
 ): StabilizationSignals {
   const currentMs = getCurrentMilestone();
   const nextMs = getNextMilestone();
@@ -820,6 +977,11 @@ function analyzeSignals(
   if (gitActivity.recentCommitCount > 0) score += 5;
   if (gitActivity.recentCommitCount >= 5) score += 5;
 
+  // Stable API overlap: proposal exports that already exist in vscode.d.ts
+  // High overlap means the proposal augments already-shipped types (strong signal)
+  if (stableOverlap.ratio > 0.5) score += 15;
+  else if (stableOverlap.count > 0) score += 5;
+
   score = Math.max(0, Math.min(100, score));
 
   return {
@@ -834,7 +996,30 @@ function analyzeSignals(
     hasTodos,
     todoCount: proposal.todoCount,
     isGrabBag,
+    stableOverlapRatio: stableOverlap.ratio,
+    stableOverlapCount: stableOverlap.count,
     readinessScore: score,
+    override: null,
+  };
+}
+
+/** Apply manual override if one exists for this proposal */
+function applyOverride(
+  signals: StabilizationSignals,
+  proposalName: string,
+): StabilizationSignals {
+  const override = OVERRIDES[proposalName];
+  if (!override) return signals;
+
+  const applied: ScoreOverride = {
+    ...override,
+    originalScore: signals.readinessScore,
+  };
+
+  return {
+    ...signals,
+    readinessScore: override.score,
+    override: applied,
   };
 }
 
@@ -860,6 +1045,13 @@ async function buildDashboard(
     proposals = proposals.filter((p) => p.name.toLowerCase().includes(pattern));
   }
   console.error(`  Found ${proposals.length} proposals`);
+
+  // Step 1b: Scan stable API surface
+  console.error("Scanning stable API surface...");
+  const stableSymbols = scanStableApiSymbols(opts.vscodePath);
+  console.error(
+    `  Found ${stableSymbols.size} exported symbols in vscode.d.ts`,
+  );
 
   // Step 2: Scan consumers
   console.error("Scanning consumer extensions...");
@@ -913,7 +1105,8 @@ async function buildDashboard(
     const finalization = finalizationMap.get(proposal.name) ?? [];
     const iterCurrent = iterationPlanCurrentMap.get(proposal.name) ?? [];
     const iterPrevious = iterationPlanPreviousMap.get(proposal.name) ?? [];
-    const signals = analyzeSignals(
+    const stableOverlap = computeStableOverlap(proposal, stableSymbols);
+    const rawSignals = analyzeSignals(
       proposal,
       gitActivity,
       prMilestones,
@@ -921,7 +1114,9 @@ async function buildDashboard(
       iterCurrent,
       iterPrevious,
       consumers,
+      stableOverlap,
     );
+    const signals = applyOverride(rawSignals, proposal.name);
 
     return {
       proposal,
