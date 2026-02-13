@@ -747,7 +747,7 @@ aliases = ["triage-epoch"]
 [[epochs.phases]]
 id = "phase-auth-triage"
 title = "Authentication (RFC 005b - Triage)"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KG0K3GP3M2BAGZ7V83FDSBQ0"
 slug = "phase-auth-triage"
@@ -764,7 +764,7 @@ aliases = ["evaluate-enterprise-oidc"]
 [[epochs.phases]]
 id = "phase-telemetry-triage"
 title = "Telemetry & Privacy (RFC 005c - Triage)"
-status = "pending"
+status = "active"
 kind = "regular"
 ulid = "01KG0K3GP346JR19VFSXSENDMX"
 slug = "phase-telemetry-triage"

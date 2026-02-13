@@ -2,11 +2,11 @@
 # Implementation Plan
 
 [phase]
-id = "phase-telemetry-triage"
+id = "phase-auth-triage"
 
 [plan]
 [[plan.goals]]
-id = "telemetry-decision"
+id = "evaluate-enterprise-oidc"
 
 
 
