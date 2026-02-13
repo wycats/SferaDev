@@ -112,11 +112,10 @@ issues, or are landing soon enough that we should be ready.
 | Score | Proposal | Value | Rationale |
 |-------|----------|-------|-----------|
 | 72 | **languageModelSystem** | Correctness (fragile) | We hardcode `role=3` and run regex heuristics to detect disguised system prompts in `system-prompt.ts`. The fallback (`extractDisguisedSystemPrompt`) pattern-matches on "You are a" etc. — fragile and wrong for non-English prompts. Stable System role eliminates all of this. |
-| 72 | **languageModelCapabilities** | Integration | `LanguageModelChatCapabilities` already has `imageInput` and `toolCalling` in stable. This proposal extends it — lets us advertise capabilities accurately instead of hardcoding. |
+| 72 | **languageModelCapabilities** | Streamline | Adds `capabilities: { supportsToolCalling, supportsImageToText, editToolsHint }` to consumer-side `LanguageModelChat`. On the provider side, our `transform.ts` already sets `imageInput`/`toolCalling` and the runtime accepts them — this is types catching up to reality, not a fragile hack. Main new value: `editToolsHint` lets consumers know which edit tools our models prefer. Low urgency but near-term timeline. |
 | 60 | **languageModelThinkingPart** | Integration + Correctness (fragile) | We probe for `LanguageModelThinkingPart` at runtime via `VSCodeThinkingPart` in `synthetic-parts.ts` and use module augmentation in `vscode-thinking.d.ts`. Works today but relies on undocumented runtime availability without `enabledApiProposals`. Stable API = native thinking display in chat UI for free. |
 | 55 | **chatParticipantAdditions** | Integration | Contains `ChatResultUsage` (`promptTokens`, `completionTokens`, `promptTokenDetails[]`) — this is how token counts show up in VS Code's native token widget. We already track tokens in our custom status bar; wiring up `ChatResultUsage` would make them visible in the standard UI too. Also contains `ChatToolInvocationPart` for native tool-call rendering. |
-| 55 | **chatStatusItem** | Integration | `window.createChatStatusItem()` — native chat status display. We built a 1,676-line `status-bar.ts` for this. The native API is simpler and positioned correctly in the chat UI rather than the global status bar. |
-| 60 | **toolProgress** | Integration | `ToolProgressStep` with `message` and `increment` — native progress UI during tool execution. Currently tool calls are silent from the user's perspective until they complete. |
+| 55 | **chatStatusItem** | Integration | `window.createChatStatusItem()` — a small status widget *inside the chat panel* (title + description + detail). Complementary to our status bar, not a replacement — our 1,676-line `status-bar.ts` does far more (agent hierarchy, subagent tracking, context management, token breakdowns). Value: surface a summary line where users are actually looking (the chat view). |
 | 60 | **mcpToolDefinitions** | Feature (orthogonal) | Has Feb 2026 milestone. Static MCP tool manifests let us declare tools without starting servers. Orthogonal to core provider — can adopt independently. |
 | 65 | **mcpServerDefinitions** | Feature (orthogonal) | `McpGateway` + `lm.startMcpGateway` — register MCP servers programmatically. Pairs with mcpToolDefinitions. We could expose Vercel AI Gateway as an MCP server. |
 | 75 | **codeActionAI** | Feature (orthogonal) | AI-powered code actions. Near-term (score 75). Could offer "Explain with Vercel AI" or "Fix with Vercel AI" code actions. Low effort, high visibility. |
@@ -161,6 +160,7 @@ Track in scanner output, revisit next quarter.
 | 60 | **aiSettingsSearch** | Feature (orthogonal) | AI-powered settings search. Same — search, not our lane. |
 | 60 | **chatHooks** | Feature (orthogonal) | Shell command hooks at chat lifecycle points (SessionStart, PreToolUse, etc.). Interesting for power users but niche. |
 | 60 | **languageModelProxy** | Streamline | `getModelProxy()` — proxy to Copilot's model endpoint. We provide our own models, so this is irrelevant (we'd be the proxy target, not the consumer). |
+| 60 | **toolProgress** | N/A (irrelevant) | `ToolProgressStep` adds progress bars inside tool invocation UI. We're a *provider*, not a tool implementor — we don't register `LanguageModelTool` instances. Tool progress is rendered by VS Code's chat UI for tools that *other* extensions register. |
 | 51 | **chatOutputRenderer** | Feature (orthogonal) | Custom output renderers for tool results. Could be useful eventually but 3 TODOs and no consumers. |
 
 ### IGNORE
@@ -178,8 +178,8 @@ Not worth attention at current timeline.
 
 | Action | Count | Key items |
 |--------|-------|-----------|
-| **PREPARE NOW** | 9 | languageModelSystem, languageModelThinkingPart, chatParticipantAdditions (token widget), chatStatusItem, toolProgress, codeActionAI, MCP pair |
+| **PREPARE NOW** | 8 | languageModelSystem, languageModelCapabilities, languageModelThinkingPart, chatParticipantAdditions (token widget), chatStatusItem, codeActionAI, MCP pair |
 | **EXPERIMENTAL** | 7 | chatProvider, chatContextProvider, chatPromptFiles, chatTab, remoteCodingAgents |
 | **DESIGN AWARENESS** | 5 | agentSessionsWorkspace, chatSessionsProvider, chatParticipantPrivate, defaultChatParticipant, languageModelToolResultAudience |
-| **WATCH** | 8 | chatReferenceBinaryData, chatHooks, languageModelProxy, etc. |
+| **WATCH** | 9 | chatReferenceBinaryData, chatHooks, languageModelProxy, toolProgress, etc. |
 | **IGNORE** | 2 | inlineCompletionsAdditions, aiRelatedInformation |
