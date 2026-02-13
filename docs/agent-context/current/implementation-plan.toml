@@ -43,22 +43,30 @@ id = "triage-proposals"
 [[plan.goals.tasks]]
 id = "triage-proposals::define-criteria"
 title = "Document triage criteria (adopt soon/design toward/watch) with concrete thresholds"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:06:09.595789003+00:00"
+completion_log = "Decision function defined in proposal-priority-model.md: 4 value types (Integration, Correctness, Feature, Streamline), 2 entanglement levels, fragility split, 5 action categories (PREPARE NOW, EXPERIMENTAL, DESIGN AWARENESS, WATCH, IGNORE)"
 
 [[plan.goals.tasks]]
 id = "triage-proposals::map-current-code"
 title = "For each proposal, identify current extension code that relates to it"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:06:14.950791533+00:00"
+completion_log = "Deep-read of system-prompt.ts (role=3 hardcode, regex heuristics), synthetic-parts.ts (ThinkingPart runtime probe), stateful-marker.ts (DataPart MIME persistence), transform.ts (capabilities already set), status-bar.ts (1676 lines), counter.ts (token estimation). Mapped in graded inventory rationales."
 
 [[plan.goals.tasks]]
 id = "triage-proposals::assess-maturity"
 title = "Assess each proposal's maturity using horizon scanner signals (readinessScore, milestone, consumers)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:06:20.995667923+00:00"
+completion_log = "Scanner v3 signals assessed for all 31 proposals: readiness scores (40-80), stable-API overlap ratios, version churn, consumer counts, milestone/finalization labels. Manual overrides applied for 5 grab-bag proposals. Data in /tmp/full-scan-v3.json and /tmp/ai-proposal-inventory-v3.json."
 
 [[plan.goals.tasks]]
 id = "triage-proposals::classify-proposals"
 title = "Apply triage classification to each proposal and produce triage table"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:06:27.735353906+00:00"
+completion_log = "Full graded inventory in proposal-priority-model.md: 8 PREPARE NOW, 9 EXPERIMENTAL, 5 DESIGN AWARENESS, 7 WATCH, 2 IGNORE. Three corrections applied per user review (languageModelCapabilities, chatStatusItem, toolProgress). V0 tools context applied (chatParticipantAdditions expanded, toolProgress+chatHooks promoted to EXPERIMENTAL)."
 
 [[plan.goals]]
 id = "update-rfc"
@@ -66,22 +74,30 @@ id = "update-rfc"
 [[plan.goals.tasks]]
 id = "update-rfc::add-inventory"
 title = "Add full proposal inventory section to RFC 00066"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:08:34.910447178+00:00"
+completion_log = "Added full proposal inventory to RFC 00066: 31 AI proposals across 5 triage categories, with PREPARE NOW detail table (8 proposals with scores, value types, current code mapping, and what changes)."
 
 [[plan.goals.tasks]]
 id = "update-rfc::add-triage-results"
 title = "Add triage results table with classifications to RFC 00066"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:08:39.956332821+00:00"
+completion_log = "Added triage results: decision function, summary table (8/9/5/7/2), PREPARE NOW detail table with current code mapping, DESIGN AWARENESS detail table with design signals."
 
 [[plan.goals.tasks]]
 id = "update-rfc::add-design-questions"
 title = "Add interface design questions section for each interface candidate"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:08:46.735156938+00:00"
+completion_log = "Revised all 3 interface candidates with expanded scope (new design questions from audit). Added Interface Candidate 4: Tool Rendering Layer (future, v0 tools context). Each candidate now lists multiple proposed APIs and new design questions surfaced by the audit."
 
 [[plan.goals.tasks]]
 id = "update-rfc::promote-stage-1"
 title = "Promote RFC 00066 from stage-0 to stage-1 if ready"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:08:51.602976135+00:00"
+completion_log = 'Promoted RFC 00066 from stage-0 to stage-1. Moved file to docs/rfcs/stage-1/. Updated status header to "Stage 1 (Proposal)".'
 
 [[plan.goals]]
 id = "design-identity-interface"
