@@ -99,6 +99,11 @@
         "command": "vercel.ai.investigation.prune",
         "title": "Prune Investigation Logs",
         "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercel.ai.exportErrorLogs",
+        "title": "Export Error Logs",
+        "category": "Vercel AI Gateway"
       }
     ],
     "menus": {

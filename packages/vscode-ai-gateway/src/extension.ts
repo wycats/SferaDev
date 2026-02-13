@@ -357,6 +357,59 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(pruneCommand);
 
+  // Register command to export error logs
+  const exportErrorLogsCommand = vscode.commands.registerCommand(
+    "vercel.ai.exportErrorLogs",
+    async () => {
+      const { createErrorLogsArchive, ErrorExportEmpty } = await import(
+        "./logger/error-export.js"
+      );
+      const errorsDir = path.join(context.globalStorageUri.fsPath, "errors");
+
+      let archive: Buffer;
+      try {
+        archive = await createErrorLogsArchive(errorsDir);
+      } catch (err) {
+        if (err instanceof ErrorExportEmpty) {
+          void vscode.window.showInformationMessage(
+            "No error logs to export. Error logs are captured automatically when requests fail.",
+          );
+          return;
+        }
+        logger.error("[ErrorExport] Failed to export error logs:", err);
+        void vscode.window.showErrorMessage(
+          `Failed to export error logs: ${String(err)}`,
+        );
+        return;
+      }
+
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/[T:]/g, "-");
+      const defaultUri = vscode.Uri.file(
+        path.join(
+          (await import("node:os")).homedir(),
+          `vercel-ai-error-logs-${timestamp}.tar.gz`,
+        ),
+      );
+
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri,
+        filters: { "Gzip Archive": ["tar.gz", "gz"] },
+        title: "Export Error Logs",
+      });
+
+      if (saveUri) {
+        await vscode.workspace.fs.writeFile(saveUri, archive);
+        void vscode.window.showInformationMessage(
+          `Error logs exported to ${saveUri.fsPath}`,
+        );
+      }
+    },
+  );
+  context.subscriptions.push(exportErrorLogsCommand);
+
   // Fire-and-forget error log pruning on activation
   void (async () => {
     try {

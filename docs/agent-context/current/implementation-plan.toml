@@ -43,22 +43,30 @@ id = "friendly-auth-errors"
 [[plan.goals.tasks]]
 id = "friendly-auth-errors::add-error-message-constants"
 title = "Add AUTH_KEY_MISSING, AUTH_KEY_INVALID, AUTH_KEY_EXPIRED constants with actionable guidance text"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:49:02.816393541+00:00"
+completion_log = "Added AUTH_KEY_MISSING, AUTH_KEY_INVALID, AUTH_KEY_EXPIRED to ERROR_MESSAGES in constants.ts"
 
 [[plan.goals.tasks]]
 id = "friendly-auth-errors::detect-error-type"
 title = "In getApiKey() catch block, detect error type from message/code and show appropriate error constant"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:49:07.221000505+00:00"
+completion_log = "getApiKey catch block now shows AUTH_FAILED with Manage Authentication button"
 
 [[plan.goals.tasks]]
 id = "friendly-auth-errors::add-manage-auth-button"
 title = "For AUTH_KEY_MISSING, use showErrorMessage with Manage Authentication button that runs vercel.ai.manageAuthentication"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:49:12.024958804+00:00"
+completion_log = "AUTH_KEY_MISSING toast with Manage Authentication button that runs vercel.ai.manage"
 
 [[plan.goals.tasks]]
 id = "friendly-auth-errors::handle-api-401-errors"
 title = "In openresponses-chat.ts API error catch, detect 401 status and show AUTH_KEY_INVALID or AUTH_KEY_EXPIRED"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:49:16.292113830+00:00"
+completion_log = "401 detection in openresponses-chat.ts: expired vs invalid, Manage Authentication button"
 
 [[plan.goals]]
 id = "first-run-experience"

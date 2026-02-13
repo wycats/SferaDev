@@ -1779,7 +1779,8 @@ ulid = "01KHC7WZANSGX4187G8V2C1S4Z"
 [[epochs.phases.goals]]
 id = "friendly-auth-errors"
 label = "Surface clear, actionable errors when auth fails: missing key → prompt to run Manage Authentication; invalid key → show specific error; expired → guide to refresh"
-status = "pending"
+status = "completed"
+completion_log = "Commit b7fe65a. Actionable auth errors with Manage Authentication buttons at all 3 error surfaces. 480/480 tests pass."
 ulid = "01KHC3J3G424TNCAZEVEH1B6CN"
 
 [[epochs.phases.goals]]
