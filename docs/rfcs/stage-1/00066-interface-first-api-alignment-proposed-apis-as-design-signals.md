@@ -69,7 +69,7 @@ PRIORITY(proposal) =
 | **languageModelSystem** (72) | Correctness (fragile) | `system-prompt.ts`: hardcodes `role=3`, regex heuristics for disguised system prompts ("You are a" etc.) — fragile, wrong for non-English | Stable System role eliminates all heuristics |
 | **languageModelCapabilities** (72) | Streamline | `transform.ts`: already sets `imageInput`/`toolCalling` and runtime accepts them | Types catch up to reality. New value: `editToolsHint` |
 | **languageModelThinkingPart** (60) | Integration + Correctness (fragile) | `synthetic-parts.ts`: runtime-probes `LanguageModelThinkingPart` without `enabledApiProposals`. Module augmentation in `vscode-thinking.d.ts` | Stable API = native thinking display for free |
-| **chatParticipantAdditions** (55) | Integration | No current usage of tool rendering pipeline | Full native tool rendering layer: `ChatToolInvocationPart` (streaming tool UI), terminal/todo/subagent/MCP renderers, question carousels, confirmations, multi-diff viewer, edit application. Also `ChatResultUsage` for native token widget. Critical for v0 tools. |
+| **chatParticipantAdditions** (55) | Integration | No current usage of tool rendering pipeline | Full native tool rendering layer: `ChatToolInvocationPart` (streaming tool UI), terminal/todo/subagent/MCP renderers, question carousels, confirmations, multi-diff viewer, edit application. Also `ChatResultUsage` for native token widget. |
 | **chatStatusItem** (55) | Integration | `status-bar.ts` (1,676 lines) | Complementary: surface summary inside chat panel where users look. Our status bar does far more (agent hierarchy, token breakdowns) |
 | **mcpToolDefinitions** (60) | Feature (orthogonal) | None | Static MCP tool manifests. Feb 2026 milestone. |
 | **mcpServerDefinitions** (65) | Feature (orthogonal) | None | `McpGateway` + `lm.startMcpGateway`. Could expose AI Gateway as MCP server. |
@@ -138,31 +138,18 @@ The original RFC proposed 3 interfaces. The audit revealed that the proposal lan
 - How do thinking blocks interact with token counting?
 - **New:** Provider-side vs. participant-side thinking. We emit `LanguageModelThinkingPart` as a provider; `ChatResponseThinkingProgressPart` is for participants consuming our output. Do we need to handle both sides?
 
-### 4. Tool Rendering Layer (New — Future)
+### 4. Tool Rendering Layer (Future — see RFC 00071)
 
-**Context:** The v0 team plans to port tools into VS Code `LanguageModelTool` instances. This creates a new interface surface that doesn't exist in the current extension.
+A cluster of experimental APIs (`chatParticipantAdditions` tool rendering, `toolProgress`, `chatHooks`, `chatOutputRenderer`) would enable native tool invocation UI. These are relevant if the extension registers as a `ChatParticipant` — a significant architectural change sketched in **RFC 00071** (v0 Integration via ChatParticipant and LanguageModelTool).
 
-**Proposed APIs (cluster):**
-- `chatParticipantAdditions` — `ChatToolInvocationPart`, `beginToolInvocation()`/`updateToolInvocation()`, specialized renderers (terminal, todo, subagent, MCP, file list), `ChatResponseQuestionCarouselPart`, `ChatResponseConfirmationPart`, `ChatResponseMultiDiffPart`
-- `toolProgress` — `ToolProgressStep` (message + increment progress bars)
-- `chatHooks` — `PreToolUse`/`PostToolUse` safety hooks
-- `chatOutputRenderer` — custom webview renderers for tool result MIME types
-
-**Design questions:**
-
-- Which v0 tools are candidates for `LanguageModelTool` registration?
-- Should tool rendering be part of this RFC or a separate RFC?
-- How do tool-specific data types (`ChatTerminalToolInvocationData`, `ChatTodoToolInvocationData`, etc.) map to v0 tool output formats?
-- What governance model do `chatHooks` enable for tool execution safety?
-
-**Status:** This is documented as a design signal, not an interface to build in this phase. The v0 tools roadmap will determine timing.
+This RFC does not design that integration. The three interfaces above (identity, tokens, thinking) are designed to be compatible with participant registration if/when it happens — each has a participant-side implementation path documented in its implementation map.
 
 ## Non-Goals
 
 - This RFC does NOT decide when to adopt any specific proposal
 - This RFC does NOT require switching to VS Code Insiders
 - This RFC does NOT change any current behavior
-- This RFC does NOT design the v0 tools integration (section 4 is a forward reference)
+- This RFC does NOT design the v0 tools integration (see RFC 00071)
 
 ## Relationship to RFC 028
 
