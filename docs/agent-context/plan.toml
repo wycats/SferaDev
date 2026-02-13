@@ -1728,29 +1728,34 @@ ulid = "01KHA0M9RK6836FYVWHJ6SR9GR"
 [[epochs.phases.goals]]
 id = "triage-proposals"
 label = "For each proposal: document what it does, current code mapping, and triage classification (adopt soon/design toward/watch)"
-status = "pending"
+status = "completed"
+completion_log = "Graded all 31 AI proposals: 8 PREPARE NOW, 9 EXPERIMENTAL, 5 DESIGN AWARENESS, 7 WATCH, 2 IGNORE. User corrected 3 gradings. V0 tools context prompted re-grading."
 ulid = "01KHA0ME8QH80XJND6AJP824CD"
 
 [[epochs.phases.goals]]
 id = "update-rfc"
 label = "Update RFC 00066 with full proposal inventory, triage results, and interface design questions"
-status = "pending"
+status = "completed"
+completion_log = "RFC 00066 promoted to stage-1 with full audit: 31 proposals inventoried, triage tables, 4 interface candidates identified, cross-cutting participant-side constraint documented."
 ulid = "01KHA0MJ74N41VKMPM64EMSEEQ"
 
 [[epochs.phases.goals]]
 id = "design-identity-interface"
 label = "Design ConversationIdentityProvider interface (co-design with stateful-marker workaround + agentSessionsWorkspace/chatSessionsProvider proposals)"
-status = "pending"
+status = "completed"
+completion_log = "ConversationIdentityProvider interface designed: branded ConversationId, IdentityResolution with source tracking, IdentityMarkerEmitter for workaround, ConversationIdentityService composite. 3 implementations mapped, 7 consumers, 3-phase adoption plan."
 ulid = "01KHA0MQ5N7HG96WRRMEJHPBCK"
 
 [[epochs.phases.goals]]
 id = "design-token-interface"
 label = "Design TokenCountProvider interface (co-design with counter.ts/usage-tracker.ts + ChatResultUsage/promptTokenDetails proposals)"
-status = "pending"
+status = "completed"
+completion_log = "TokenCountProvider interface designed: TokenEstimator (pre-flight) + TokenUsageReporter (post-response) + TokenCountService composite. Absolute counts, isAnchored delta flag, 3 implementations mapped (AiTokenizerEstimator, OpenResponsesUsageReporter, ChatResultUsageReporter), 6 consumers."
 ulid = "01KHA0MWCE4ZTN8T9AQS1TS3HC"
 
 [[epochs.phases.goals]]
 id = "design-thinking-interface"
 label = "Design ThinkingContentProvider interface (co-design with synthetic-parts.ts + languageModelThinkingPart/ChatResponseThinkingProgressPart proposals)"
-status = "pending"
+status = "completed"
+completion_log = "ThinkingContentProvider interface designed: thin wrapper formalizing streaming/persistence duality. ThinkingBlock, createStreamingPart/createPersistencePart/recoverFromHistory. 3 implementations mapped (ThinkingPartEmitter, ChatResponseThinkingEmitter, Stable ThinkingPart), 5 consumers, 3-phase adoption."
 ulid = "01KHA0MWDADE22SR9KA122PWQ0"

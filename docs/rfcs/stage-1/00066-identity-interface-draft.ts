@@ -17,6 +17,7 @@
  * - Session/request identity are separate from conversation identity
  */
 
+// @ts-nocheck — Design document, not compilable code
 import type { LanguageModelChatMessage } from "vscode";
 
 // =============================================================================

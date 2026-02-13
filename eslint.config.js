@@ -143,6 +143,8 @@ export default tseslint.config(
       "packages/openresponses-client/src/generated/**",
       "**/scripts/**",
       "**/.vscode-test/**",
+      // RFC design documents (TypeScript interfaces for discussion, not compilable code)
+      "docs/**",
     ],
   },
 );
