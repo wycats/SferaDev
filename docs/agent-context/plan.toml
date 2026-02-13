@@ -1708,13 +1708,13 @@ id = "00063"
 [[epochs]]
 id = "01kha0khyfas843fhsryyks0s8"
 title = "Interface-First API Alignment (RFC 00066)"
-status = "active"
+status = "completed"
 ulid = "01KHA0KHYFAS843FHSRYYKS0S8"
 
 [[epochs.phases]]
 id = "01kha0kpfx47pkebr4d2bvm3b0"
 title = "Proposal Audit & Interface Design"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHA0KPFX47PKEBR4D2BVM3B0"
 
