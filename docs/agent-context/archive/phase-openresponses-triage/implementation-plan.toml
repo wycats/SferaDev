@@ -2,17 +2,11 @@
 # Implementation Plan
 
 [phase]
-id = "01khc3gkfxqf829czsgj1xtdtc"
+id = "phase-openresponses-triage"
 
 [plan]
 [[plan.goals]]
-id = "error-audit"
-
-[[plan.goals]]
-id = "user-facing-errors"
-
-[[plan.goals]]
-id = "retry-resilience"
+id = "wait-for-sdk"
 
 
 

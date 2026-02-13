@@ -739,7 +739,7 @@ aliases = ["parallel-operation"]
 [[epochs]]
 id = "triage-epoch"
 title = "Ideas to Triage"
-status = "active"
+status = "completed"
 ulid = "01KG0K3GP3D0XB36ZJW8TDGXW4"
 slug = "triage-epoch"
 aliases = ["triage-epoch"]
@@ -781,7 +781,7 @@ aliases = ["telemetry-decision"]
 [[epochs.phases]]
 id = "phase-openresponses-triage"
 title = "OpenResponses API (RFC 004 - Triage)"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KG0K3GP36T580126F5T36X2J"
 slug = "phase-openresponses-triage"
@@ -1800,7 +1800,7 @@ ulid = "01KHC3J3H0TD4ZXGPHKCQRC39Z"
 [[epochs.phases]]
 id = "01khc3gkfxqf829czsgj1xtdtc"
 title = "Error UX & Resilience"
-status = "pending"
+status = "active"
 kind = "regular"
 ulid = "01KHC3GKFXQF829CZSGJ1XTDTC"
 
