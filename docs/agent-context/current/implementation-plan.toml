@@ -109,12 +109,12 @@ status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-identity-interface::audit-proposal"
-title = "Audit chatRequest.conversationId proposal: document API shape, stability signals"
+title = "Audit identity proposals: agentSessionsWorkspace (80) + chatSessionsProvider (55) — API shapes, stability, workspace vs conversation scope"
 status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-identity-interface::surface-questions"
-title = "Document design questions (first turn, UUID generation, restart stability)"
+title = "Document design questions (first turn, UUID gen, restart stability, workspace vs per-conversation, persistence vs identity-only)"
 status = "pending"
 
 [[plan.goals.tasks]]
@@ -124,7 +124,7 @@ status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-identity-interface::map-implementations"
-title = "Map interface methods to workaround code and proposal API"
+title = "Map interface to stateful-marker.ts workaround + agentSessionsWorkspace + chatSessionsProvider APIs"
 status = "pending"
 
 [[plan.goals]]
@@ -137,12 +137,12 @@ status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-token-interface::audit-proposal"
-title = "Audit proposed token counting API: document API shape, stability signals"
+title = "Audit token proposals: ChatResultUsage + promptTokenDetails[] from chatParticipantAdditions — native token widget shape, category breakdowns"
 status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-token-interface::surface-questions"
-title = "Document design questions (per-message vs context, streaming, delta composition)"
+title = "Document design questions (per-message vs context, streaming, delta composition, ChatResultUsage shape alignment, promptTokenDetails categories)"
 status = "pending"
 
 [[plan.goals.tasks]]
@@ -152,7 +152,7 @@ status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-token-interface::map-implementations"
-title = "Map interface methods to counter.ts and proposal API"
+title = "Map interface to counter.ts + usage-tracker.ts workarounds + ChatResultUsage/promptTokenDetails API"
 status = "pending"
 
 [[plan.goals]]
@@ -165,12 +165,12 @@ status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-thinking-interface::audit-proposal"
-title = "Audit LanguageModelThinkingPart proposal: document API shape, stability signals"
+title = "Audit thinking proposals: languageModelThinkingPart (provider-side) + ChatResponseThinkingProgressPart/ThinkingDelta (participant-side)"
 status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-thinking-interface::surface-questions"
-title = "Document design questions (streaming vs complete, opt-in, token counting interaction)"
+title = "Document design questions (streaming vs complete, opt-in, token counting interaction, provider-side vs participant-side rendering)"
 status = "pending"
 
 [[plan.goals.tasks]]
@@ -180,7 +180,7 @@ status = "pending"
 
 [[plan.goals.tasks]]
 id = "design-thinking-interface::map-implementations"
-title = "Map interface methods to synthetic-parts.ts and proposal API"
+title = "Map interface to synthetic-parts.ts workaround + languageModelThinkingPart + ChatResponseThinkingProgressPart APIs"
 status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 

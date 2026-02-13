@@ -1739,18 +1739,18 @@ ulid = "01KHA0MJ74N41VKMPM64EMSEEQ"
 
 [[epochs.phases.goals]]
 id = "design-identity-interface"
-label = "Design ConversationIdentityProvider interface (co-design with stateful_marker workaround + chatRequest.conversationId proposal)"
+label = "Design ConversationIdentityProvider interface (co-design with stateful-marker workaround + agentSessionsWorkspace/chatSessionsProvider proposals)"
 status = "pending"
 ulid = "01KHA0MQ5N7HG96WRRMEJHPBCK"
 
 [[epochs.phases.goals]]
 id = "design-token-interface"
-label = "Design TokenCountProvider interface (co-design with ai-tokenizer estimation + proposed token counting API)"
+label = "Design TokenCountProvider interface (co-design with counter.ts/usage-tracker.ts + ChatResultUsage/promptTokenDetails proposals)"
 status = "pending"
 ulid = "01KHA0MWCE4ZTN8T9AQS1TS3HC"
 
 [[epochs.phases.goals]]
 id = "design-thinking-interface"
-label = "Design ThinkingContentProvider interface (co-design with custom DataPart + LanguageModelThinkingPart proposal)"
+label = "Design ThinkingContentProvider interface (co-design with synthetic-parts.ts + languageModelThinkingPart/ChatResponseThinkingProgressPart proposals)"
 status = "pending"
 ulid = "01KHA0MWDADE22SR9KA122PWQ0"
