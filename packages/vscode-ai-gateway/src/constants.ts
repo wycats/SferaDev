@@ -32,4 +32,11 @@ export const ERROR_MESSAGES = {
   VERCEL_CLI_NOT_LOGGED_IN:
     "Vercel CLI not logged in. Please run `vercel login` first.",
   MODELS_FETCH_FAILED: "Failed to fetch models from Vercel AI Gateway",
+  // Friendly auth errors with actionable guidance
+  AUTH_KEY_MISSING:
+    "No API key configured. Set up authentication to use Vercel AI Gateway.",
+  AUTH_KEY_INVALID:
+    "Your API key was rejected by the server. Please check your authentication settings.",
+  AUTH_KEY_EXPIRED:
+    "Your authentication has expired. Please re-authenticate to continue.",
 } as const;

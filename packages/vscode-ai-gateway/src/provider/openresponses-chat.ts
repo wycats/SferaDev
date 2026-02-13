@@ -17,6 +17,7 @@ import {
   OpenResponsesError,
   type Usage,
 } from "openresponses-client";
+import * as vscode from "vscode";
 import {
   type CancellationToken,
   type LanguageModelChatInformation,
@@ -29,6 +30,7 @@ import {
   type Uri,
 } from "vscode";
 import type { ConfigService } from "../config.js";
+import { ERROR_MESSAGES, EXTENSION_ID } from "../constants.js";
 import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
 import {
   extractTokenCountFromError,
@@ -273,9 +275,7 @@ export async function executeOpenResponsesChat(
   let textPartCount = 0;
   let toolsForCapture: unknown[] = [];
   let toolNames: string[] = [];
-  let requestBody:
-    | (CreateResponseBody & { caching?: "auto" })
-    | undefined;
+  let requestBody: (CreateResponseBody & { caching?: "auto" }) | undefined;
 
   const buildErrorCaptureData = (
     errorType: ErrorCaptureData["errorType"],
@@ -293,7 +293,9 @@ export async function executeOpenResponsesChat(
     const requestBodyData = requestBody
       ? {
           model: requestBody.model ?? decodeVsCodeModelId(model.id),
-          input: (Array.isArray(requestBody.input) ? requestBody.input : []) as unknown[],
+          input: (Array.isArray(requestBody.input)
+            ? requestBody.input
+            : []) as unknown[],
           instructions: requestBody.instructions,
           tools: requestBody.tools as unknown[] | undefined,
           tool_choice: requestBody.tool_choice,
@@ -433,9 +435,7 @@ export async function executeOpenResponsesChat(
     // Investigation logging — start a request handle (null when detail=off)
     const investigationLogger = new InvestigationLogger();
     toolsForCapture = tools as unknown[];
-    toolNames = tools.map(
-      (t) => (t as { name?: string }).name ?? "unknown",
-    );
+    toolNames = tools.map((t) => (t as { name?: string }).name ?? "unknown");
     investigationHandle = investigationLogger.startRequest({
       conversationId,
       chatId,
@@ -800,6 +800,27 @@ export async function executeOpenResponsesChat(
           : "Unknown error";
 
     logger.error(`[OpenResponses] Request failed: ${errorMessage}`);
+
+    // Detect auth errors (401) and show actionable message
+    if (
+      (error instanceof OpenResponsesError && error.status === 401) ||
+      errorMessage.includes("401")
+    ) {
+      const lowerErrorMessage = errorMessage.toLowerCase();
+      const isExpired =
+        lowerErrorMessage.includes("expired") ||
+        lowerErrorMessage.includes("expire");
+      const authMessage = isExpired
+        ? ERROR_MESSAGES.AUTH_KEY_EXPIRED
+        : ERROR_MESSAGES.AUTH_KEY_INVALID;
+      void vscode.window
+        .showErrorMessage(authMessage, "Manage Authentication")
+        .then((selection) => {
+          if (selection === "Manage Authentication") {
+            void vscode.commands.executeCommand(`${EXTENSION_ID}.manage`);
+          }
+        });
+    }
 
     // Extract token info from "input too long" errors for compaction triggering
     let tokenInfo = extractTokenInfoFromDetails(error);

@@ -121,7 +121,9 @@ describe("executeOpenResponsesChat terminal completion", () => {
     apiKey: "test-key",
     estimatedInputTokens: 1234,
     chatId: "chat-1",
-    conversationId: "test-conv-id",    globalStorageUri: { fsPath: "/tmp/test-global-storage" },  };
+    conversationId: "test-conv-id",
+    globalStorageUri: { fsPath: "/tmp/test-global-storage" },
+  };
 
   const options = { modelOptions: {} };
   const chatMessages: unknown[] = [];
@@ -316,13 +318,14 @@ describe("executeOpenResponsesChat terminal completion", () => {
     );
 
     expect(logger.error).toHaveBeenCalledTimes(1);
-    const logMessage = (logger.error as unknown as { mock: { calls: string[][] } })
-      .mock.calls[0]?.[0];
+    const logMessage = (
+      logger.error as unknown as { mock: { calls: string[][] } }
+    ).mock.calls[0]?.[0];
     expect(logMessage).toContain("[NoResponse]");
-    expect(logMessage).toContain("\"chatId\": \"chat-1\"");
-    expect(logMessage).toContain("\"conversationId\": \"test-conv-id\"");
-    expect(logMessage).toContain("\"eventCount\": 0");
-    expect(logMessage).toContain("\"textPartCount\": 0");
+    expect(logMessage).toContain('"chatId": "chat-1"');
+    expect(logMessage).toContain('"conversationId": "test-conv-id"');
+    expect(logMessage).toContain('"eventCount": 0');
+    expect(logMessage).toContain('"textPartCount": 0');
   });
 });
 

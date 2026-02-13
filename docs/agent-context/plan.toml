@@ -1772,7 +1772,8 @@ ulid = "01KHC66G30748CVBYHG3ANVS69"
 [[epochs.phases.goals]]
 id = "error-capture-prune"
 label = "Error log pruning: 90-day + 50MB cap eviction for globalStorageUri/errors/, oldest-first, runs on activation"
-status = "pending"
+status = "completed"
+completion_log = "Commit f761713. 90-day + 50MB cap pruning with fire-and-forget activation. 480/480 tests pass."
 ulid = "01KHC7WZANSGX4187G8V2C1S4Z"
 
 [[epochs.phases.goals]]

@@ -253,22 +253,30 @@ id = "error-capture-prune"
 [[plan.goals.tasks]]
 id = "error-capture-prune::implement-prune-function"
 title = "Create src/logger/error-capture-prune.ts with pruneErrorLogs(errorsDir, maxAgeDays=90, maxSizeBytes=50MB) oldest-first eviction"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:32:36.514781076+00:00"
+completion_log = "pruneErrorLogs() with age-based and size-based eviction in error-capture-prune.ts"
 
 [[plan.goals.tasks]]
 id = "error-capture-prune::implement-size-calc"
 title = "Implement calculateDirectorySize(dir) helper that sums file sizes for cap enforcement"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:32:43.101382346+00:00"
+completion_log = "calculateDirectorySize() with recursive readdir and parentPath for correct nested paths"
 
 [[plan.goals.tasks]]
 id = "error-capture-prune::wire-to-activation"
 title = "In extension.ts activate(), call pruneErrorLogs(globalStorageUri/errors/) after provider initialization"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:32:49.484582399+00:00"
+completion_log = "Fire-and-forget pruneErrorLogs() call in extension.ts activate() after provider init"
 
 [[plan.goals.tasks]]
 id = "error-capture-prune::add-tests"
 title = "Unit tests: verify 90-day age pruning, 50MB cap eviction, oldest-first order"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:32:54.951920742+00:00"
+completion_log = "6 unit tests: age pruning, size cap eviction, combined, empty state, dir cleanup, missing dir"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

@@ -210,11 +210,7 @@ export async function pruneErrorLogs(
       result.entriesRemoved += 1;
     }
 
-    await fs.promises.writeFile(
-      indexPath,
-      formatJsonl(keptEntries),
-      "utf8",
-    );
+    await fs.promises.writeFile(indexPath, formatJsonl(keptEntries), "utf8");
     await removeEmptyDateDirs(errorsDir, removedEntries);
   }
 
@@ -259,11 +255,7 @@ export async function pruneErrorLogs(
     (entry) => !removedKeys.has(`${entry.ts}:${entry.chatId}`),
   );
 
-  await fs.promises.writeFile(
-    indexPath,
-    formatJsonl(remainingEntries),
-    "utf8",
-  );
+  await fs.promises.writeFile(indexPath, formatJsonl(remainingEntries), "utf8");
   await removeEmptyDateDirs(errorsDir, removedBySize);
 
   if (remainingEntries.length === 0) {

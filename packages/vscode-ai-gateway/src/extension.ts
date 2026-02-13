@@ -360,9 +360,8 @@ export async function activate(context: vscode.ExtensionContext) {
   // Fire-and-forget error log pruning on activation
   void (async () => {
     try {
-      const { pruneErrorLogs } = await import(
-        "./logger/error-capture-prune.js"
-      );
+      const { pruneErrorLogs } =
+        await import("./logger/error-capture-prune.js");
       const errorsDir = path.join(context.globalStorageUri.fsPath, "errors");
       const result = await pruneErrorLogs(errorsDir);
       if (result.entriesRemoved > 0) {

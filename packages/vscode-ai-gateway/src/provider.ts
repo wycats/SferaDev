@@ -4,6 +4,7 @@ import { getVercelCliTokenFromStorage } from "./vercel-auth.js";
 import {
   authentication,
   type CancellationToken,
+  commands,
   type ExtensionContext,
   type LanguageModelChatInformation,
   type LanguageModelChatMessage,
@@ -62,7 +63,7 @@ function getTextValue(part: TextPartLike): string {
 
 import { VERCEL_AI_AUTH_PROVIDER_ID } from "./auth";
 import { ConfigService } from "./config";
-import { ERROR_MESSAGES, LAST_SELECTED_MODEL_KEY } from "./constants";
+import { ERROR_MESSAGES, EXTENSION_ID, LAST_SELECTED_MODEL_KEY } from "./constants";
 import {
   extractErrorMessage,
   extractTokenCountFromError,
@@ -403,7 +404,17 @@ export class VercelAIChatModelProvider
 
       const apiKey = await this.getApiKey(false);
       if (!apiKey) {
-        throw new Error(ERROR_MESSAGES.API_KEY_NOT_FOUND);
+        void window
+          .showErrorMessage(
+            ERROR_MESSAGES.AUTH_KEY_MISSING,
+            "Manage Authentication",
+          )
+          .then((selection) => {
+            if (selection === "Manage Authentication") {
+              void commands.executeCommand(`${EXTENSION_ID}.manage`);
+            }
+          });
+        throw new Error(ERROR_MESSAGES.AUTH_KEY_MISSING);
       }
 
       // Lazy enrichment: fetch additional metadata on first use of each model
@@ -657,7 +668,13 @@ export class VercelAIChatModelProvider
     } catch (error) {
       if (!silent) {
         logger.error("Failed to get authentication session:", error);
-        window.showErrorMessage(ERROR_MESSAGES.AUTH_FAILED);
+        void window
+          .showErrorMessage(ERROR_MESSAGES.AUTH_FAILED, "Manage Authentication")
+          .then((selection) => {
+            if (selection === "Manage Authentication") {
+              void commands.executeCommand(`${EXTENSION_ID}.manage`);
+            }
+          });
       }
       return undefined;
     }

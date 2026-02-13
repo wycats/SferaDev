@@ -274,9 +274,7 @@ export class ErrorCaptureLogger {
     } catch (err) {
       // Fire-and-forget — never let error logging crash the extension
       const message = err instanceof Error ? err.message : "Unknown error";
-      logger.error(
-        `[ErrorCapture] Failed to write error log: ${message}`,
-      );
+      logger.error(`[ErrorCapture] Failed to write error log: ${message}`);
     }
   }
 

@@ -28,12 +28,16 @@ function createTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "error-prune-"));
 }
 
-function makeEntry(daysAgo: number, overrides: Partial<ErrorIndexEntry> = {}): ErrorIndexEntry {
+function makeEntry(
+  daysAgo: number,
+  overrides: Partial<ErrorIndexEntry> = {},
+): ErrorIndexEntry {
   const ts = new Date(Date.now() - daysAgo * MS_PER_DAY).toISOString();
   return {
     ts,
     durationMs: 1000,
-    chatId: overrides.chatId ?? `chat-${Math.random().toString(36).slice(2, 10)}`,
+    chatId:
+      overrides.chatId ?? `chat-${Math.random().toString(36).slice(2, 10)}`,
     conversationId: overrides.conversationId ?? "conv-1",
     model: "test/model",
     errorType: "timeout",
@@ -48,9 +52,10 @@ function makeEntry(daysAgo: number, overrides: Partial<ErrorIndexEntry> = {}): E
 
 function writeIndex(errorsDir: string, entries: ErrorIndexEntry[]): void {
   fs.mkdirSync(errorsDir, { recursive: true });
-  const content = entries.length === 0
-    ? ""
-    : `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
+  const content =
+    entries.length === 0
+      ? ""
+      : `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
   fs.writeFileSync(path.join(errorsDir, "index.jsonl"), content, "utf8");
 }
 
@@ -105,7 +110,11 @@ describe("pruneErrorLogs", () => {
 
     const result = await pruneErrorLogs(errorsDir);
 
-    expect(result).toEqual({ entriesRemoved: 0, filesDeleted: 0, bytesFreed: 0 });
+    expect(result).toEqual({
+      entriesRemoved: 0,
+      filesDeleted: 0,
+      bytesFreed: 0,
+    });
   });
 
   it("returns zeros when index.jsonl is empty", async () => {
@@ -116,7 +125,11 @@ describe("pruneErrorLogs", () => {
 
     const result = await pruneErrorLogs(errorsDir);
 
-    expect(result).toEqual({ entriesRemoved: 0, filesDeleted: 0, bytesFreed: 0 });
+    expect(result).toEqual({
+      entriesRemoved: 0,
+      filesDeleted: 0,
+      bytesFreed: 0,
+    });
   });
 
   it("prunes entries older than maxAgeDays", async () => {

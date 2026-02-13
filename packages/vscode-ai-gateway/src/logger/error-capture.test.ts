@@ -123,9 +123,7 @@ function makeSSEBuffer(count = 3): SSEEventEntry[] {
   }));
 }
 
-function makeErrorCapture(
-  overrides: Partial<ErrorCapture> = {},
-): ErrorCapture {
+function makeErrorCapture(overrides: Partial<ErrorCapture> = {}): ErrorCapture {
   return {
     ts: "2026-02-10T12:00:00.000Z",
     chatId: "chat-123",
@@ -204,8 +202,8 @@ describe("writeError", () => {
 
     // Should write capture JSON
     expect(hoisted.mockWriteFile).toHaveBeenCalledOnce();
-    const [capturePath, captureContent] =
-      hoisted.mockWriteFile.mock.calls[0] as [string, string];
+    const [capturePath, captureContent] = hoisted.mockWriteFile.mock
+      .calls[0] as [string, string];
     expect(capturePath).toBe("/storage/errors/2026-02-10/chat-123.json");
     const parsed = parseCapture(captureContent);
     expect(parsed.errorType).toBe("no-response");
@@ -222,20 +220,16 @@ describe("writeError", () => {
     // Should write 2 files: capture JSON + SSE JSONL
     expect(hoisted.mockWriteFile).toHaveBeenCalledTimes(2);
 
-    const sseCalls = hoisted.mockWriteFile.mock.calls.filter(
-      (c: unknown[]) => (c[0] as string).endsWith(".sse.jsonl"),
+    const sseCalls = hoisted.mockWriteFile.mock.calls.filter((c: unknown[]) =>
+      (c[0] as string).endsWith(".sse.jsonl"),
     );
     expect(sseCalls).toHaveLength(1);
     const [ssePath, sseContent] = sseCalls[0] as [string, string];
-    expect(ssePath).toBe(
-      "/storage/errors/2026-02-10/chat-123.sse.jsonl",
-    );
+    expect(ssePath).toBe("/storage/errors/2026-02-10/chat-123.sse.jsonl");
     const lines = sseContent.trim().split("\n");
     expect(lines).toHaveLength(3);
     const firstLine = lines[0] ?? "";
-    expect(parseSSE(firstLine).type).toBe(
-      "response.output_text.delta",
-    );
+    expect(parseSSE(firstLine).type).toBe("response.output_text.delta");
   });
 
   it("skips SSE file when buffer is empty", async () => {
@@ -278,7 +272,9 @@ describe("writeError", () => {
 
     await writeError("/storage/errors", capture, []);
 
-    const indexContent = (hoisted.mockAppendFile.mock.calls[0] as [string, string])[1];
+    const indexContent = (
+      hoisted.mockAppendFile.mock.calls[0] as [string, string]
+    )[1];
     const entry = parseIndex(indexContent.trim());
     expect(entry.conversationId).toBe("conv-789");
     expect(entry.isSummarization).toBe(true);
@@ -344,7 +340,9 @@ describe("ErrorCaptureLogger", () => {
 
     await errorLogger.captureError(data, []);
 
-    const captureContent = (hoisted.mockWriteFile.mock.calls[0] as [string, string])[1];
+    const captureContent = (
+      hoisted.mockWriteFile.mock.calls[0] as [string, string]
+    )[1];
     const capture = parseCapture(captureContent);
 
     expect(capture.ts).toBe("2026-02-10T12:00:00.000Z");
@@ -404,7 +402,9 @@ describe("ErrorCaptureLogger", () => {
 
     await errorLogger.captureError(data, []);
 
-    const captureContent = (hoisted.mockWriteFile.mock.calls[0] as [string, string])[1];
+    const captureContent = (
+      hoisted.mockWriteFile.mock.calls[0] as [string, string]
+    )[1];
     const capture = parseCapture(captureContent);
 
     expect(capture.request.body.model).toBe("claude-sonnet-4-20250514");
@@ -423,10 +423,10 @@ describe("ErrorCaptureLogger", () => {
 
     await errorLogger.captureError(data, []);
 
-    const indexContent = (hoisted.mockAppendFile.mock.calls[0] as [string, string])[1];
+    const indexContent = (
+      hoisted.mockAppendFile.mock.calls[0] as [string, string]
+    )[1];
     const entry = parseIndex(indexContent.trim());
     expect(entry.isSummarization).toBe(true);
   });
 });
-
-
