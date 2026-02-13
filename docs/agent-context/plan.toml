@@ -1793,7 +1793,8 @@ ulid = "01KHC7QX92HR3RR3JA83TT45SD"
 [[epochs.phases.goals]]
 id = "first-run-experience"
 label = "First-run experience: detect no-auth state on activation, show welcome notification with setup steps"
-status = "pending"
+status = "completed"
+completion_log = "Commit a976da1. Welcome notification with auth detection and globalState tracking. 480/480 tests pass."
 ulid = "01KHC3J3H0TD4ZXGPHKCQRC39Z"
 
 [[epochs.phases]]

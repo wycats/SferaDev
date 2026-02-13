@@ -75,29 +75,29 @@ id = "first-run-experience"
 id = "first-run-experience::detect-no-auth"
 title = "In extension.ts after provider creation, check if getApiKey(true) returns undefined AND no sessions exist"
 status = "completed"
-completed_at = "2026-02-13T22:56:56.188801786+00:00"
-completion_log = "Added first-run auth check on activation using env var, sessions, and CLI token."
+completed_at = "2026-02-13T22:58:27.908172595+00:00"
+completion_log = "Check env vars, authProvider.getSessions(), and CLI token fallback"
 
 [[plan.goals.tasks]]
 id = "first-run-experience::show-welcome-notification"
 title = "When no-auth detected, show showInformationMessage with welcome text and Set Up Authentication button"
 status = "completed"
-completed_at = "2026-02-13T22:56:56.213349021+00:00"
-completion_log = "Show welcome info message when no auth configured."
+completed_at = "2026-02-13T22:58:33.301142102+00:00"
+completion_log = "showInformationMessage with welcome text and Set Up Authentication button"
 
 [[plan.goals.tasks]]
 id = "first-run-experience::track-first-run"
 title = "Use context.globalState to track vercel.ai.welcomeShown so notification only appears once per profile"
 status = "completed"
-completed_at = "2026-02-13T22:56:56.228676705+00:00"
-completion_log = "Persist welcome shown flag in globalState."
+completed_at = "2026-02-13T22:58:37.762001596+00:00"
+completion_log = "vercel.ai.welcomeShown in context.globalState — only shows once per profile"
 
 [[plan.goals.tasks]]
 id = "first-run-experience::wire-setup-button"
 title = "Button click runs vercel.ai.manageAuthentication command to start auth flow"
 status = "completed"
-completed_at = "2026-02-13T22:56:56.243340579+00:00"
-completion_log = "Wire Set Up Authentication button to vercel.ai.manage command."
+completed_at = "2026-02-13T22:58:43.490048182+00:00"
+completion_log = "Button click runs vercel.ai.manage command to start auth flow"
 
 [[plan.goals]]
 id = "error-audit"
