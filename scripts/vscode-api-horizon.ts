@@ -23,6 +23,7 @@
  *                           (default: signals)
  *
  * See docs/research/VSCODE_API_HORIZON_METHODOLOGY.md for background.
+ * See scripts/proposal-priority-model.md for the value/priority decision function.
  */
 
 import * as fs from "node:fs";
