@@ -143,27 +143,37 @@ id = "design-token-interface"
 [[plan.goals.tasks]]
 id = "design-token-interface::audit-workaround"
 title = "Audit counter.ts and ai-tokenizer usage: document estimation approach, accuracy"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:50:55.332220121+00:00"
+completion_log = "Full audit of token counting workaround. TokenCounter class (counter.ts, 583 lines): uses ai-tokenizer with model-family encoding dispatch (o200k_base for OpenAI, claude for Anthropic). Methods: estimateTextTokens (LRU cached), estimateMessageTokens (handles all part types, skips metadata MIMEs), countToolsTokens (GCMP formula: 16 base + 8/tool + content × multiplier), countSystemPromptTokens (text + 28 overhead). Multipliers: 1.1 general, 1.4 Anthropic schema, 1.25 Anthropic tool calls. TokenUsage interface (status-bar.ts:39): {inputTokens, outputTokens, maxInputTokens?, modelId?, contextManagement?, messageCount?}. AgentEntry tracks: inputTokens, outputTokens, lastActualInputTokens, totalOutputTokens, turnCount, estimatedInputTokens, estimatedDeltaTokens, estimationSource. Display logic (display.ts): streaming shows delta-anchored or full estimate; complete shows actuals. Summarization detection: 30% token drop between turns. Token flow: counter.ts estimates pre-flight → openresponses-chat.ts gets API usage → status-bar.ts completeAgent stores actuals → display.ts computes what to show."
 
 [[plan.goals.tasks]]
 id = "design-token-interface::audit-proposal"
 title = "Audit token proposals: ChatResultUsage + promptTokenDetails[] from chatParticipantAdditions — native token widget shape, category breakdowns"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:51:19.971984925+00:00"
+completion_log = """Audited token proposals. ChatResultUsage (chatParticipantAdditions): {promptTokens: number, completionTokens: number, promptTokenDetails?: ChatResultPromptTokenDetail[]}. ChatResultPromptTokenDetail: {category: string, label: string, percentageOfPrompt: number}. Reported via ChatResponseStream.usage() — participant-side only. Categories are strings like "System", "Context", "Conversation". Our TokenUsage maps: inputTokens→promptTokens, outputTokens→completionTokens. NEW capability: promptTokenDetails provides category breakdown (system prompt, context, conversation) as percentages. Our counter.ts already computes these separately (countSystemPromptTokens, countToolsTokens, estimateMessageTokens) but doesn't expose them as a unified breakdown. languageModelCapabilities has no token-related types (only supportsToolCalling, supportsImageToText, editToolsHint). Key gap: ChatResultUsage is participant-side (ChatResponseStream), not provider-side. We'd need participant registration to use it natively."""
 
 [[plan.goals.tasks]]
 id = "design-token-interface::surface-questions"
 title = "Document design questions (per-message vs context, streaming, delta composition, ChatResultUsage shape alignment, promptTokenDetails categories)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:51:45.094765493+00:00"
+completion_log = "Surfaced 7 design questions: (1) Estimation vs actuals — interface should cover both phases or just actuals? (2) Category breakdown shape — percentages (ChatResultUsage) vs absolute counts (our counter.ts). (3) Streaming vs complete — support streaming updates or just final? (4) Delta estimation — include estimatedDeltaTokens or treat as impl detail? (5) Provider-side vs participant-side — push (reporter) vs pull (provider) model. (6) Tool schema tokens — first-class concept or just a category? (7) maxInputTokens — part of token interface or model metadata?"
 
 [[plan.goals.tasks]]
 id = "design-token-interface::draft-interface"
 title = "Draft TokenCountProvider interface in TypeScript"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:52:44.308069174+00:00"
+completion_log = "Drafted TokenCountProvider interface at docs/rfcs/stage-1/00066-token-interface-draft.ts. Key types: TokenUsageReport (promptTokens + completionTokens + promptBreakdown), TokenCategoryDetail (category + label + absolute tokens), TokenEstimate (total + isAnchored + breakdown). Two provider interfaces: TokenEstimator (pre-flight estimation from messages) and TokenUsageReporter (post-response actuals from API). TokenCountService composite. Design decisions: absolute counts not percentages, separate estimator/reporter, maxInputTokens excluded (model metadata), delta estimation abstracted via isAnchored flag."
 
 [[plan.goals.tasks]]
 id = "design-token-interface::map-implementations"
 title = "Map interface to counter.ts + usage-tracker.ts workarounds + ChatResultUsage/promptTokenDetails API"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:53:33.212528983+00:00"
+completion_log = "Created token implementation map at docs/rfcs/stage-1/00066-token-implementation-map.md. Maps: AiTokenizerEstimator wraps TokenCounter (counter.ts) with 3 categories (System, Tools, Conversation). OpenResponsesUsageReporter wraps API Usage → TokenUsageReport with derived breakdown from estimate proportions. ChatResultUsageReporter (future) converts ChatResultUsage percentages to absolute counts. Consumer migration: 6 consumers, main cost is field renaming (inputTokens→promptTokens, outputTokens→completionTokens). 3-phase adoption: Extract → Add breakdown → Switch to native ChatResultUsage."
 
 [[plan.goals]]
 id = "design-thinking-interface"
@@ -171,27 +181,37 @@ id = "design-thinking-interface"
 [[plan.goals.tasks]]
 id = "design-thinking-interface::audit-workaround"
 title = "Audit synthetic-parts.ts and ThinkingData: document current DataPart approach"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:55:17.193305802+00:00"
+completion_log = """Full audit of thinking workaround. Two layers: (1) Provider-side: stream-adapter.ts emits LanguageModelThinkingPart (proposed API, available at runtime without enabledApiProposals) during reasoning deltas. Buffers 20+ chars before flushing. On reasoning done, emits DataPart('thinking') with ThinkingDataContainer for persistence. (2) Synthetic parts: synthetic-parts.ts defines ThinkingPart {kind: "thinking", content, id?}, converts to LanguageModelThinkingPart when available, falls back to TextPart. Runtime detection via VSCodeThinkingPart = vscode.LanguageModelThinkingPart. (3) Persistence: ThinkingData {id, text, metadata?, tokens?} encoded as ThinkingDataContainer {type: "thinking", thinking: ThinkingData} in DataPart. Survives round-trips via undocumented MIME allowlist. findThinkingData() recovers from message history. (4) Token counting: isMetadataMime() excludes thinking DataParts from token estimation."""
 
 [[plan.goals.tasks]]
 id = "design-thinking-interface::audit-proposal"
 title = "Audit thinking proposals: languageModelThinkingPart (provider-side) + ChatResponseThinkingProgressPart/ThinkingDelta (participant-side)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:55:37.889139129+00:00"
+completion_log = "Audited thinking proposals. (1) languageModelThinkingPart (version 1, provider-side): LanguageModelThinkingPart class {value: string|string[], id?: string, metadata?: Record}. Added to LanguageModelChatResponse.stream union. Also adds LanguageModelChatMessage2 with ThinkingPart in content array. This is what we ALREADY USE at runtime — the class exists on vscode namespace without enabledApiProposals. Our stream-adapter.ts creates instances directly. Key: this is the provider-side API for emitting thinking content. (2) chatParticipantAdditions (participant-side): ChatResponseThinkingProgressPart class {value: string|string[], id?, metadata?, task?} — wraps LanguageModelThinkingPart with a task callback for streaming. ThinkingDelta type = {text?, id, metadata?} | {text?, id?, metadata} | {text, id?, metadata?} — union requiring at least one of text/id/metadata. ChatResponseStream.thinkingProgress(thinkingDelta) — participant-side streaming method. Key difference: provider-side emits LanguageModelThinkingPart directly in the response stream; participant-side wraps it in ChatResponseThinkingProgressPart with a task callback pattern. Our extension uses provider-side (correct for LM provider)."
 
 [[plan.goals.tasks]]
 id = "design-thinking-interface::surface-questions"
 title = "Document design questions (streaming vs complete, opt-in, token counting interaction, provider-side vs participant-side rendering)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:56:21.120585194+00:00"
+completion_log = "Surfaced 6 design questions: (1) Already using proposal API — LanguageModelThinkingPart exists at runtime, is there a workaround to abstract? (2) Streaming vs persistence duality — ThinkingPart for streaming, DataPart('thinking') for persistence. (3) Buffering strategy — 20-char threshold, interface-level or impl detail? (4) Provider-side vs participant-side rendering — LanguageModelThinkingPart vs ChatResponseThinkingProgressPart. (5) Thinking token counting — excluded from estimation but real tokens, expose separately? (6) Opt-in thinking — capability detection for models that support it."
 
 [[plan.goals.tasks]]
 id = "design-thinking-interface::draft-interface"
 title = "Draft ThinkingContentProvider interface in TypeScript"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:57:38.811484936+00:00"
+completion_log = "Drafted ThinkingContentProvider interface at docs/rfcs/stage-1/00066-thinking-interface-draft.ts. Key types: ThinkingBlock {id, text, metadata?, tokens?}. ThinkingContentProvider with: isSupported (runtime detection), createStreamingPart (LanguageModelThinkingPart), createPersistencePart (DataPart encoding, returns undefined when native persistence available), recoverFromHistory (scan message history). Thinner than identity/tokens because we already use the proposed API directly. Main value: formalizes streaming/persistence duality and prepares for stable API transition."
 
 [[plan.goals.tasks]]
 id = "design-thinking-interface::map-implementations"
 title = "Map interface to synthetic-parts.ts workaround + languageModelThinkingPart + ChatResponseThinkingProgressPart APIs"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:58:46.977643614+00:00"
+completion_log = "Created thinking implementation map at docs/rfcs/stage-1/00066-thinking-implementation-map.md. Maps 3 implementations: (1) ThinkingPartEmitter (current) — dual emission: LanguageModelThinkingPart for streaming + DataPart('thinking') for persistence. Touches stream-adapter.ts, synthetic-parts.ts, stateful-marker.ts. (2) ChatResponseThinkingEmitter (future participant-side) — uses ChatResponseStream.thinkingProgress() with ThinkingDelta. (3) Stable ThinkingPart (future) — no casts, no DataPart hack, native persistence. 5 consumers mapped. 3-phase adoption: Extract → Simplify when stable → Optional participant-side."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
