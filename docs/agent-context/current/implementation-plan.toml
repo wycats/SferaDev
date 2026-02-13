@@ -137,27 +137,37 @@ id = "wire-error-capture"
 [[plan.goals.tasks]]
 id = "wire-error-capture::pass-context-to-chat"
 title = "Add ExtensionContext to OpenResponsesChatOptions and pass from provider.ts provideLanguageModelChatResponse"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:15:05.200352147+00:00"
+completion_log = "Added globalStorageUri to OpenResponsesChatOptions interface and passed from provider.ts context"
 
 [[plan.goals.tasks]]
 id = "wire-error-capture::capture-at-no-response"
 title = "At safety check, call ErrorCaptureLogger.captureError with errorType=no-response, include investigationHandle.getBuffer() for SSE"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:15:08.991516241+00:00"
+completion_log = "ErrorCaptureLogger.captureError at no-response safety check with buildErrorCaptureData helper"
 
 [[plan.goals.tasks]]
 id = "wire-error-capture::capture-at-timeout"
 title = "At timeout block, call ErrorCaptureLogger.captureError with errorType=timeout, include SSE buffer"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:15:12.388245803+00:00"
+completion_log = "ErrorCaptureLogger.captureError at stream inactivity timeout path"
 
 [[plan.goals.tasks]]
 id = "wire-error-capture::capture-at-api-error"
 title = "At API error catch, call ErrorCaptureLogger.captureError with errorType=api-error, include SSE buffer and parsed error details"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:15:16.286882148+00:00"
+completion_log = "ErrorCaptureLogger.captureError at API error catch block"
 
 [[plan.goals.tasks]]
 id = "wire-error-capture::fix-investigation-complete-gap"
 title = "Add investigationHandle.complete() with status=error at the no-response safety check path (currently only called inside stream loop)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T22:15:20.793657750+00:00"
+completion_log = "Added investigationHandle.complete() at no-response path to ensure SSE buffer is flushed"
 
 [[plan.goals]]
 id = "export-error-logs"

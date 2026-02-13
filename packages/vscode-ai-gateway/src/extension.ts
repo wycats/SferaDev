@@ -357,6 +357,24 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(pruneCommand);
 
+  // Fire-and-forget error log pruning on activation
+  void (async () => {
+    try {
+      const { pruneErrorLogs } = await import(
+        "./logger/error-capture-prune.js"
+      );
+      const errorsDir = path.join(context.globalStorageUri.fsPath, "errors");
+      const result = await pruneErrorLogs(errorsDir);
+      if (result.entriesRemoved > 0) {
+        logger.info(
+          `[ErrorCapture] Pruned ${result.entriesRemoved} old error logs (${result.filesDeleted} files, ${result.bytesFreed} bytes freed)`,
+        );
+      }
+    } catch (err) {
+      logger.warn(`[ErrorCapture] Error pruning logs: ${String(err)}`);
+    }
+  })();
+
   // Register command to manage authentication
   const commandDisposable = vscode.commands.registerCommand(
     `${EXTENSION_ID}.manage`,

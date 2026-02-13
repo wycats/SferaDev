@@ -1765,7 +1765,8 @@ ulid = "01KHC3HVNS1VK38HG43652S5R7"
 [[epochs.phases.goals]]
 id = "wire-error-capture"
 label = "Wire error capture into all failure paths: no-response safety check, timeout, OpenResponsesError, network errors — ensure investigation handle.complete() is called with error status"
-status = "pending"
+status = "completed"
+completion_log = "Commit 24d9572. ErrorCaptureLogger wired into all 3 failure paths. 474/474 tests pass."
 ulid = "01KHC66G30748CVBYHG3ANVS69"
 
 [[epochs.phases.goals]]
