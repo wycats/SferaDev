@@ -27,12 +27,12 @@ The problem: when debugging a production issue, you need to correlate across all
 
 ## Current State (Audit Results)
 
-| System | Output | Persistence | Scoped | Structured |
-|--------|--------|-------------|--------|------------|
-| Narrative logger | Output Channel + console | No | No | No |
-| Tree diagnostics | Output Channel (via logger) | No | No | Yes (snapshots) |
-| Diagnostic dump | `.logs/` file | Yes (on-demand) | No | Yes (JSON) |
-| InvestigationLogger | `.logs/` directory tree | Yes | Per-request | Yes (JSONL) |
+| System              | Output                      | Persistence     | Scoped      | Structured      |
+| ------------------- | --------------------------- | --------------- | ----------- | --------------- |
+| Narrative logger    | Output Channel + console    | No              | No          | No              |
+| Tree diagnostics    | Output Channel (via logger) | No              | No          | Yes (snapshots) |
+| Diagnostic dump     | `.logs/` file               | Yes (on-demand) | No          | Yes (JSON)      |
+| InvestigationLogger | `.logs/` directory tree     | Yes             | Per-request | Yes (JSONL)     |
 
 ## Proposed Alignment
 

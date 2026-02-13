@@ -105,27 +105,37 @@ id = "design-identity-interface"
 [[plan.goals.tasks]]
 id = "design-identity-interface::audit-workaround"
 title = "Audit stateful-marker.ts: document current behavior, edge cases, limitations"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:43:22.540452331+00:00"
+completion_log = 'Full audit of stateful-marker.ts identity workaround complete. Documented: (1) Emission site in stream-adapter.ts:545 — encodes {provider, modelId, sdkMode, sessionId=conversationId, responseId} as DataPart("stateful_marker") on response.completed. (2) Recovery in provider.ts:247-248 — findLatestStatefulMarker scans backward through assistant messages, falls back to randomUUID(). (3) Consumption: conversationId flows to openresponses-chat (prompt_cache_key), status-bar (agentsByConversationId map), persistence/stores (PersistedAgentState, 7-day TTL), investigation logger (directory structure), tree-diagnostics, agent-tree (filtering). Edge cases: first turn gets new UUID (identity unstable until first response), expireAt defined but never set (dead code), relies on undocumented DataPart MIME allowlist, extension ID hardcoded, _modelId param unused in search, no workspace scoping.'
 
 [[plan.goals.tasks]]
 id = "design-identity-interface::audit-proposal"
 title = "Audit identity proposals: agentSessionsWorkspace (80) + chatSessionsProvider (55) — API shapes, stability, workspace vs conversation scope"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:45:17.483704040+00:00"
+completion_log = "Audited both identity proposals. (1) agentSessionsWorkspace (readiness 80): Trivial — single boolean `workspace.isAgentSessionsWorkspace`. Only 1 commit. Indicates whether the window is a dedicated agent session workspace. NOT a conversation identity API — it's a workspace-type flag. Enabled by copilot-chat. Relevance to our identity problem: minimal. It tells us IF we're in an agent workspace, not WHO the conversation is. (2) chatSessionsProvider (readiness 55, version 3): Rich API — ChatSessionItemProvider, ChatSessionItemController, ChatSessionContentProvider, ChatSessionItem (with resource URI, label, status, timing, changes, metadata), ChatSession (with history, options, activeResponseCallback, requestHandler). 15+ commits, very active development. Enabled by copilot-chat@v3. This is a FULL session management API — it provides session identity (resource URI), persistence (provider/controller pattern), history access, and session lifecycle. Key shapes: ChatSessionItem.resource (Uri) is the identity, ChatSessionItem.timing has created/lastRequestStarted/lastRequestEnded, ChatSessionItem.metadata is arbitrary JSON. ChatSessionContext in ChatContext gives access to the current session item. This is the real identity replacement — our conversationId maps to ChatSessionItem.resource, our PersistedAgentState maps to ChatSessionItem.metadata."
 
 [[plan.goals.tasks]]
 id = "design-identity-interface::surface-questions"
 title = "Document design questions (first turn, UUID gen, restart stability, workspace vs per-conversation, persistence vs identity-only)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:45:54.692154798+00:00"
+completion_log = "Surfaced 7 design questions: (1) First-turn identity gap — current workaround has unstable identity until first response, chatSessionsProvider provides identity before first turn via ChatSessionItem.resource. (2) Identity type — UUID string vs Uri vs opaque ConversationId. (3) Workspace scoping — current has none, agentSessionsWorkspace is just a boolean, chatSessionsProvider uses Uri. (4) Persistence boundary — should identity include persistence (like chatSessionsProvider metadata) or be separate? (5) Session vs conversation vs request — three identity levels, which does the interface provide? (6) Provider-side vs participant-side — our extension is an LM provider, chatSessionsProvider requires ChatParticipant. Can providers use it? (7) prompt_cache_key coupling — identity currently doubles as cache key, should these be decoupled?"
 
 [[plan.goals.tasks]]
 id = "design-identity-interface::draft-interface"
 title = "Draft ConversationIdentityProvider interface in TypeScript"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:47:01.364180170+00:00"
+completion_log = "Drafted ConversationIdentityProvider interface at docs/rfcs/stage-1/00066-identity-interface-draft.ts. Key types: ConversationId (branded string), IdentityResolution (conversationId + source + isNew), ConversationIdentityProvider (resolve method), IdentityMarkerEmitter (workaround-specific marker creation), ConversationIdentityService (composite). Design decisions: (1) string not Uri for testability and common denominator, (2) persistence excluded — orthogonal concern, (3) marker emission separated from resolution, (4) chatSessionsProvider impl would have no markerEmitter, (5) first-turn identity is valid but marked isNew=true. Extensive design notes documenting rationale for each decision."
 
 [[plan.goals.tasks]]
 id = "design-identity-interface::map-implementations"
 title = "Map interface to stateful-marker.ts workaround + agentSessionsWorkspace + chatSessionsProvider APIs"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-13T06:47:55.252011477+00:00"
+completion_log = "Created implementation map at docs/rfcs/stage-1/00066-identity-implementation-map.md. Maps interface to 3 implementations: (1) StatefulMarkerIdentityProvider — wraps existing findLatestStatefulMarker + encodeStatefulMarker, touches provider.ts:247-248 and stream-adapter.ts:545-556. (2) ChatSessionIdentityProvider — delegates to ChatContext.chatSessionContext.chatSessionItem.resource, requires participant registration (significant architectural change). (3) agentSessionsWorkspace — orthogonal, not an identity provider, just a workspace-type flag. Consumer migration map shows all 7 consumers (provider.ts, openresponses-chat.ts, status-bar.ts, persistence/stores.ts, investigation.ts, tree-diagnostics.ts, agent-tree.ts) work unchanged because ConversationId is a branded string. 3-phase adoption strategy: Extract → Prepare → Switch."
 
 [[plan.goals]]
 id = "design-token-interface"

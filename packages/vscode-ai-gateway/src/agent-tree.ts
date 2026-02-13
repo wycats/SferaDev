@@ -297,8 +297,7 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
     // conversation's agents. This prevents showing a composite of agents
     // from all past conversations. Applied to both root and child lookups.
     const isIdle = this.statusBar.getActiveAgentId() === null;
-    const lastConversationId =
-      this.statusBar.getLastActiveConversationId();
+    const lastConversationId = this.statusBar.getLastActiveConversationId();
 
     const agents =
       isIdle && lastConversationId
