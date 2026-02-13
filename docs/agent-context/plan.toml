@@ -739,7 +739,7 @@ aliases = ["parallel-operation"]
 [[epochs]]
 id = "triage-epoch"
 title = "Ideas to Triage"
-status = "pending"
+status = "active"
 ulid = "01KG0K3GP3D0XB36ZJW8TDGXW4"
 slug = "triage-epoch"
 aliases = ["triage-epoch"]
@@ -747,7 +747,7 @@ aliases = ["triage-epoch"]
 [[epochs.phases]]
 id = "phase-auth-triage"
 title = "Authentication (RFC 005b - Triage)"
-status = "pending"
+status = "active"
 kind = "regular"
 ulid = "01KG0K3GP3M2BAGZ7V83FDSBQ0"
 slug = "phase-auth-triage"
@@ -1730,7 +1730,7 @@ ulid = "01KHC3FJAZWW6GHX1GDNSJD3JY"
 [[epochs.phases]]
 id = "01khc3gc5x730gg3sr2w85hd3e"
 title = "Auth & Onboarding"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHC3GC5X730GG3SR2W85HD3E"
 
