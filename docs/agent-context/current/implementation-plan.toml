@@ -8,8 +8,57 @@ id = "01khc3gkfxqf829czsgj1xtdtc"
 [[plan.goals]]
 id = "error-audit"
 
+[[plan.goals.tasks]]
+id = "audit-error-paths"
+title = "Audit all error paths and document findings"
+status = "completed"
+completed_at = "2026-02-13T23:15:14.483050966+00:00"
+completion_log = "Created docs/investigation/error-path-audit.md with 16 error paths catalogued, gap analysis, and recommendations for goals 2 and 3"
+
 [[plan.goals]]
 id = "user-facing-errors"
+
+[[plan.goals.tasks]]
+id = "add-error-constants"
+title = "Add status-specific error message constants to constants.ts"
+status = "completed"
+completed_at = "2026-02-13T23:17:41.063217297+00:00"
+completion_log = "Added 8 new error message constants: MODEL_NOT_FOUND, RATE_LIMITED, SERVER_ERROR, SERVICE_UNAVAILABLE, NETWORK_ERROR, CONTENT_FILTERED, RESPONSE_TRUNCATED, RESPONSE_FAILED, MODELS_UNAVAILABLE"
+
+[[plan.goals.tasks]]
+id = "status-specific-chat-errors"
+title = "Implement status-specific error handling in openresponses-chat.ts catch block"
+status = "completed"
+completed_at = "2026-02-13T23:19:10.882361724+00:00"
+completion_log = "Added classifyError() helper that maps HTTP status codes and network errors to user-friendly messages. 401→auth handling (existing), 403→AUTH_KEY_INVALID, 404→MODEL_NOT_FOUND, 429→RATE_LIMITED, 500→SERVER_ERROR, 502/503→SERVICE_UNAVAILABLE, network→NETWORK_ERROR. Raw messages preserved for forensic logging."
+
+[[plan.goals.tasks]]
+id = "stream-error-ux"
+title = "Add user-facing messages for stream-adapter terminal events (response.failed, response.incomplete, error)"
+status = "completed"
+completed_at = "2026-02-13T23:21:22.988578049+00:00"
+completion_log = "Updated stream-adapter.ts: response.failed uses RESPONSE_FAILED constant, response.incomplete now emits user-facing Note for content_filter/max_output_tokens/unknown reasons (was silent), error event classifies by error code for actionable messages"
+
+[[plan.goals.tasks]]
+id = "wire-stream-error-capture"
+title = "Wire ErrorCaptureLogger into stream-adapter failure paths"
+status = "completed"
+completed_at = "2026-02-13T23:21:55.674442651+00:00"
+completion_log = "Added ErrorCaptureLogger.captureError() call in the adapted.done block for stream-level errors (response.failed, error events). Captures with api-error type and includes investigation events for forensics."
+
+[[plan.goals.tasks]]
+id = "model-list-failure-ux"
+title = "Show notification when model list fetch fails with no cached models"
+status = "completed"
+completed_at = "2026-02-13T23:22:28.587522219+00:00"
+completion_log = "Added warning notification when model list fetch fails and no cached models are available. Uses MODELS_UNAVAILABLE constant."
+
+[[plan.goals.tasks]]
+id = "error-ux-tests"
+title = "Add tests for all new error message paths"
+status = "completed"
+completed_at = "2026-02-13T23:38:57.683992623+00:00"
+completion_log = "Added 22 new tests: 10 in openresponses-chat.test.ts for error classification (404/429/500/502/network/unknown), 12 in stream-adapter-errors.test.ts for stream-level error UX (response.failed, response.incomplete, error events). All 502 tests pass."
 
 [[plan.goals]]
 id = "retry-resilience"

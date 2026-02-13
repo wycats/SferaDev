@@ -39,4 +39,25 @@ export const ERROR_MESSAGES = {
     "Your API key was rejected by the server. Please check your authentication settings.",
   AUTH_KEY_EXPIRED:
     "Your authentication has expired. Please re-authenticate to continue.",
+  // Status-specific error messages with actionable guidance
+  MODEL_NOT_FOUND:
+    "Model not found. Check that the model name is correct and available in your Vercel AI Gateway.",
+  RATE_LIMITED:
+    "Rate limit exceeded. Please wait a moment and try again.",
+  SERVER_ERROR:
+    "The AI Gateway encountered an internal error. Please try again in a few moments.",
+  SERVICE_UNAVAILABLE:
+    "The AI Gateway is temporarily unavailable. Please try again shortly.",
+  NETWORK_ERROR:
+    "Unable to reach the AI Gateway. Check your internet connection and try again.",
+  // Stream-level error messages
+  CONTENT_FILTERED:
+    "The response was filtered due to content policy. Try rephrasing your request.",
+  RESPONSE_TRUNCATED:
+    "The response was truncated because it reached the maximum output length. The model's output may be incomplete.",
+  RESPONSE_FAILED:
+    "The model failed to generate a response. Please try again.",
+  // Model list
+  MODELS_UNAVAILABLE:
+    "Unable to load models from Vercel AI Gateway. The model picker may be empty until connectivity is restored.",
 } as const;

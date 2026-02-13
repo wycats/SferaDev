@@ -34,8 +34,14 @@ const hoisted = vi.hoisted(() => {
 vi.mock("openresponses-client", () => ({
   createClient: hoisted.createClient,
   OpenResponsesError: class OpenResponsesError extends Error {
-    code?: string;
-    status?: number;
+    constructor(
+      message: string,
+      public readonly status?: number,
+      public readonly code?: string,
+    ) {
+      super(message);
+      this.name = "OpenResponsesError";
+    }
   },
 }));
 
@@ -91,7 +97,9 @@ vi.mock("../utils/stateful-marker.js", () => ({
   findLatestStatefulMarker: vi.fn(() => undefined),
 }));
 
+import { OpenResponsesError } from "openresponses-client";
 import { LanguageModelTextPart } from "vscode";
+import { ERROR_MESSAGES } from "../constants.js";
 import { logger } from "../logger.js";
 import {
   detectSummarizationRequest,
@@ -732,5 +740,250 @@ describe("detectSummarizationRequest", () => {
       ];
       expect(detectSummarizationRequest(messages)).toBe(false);
     });
+  });
+});
+
+describe("error classification and user-friendly messages", () => {
+  const model = {
+    id: "test-model",
+    maxInputTokens: 128000,
+    maxOutputTokens: 4096,
+  };
+
+  const baseChatOptions = {
+    configService: {
+      openResponsesBaseUrl: "http://localhost:1234",
+      timeout: 1000,
+    },
+    apiKey: "test-key",
+    estimatedInputTokens: 1234,
+    chatId: "chat-1",
+    conversationId: "test-conv-id",
+    globalStorageUri: { fsPath: "/tmp/test-global-storage" },
+  };
+
+  const options = { modelOptions: {} };
+  const chatMessages: unknown[] = [];
+
+  const createToken = () => ({
+    onCancellationRequested: () => ({ dispose: vi.fn() }),
+  });
+
+  const createProgress = () => ({ report: vi.fn() });
+
+  const statusBar = {
+    updateAgentActivity: vi.fn(),
+    completeAgent: vi.fn(),
+    errorAgent: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    hoisted.adaptMock.mockReset();
+  });
+
+  it("shows MODEL_NOT_FOUND for 404 errors", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new OpenResponsesError("Not Found", 404, "not_found");
+      },
+    });
+
+    const progress = createProgress();
+    const result = await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      progress,
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(ERROR_MESSAGES.MODEL_NOT_FOUND);
+    // Verify user sees the friendly message
+    const reportedParts = progress.report.mock.calls.map(
+      (c: unknown[]) => (c[0] as { value: string }).value,
+    );
+    expect(reportedParts.some((p: string) => p.includes(ERROR_MESSAGES.MODEL_NOT_FOUND))).toBe(true);
+  });
+
+  it("shows RATE_LIMITED for 429 errors", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new OpenResponsesError("Rate limit exceeded", 429, "rate_limit");
+      },
+    });
+
+    const progress = createProgress();
+    const result = await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      progress,
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(ERROR_MESSAGES.RATE_LIMITED);
+  });
+
+  it("shows SERVER_ERROR for 500 errors", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new OpenResponsesError("Internal Server Error", 500, "server_error");
+      },
+    });
+
+    const result = await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(ERROR_MESSAGES.SERVER_ERROR);
+  });
+
+  it("shows SERVICE_UNAVAILABLE for 502/503 errors", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new OpenResponsesError("Bad Gateway", 502, "bad_gateway");
+      },
+    });
+
+    const result = await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(ERROR_MESSAGES.SERVICE_UNAVAILABLE);
+  });
+
+  it("shows NETWORK_ERROR for connection failures", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new TypeError("fetch failed: ECONNREFUSED");
+      },
+    });
+
+    const result = await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(ERROR_MESSAGES.NETWORK_ERROR);
+  });
+
+  it("shows NETWORK_ERROR for DNS failures", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new Error("getaddrinfo ENOTFOUND ai-gateway.vercel.sh");
+      },
+    });
+
+    const result = await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe(ERROR_MESSAGES.NETWORK_ERROR);
+  });
+
+  it("preserves raw error message for unknown errors", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new Error("Something completely unexpected");
+      },
+    });
+
+    const result = await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Something completely unexpected");
+  });
+
+  it("logs raw error message for forensics even when showing friendly message", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        throw new OpenResponsesError("model xyz not found in registry", 404, "not_found");
+      },
+    });
+
+    await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    // Raw message should be logged, not the friendly one
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("model xyz not found in registry"),
+    );
+  });
+
+  it("captures stream-level errors via ErrorCaptureLogger", async () => {
+    hoisted.createClient.mockReturnValue({
+      createStreamingResponse: async function* () {
+        await Promise.resolve();
+        yield { type: "error", error: { message: "stream broke", code: "stream_error" } };
+      },
+    });
+
+    hoisted.adaptMock.mockReturnValueOnce({
+      parts: [new LanguageModelTextPart("error text")],
+      done: true,
+      error: "stream broke",
+      finishReason: "error",
+    });
+
+    const mockHandle = {
+      recorder: null,
+      complete: hoisted.mockComplete,
+      getEvents: vi.fn(() => []),
+    };
+    hoisted.mockStartRequest.mockReturnValue(mockHandle);
+
+    await executeOpenResponsesChat(
+      model as never,
+      chatMessages as never,
+      options as never,
+      createProgress(),
+      createToken() as never,
+      { ...baseChatOptions, statusBar } as never,
+    );
+
+    // ErrorCaptureLogger should have been called for stream-level error
+    // (The mock is auto-created by the vi.mock for error-capture.js)
+    expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
   });
 });

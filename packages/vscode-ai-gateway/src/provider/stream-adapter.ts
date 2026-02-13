@@ -59,6 +59,7 @@ import {
   LanguageModelThinkingPart,
   LanguageModelToolCallPart,
 } from "vscode";
+import { ERROR_MESSAGES } from "../constants.js";
 import { logger } from "../logger.js";
 import {
   CustomDataPartMimeTypes,
@@ -570,13 +571,14 @@ export class StreamAdapter {
   ): AdaptedEvent {
     const response = event.response as ResponseResource | undefined;
     const responseError = response?.error as ResponseError | null | undefined;
-    const errorMessage = responseError?.message ?? "Response generation failed";
+    const rawErrorMessage =
+      responseError?.message ?? "Response generation failed";
     const errorCode =
       responseError?.code !== undefined
         ? String(responseError.code)
         : undefined;
 
-    if (this.isCancellationError(errorMessage, errorCode)) {
+    if (this.isCancellationError(rawErrorMessage, errorCode)) {
       return {
         parts: [],
         done: true,
@@ -586,10 +588,16 @@ export class StreamAdapter {
       };
     }
 
+    // Use friendly message for user, preserve raw message in error field for forensics
+    const userMessage = ERROR_MESSAGES.RESPONSE_FAILED;
+    logger.error(
+      `[OpenResponses] response.failed: ${rawErrorMessage} (code: ${errorCode ?? "none"})`,
+    );
+
     return {
-      parts: [new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`)],
+      parts: [new LanguageModelTextPart(`\n\n**Error:** ${userMessage}\n\n`)],
       done: true,
-      error: errorMessage,
+      error: rawErrorMessage,
       finishReason: "error",
       responseId: response?.id,
     };
@@ -616,8 +624,25 @@ export class StreamAdapter {
 
     const usage = (response?.usage as Usage | null | undefined) ?? undefined;
 
+    // Emit user-facing message for non-cancellation incomplete responses
+    const parts: LanguageModelResponsePart[] = [];
+    if (!cancelled) {
+      let userMessage: string;
+      if (reason === "content_filter") {
+        userMessage = ERROR_MESSAGES.CONTENT_FILTERED;
+      } else if (reason === "max_output_tokens" || reason === "max_tokens") {
+        userMessage = ERROR_MESSAGES.RESPONSE_TRUNCATED;
+      } else {
+        userMessage = `Response ended unexpectedly (reason: ${reason}).`;
+      }
+      parts.push(new LanguageModelTextPart(`\n\n**Note:** ${userMessage}\n\n`));
+      logger.warn(
+        `[OpenResponses] response.incomplete: reason=${reason}, responseId=${response?.id ?? "unknown"}`,
+      );
+    }
+
     return {
-      parts: [],
+      parts,
       ...(usage ? { usage } : {}),
       done: true,
       finishReason,
@@ -1277,10 +1302,10 @@ export class StreamAdapter {
 
   private handleError(event: ErrorStreamingEvent): AdaptedEvent {
     const errorPayload = event.error as ErrorPayload | undefined;
-    const errorMessage = errorPayload?.message ?? "Unknown error";
+    const rawErrorMessage = errorPayload?.message ?? "Unknown error";
     const errorCode = errorPayload?.code ?? "UNKNOWN";
 
-    if (this.isCancellationError(errorMessage, errorCode)) {
+    if (this.isCancellationError(rawErrorMessage, errorCode)) {
       return {
         parts: [],
         done: true,
@@ -1291,14 +1316,34 @@ export class StreamAdapter {
       };
     }
 
+    // Log raw error for forensics, show friendly message to user
+    logger.error(
+      `[OpenResponses] Stream error event: code=${errorCode}, message=${rawErrorMessage}`,
+    );
+
+    // Classify the error code to provide actionable guidance
+    let userMessage: string;
+    if (
+      errorCode === "rate_limit_exceeded" ||
+      rawErrorMessage.toLowerCase().includes("rate limit")
+    ) {
+      userMessage = ERROR_MESSAGES.RATE_LIMITED;
+    } else if (
+      errorCode === "server_error" ||
+      errorCode === "internal_error"
+    ) {
+      userMessage = ERROR_MESSAGES.SERVER_ERROR;
+    } else {
+      // For unrecognized error codes, include the code for debugging
+      userMessage = `An error occurred (${errorCode}). Please try again.`;
+    }
+
     return {
       parts: [
-        new LanguageModelTextPart(
-          `\n\n**Error (${errorCode}):** ${errorMessage}\n\n`,
-        ),
+        new LanguageModelTextPart(`\n\n**Error:** ${userMessage}\n\n`),
       ],
       done: true,
-      error: errorMessage,
+      error: rawErrorMessage,
       finishReason: "error",
     };
   }

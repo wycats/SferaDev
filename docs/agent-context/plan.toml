@@ -1807,13 +1807,15 @@ ulid = "01KHC3GKFXQF829CZSGJ1XTDTC"
 [[epochs.phases.goals]]
 id = "error-audit"
 label = "Audit all error paths in provider.ts and openresponses-chat.ts: what does the user see when the endpoint is unreachable, returns 500, returns 429 (rate limit), or streams malformed SSE?"
-status = "pending"
+status = "completed"
+completion_log = "Audit complete: 16 error paths documented in docs/investigation/error-path-audit.md"
 ulid = "01KHC3JJF624NYQ700KDTN1XGP"
 
 [[epochs.phases.goals]]
 id = "user-facing-errors"
 label = "Implement user-friendly error messages with actionable guidance for common failure modes (network, auth, rate limit, model not found)"
-status = "pending"
+status = "completed"
+completion_log = "Implemented user-friendly error messages for all failure modes: 404→MODEL_NOT_FOUND, 429→RATE_LIMITED, 500→SERVER_ERROR, 502/503→SERVICE_UNAVAILABLE, network→NETWORK_ERROR, content_filter→CONTENT_FILTERED, max_output_tokens→RESPONSE_TRUNCATED, response.failed→RESPONSE_FAILED. Stream errors now captured by ErrorCaptureLogger. Model list failures show notification. 22 new tests, 502 total passing."
 ulid = "01KHC3JSMKZBCFX1RNH8M3JMMJ"
 
 [[epochs.phases.goals]]

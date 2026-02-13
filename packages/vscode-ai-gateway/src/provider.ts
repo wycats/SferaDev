@@ -222,6 +222,8 @@ export class VercelAIChatModelProvider
         );
         return cachedModels;
       }
+      // No cached models available — notify user so they know why the picker is empty
+      void window.showWarningMessage(ERROR_MESSAGES.MODELS_UNAVAILABLE);
       return [];
     }
   }

@@ -341,6 +341,80 @@ export async function executeOpenResponsesChat(
     };
   };
 
+  /**
+   * Classify an error and return a user-friendly message with the appropriate
+   * ErrorCaptureLogger error type. Falls back to the raw error message for
+   * unrecognized errors.
+   */
+  const classifyError = (
+    error: unknown,
+    rawMessage: string,
+  ): {
+    userMessage: string;
+    captureType: ErrorCaptureData["errorType"];
+  } => {
+    // Network errors (not OpenResponsesError — these are fetch/DNS/connection failures)
+    if (!(error instanceof OpenResponsesError)) {
+      const msg = rawMessage.toLowerCase();
+      if (
+        msg.includes("econnrefused") ||
+        msg.includes("enotfound") ||
+        msg.includes("etimedout") ||
+        msg.includes("fetch failed") ||
+        msg.includes("network") ||
+        msg.includes("dns")
+      ) {
+        return {
+          userMessage: ERROR_MESSAGES.NETWORK_ERROR,
+          captureType: "network-error",
+        };
+      }
+      // Unknown non-API error — use raw message
+      return { userMessage: rawMessage, captureType: "api-error" };
+    }
+
+    // HTTP status-specific handling
+    const status = error.status;
+    if (status === 401) {
+      // Auth errors are handled separately with notification + button
+      // Return raw message here; the auth notification logic runs independently
+      return { userMessage: rawMessage, captureType: "api-error" };
+    }
+    if (status === 403) {
+      return {
+        userMessage: ERROR_MESSAGES.AUTH_KEY_INVALID,
+        captureType: "api-error",
+      };
+    }
+    if (status === 404) {
+      return {
+        userMessage: ERROR_MESSAGES.MODEL_NOT_FOUND,
+        captureType: "api-error",
+      };
+    }
+    if (status === 429) {
+      return {
+        userMessage: ERROR_MESSAGES.RATE_LIMITED,
+        captureType: "api-error",
+      };
+    }
+    if (status === 500) {
+      return {
+        userMessage: ERROR_MESSAGES.SERVER_ERROR,
+        captureType: "api-error",
+      };
+    }
+    if (status === 502 || status === 503) {
+      return {
+        userMessage: ERROR_MESSAGES.SERVICE_UNAVAILABLE,
+        captureType: "api-error",
+      };
+    }
+
+    // Unrecognized status — use raw message
+    return { userMessage: rawMessage, captureType: "api-error" };
+  };
+
   try {
     // Translate messages to OpenResponses format
     const { input, instructions, tools, toolChoice } = translateRequest(
@@ -666,6 +740,14 @@ export async function executeOpenResponsesChat(
               }
             : null,
         });
+
+        // Capture stream-level errors (response.failed, error events) for forensics
+        if (adapted.error && !adapted.cancelled) {
+          void errorCaptureLogger.captureError(
+            buildErrorCaptureData("api-error", adapted.error),
+            investigationHandle?.getEvents() ?? [],
+          );
+        }
         break;
       }
     }
@@ -792,21 +874,24 @@ export async function executeOpenResponsesChat(
     }
 
     // Handle API errors
-    const errorMessage =
+    const rawErrorMessage =
       error instanceof OpenResponsesError
         ? `${error.message} (${error.code ?? error.status})`
         : error instanceof Error
           ? error.message
           : "Unknown error";
 
-    logger.error(`[OpenResponses] Request failed: ${errorMessage}`);
+    // Classify error for user-friendly messaging and correct capture type
+    const { userMessage, captureType } = classifyError(error, rawErrorMessage);
 
-    // Detect auth errors (401) and show actionable message
+    logger.error(`[OpenResponses] Request failed: ${rawErrorMessage}`);
+
+    // Detect auth errors (401) and show actionable message with button
     if (
       (error instanceof OpenResponsesError && error.status === 401) ||
-      errorMessage.includes("401")
+      rawErrorMessage.includes("401")
     ) {
-      const lowerErrorMessage = errorMessage.toLowerCase();
+      const lowerErrorMessage = rawErrorMessage.toLowerCase();
       const isExpired =
         lowerErrorMessage.includes("expired") ||
         lowerErrorMessage.includes("expire");
@@ -829,7 +914,7 @@ export async function executeOpenResponsesChat(
     // Fallback: if error indicates "too long" but we couldn't parse exact count
     if (
       !tokenInfo &&
-      errorMessage.toLowerCase().includes("too long") &&
+      rawErrorMessage.toLowerCase().includes("too long") &&
       model.maxInputTokens > 0
     ) {
       tokenInfo = {
@@ -847,21 +932,21 @@ export async function executeOpenResponsesChat(
       );
     }
 
-    // Emit error to user if we haven't sent anything yet
+    // Emit user-friendly error if we haven't sent anything yet
     if (!responseSent) {
       progress.report(
-        new LanguageModelTextPart(`\n\n**Error:** ${errorMessage}\n\n`),
+        new LanguageModelTextPart(`\n\n**Error:** ${userMessage}\n\n`),
       );
     }
 
     markAgentError();
 
-    // Investigation logging — error
+    // Investigation logging — error (use raw message for forensics)
     void investigationHandle?.complete({
       status: "error",
       finishReason: null,
       responseId: null,
-      error: errorMessage,
+      error: rawErrorMessage,
       durationMs: performance.now() - requestStartTime,
       ttftMs: timeToFirstToken,
       eventCount,
@@ -870,13 +955,13 @@ export async function executeOpenResponsesChat(
       usage: null,
     });
     void errorCaptureLogger.captureError(
-      buildErrorCaptureData("api-error", errorMessage),
+      buildErrorCaptureData(captureType, rawErrorMessage),
       investigationHandle?.getEvents() ?? [],
     );
 
     return tokenInfo
-      ? { success: false, error: errorMessage, tokenInfo }
-      : { success: false, error: errorMessage };
+      ? { success: false, error: userMessage, tokenInfo }
+      : { success: false, error: userMessage };
   } finally {
     // Clear streaming inactivity timer
     if (streamTimeoutId !== null) {
