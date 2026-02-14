@@ -1,0 +1,53 @@
+# READ-ONLY: Use 'exo' CLI to modify this file.
+# Implementation Plan
+
+[phase]
+id = "01khc3gkgdbgzr4pybs1rakarb"
+
+[plan]
+[[plan.goals]]
+id = "model-list-ux"
+
+[[plan.goals.tasks]]
+id = "apply-user-selectable"
+title = "Apply modelsUserSelectable config in transform.ts"
+status = "completed"
+completed_at = "2026-02-14T00:33:23.544145568+00:00"
+completion_log = "Handled as part of wire-default-model. TransformOptions.userSelectable controls isUserSelectable per model. When false, only the default model is selectable."
+
+[[plan.goals.tasks]]
+id = "model-refresh-cmd"
+title = "Add vercel.ai.refreshModels command for manual model list refresh"
+status = "completed"
+completed_at = "2026-02-14T00:42:05.464832472+00:00"
+completion_log = "Added invalidateCache() to ModelsClient, refreshModels() to provider, registered vercel.ai.refreshModels command in extension.ts and package.json"
+
+[[plan.goals.tasks]]
+id = "phase3-tests"
+title = "Write tests for all Phase 3 changes"
+status = "completed"
+completed_at = "2026-02-14T00:48:14.808248196+00:00"
+completion_log = "Created transform.test.ts with 17 tests. Fixed provider.test.ts mock. 552/552 tests pass."
+
+[[plan.goals]]
+id = "default-model-selection"
+
+[[plan.goals.tasks]]
+id = "wire-default-model"
+title = "Wire vercel.ai.models.default config into transform.ts"
+status = "completed"
+completed_at = "2026-02-14T00:33:10.974730710+00:00"
+completion_log = "Added TransformOptions interface with defaultModelId and userSelectable. Updated transformRawModelsToChatInfo to accept options. Wired ModelFilter.getDefaultModel() into ModelsClient.transformToVSCodeModels(). Updated StubProvider to read config directly."
+
+[[plan.goals.tasks]]
+id = "last-selected-read"
+title = "Wire LAST_SELECTED_MODEL_KEY as fallback default when no config default set"
+status = "completed"
+completed_at = "2026-02-14T00:44:06.224726602+00:00"
+completion_log = "Added setLastSelectedModelGetter() to ModelsClient. Provider wires getLastSelectedModelId() as fallback. transformToVSCodeModels now uses priority: config default > last-selected > first model."
+
+
+
+[verification]
+automated = ["Run scripts/verify-phase.sh"]
+manual = []

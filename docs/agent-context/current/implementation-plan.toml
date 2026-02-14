@@ -2,49 +2,150 @@
 # Implementation Plan
 
 [phase]
-id = "01khc3gkgdbgzr4pybs1rakarb"
+id = "01khc3gkgyasf7p25m518w3fxr"
 
 [plan]
-[[plan.goals]]
-id = "model-list-ux"
-
-[[plan.goals.tasks]]
-id = "apply-user-selectable"
-title = "Apply modelsUserSelectable config in transform.ts"
-status = "completed"
-completed_at = "2026-02-14T00:33:23.544145568+00:00"
-completion_log = "Handled as part of wire-default-model. TransformOptions.userSelectable controls isUserSelectable per model. When false, only the default model is selectable."
-
-[[plan.goals.tasks]]
-id = "model-refresh-cmd"
-title = "Add vercel.ai.refreshModels command for manual model list refresh"
-status = "completed"
-completed_at = "2026-02-14T00:42:05.464832472+00:00"
-completion_log = "Added invalidateCache() to ModelsClient, refreshModels() to provider, registered vercel.ai.refreshModels command in extension.ts and package.json"
-
-[[plan.goals.tasks]]
-id = "phase3-tests"
-title = "Write tests for all Phase 3 changes"
-status = "completed"
-completed_at = "2026-02-14T00:48:14.808248196+00:00"
-completion_log = "Created transform.test.ts with 17 tests. Fixed provider.test.ts mock. 552/552 tests pass."
 
 [[plan.goals]]
-id = "default-model-selection"
+id = "prepare-audit"
 
 [[plan.goals.tasks]]
-id = "wire-default-model"
-title = "Wire vercel.ai.models.default config into transform.ts"
+id = "verify-vsix"
+title = "Run pnpm package, inspect VSIX contents for correctness"
 status = "completed"
-completed_at = "2026-02-14T00:33:10.974730710+00:00"
-completion_log = "Added TransformOptions interface with defaultModelId and userSelectable. Updated transformRawModelsToChatInfo to accept options. Wired ModelFilter.getDefaultModel() into ModelsClient.transformToVSCodeModels(). Updated StubProvider to read config directly."
+log = [{ kind = "progress", message = "VSIX builds (4.29 MB, 135 files). Issues: (1) Unnecessary files: AGENTS.md, tsconfig.test.json, scripts/, docs/ not in .vscodeignore. (2) o200k_base tokenizer 7.6 MB uncompressed — largest chunk. (3) 121 JS files from esbuild splitting — vsce warns but intentional.", when = "2026-02-14T02:04:41.582749718+00:00" }]
+completed_at = "2026-02-14T02:05:42.920627174+00:00"
+completion_log = "VSIX builds successfully (4.29 MB). Fixable: add AGENTS.md, tsconfig.test.json, scripts/, docs/ to .vscodeignore."
 
 [[plan.goals.tasks]]
-id = "last-selected-read"
-title = "Wire LAST_SELECTED_MODEL_KEY as fallback default when no config default set"
+id = "audit-readme"
+title = "Audit README vs actual features: identify stale, missing, and inaccurate sections"
 status = "completed"
-completed_at = "2026-02-14T00:44:06.224726602+00:00"
-completion_log = "Added setLastSelectedModelGetter() to ModelsClient. Provider wires getLastSelectedModelId() as fallback. transformToVSCodeModels now uses priority: config default > last-selected > first model."
+completed_at = "2026-02-14T02:09:11.045964396+00:00"
+completion_log = """
+README Audit:
+✅ Features section: mostly accurate (models, streaming, tools, OpenResponses)
+⚠️ Quick Start: says 'Install from VS Code Marketplace' — WRONG, this is internal-only VSIX. Says key starts with vck_ but OIDC is also supported.
+⚠️ Architecture section: mentions 'Vercel AI SDK' as legacy mode — stale, AI SDK path may be removed. Overly developer-focused for an internal user guide.
+🔴 Missing: Auth methods (API key + OIDC via Vercel CLI)
+🔴 Missing: Configuration reference (endpoint, default model, userSelectable, logging, investigation)
+🔴 Missing: Commands reference (8 commands registered)
+🔴 Missing: Troubleshooting (auth failures, no models, activation timing)
+🔴 Missing: Token status bar / Agent Tree sidebar
+🔴 Missing: How to install from VSIX
+🔴 Missing: Error export / diagnostics commands
+⚠️ Documentation links: point to relative monorepo paths — won't work for end users"""
+
+[[plan.goals.tasks]]
+id = "audit-changelog"
+title = "Audit CHANGELOG vs completed phases: list all capabilities to document"
+status = "completed"
+completed_at = "2026-02-14T02:09:30.333474389+00:00"
+completion_log = """
+CHANGELOG Audit:
+Current: 0.2.0–0.2.2 (monorepo migration, doc update, auth session fix)
+Needed for 0.3.0:
+- Auth: API key + OIDC auth, secure credential storage, session management, first-run welcome
+- Error UX: structured error surfaces, user-facing error messages, retry with exponential backoff
+- Model Discovery: userSelectable config, refresh models command, default model priority (config > last-selected > first)
+- Token Display: status bar token counter, Agent Tree sidebar
+- Streaming: OpenResponses wire protocol, tool calling, reasoning support
+- Diagnostics: error log export, investigation logging, tree diagnostics
+- Performance: stub provider for instant activation, stale-while-revalidate model cache, ETag conditional requests"""
+
+[[plan.goals.tasks]]
+id = "readiness-report"
+title = "Produce readiness report: corrections needed, blockers, implementation order"
+status = "completed"
+completed_at = "2026-02-14T02:44:16.183097381+00:00"
+completion_log = """
+READINESS REPORT
+
+## Corrections Needed
+1. README Quick Start says 'Install from VS Code Marketplace' — must change to VSIX install
+2. README says API key starts with vck_ — OIDC auth also supported
+3. Architecture section references 'Vercel AI SDK legacy mode' — stale
+4. Documentation links use relative monorepo paths — won't work for users
+
+## Missing Sections (README)
+- Auth methods (API key + OIDC)
+- Configuration reference (6 settings)
+- Commands reference (8 commands)
+- Troubleshooting
+- Token status bar / Agent Tree sidebar
+- VSIX install instructions
+
+## .vscodeignore Additions
+- AGENTS.md
+- tsconfig.test.json
+- scripts/
+- docs/
+- INTEGRATION_TEST_INVESTIGATION.md
+- CONTRIBUTING.md (if present)
+
+## Blockers
+None — all issues are fixable in Execute phase.
+
+## Implementation Order
+1. Fix .vscodeignore (quick win, reduces VSIX size)
+2. Bump version to 0.3.0
+3. Rewrite README (largest task)
+4. Write CHANGELOG 0.3.0"""
+
+[[plan.goals]]
+id = "docs-and-packaging"
+
+[[plan.goals.tasks]]
+id = "rewrite-readme"
+title = "Rewrite README: quick start, config reference, commands reference, troubleshooting"
+status = "completed"
+completed_at = "2026-02-14T02:51:43.459019636+00:00"
+completion_log = "Complete rewrite: Quick Start (VSIX install + auth + chat), Features, Configuration (6 settings table), Commands (8 commands table), Troubleshooting (4 scenarios). Removed stale Architecture/Documentation sections."
+
+[[plan.goals.tasks]]
+id = "write-changelog"
+title = "Write CHANGELOG 0.3.0: auth flow, error UX, model discovery, retry resilience"
+status = "completed"
+completed_at = "2026-02-14T02:53:06.329407170+00:00"
+completion_log = "Wrote 0.3.0 entry with 6 sections: Auth & Onboarding, Error UX & Resilience, Model Discovery & Selection, Performance & Architecture, Token Tracking & Diagnostics, Packaging."
+
+[[plan.goals.tasks]]
+id = "version-bump"
+title = "Bump version to 0.3.0 in package.json"
+status = "completed"
+completed_at = "2026-02-14T02:50:33.241742697+00:00"
+completion_log = "Bumped 0.2.3 → 0.3.0 in package.json"
+
+[[plan.goals.tasks]]
+id = "fix-vsix-issues"
+title = "Fix any VSIX packaging issues found in Prepare"
+status = "completed"
+completed_at = "2026-02-14T02:49:51.071563991+00:00"
+completion_log = "Added 7 entries to .vscodeignore. VSIX: 135→128 files, 4.29→4.28 MB. No more dev artifacts."
+
+[[plan.goals]]
+id = "release-review"
+
+[[plan.goals.tasks]]
+id = "verify-vsix-install"
+title = "Build VSIX and verify it installs cleanly in VS Code"
+status = "completed"
+completed_at = "2026-02-14T02:59:47.539719235+00:00"
+completion_log = "vscode-ai-gateway-0.3.0.vsix (128 files, 4.28 MB) installs cleanly. No dev artifacts, correct version."
+
+[[plan.goals.tasks]]
+id = "docs-accuracy"
+title = "Verify docs accuracy: walk through README as a new user, check all instructions"
+status = "completed"
+completed_at = "2026-02-14T03:08:01.286069410+00:00"
+completion_log = "Review agent verified all claims. One fix: Output channel name corrected to 'Vercel AI Gateway'. All 6 config settings, 8 commands, auth methods, and features verified against source."
+
+[[plan.goals.tasks]]
+id = "changelog-completeness"
+title = "Verify CHANGELOG covers all 4 phases of work"
+status = "completed"
+completed_at = "2026-02-14T03:08:21.689737141+00:00"
+completion_log = "CHANGELOG 0.3.0 covers all 4 epoch phases across 6 sections. 20 bullet points covering auth, errors, models, performance, diagnostics, packaging."
 
 
 

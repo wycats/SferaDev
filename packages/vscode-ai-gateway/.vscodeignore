@@ -24,3 +24,10 @@ package-lock.json
 *.vsix
 .claude/
 CHANGELOG.md
+AGENTS.md
+CONTRIBUTING.md
+INTEGRATION_TEST_INVESTIGATION.md
+tsconfig.test.json
+scripts/
+docs/
+vitest.config.ts

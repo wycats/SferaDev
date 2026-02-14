@@ -1,58 +1,102 @@
-# Vercel AI Gateway - VS Code Extension
+# Vercel AI Gateway — VS Code Extension
 
-A VS Code extension that provides [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) models via the Language Model API, integrating AI models directly within VS Code's native chat interface.
-
-## Features
-
-- **Multiple AI Models** - Access GPT-4o, Claude, Gemini, and all Vercel AI Gateway models
-- **Native Integration** - Works with VS Code's built-in chat interface and Copilot
-- **Streaming Responses** - Real-time streaming of AI responses
-- **Tool Calling** - Full support for VS Code tool integration
-- **OpenResponses API** - Uses the [OpenResponses](https://www.openresponses.org) wire protocol for accurate token usage
+Use [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) models (GPT-4o, Claude, Gemini, and more) directly in VS Code's native chat interface.
 
 ## Quick Start
 
-1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=vercel.vscode-ai-gateway)
-2. Open Command Palette (`Cmd/Ctrl + Shift + P`)
-3. Run "Vercel AI Gateway: Manage Authentication"
-4. Enter your API key (starts with `vck_`)
+### 1. Install the Extension
 
-## Diagnostics (Activation Timing)
+```sh
+# From the repo root
+cd packages/vscode-ai-gateway
+pnpm package
+code --install-extension vscode-ai-gateway-*.vsix --force
+```
 
-If the Extensions view shows a large activation time, use VS Code's built-in tools to see where the time is spent:
+Or use the VS Code task **Build and Install Extension** (`Ctrl+Shift+B`).
 
-1. Open Command Palette (`Cmd/Ctrl + Shift + P`).
-2. Run `Developer: Startup Performance`.
-3. Find **Vercel AI** and note `Load Code`, `Call Activate`, and `Finish Activate`.
+### 2. Authenticate
 
-`Load Code + Call Activate` is the number shown in the Extensions view. A large `Finish Activate` means `activate()` returned a promise that took time to resolve.
+Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
 
-You can also run `Developer: Show Running Extensions` and sort by activation time for a live view.
+> **Vercel AI Gateway: Manage Authentication**
 
-## Architecture
+Two methods are available:
 
-This extension uses two API modes:
+| Method | When to use |
+|--------|-------------|
+| **API Key** | Enter a Vercel AI Gateway API key manually |
+| **Vercel OIDC** | Automatic — available when the Vercel CLI is logged in (`vercel whoami`) |
 
-1. **Vercel AI SDK** - For standard chat completions (legacy)
-2. **OpenResponses API** - For streaming with accurate token usage reporting
+### 3. Start Chatting
 
-### OpenResponses Integration
+Open VS Code's Chat panel (`Ctrl+Shift+I` / `Cmd+Shift+I`). Select a **Vercel AI** model from the model picker and start a conversation.
 
-The OpenResponses integration (`src/provider/openresponses-chat.ts`) communicates directly with the OpenResponses wire protocol.
+> **Tip:** Set `vercel.ai.models.userSelectable` to `true` in settings to make all models immediately visible in the picker without using "Manage Models" first.
 
-**Important**: The OpenResponses API is:
+## Features
 
-- **NOT** the OpenAI Chat Completions API
-- **NOT** the Vercel AI SDK format
-- A distinct wire protocol based on (but independent from) the OpenAI Responses API
+- **Multiple AI Models** — Access all Vercel AI Gateway models (GPT-4o, Claude, Gemini, etc.)
+- **Native Integration** — Works with VS Code's built-in chat and Copilot
+- **Streaming Responses** — Real-time streaming via the [OpenResponses](https://www.openresponses.org) wire protocol
+- **Tool Calling** — Full support for VS Code tool integration
+- **Token Tracking** — Status bar counter and Agent Tree sidebar for per-conversation token usage
+- **Retry Resilience** — Automatic retry with exponential backoff for transient errors
+- **Instant Activation** — Stub provider serves cached models immediately on startup
 
-See the [openresponses-client documentation](../../packages/openresponses-client/README.md) for details.
+## Configuration
 
-## Documentation
+All settings are under `vercel.ai.*` in VS Code Settings.
 
-- **Extension Docs**: [https://github.com/vercel-labs/vscode-ai-gateway](https://github.com/vercel-labs/vscode-ai-gateway)
-- **OpenResponses Spec**: [../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md](../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md)
-- **OpenAPI Schema**: [../../packages/openresponses-client/openapi.json](../../packages/openresponses-client/openapi.json)
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `vercel.ai.endpoint` | `https://ai-gateway.vercel.sh` | AI Gateway endpoint URL. Change for self-hosted or regional deployments. |
+| `vercel.ai.models.default` | *(empty)* | Default model ID (e.g. `anthropic/claude-sonnet-4-20250514`). Leave empty to show the model picker. |
+| `vercel.ai.models.userSelectable` | `false` | Make all models visible in the picker by default. Enable for testing or if you want all models immediately available. |
+| `vercel.ai.logging.level` | `warn` | Logging verbosity: `off`, `error`, `warn`, `info`, `debug`, `trace`. |
+| `vercel.ai.investigation.name` | `default` | Investigation scope name. Detailed logs are captured to `.logs/{name}/`. |
+| `vercel.ai.investigation.detail` | `off` | Investigation detail: `off`, `index`, `messages`, `full`. At `messages`+ levels, full request/response bodies are captured. |
+
+## Commands
+
+Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and type "Vercel AI Gateway" to see all commands:
+
+| Command | Description |
+|---------|-------------|
+| **Manage Authentication** | Add, switch, or remove authentication sessions |
+| **Refresh Models** | Force-refresh the model list from the gateway |
+| **Show Token Usage Details** | Show detailed token usage for the current session |
+| **Refresh Agent Tree** | Refresh the Agent Tokens sidebar |
+| **Export Error Logs** | Export captured error logs for debugging |
+| **Dump Agent Tree Diagnostics** | Write agent tree state to diagnostics log |
+| **Prune Investigation Logs** | Clean up old investigation log files |
+| **Test Summarization Detection** | Diagnostic: test summarization boundary detection |
+
+## Troubleshooting
+
+### "No models available"
+
+1. Check authentication: run **Manage Authentication** and verify a session is active.
+2. Check the endpoint: ensure `vercel.ai.endpoint` is reachable.
+3. Run **Refresh Models** to force a fresh fetch.
+4. Check the Output panel (`Vercel AI Gateway`) for error details.
+
+### Authentication fails
+
+- **API Key**: Verify the key is valid and has gateway access.
+- **OIDC**: Ensure the Vercel CLI is logged in (`vercel whoami`). OIDC tokens auto-refresh but require an active CLI session.
+
+### Models don't appear in the picker
+
+By default, models are hidden until enabled via **Manage Models** in the chat model dropdown. Set `vercel.ai.models.userSelectable` to `true` to make all models immediately visible.
+
+### Slow activation
+
+The extension uses a stub provider for instant model availability. If activation appears slow:
+
+1. Run `Developer: Startup Performance` from the Command Palette.
+2. Find **Vercel AI** — check `Load Code` vs `Finish Activate`.
+3. A large `Finish Activate` means the async provider setup took time (network-dependent).
 
 ## License
 

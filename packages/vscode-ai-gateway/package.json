@@ -3,7 +3,7 @@
   "private": true,
   "displayName": "Vercel AI",
   "description": "VS Code extension that provides Vercel AI models via the Language Model API",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "publisher": "vercel",
   "license": "MIT",
   "icon": "images/icon.png",
