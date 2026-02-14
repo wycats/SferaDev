@@ -6,6 +6,7 @@ import {
 } from "./diagnostics/tree-diagnostics.js";
 import { ClaimRegistry } from "./identity/index.js";
 import { logger } from "./logger";
+import { decodeVsCodeModelId } from "./models/vscode-model-id.js";
 import {
   createPersistenceManager,
   AGENT_STATE_STORE,
@@ -18,6 +19,7 @@ import type {
   PersistenceManager,
 } from "./persistence/index.js";
 import { formatTokens, getDisplayTokens } from "./tokens/display.js";
+import { getTitleGenerator } from "./title-generator.js";
 
 /**
  * Context management edit from Anthropic's API
@@ -91,6 +93,10 @@ export interface AgentEntry {
   childConversationHashes?: string[] | undefined;
   /** Hash of first user message (computed at conversation start) */
   firstUserMessageHash?: string | undefined;
+  /** Preview of first user message (first ~50 chars, for display) */
+  firstUserMessagePreview?: string | undefined;
+  /** AI-generated title for the conversation (async, may be undefined initially) */
+  generatedTitle?: string | undefined;
 
   /** Source of the token estimate (for diagnostics/UI) */
   estimationSource?: "exact" | "delta" | "estimated" | undefined;
@@ -328,15 +334,22 @@ export class TokenStatusBar implements vscode.Disposable {
     }
 
     // For main agent, try to extract from model ID
-    // (e.g., "anthropic:claude-sonnet-4" -> "claude-sonnet-4")
+    // Model IDs may be VS Code encoded (e.g., "m:anthropic%2Fclaude-opus-4.5")
+    // Decode first to get the raw model ID (e.g., "anthropic/claude-opus-4.5")
     if (modelId) {
-      // If it contains a colon, extract after it
-      const colonIdx = modelId.indexOf(":");
-      if (colonIdx >= 0) {
-        return modelId.slice(colonIdx + 1);
+      const decodedModelId = decodeVsCodeModelId(modelId);
+      // Extract the model name after the provider prefix
+      // Raw model IDs use either "/" or ":" as separator:
+      // - "anthropic/claude-opus-4.5" -> "claude-opus-4.5"
+      // - "anthropic:claude-sonnet-4" -> "claude-sonnet-4"
+      const slashIdx = decodedModelId.lastIndexOf("/");
+      const colonIdx = decodedModelId.lastIndexOf(":");
+      const separatorIdx = Math.max(slashIdx, colonIdx);
+      if (separatorIdx >= 0) {
+        return decodedModelId.slice(separatorIdx + 1);
       }
-      // Otherwise use the full modelId
-      return modelId;
+      // Fall back to full decoded model ID
+      return decodedModelId;
     }
     // Fall back to last 6 chars of agentId
     return agentId.slice(-6);
@@ -382,6 +395,7 @@ export class TokenStatusBar implements vscode.Disposable {
     estimationSource: "exact" | "delta" | "estimated" | undefined,
     conversationId: string | undefined,
     isSummarization: boolean | undefined,
+    firstUserMessagePreview: string | undefined,
   ): string {
     const agent: AgentEntry = {
       id: agentId,
@@ -404,6 +418,7 @@ export class TokenStatusBar implements vscode.Disposable {
       systemPromptHash,
       agentTypeHash,
       firstUserMessageHash,
+      firstUserMessagePreview,
       parentConversationHash: claimMatch.parentConversationHash,
       conversationId,
       isSummarization: isSummarization ?? false,
@@ -465,6 +480,7 @@ export class TokenStatusBar implements vscode.Disposable {
    * @param systemPromptHash Hash of the system prompt - diagnostics only
    * @param estimatedDeltaTokens Estimated tokens for NEW messages only (delta)
    * @param conversationId Stable conversation UUID from stateful_marker sessionId (GCMP pattern)
+   * @param firstUserMessagePreview Preview of first user message (first ~50 chars)
    */
   startAgent(
     agentId: string,
@@ -477,6 +493,7 @@ export class TokenStatusBar implements vscode.Disposable {
     estimatedDeltaTokens?: number,
     conversationId?: string,
     isSummarization?: boolean,
+    firstUserMessagePreview?: string,
   ): string {
     const now = Date.now();
 
@@ -548,6 +565,7 @@ export class TokenStatusBar implements vscode.Disposable {
           undefined, // estimationSource not passed from provider
           conversationId,
           isSummarization,
+          firstUserMessagePreview,
         );
       }
     }
@@ -571,6 +589,8 @@ export class TokenStatusBar implements vscode.Disposable {
         agentTypeHash ?? existingAgent.agentTypeHash;
       existingAgent.firstUserMessageHash =
         firstUserMessageHash ?? existingAgent.firstUserMessageHash;
+      existingAgent.firstUserMessagePreview =
+        firstUserMessagePreview ?? existingAgent.firstUserMessagePreview;
       // Update conversationId if a new one is provided (may not have been available on first turn)
       if (conversationId && !existingAgent.conversationId) {
         existingAgent.conversationId = conversationId;
@@ -716,6 +736,7 @@ export class TokenStatusBar implements vscode.Disposable {
       systemPromptHash,
       agentTypeHash,
       firstUserMessageHash,
+      firstUserMessagePreview,
       parentConversationHash,
       conversationId,
       isSummarization: isSummarization ?? false,
@@ -769,6 +790,12 @@ export class TokenStatusBar implements vscode.Disposable {
 
     this.updateDisplay();
     this._onDidChangeAgents.fire();
+
+    // Trigger async title generation for main agents
+    if (isMain && firstUserMessagePreview) {
+      this.triggerTitleGeneration(agentId);
+    }
+
     return agentId;
   }
 
@@ -783,6 +810,61 @@ export class TokenStatusBar implements vscode.Disposable {
       agent.lastUpdateTime = Date.now();
       // Don't call updateDisplay here to avoid excessive updates
       // The display will refresh on the next scheduled update
+    }
+  }
+
+  /**
+   * Trigger async title generation for an agent.
+   * This is fire-and-forget - the title will be updated when ready.
+   *
+   * @param agentId The agent to generate a title for
+   */
+  triggerTitleGeneration(agentId: string): void {
+    const resolvedId = this.resolveAgentId(agentId);
+    const agent = this.agents.get(resolvedId);
+    if (!agent) {
+      return;
+    }
+
+    // Only generate titles for main agents with a preview
+    if (!agent.isMain || !agent.firstUserMessagePreview) {
+      return;
+    }
+
+    // Don't regenerate if we already have a title
+    if (agent.generatedTitle) {
+      return;
+    }
+
+    // Fire and forget - generate title asynchronously
+    void this.generateTitleAsync(agent);
+  }
+
+  /**
+   * Async title generation helper.
+   */
+  private async generateTitleAsync(agent: AgentEntry): Promise<void> {
+    try {
+      const titleGenerator = getTitleGenerator();
+      // Use the full first user message text if available, otherwise use preview
+      const messageText = agent.firstUserMessagePreview;
+      if (!messageText) {
+        return;
+      }
+
+      const title = await titleGenerator.generateTitle(messageText);
+      if (title) {
+        agent.generatedTitle = title;
+        logger.debug(
+          `[StatusBar] Generated title for agent ${agent.id.slice(-8)}: "${title}"`,
+        );
+        // Notify listeners that agents have changed
+        this._onDidChangeAgents.fire();
+      }
+    } catch (error) {
+      logger.debug(
+        `[StatusBar] Title generation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 

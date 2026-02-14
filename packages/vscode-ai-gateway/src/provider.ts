@@ -387,6 +387,11 @@ export class VercelAIChatModelProvider
       const firstUserMessageHash = firstUserMessageText
         ? hashUserMessage(firstUserMessageText)
         : undefined;
+      // Extract a preview of the first user message for display (first ~50 chars)
+      const firstUserMessagePreview = firstUserMessageText
+        ? firstUserMessageText.slice(0, 50).trim() +
+          (firstUserMessageText.length > 50 ? "..." : "")
+        : undefined;
       const isSummarizationRequest = detectSummarizationRequest(chatMessages);
       // Compute delta token estimate for resumed conversations.
       // Instead of showing the full re-estimate during streaming (which has
@@ -425,6 +430,7 @@ export class VercelAIChatModelProvider
         estimatedDeltaTokens,
         conversationId,
         isSummarizationRequest,
+        firstUserMessagePreview,
       );
 
       const apiKey = await this.getApiKey(false);
