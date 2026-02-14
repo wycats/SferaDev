@@ -1328,10 +1328,7 @@ export class StreamAdapter {
       rawErrorMessage.toLowerCase().includes("rate limit")
     ) {
       userMessage = ERROR_MESSAGES.RATE_LIMITED;
-    } else if (
-      errorCode === "server_error" ||
-      errorCode === "internal_error"
-    ) {
+    } else if (errorCode === "server_error" || errorCode === "internal_error") {
       userMessage = ERROR_MESSAGES.SERVER_ERROR;
     } else {
       // For unrecognized error codes, include the code for debugging
@@ -1339,9 +1336,7 @@ export class StreamAdapter {
     }
 
     return {
-      parts: [
-        new LanguageModelTextPart(`\n\n**Error:** ${userMessage}\n\n`),
-      ],
+      parts: [new LanguageModelTextPart(`\n\n**Error:** ${userMessage}\n\n`)],
       done: true,
       error: rawErrorMessage,
       finishReason: "error",

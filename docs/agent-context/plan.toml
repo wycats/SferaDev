@@ -1835,13 +1835,15 @@ ulid = "01KHC3GKGDBGZR4PYBS1RAKARB"
 [[epochs.phases.goals]]
 id = "model-list-ux"
 label = "Audit model discovery UX: how does a user know which models are available? Ensure Manage Models command is discoverable and model list is current."
-status = "pending"
+status = "completed"
+completion_log = "Applied userSelectable config, registered vercel.ai.refreshModels command, wrote 17 transform tests. 552/552 tests pass."
 ulid = "01KHC3K3FAVTWDHM0TM3BXKX2R"
 
 [[epochs.phases.goals]]
 id = "default-model-selection"
 label = "Sensible default model selection: pick a good default so users can start chatting immediately after auth"
-status = "pending"
+status = "completed"
+completion_log = "Wired config default + last-selected fallback via TransformOptions. Default model priority: config > last-selected > first model. Tests verify all paths."
 ulid = "01KHC3K3G6VZMAT9Z3Q6FCHXJP"
 
 [[epochs.phases]]

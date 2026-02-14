@@ -11,12 +11,12 @@ This document enumerates every location where the extension surfaces errors to u
 
 The extension has **four distinct channels** for communicating errors to users:
 
-| Channel | Where it appears | Persistence | Example |
-|---------|-----------------|-------------|---------|
-| **Inline text** | Inside the chat response | Permanent (in conversation) | `**Error:** Rate limit exceeded...` |
-| **Notification** | VS Code notification toast | Dismissable | "Your API key was rejected..." + button |
-| **Status bar** | Bottom status bar | Transient | Token limit info |
-| **Silent** | Nowhere — logged only | N/A | Model list fetch failure (before fix) |
+| Channel          | Where it appears           | Persistence                 | Example                                 |
+| ---------------- | -------------------------- | --------------------------- | --------------------------------------- |
+| **Inline text**  | Inside the chat response   | Permanent (in conversation) | `**Error:** Rate limit exceeded...`     |
+| **Notification** | VS Code notification toast | Dismissable                 | "Your API key was rejected..." + button |
+| **Status bar**   | Bottom status bar          | Transient                   | Token limit info                        |
+| **Silent**       | Nowhere — logged only      | N/A                         | Model list fetch failure (before fix)   |
 
 ## Error Location Inventory
 
@@ -25,8 +25,9 @@ The extension has **four distinct channels** for communicating errors to users:
 **Trigger**: `getModels()` API call fails (network, auth, server error).
 
 **Current behavior**:
+
 - If cached models exist → silently returns cache (good)
-- If no cache → shows warning notification: *"Unable to load models from Vercel AI Gateway. The model picker may be empty until connectivity is restored."*
+- If no cache → shows warning notification: _"Unable to load models from Vercel AI Gateway. The model picker may be empty until connectivity is restored."_
 
 **Strategy**: This is a background operation. Notification is appropriate because the user didn't directly trigger it — they just opened the model picker and it's empty. No inline error possible here.
 
@@ -44,8 +45,9 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Trigger**: API returns 401 during a chat request.
 
-**Current behavior**: 
-- Notification: *"Your authentication has expired/rejected..."* + "Manage Authentication" button
+**Current behavior**:
+
+- Notification: _"Your authentication has expired/rejected..."_ + "Manage Authentication" button
 - Inline: raw error message (the notification is the primary UX)
 
 **Strategy**: Dual-channel (notification + inline) is appropriate for auth errors because the user needs to take action outside the chat. The notification provides the action button.
@@ -58,18 +60,19 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Current behavior** (after Phase 2 changes):
 
-| Status | Inline message | Retry? |
-|--------|---------------|--------|
-| 403 | *"Your API key was rejected by the server..."* | No |
-| 404 | *"Model not found. Check that the model name is correct..."* | No |
-| 429 | *"Rate limit exceeded. Please wait a moment..."* | Yes (up to 3×, respects Retry-After) |
-| 500 | *"The AI Gateway encountered an internal error..."* | Yes (1× only) |
-| 502/503 | *"The AI Gateway is temporarily unavailable..."* | Yes (up to 3×) |
-| Other | Raw error message | No |
+| Status  | Inline message                                               | Retry?                               |
+| ------- | ------------------------------------------------------------ | ------------------------------------ |
+| 403     | _"Your API key was rejected by the server..."_               | No                                   |
+| 404     | _"Model not found. Check that the model name is correct..."_ | No                                   |
+| 429     | _"Rate limit exceeded. Please wait a moment..."_             | Yes (up to 3×, respects Retry-After) |
+| 500     | _"The AI Gateway encountered an internal error..."_          | Yes (1× only)                        |
+| 502/503 | _"The AI Gateway is temporarily unavailable..."_             | Yes (up to 3×)                       |
+| Other   | Raw error message                                            | No                                   |
 
 **Strategy**: Status-specific messages with actionable guidance. Retry happens silently before the user sees anything (only when no stream events have been emitted yet).
 
 **Open questions**:
+
 - Should 429 show a progress indicator during retry wait?
 - Should we tell the user "Retrying..." or keep it invisible?
 
@@ -77,7 +80,7 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Trigger**: Fetch/DNS/connection failure (not an HTTP response at all).
 
-**Current behavior**: Inline: *"Unable to reach the AI Gateway. Check your internet connection and try again."*
+**Current behavior**: Inline: _"Unable to reach the AI Gateway. Check your internet connection and try again."_
 
 **Strategy**: Network errors are retried (up to 3×) before the user sees anything. If all retries fail, the friendly message appears.
 
@@ -85,7 +88,7 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Trigger**: SSE event indicating the response generation failed server-side.
 
-**Current behavior**: Inline: *"The model failed to generate a response. Please try again."* (raw error preserved in logs)
+**Current behavior**: Inline: _"The model failed to generate a response. Please try again."_ (raw error preserved in logs)
 
 **Strategy**: Generic friendly message because `response.failed` reasons are opaque server-side errors. The raw error is logged for forensics.
 
@@ -97,13 +100,13 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Current behavior** (after Phase 2 — was previously **completely silent**):
 
-| Reason | Inline message | Style |
-|--------|---------------|-------|
-| `content_filter` | *"The response was filtered due to content policy..."* | `**Note:**` |
-| `max_output_tokens` | *"The response was truncated because it reached the maximum output length..."* | `**Note:**` |
-| Other | *"Response ended unexpectedly (reason: X)."* | `**Note:**` |
+| Reason              | Inline message                                                                 | Style       |
+| ------------------- | ------------------------------------------------------------------------------ | ----------- |
+| `content_filter`    | _"The response was filtered due to content policy..."_                         | `**Note:**` |
+| `max_output_tokens` | _"The response was truncated because it reached the maximum output length..."_ | `**Note:**` |
+| Other               | _"Response ended unexpectedly (reason: X)."_                                   | `**Note:**` |
 
-**Strategy**: These are `**Note:**` rather than `**Error:**` because partial content was delivered. The user got *something* — we're just explaining why it stopped.
+**Strategy**: These are `**Note:**` rather than `**Error:**` because partial content was delivered. The user got _something_ — we're just explaining why it stopped.
 
 **Open question**: For `max_output_tokens`, should we suggest "Try asking the model to be more concise" or similar?
 
@@ -113,11 +116,11 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Current behavior**:
 
-| Error code | Inline message |
-|------------|---------------|
-| `rate_limit_exceeded` | *"Rate limit exceeded. Please wait a moment..."* |
-| `server_error` / `internal_error` | *"The AI Gateway encountered an internal error..."* |
-| Other | *"An error occurred (CODE). Please try again."* |
+| Error code                        | Inline message                                      |
+| --------------------------------- | --------------------------------------------------- |
+| `rate_limit_exceeded`             | _"Rate limit exceeded. Please wait a moment..."_    |
+| `server_error` / `internal_error` | _"The AI Gateway encountered an internal error..."_ |
+| Other                             | _"An error occurred (CODE). Please try again."_     |
 
 **Strategy**: These are mid-stream errors (content may have already been delivered), so retry is not possible. We classify known codes and fall back to including the code for unknown ones.
 
@@ -125,7 +128,7 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Trigger**: 120 seconds with no SSE events.
 
-**Current behavior**: Inline: *"Request timed out — the model did not respond within 120 seconds. This may indicate a temporary issue with the AI Gateway."*
+**Current behavior**: Inline: _"Request timed out — the model did not respond within 120 seconds. This may indicate a temporary issue with the AI Gateway."_
 
 **Strategy**: Good as-is. Timeout is a clear failure with a clear message.
 
@@ -133,7 +136,7 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Trigger**: Stream completes normally but produced no text/tool-call content.
 
-**Current behavior**: Inline: *"No response received from model. Please try again."*
+**Current behavior**: Inline: _"No response received from model. Please try again."_
 
 **Strategy**: Good as-is. This catches edge cases where the API returns success but empty content.
 
@@ -151,7 +154,7 @@ The extension has **four distinct channels** for communicating errors to users:
 
 **Trigger**: Writing to the forensic log file fails.
 
-**Current behavior**: Notification: *"Investigation logging failed..."*
+**Current behavior**: Notification: _"Investigation logging failed..."_
 
 **Strategy**: This is an internal diagnostic failure, not a user-facing feature failure. Notification is appropriate but could be demoted to a log-only message since users don't know what "investigation logging" is.
 
@@ -174,7 +177,7 @@ Retryable:
 
 Not retryable:
   401/403 (auth)    → needs user action
-  404 (not found)   → needs user action  
+  404 (not found)   → needs user action
   400 (bad request) → needs code fix
   Cancellation      → user intent
   Unknown           → conservative default
@@ -190,15 +193,15 @@ Defaults: 1s initial, 2× multiplier, 16s max, ±25% jitter.
 
 The `ErrorCaptureLogger` writes structured error data to `globalStorageUri/errors/` for forensic analysis. Current coverage:
 
-| Error location | Capture type | Captured? |
-|---------------|-------------|-----------|
-| Chat API errors | `api-error` | ✅ Yes |
-| Network errors | `network-error` | ✅ Yes (new in Phase 2) |
-| No response | `no-response` | ✅ Yes |
-| Timeout | `timeout` | ✅ Yes |
-| Stream `response.failed` | — | ❌ Not yet |
-| Stream `error` event | — | ❌ Not yet |
-| Model list failure | — | ❌ Not yet |
+| Error location           | Capture type    | Captured?               |
+| ------------------------ | --------------- | ----------------------- |
+| Chat API errors          | `api-error`     | ✅ Yes                  |
+| Network errors           | `network-error` | ✅ Yes (new in Phase 2) |
+| No response              | `no-response`   | ✅ Yes                  |
+| Timeout                  | `timeout`       | ✅ Yes                  |
+| Stream `response.failed` | —               | ❌ Not yet              |
+| Stream `error` event     | —               | ❌ Not yet              |
+| Model list failure       | —               | ❌ Not yet              |
 
 **Open question**: Should we wire ErrorCaptureLogger into the stream-level errors? They're currently logged but not captured to disk.
 

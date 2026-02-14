@@ -902,7 +902,10 @@ export async function executeOpenResponsesChat(
         DEFAULT_RETRY_CONFIG.maxRetries,
       );
 
-      if (retryClassification.retryable && _retryAttempt < effectiveMaxRetries) {
+      if (
+        retryClassification.retryable &&
+        _retryAttempt < effectiveMaxRetries
+      ) {
         const delay = calculateRetryDelay(
           _retryAttempt,
           DEFAULT_RETRY_CONFIG,

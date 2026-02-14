@@ -35,7 +35,10 @@ describe("classifyForRetry", () => {
   });
 
   describe("HTTP status errors", () => {
-    const makeHttpError = (status: number, headers?: Record<string, string>) => ({
+    const makeHttpError = (
+      status: number,
+      headers?: Record<string, string>,
+    ) => ({
       status,
       message: `HTTP ${status}`,
       headers,
@@ -49,7 +52,9 @@ describe("classifyForRetry", () => {
     });
 
     it("extracts Retry-After header for 429", () => {
-      const result = classifyForRetry(makeHttpError(429, { "retry-after": "5" }));
+      const result = classifyForRetry(
+        makeHttpError(429, { "retry-after": "5" }),
+      );
       expect(result.retryable).toBe(true);
       expect(result.suggestedDelayMs).toBe(5000);
     });
@@ -103,14 +108,18 @@ describe("classifyForRetry", () => {
 
   describe("network errors", () => {
     it("classifies ECONNREFUSED as retryable", () => {
-      const result = classifyForRetry(new Error("connect ECONNREFUSED 127.0.0.1:443"));
+      const result = classifyForRetry(
+        new Error("connect ECONNREFUSED 127.0.0.1:443"),
+      );
       expect(result.retryable).toBe(true);
       expect(result.maxRetries).toBe(3);
       expect(result.reason).toContain("Network");
     });
 
     it("classifies ENOTFOUND as retryable", () => {
-      const result = classifyForRetry(new Error("getaddrinfo ENOTFOUND example.com"));
+      const result = classifyForRetry(
+        new Error("getaddrinfo ENOTFOUND example.com"),
+      );
       expect(result.retryable).toBe(true);
     });
 
@@ -214,9 +223,9 @@ describe("withRetry", () => {
 
   it("throws immediately for non-retryable errors", async () => {
     const fn = vi.fn().mockRejectedValue({ status: 404, message: "Not found" });
-    await expect(withRetry(fn, { maxRetries: 3, jitterFactor: 0 })).rejects.toEqual(
-      expect.objectContaining({ status: 404 }),
-    );
+    await expect(
+      withRetry(fn, { maxRetries: 3, jitterFactor: 0 }),
+    ).rejects.toEqual(expect.objectContaining({ status: 404 }));
     expect(fn).toHaveBeenCalledTimes(1);
   });
 

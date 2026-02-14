@@ -8,7 +8,10 @@ import { encodeVsCodeModelId } from "./vscode-model-id";
 
 /** Helper to create a minimal Model for testing. */
 function makeModel(
-  overrides: Omit<Partial<Model>, "type"> & { id: string; type?: string | undefined },
+  overrides: Omit<Partial<Model>, "type"> & {
+    id: string;
+    type?: string | undefined;
+  },
 ): Model {
   const base: Model = {
     id: overrides.id,
@@ -41,7 +44,9 @@ const MODELS: Model[] = [
 ];
 
 // Helper type to access undocumented VS Code picker fields
-type ModelWithPickerFields = ReturnType<typeof transformRawModelsToChatInfo>[0] & {
+type ModelWithPickerFields = ReturnType<
+  typeof transformRawModelsToChatInfo
+>[0] & {
   isDefault?: boolean;
   isDefaultForLocation?: boolean[];
   isUserSelectable?: boolean;
@@ -56,7 +61,9 @@ type ModelWithPickerFields = ReturnType<typeof transformRawModelsToChatInfo>[0] 
 describe("transformRawModelsToChatInfo", () => {
   describe("default model selection", () => {
     it("defaults to the first model when no options are provided", () => {
-      const result = transformRawModelsToChatInfo(MODELS) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+      ) as ModelWithPickerFields[];
 
       expect(result[0]!.isDefault).toBe(true);
       expect(result[0]!.isDefaultForLocation).toBeDefined();
@@ -65,7 +72,10 @@ describe("transformRawModelsToChatInfo", () => {
     });
 
     it("defaults to the first model when options are empty", () => {
-      const result = transformRawModelsToChatInfo(MODELS, {}) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+        {},
+      ) as ModelWithPickerFields[];
 
       expect(result[0]!.isDefault).toBe(true);
       expect(result[1]!.isDefault).toBeUndefined();
@@ -75,7 +85,10 @@ describe("transformRawModelsToChatInfo", () => {
       const options: TransformOptions = {
         defaultModelId: "nonexistent/model",
       };
-      const result = transformRawModelsToChatInfo(MODELS, options) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+        options,
+      ) as ModelWithPickerFields[];
 
       expect(result[0]!.isDefault).toBe(true);
       expect(result[1]!.isDefault).toBeUndefined();
@@ -86,7 +99,10 @@ describe("transformRawModelsToChatInfo", () => {
       const options: TransformOptions = {
         defaultModelId: "anthropic/claude-sonnet-4-20250514",
       };
-      const result = transformRawModelsToChatInfo(MODELS, options) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+        options,
+      ) as ModelWithPickerFields[];
 
       expect(result[0]!.isDefault).toBeUndefined();
       expect(result[1]!.isDefault).toBe(true);
@@ -100,7 +116,10 @@ describe("transformRawModelsToChatInfo", () => {
       const options: TransformOptions = {
         defaultModelId: "google/gemini-2.0-flash",
       };
-      const result = transformRawModelsToChatInfo(MODELS, options) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+        options,
+      ) as ModelWithPickerFields[];
 
       expect(result[0]!.isDefault).toBeUndefined();
       expect(result[1]!.isDefault).toBeUndefined();
@@ -110,7 +129,9 @@ describe("transformRawModelsToChatInfo", () => {
 
   describe("userSelectable", () => {
     it("makes all models user-selectable by default (backward compat)", () => {
-      const result = transformRawModelsToChatInfo(MODELS) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+      ) as ModelWithPickerFields[];
 
       for (const model of result) {
         expect(model.isUserSelectable).toBe(true);
@@ -119,7 +140,10 @@ describe("transformRawModelsToChatInfo", () => {
 
     it("makes all models user-selectable when userSelectable is true", () => {
       const options: TransformOptions = { userSelectable: true };
-      const result = transformRawModelsToChatInfo(MODELS, options) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+        options,
+      ) as ModelWithPickerFields[];
 
       for (const model of result) {
         expect(model.isUserSelectable).toBe(true);
@@ -128,7 +152,10 @@ describe("transformRawModelsToChatInfo", () => {
 
     it("only makes the default model selectable when userSelectable is false", () => {
       const options: TransformOptions = { userSelectable: false };
-      const result = transformRawModelsToChatInfo(MODELS, options) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+        options,
+      ) as ModelWithPickerFields[];
 
       // First model is default (no defaultModelId set)
       expect(result[0]!.isUserSelectable).toBe(true);
@@ -141,7 +168,10 @@ describe("transformRawModelsToChatInfo", () => {
         defaultModelId: "anthropic/claude-sonnet-4-20250514",
         userSelectable: false,
       };
-      const result = transformRawModelsToChatInfo(MODELS, options) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        MODELS,
+        options,
+      ) as ModelWithPickerFields[];
 
       expect(result[0]!.isUserSelectable).toBe(false);
       expect(result[1]!.isUserSelectable).toBe(true); // the configured default
@@ -196,7 +226,9 @@ describe("transformRawModelsToChatInfo", () => {
         makeModel({ id: "o1-model", tags: ["o1"] }),
         makeModel({ id: "plain-model", tags: [] }),
       ];
-      const result = transformRawModelsToChatInfo(models) as ModelWithPickerFields[];
+      const result = transformRawModelsToChatInfo(
+        models,
+      ) as ModelWithPickerFields[];
 
       expect(result[0]!.capabilities.reasoning).toBe(true);
       expect(result[1]!.capabilities.reasoning).toBe(true);

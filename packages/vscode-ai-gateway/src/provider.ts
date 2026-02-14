@@ -63,7 +63,11 @@ function getTextValue(part: TextPartLike): string {
 
 import { VERCEL_AI_AUTH_PROVIDER_ID } from "./auth";
 import { ConfigService } from "./config";
-import { ERROR_MESSAGES, EXTENSION_ID, LAST_SELECTED_MODEL_KEY } from "./constants";
+import {
+  ERROR_MESSAGES,
+  EXTENSION_ID,
+  LAST_SELECTED_MODEL_KEY,
+} from "./constants";
 import {
   extractErrorMessage,
   extractTokenCountFromError,

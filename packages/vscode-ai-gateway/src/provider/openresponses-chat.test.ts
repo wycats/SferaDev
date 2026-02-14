@@ -822,7 +822,11 @@ describe("error classification and user-friendly messages", () => {
     const reportedParts = progress.report.mock.calls.map(
       (c: unknown[]) => (c[0] as { value: string }).value,
     );
-    expect(reportedParts.some((p: string) => p.includes(ERROR_MESSAGES.MODEL_NOT_FOUND))).toBe(true);
+    expect(
+      reportedParts.some((p: string) =>
+        p.includes(ERROR_MESSAGES.MODEL_NOT_FOUND),
+      ),
+    ).toBe(true);
   });
 
   it("shows RATE_LIMITED for 429 errors", async () => {
@@ -849,7 +853,11 @@ describe("error classification and user-friendly messages", () => {
   it("shows SERVER_ERROR for 500 errors", async () => {
     hoisted.createClient.mockReturnValue({
       createStreamingResponse: async function* () {
-        throw new OpenResponsesError("Internal Server Error", 500, "server_error");
+        throw new OpenResponsesError(
+          "Internal Server Error",
+          500,
+          "server_error",
+        );
       },
     });
 
@@ -949,7 +957,11 @@ describe("error classification and user-friendly messages", () => {
   it("logs raw error message for forensics even when showing friendly message", async () => {
     hoisted.createClient.mockReturnValue({
       createStreamingResponse: async function* () {
-        throw new OpenResponsesError("model xyz not found in registry", 404, "not_found");
+        throw new OpenResponsesError(
+          "model xyz not found in registry",
+          404,
+          "not_found",
+        );
       },
     });
 
@@ -972,7 +984,10 @@ describe("error classification and user-friendly messages", () => {
     hoisted.createClient.mockReturnValue({
       createStreamingResponse: async function* () {
         await Promise.resolve();
-        yield { type: "error", error: { message: "stream broke", code: "stream_error" } };
+        yield {
+          type: "error",
+          error: { message: "stream broke", code: "stream_error" },
+        };
       },
     });
 

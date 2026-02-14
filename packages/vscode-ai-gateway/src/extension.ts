@@ -412,9 +412,8 @@ export async function activate(context: vscode.ExtensionContext) {
   const exportErrorLogsCommand = vscode.commands.registerCommand(
     "vercel.ai.exportErrorLogs",
     async () => {
-      const { createErrorLogsArchive, ErrorExportEmpty } = await import(
-        "./logger/error-export.js"
-      );
+      const { createErrorLogsArchive, ErrorExportEmpty } =
+        await import("./logger/error-export.js");
       const errorsDir = path.join(context.globalStorageUri.fsPath, "errors");
 
       let archive: Buffer;

@@ -6,6 +6,7 @@
 ## Summary
 
 15 distinct error paths identified across 4 files. Key findings:
+
 - **Well-handled**: Auth failures (401) with actionable buttons, no-response diagnostic, timeout with guidance
 - **Poorly handled**: 404/429/5xx show raw error messages with no guidance
 - **Silent failures**: `response.incomplete` (truncation/content filter), model list fetch errors
@@ -15,39 +16,39 @@
 
 ### provider.ts
 
-| # | Line | Trigger | User Sees | Actionability | Captured |
-|---|------|---------|-----------|---------------|----------|
-| 1 | ~212-225 | `getModels()` throws | **Silent** — logged only | None | No |
-| 2 | ~408-417 | No API key configured | Notification: "No API key configured..." + "Manage Authentication" button | Good | No |
-| 3 | ~462-498 | Any non-cancel exception during chat | Inline: `**Error:** ${errorMessage}` | Poor | No |
-| 4 | ~475-483 | Token limit exceeded (extracted from error) | Status bar: "Token limit exceeded: X tokens (max: Y)" | Poor | No |
-| 5 | ~668-677 | `authentication.getSession()` throws | Notification: "Failed to authenticate..." | Good | No |
+| #   | Line     | Trigger                                     | User Sees                                                                 | Actionability | Captured |
+| --- | -------- | ------------------------------------------- | ------------------------------------------------------------------------- | ------------- | -------- |
+| 1   | ~212-225 | `getModels()` throws                        | **Silent** — logged only                                                  | None          | No       |
+| 2   | ~408-417 | No API key configured                       | Notification: "No API key configured..." + "Manage Authentication" button | Good          | No       |
+| 3   | ~462-498 | Any non-cancel exception during chat        | Inline: `**Error:** ${errorMessage}`                                      | Poor          | No       |
+| 4   | ~475-483 | Token limit exceeded (extracted from error) | Status bar: "Token limit exceeded: X tokens (max: Y)"                     | Poor          | No       |
+| 5   | ~668-677 | `authentication.getSession()` throws        | Notification: "Failed to authenticate..."                                 | Good          | No       |
 
 ### openresponses-chat.ts
 
-| # | Line | Trigger | User Sees | Actionability | Captured |
-|---|------|---------|-----------|---------------|----------|
-| 6 | ~679-726 | Stream completes with no content | Inline: "No response received from model. Please try again." | Good | Yes (`no-response`) |
-| 7 | ~737-772 | 120s inactivity timeout | Inline: "Request timed out — the model did not respond within 120 seconds..." | Good | Yes (`timeout`) |
-| 8 | ~804-879 | 401 status | Notification: "Your authentication has expired/rejected..." + button | Good | Yes (`api-error`) |
-| 9 | ~794-879 | 404 status | Inline: `**Error:** ${errorMessage}` | Poor | Yes (`api-error`) |
-| 10 | ~794-879 | 429 status | Inline: `**Error:** ${errorMessage}` | Poor | Yes (`api-error`) |
-| 11 | ~794-879 | 5xx status | Inline: `**Error:** ${errorMessage}` | Poor | Yes (`api-error`) |
-| 12 | ~794-879 | Network error (ECONNREFUSED etc.) | Inline: `**Error:** ${errorMessage}` | Poor | Yes (`api-error`) |
+| #   | Line     | Trigger                           | User Sees                                                                     | Actionability | Captured            |
+| --- | -------- | --------------------------------- | ----------------------------------------------------------------------------- | ------------- | ------------------- |
+| 6   | ~679-726 | Stream completes with no content  | Inline: "No response received from model. Please try again."                  | Good          | Yes (`no-response`) |
+| 7   | ~737-772 | 120s inactivity timeout           | Inline: "Request timed out — the model did not respond within 120 seconds..." | Good          | Yes (`timeout`)     |
+| 8   | ~804-879 | 401 status                        | Notification: "Your authentication has expired/rejected..." + button          | Good          | Yes (`api-error`)   |
+| 9   | ~794-879 | 404 status                        | Inline: `**Error:** ${errorMessage}`                                          | Poor          | Yes (`api-error`)   |
+| 10  | ~794-879 | 429 status                        | Inline: `**Error:** ${errorMessage}`                                          | Poor          | Yes (`api-error`)   |
+| 11  | ~794-879 | 5xx status                        | Inline: `**Error:** ${errorMessage}`                                          | Poor          | Yes (`api-error`)   |
+| 12  | ~794-879 | Network error (ECONNREFUSED etc.) | Inline: `**Error:** ${errorMessage}`                                          | Poor          | Yes (`api-error`)   |
 
 ### stream-adapter.ts
 
-| # | Line | Trigger | User Sees | Actionability | Captured |
-|---|------|---------|-----------|---------------|----------|
-| 13 | ~568-593 | SSE `response.failed` | Inline: `**Error:** ${errorMessage}` | Poor | No |
-| 14 | ~598-635 | SSE `response.incomplete` | **Silent** — no message | None | No |
-| 15 | ~1278-1302 | SSE `error` event | Inline: `**Error (${code}):** ${message}` | Poor | No |
+| #   | Line       | Trigger                   | User Sees                                 | Actionability | Captured |
+| --- | ---------- | ------------------------- | ----------------------------------------- | ------------- | -------- |
+| 13  | ~568-593   | SSE `response.failed`     | Inline: `**Error:** ${errorMessage}`      | Poor          | No       |
+| 14  | ~598-635   | SSE `response.incomplete` | **Silent** — no message                   | None          | No       |
+| 15  | ~1278-1302 | SSE `error` event         | Inline: `**Error (${code}):** ${message}` | Poor          | No       |
 
 ### investigation.ts
 
-| # | Line | Trigger | User Sees | Actionability | Captured |
-|---|------|---------|-----------|---------------|----------|
-| 16 | ~435-438 | Log write failure | Notification: "Investigation logging failed..." | Good | No |
+| #   | Line     | Trigger           | User Sees                                       | Actionability | Captured |
+| --- | -------- | ----------------- | ----------------------------------------------- | ------------- | -------- |
+| 16  | ~435-438 | Log write failure | Notification: "Investigation logging failed..." | Good          | No       |
 
 ## Gap Analysis
 
@@ -86,6 +87,7 @@ max_output_tokens → "The response was truncated because it reached the maximum
 ### ErrorCaptureLogger Coverage
 
 Wire ErrorCaptureLogger into:
+
 - stream-adapter.ts `response.failed` events
 - stream-adapter.ts `error` events
 - Use `network-error` type for ECONNREFUSED/ENOTFOUND/ETIMEDOUT
@@ -97,17 +99,20 @@ Show a notification when model list fetch fails and no cached models exist.
 ## Recommendations for Goal 3 (Retry Resilience)
 
 ### Retryable Conditions
+
 - Network errors (ECONNREFUSED, ENOTFOUND, ETIMEDOUT)
 - HTTP 502, 503
 - HTTP 429 (with Retry-After header respect)
 
 ### Non-Retryable Conditions
+
 - HTTP 401, 403 (auth — needs user action)
 - HTTP 404 (model not found — needs user action)
 - HTTP 400 (bad request — needs code fix)
 - HTTP 500 (ambiguous — retry once only)
 
 ### Backoff Strategy
+
 - Initial delay: 1s
 - Multiplier: 2x
 - Max retries: 3

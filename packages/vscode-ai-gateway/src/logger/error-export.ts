@@ -27,7 +27,9 @@ export async function createErrorLogsArchive(
     throw new ErrorExportEmpty();
   }
 
-  logger.info(`[ErrorExport] Archiving ${files.length} files from ${errorsDir}`);
+  logger.info(
+    `[ErrorExport] Archiving ${files.length} files from ${errorsDir}`,
+  );
 
   // Build tar stream
   const chunks: Buffer[] = [];
@@ -131,12 +133,7 @@ function createTarHeader(fileName: string, fileSize: number): Buffer {
   header.write("0000000\0", 116, 8, "utf8");
 
   // Size (124-135, 12 bytes) -- octal
-  header.write(
-    fileSize.toString(8).padStart(11, "0") + "\0",
-    124,
-    12,
-    "utf8",
-  );
+  header.write(fileSize.toString(8).padStart(11, "0") + "\0", 124, 12, "utf8");
 
   // Mtime (136-147, 12 bytes) -- current time in octal
   const mtime = Math.floor(Date.now() / 1000);

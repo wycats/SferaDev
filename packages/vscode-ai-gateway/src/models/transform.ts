@@ -95,8 +95,7 @@ export function transformRawModelsToChatInfo(
 
     // A model is default if it matches the configured default, or if no
     // configured default was found, the first model wins.
-    const isDefault =
-      defaultIndex >= 0 ? index === defaultIndex : index === 0;
+    const isDefault = defaultIndex >= 0 ? index === defaultIndex : index === 0;
 
     return {
       // IMPORTANT: VS Code's internal model picker logic appears to key preferences
