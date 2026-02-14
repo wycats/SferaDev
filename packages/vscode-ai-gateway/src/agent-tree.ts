@@ -52,13 +52,12 @@ export class AgentTreeItem extends vscode.TreeItem {
       return "streaming...";
     }
 
-    const prefix = display.isEstimate ? "~" : "";
     const tokens = formatTokens(display.value);
 
     if (this.agent.maxInputTokens) {
       const max = formatTokens(this.agent.maxInputTokens);
       const pct = Math.round((display.value / this.agent.maxInputTokens) * 100);
-      let desc = `${prefix}${tokens}/${max} · ${pct.toString()}%`;
+      let desc = `${tokens}/${max} · ${pct.toString()}%`;
 
       // Show ↓ suffix while fading
       const totalFreed = this.getTotalFreedTokens();
@@ -69,7 +68,7 @@ export class AgentTreeItem extends vscode.TreeItem {
       return desc;
     }
 
-    return `${prefix}${tokens}`;
+    return tokens;
   }
 
   private getTotalFreedTokens(): number {

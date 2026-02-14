@@ -62,7 +62,7 @@ describe("TokenStatusBar", () => {
         "anthropic:claude-sonnet-4",
       );
 
-      expect(mockStatusBarItem.text).toBe("$(loading~spin) ~50.0k/128.0k 39%");
+      expect(mockStatusBarItem.text).toBe("$(loading~spin) 50.0k/128.0k 39%");
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
 

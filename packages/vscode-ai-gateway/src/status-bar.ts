@@ -1108,16 +1108,15 @@ export class TokenStatusBar implements vscode.Disposable {
   private formatAgentUsage(agent: AgentEntry): string {
     const display = getDisplayTokens(agent);
     const inputTokens = display?.value ?? 0;
-    const prefix = display?.isEstimate ? "~" : "";
     const input = formatTokens(inputTokens);
 
     if (agent.maxInputTokens) {
       const max = formatTokens(agent.maxInputTokens);
       const pct = Math.round((inputTokens / agent.maxInputTokens) * 100);
-      return `${prefix}${input}/${max} ${pct.toString()}%`;
+      return `${input}/${max} ${pct.toString()}%`;
     }
 
-    return `${prefix}${input}`;
+    return input;
   }
 
   /**

@@ -50,7 +50,7 @@ The status bar (bottom-right) is a context window fuel gauge:
 
 ```
 52.0k/128.0k 41%       — normal (input / max, percentage)
-~50.0k/128.0k 39%      — streaming (~ = estimated)
+50.0k/128.0k 39%       — streaming
 37.1k/128.0k 29% ↓15k  — after summarization (↓ = tokens freed, fades after 2 turns)
 summarizing...          — VS Code is summarizing the conversation
 streaming...            — streaming, no estimate yet
@@ -60,7 +60,7 @@ streaming...            — streaming, no estimate yet
 | -------------- | -------------------------------------------------------- |
 | `52.0k/128.0k` | Input tokens used / context window size                  |
 | `41%`          | Percentage of context window consumed                    |
-| `~` prefix     | Estimated (exact count arrives after response completes) |
+| spinning icon  | Streaming (exact count arrives after response completes) |
 | `↓15k`         | Tokens freed by summarization (shown for 2 turns)        |
 
 **Background color** changes with context pressure:
