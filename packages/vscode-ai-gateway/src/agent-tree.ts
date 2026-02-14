@@ -42,32 +42,26 @@ export class AgentTreeItem extends vscode.TreeItem {
   }
 
   private formatDescription(): string {
-    const parts: string[] = [];
-
-    // Compute the token value we'll display AND use for percentage
-    // INVARIANT: displayedTokens is used for both display and percentage calculation
-    let displayedTokens: number | null = null;
-
     const display = getDisplayTokens(this.agent);
+
     if (this.agent.status === "error") {
-      parts.push("error");
-    } else if (display) {
-      displayedTokens = display.value;
-      const prefix = display.isEstimate ? "~" : "";
-      parts.push(`${prefix}${formatTokens(displayedTokens)}`);
-    } else {
-      parts.push("streaming...");
+      return "error";
     }
 
-    // Percentage uses the SAME value as display (invariant)
-    if (this.agent.maxInputTokens && displayedTokens) {
-      const pct = Math.round(
-        (displayedTokens / this.agent.maxInputTokens) * 100,
-      );
-      parts.push(`(${pct}%)`);
+    if (!display) {
+      return "streaming...";
     }
 
-    return parts.join(" ");
+    const prefix = display.isEstimate ? "~" : "";
+    const tokens = formatTokens(display.value);
+
+    if (this.agent.maxInputTokens) {
+      const max = formatTokens(this.agent.maxInputTokens);
+      const pct = Math.round((display.value / this.agent.maxInputTokens) * 100);
+      return `${prefix}${tokens}/${max} · ${pct.toString()}%`;
+    }
+
+    return `${prefix}${tokens}`;
   }
 
   private formatTooltip(): vscode.MarkdownString {

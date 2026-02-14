@@ -46,63 +46,55 @@ Open VS Code's Chat panel (`Ctrl+Shift+I` / `Cmd+Shift+I`). Select a **Vercel AI
 
 ## Token Status Bar
 
-The status bar (bottom-right) shows live token usage for the active conversation:
+The status bar (bottom-right) is a context window fuel gauge:
 
 ```
-$(triangle-up) 52k/128k (41%)          — normal
-$(loading~spin) streaming...            — while streaming
-$(fold) 52k/128k ↓15k                  — after context compaction
-$(triangle-up) 52k/128k | ▸ recon 8k   — with active subagent
+52.0k/128.0k 41%       — normal (input / max, percentage)
+~50.0k/128.0k 39%      — streaming (~ = estimated)
+37.1k/128.0k 29% ↓15k  — after context compaction (↓ = tokens freed)
+streaming...            — streaming, no estimate yet
 ```
 
-**What the numbers mean:**
+| Element | Meaning |
+| ------- | ------- |
+| `52.0k/128.0k` | Input tokens used / context window size |
+| `41%` | Percentage of context window consumed |
+| `~` prefix | Estimated (exact count arrives after response completes) |
+| `↓15k` | Tokens freed by context compaction or summarization |
 
-| Display | Meaning |
-|---------|---------|
-| `52k/128k` | Input tokens used / model's context window |
-| `(41%)` | Percentage of context window consumed |
-| `~52k` | Tilde prefix = estimated (exact count arrives after response) |
-| `↓15k` | Tokens freed by context compaction (server-side or summarization) |
-| `▸ recon 8k` | Active subagent name and its token usage |
+**Background color** changes with context pressure:
 
-**Color coding** (icon color reflects context pressure):
+- **Default** — Under 75% of context window
+- **Prominent** — 75–90% of context window
+- **Warning** — Over 90% of context window
 
-- **Green** — Under 70% of context window
-- **Orange** — 70–90% of context window
-- **Red** — Over 90% of context window
-
-Click the status bar item to run **Show Token Usage Details**.
+**Click** the status bar to open the **Agent Tokens** sidebar for full details.
 
 ## Agent Tree Sidebar
 
-The **Agent Tokens** panel in the activity bar sidebar shows a hierarchical view of all conversations and their token usage.
+The **Agent Tokens** panel in the activity bar shows all conversations and their token usage in a tree.
 
-**What you'll see:**
+Each agent shows `tokens/max · pct%` (e.g. `52.0k/128.0k · 41%`).
 
-- **Main agents** at the root level, with subagents nested underneath
-- **Live streaming indicator** (spinning icon) for active conversations
-- **Token counts** next to each agent — exact after completion, estimated during streaming
-- **Context compaction icon** (fold) when the server or VS Code has compacted the context
-- **Last Session summary** when no conversation is active (agent count, peak context tokens)
+**Tree structure:**
 
-**Hover tooltips** show full details for each agent:
+- **Main agents** at the root, subagents nested underneath
+- **Spinning icon** — actively streaming
+- **Check icon** — complete (green < 70%, orange 70–90%, red > 90%)
+- **Fold icon** — context was compacted (server-side or summarization)
+- **Last Session** — shown when idle (agent count, peak context)
 
-- Model ID, status, and duration
-- Input/output token breakdown
-- Turn count for multi-turn conversations
-- Per-turn token details (last turn in vs out)
-- Context compaction details (edits applied, tokens freed)
-- Summarization reduction (if VS Code compressed the context)
+**Hover tooltips** show full details: model, status, duration, input/output breakdown, turn count, compaction details, and summarization reduction.
 
 **Agent lifecycle:**
 
-1. Agents appear when a conversation starts (streaming icon)
-2. Agents show final token counts when complete (check icon)
-3. Older agents dim after 2 newer conversations complete
-4. Agents are removed after 5 newer conversations complete
-5. Session stats persist across VS Code restarts
+1. Agents appear on conversation start (streaming icon)
+2. Final token counts shown on completion (check icon)
+3. Dim after 2 newer conversations complete
+4. Removed after 5 newer conversations complete
+5. Session stats persist across restarts
 
-**Parent-child linking:** When Copilot spawns subagents (e.g., `recon`, `execute`), they appear nested under the parent conversation. The tree uses stable conversation IDs to maintain correct hierarchy even across reconnections.
+**Parent-child linking:** Subagents (e.g. `recon`, `execute`) nest under their parent conversation via stable conversation IDs.
 
 ## Configuration
 

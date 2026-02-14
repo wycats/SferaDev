@@ -56,34 +56,14 @@ export function getDisplayTokens(agent: AgentEntry): DisplayTokens | null {
  * Format a token count for display.
  *
  * @param count - The token count to format
- * @param options.padded - Whether to pad with figure spaces for fixed-width display (status bar)
  * @returns Formatted string like "52.3k", "1.2M", or "500"
  */
-export function formatTokens(
-  count: number,
-  options?: { padded?: boolean },
-): string {
-  const padded = options?.padded ?? false;
-  // Figure space has the same width as digits in most fonts
-  const figureSpace = "\u2007";
-
+export function formatTokens(count: number): string {
   if (count >= 1000000) {
-    const formatted = `${(count / 1000000).toFixed(1)}M`;
-    if (padded) {
-      return formatted.padStart(5, figureSpace);
-    }
-    return formatted;
+    return `${(count / 1000000).toFixed(1)}M`;
   }
   if (count >= 1000) {
-    const formatted = `${(count / 1000).toFixed(1)}k`;
-    if (padded) {
-      return formatted.padStart(6, figureSpace);
-    }
-    return formatted;
+    return `${(count / 1000).toFixed(1)}k`;
   }
-  const formatted = count.toString();
-  if (padded) {
-    return formatted.padStart(3, figureSpace);
-  }
-  return formatted;
+  return count.toString();
 }

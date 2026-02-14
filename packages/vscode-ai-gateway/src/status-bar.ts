@@ -176,7 +176,7 @@ export class TokenStatusBar implements vscode.Disposable {
       100,
     );
     this.statusBarItem.name = "Vercel AI Token Usage";
-    this.statusBarItem.command = "vercel.ai.showTokenDetails";
+    this.statusBarItem.command = "vercel.ai.agentTree.focus";
     this.hide();
 
     this.cleanupInterval = setInterval(() => {
@@ -1007,139 +1007,55 @@ export class TokenStatusBar implements vscode.Disposable {
       }
     }
 
-    // Build main part of display
-    let mainText = "";
-    let icon = "$(triangle-up)";
-
-    if (mainAgent) {
-      const hasServerCompaction =
-        (mainAgent.contextManagement?.appliedEdits.length ?? 0) > 0;
-      const hasSummarization = mainAgent.summarizationDetected === true;
-      const hasCompaction = hasServerCompaction || hasSummarization;
-      if (hasCompaction) {
-        icon = "$(fold)";
-      }
-
-      if (mainAgent.status === "streaming") {
-        icon = "$(loading~spin)";
-        const display = getDisplayTokens(mainAgent);
-        if (display && mainAgent.maxInputTokens) {
-          const pct = this.formatPercentage(
-            display.value,
-            mainAgent.maxInputTokens,
-          );
-          const prefix = display.isEstimate ? "~" : "";
-          mainText = `${prefix}${this.formatTokenCount(display.value)}/${this.formatTokenCount(mainAgent.maxInputTokens)} (${pct})`;
-        } else {
-          mainText = "streaming...";
-        }
-      } else {
-        mainText = this.formatAgentUsage(mainAgent);
-      }
-
-      // Add compaction suffix (server-side edits + summarization)
-      if (hasCompaction) {
-        const serverFreed =
-          mainAgent.contextManagement?.appliedEdits.reduce(
-            (t, e) => t + e.clearedInputTokens,
-            0,
-          ) ?? 0;
-        const summarizationFreed = mainAgent.summarizationReduction ?? 0;
-        const totalFreed = serverFreed + summarizationFreed;
-        if (totalFreed > 0) {
-          // Use unpadded format for compaction suffix since it's less critical
-          mainText += ` ↓${this.formatTokenCount(totalFreed, false)}`;
-        }
-      }
-    }
-
-    // Build subagent part - find the most relevant subagent to display
-    // Priority: most recently active streaming subagent > most recently completed subagent
-    let subagentText = "";
-    const subagents = agentsArray.filter((a) => !a.isMain);
-
-    // Find streaming subagents and pick the one with most recent activity (lastUpdateTime)
-    const streamingSubagents = subagents.filter(
-      (a) => a.status === "streaming",
-    );
-    const streamingSubagent =
-      streamingSubagents.length > 0
-        ? streamingSubagents.reduce((latest, a) =>
-            a.lastUpdateTime > latest.lastUpdateTime ? a : latest,
-          )
-        : null;
-
-    // Fall back to most recently completed subagent
-    const completedSubagents = subagents.filter((a) => a.status === "complete");
-    const mostRecentCompletedSubagent =
-      completedSubagents.length > 0
-        ? completedSubagents.reduce((latest, a) =>
-            a.lastUpdateTime > latest.lastUpdateTime ? a : latest,
-          )
-        : null;
-
-    const subagentToShow = streamingSubagent ?? mostRecentCompletedSubagent;
-
-    // Debug logging for subagent selection
-    if (subagents.length > 0) {
-      logger.debug(
-        `[StatusBar] Subagent selection`,
-        JSON.stringify({
-          subagentCount: subagents.length,
-          streamingCount: streamingSubagents.length,
-          completedCount: completedSubagents.length,
-          subagents: subagents.map((s) => ({
-            id: s.id.slice(-12),
-            status: s.status,
-            isMain: s.isMain,
-            estimatedInputTokens: s.estimatedInputTokens,
-            inputTokens: s.inputTokens,
-            startTime: s.startTime,
-            lastUpdateTime: s.lastUpdateTime,
-          })),
-          selectedSubagentId: subagentToShow?.id.slice(-12),
-          selectedStatus: subagentToShow?.status,
-        }),
-      );
-    }
-
-    if (subagentToShow) {
-      if (subagentToShow.status === "streaming") {
-        const subDisplay = getDisplayTokens(subagentToShow);
-        if (subDisplay && subagentToShow.maxInputTokens) {
-          const pct = this.formatPercentage(
-            subDisplay.value,
-            subagentToShow.maxInputTokens,
-          );
-          const prefix = subDisplay.isEstimate ? "~" : "";
-          subagentText = `▸ ${subagentToShow.name} ${prefix}${this.formatTokenCount(subDisplay.value)}/${this.formatTokenCount(subagentToShow.maxInputTokens)} (${pct})`;
-        } else {
-          subagentText = `▸ ${subagentToShow.name}...`;
-        }
-      } else {
-        // Completed: show actual usage
-        subagentText = `${subagentToShow.name}: ${this.formatAgentUsage(subagentToShow)}`;
-      }
-    }
-
-    // Combine main and subagent text with separator only if both exist
-    // Check if any agents are still streaming - don't hide if so
     const hasStreamingAgents = agentsArray.some(
       (a) => a.status === "streaming",
     );
-    const separator = mainText && subagentText ? " | " : "";
-    const combinedText = `${mainText}${separator}${subagentText}`;
 
-    if (combinedText) {
-      this.statusBarItem.text = `${icon} ${combinedText}`.trim();
-      this.statusBarItem.tooltip = this.buildTooltip();
-      this.setBackgroundColor(mainAgent);
-      this.statusBarItem.show();
-    } else if (hasStreamingAgents) {
-      // Agents are streaming but we couldn't build display text
-      // Show a generic streaming indicator to avoid flickering
+    const hasServerCompaction =
+      (mainAgent?.contextManagement?.appliedEdits.length ?? 0) > 0;
+    const hasSummarization = mainAgent?.summarizationDetected === true;
+    const hasCompaction = hasServerCompaction || hasSummarization;
+
+    let icon = "$(triangle-up)";
+    if (hasStreamingAgents) {
+      icon = "$(loading~spin)";
+    } else if (hasCompaction) {
+      icon = "$(fold)";
+    }
+
+    let mainText = "";
+
+    if (mainAgent) {
+      const display = getDisplayTokens(mainAgent);
+      if (display) {
+        mainText = this.formatAgentUsage(mainAgent);
+
+        if (hasCompaction) {
+          const serverFreed =
+            mainAgent.contextManagement?.appliedEdits.reduce(
+              (t, e) => t + e.clearedInputTokens,
+              0,
+            ) ?? 0;
+          const summarizationFreed = mainAgent.summarizationReduction ?? 0;
+          const totalFreed = serverFreed + summarizationFreed;
+          if (totalFreed > 0) {
+            mainText += ` ↓${formatTokens(totalFreed)}`;
+          }
+        }
+      }
+    }
+
+    if (!mainText && hasStreamingAgents) {
       this.statusBarItem.text = "$(loading~spin) streaming...";
-      this.statusBarItem.tooltip = this.buildTooltip();
+      this.statusBarItem.tooltip = undefined;
+      this.statusBarItem.show();
+      return;
+    }
+
+    if (mainText) {
+      this.statusBarItem.text = `${icon} ${mainText}`.trim();
+      this.statusBarItem.tooltip = undefined;
+      this.setBackgroundColor(mainAgent);
       this.statusBarItem.show();
     } else {
       this.hide();
@@ -1152,16 +1068,16 @@ export class TokenStatusBar implements vscode.Disposable {
   private formatAgentUsage(agent: AgentEntry): string {
     const display = getDisplayTokens(agent);
     const inputTokens = display?.value ?? 0;
-    // Note: outputTokens available for future use:
-    // agent.turnCount > 1 ? agent.totalOutputTokens : agent.outputTokens
-    const input = this.formatTokenCount(inputTokens);
+    const prefix = display?.isEstimate ? "~" : "";
+    const input = formatTokens(inputTokens);
 
     if (agent.maxInputTokens) {
-      const max = this.formatTokenCount(agent.maxInputTokens);
-      return `${input}/${max}`;
+      const max = formatTokens(agent.maxInputTokens);
+      const pct = Math.round((inputTokens / agent.maxInputTokens) * 100);
+      return `${prefix}${input}/${max} ${pct.toString()}%`;
     }
 
-    return `${input} in`;
+    return `${prefix}${input}`;
   }
 
   /**
@@ -1190,151 +1106,6 @@ export class TokenStatusBar implements vscode.Disposable {
     }
   }
 
-  /**
-   * Build tooltip with all agent details
-   */
-  private buildTooltip(): string {
-    const lines: string[] = [];
-
-    // Get all non-dimmed agents, sorted by start time
-    const visibleAgents = Array.from(this.agents.values())
-      .filter((a) => !a.dimmed)
-      .sort((a, b) => a.startTime - b.startTime);
-
-    logger.debug(
-      `[StatusBar] buildTooltip`,
-      JSON.stringify({
-        timestamp: Date.now(),
-        visibleCount: visibleAgents.length,
-        agents: visibleAgents.map((a) => ({
-          id: a.id.slice(-8),
-          name: a.name,
-          status: a.status,
-          isMain: a.isMain,
-          inputTokens: a.inputTokens,
-          estimatedInputTokens: a.estimatedInputTokens,
-          contextEdits: a.contextManagement?.appliedEdits.length ?? 0,
-        })),
-      }),
-    );
-
-    for (const agent of visibleAgents) {
-      const prefix = agent.isMain ? "Main" : agent.name;
-      const statusIcon =
-        agent.status === "streaming"
-          ? "⏳"
-          : agent.status === "error"
-            ? "❌"
-            : "✓";
-
-      if (agent.modelId) {
-        lines.push(`${statusIcon} ${prefix} (${agent.modelId})`);
-      } else {
-        lines.push(`${statusIcon} ${prefix}`);
-      }
-
-      if (agent.status === "complete" || agent.status === "error") {
-        // Show accumulated totals for multi-turn conversations
-        if (agent.turnCount > 1) {
-          lines.push(`   Turns: ${agent.turnCount.toString()}`);
-          lines.push(
-            `   Input: ${agent.lastActualInputTokens.toLocaleString()}`,
-          );
-          lines.push(
-            `   Last Turn: ${agent.inputTokens.toLocaleString()} in, ${agent.outputTokens.toLocaleString()} out`,
-          );
-        } else {
-          lines.push(`   Input: ${agent.inputTokens.toLocaleString()}`);
-        }
-        if (agent.maxInputTokens) {
-          const tokensForPct =
-            agent.turnCount > 1
-              ? agent.lastActualInputTokens
-              : agent.inputTokens;
-          const pct = Math.round((tokensForPct / agent.maxInputTokens) * 100);
-          lines.push(
-            `   Context: ${pct.toString()}% of ${agent.maxInputTokens.toLocaleString()}`,
-          );
-        }
-      } else {
-        const display = getDisplayTokens(agent);
-        if (display) {
-          const sourceLabel = agent.estimationSource
-            ? `(${agent.estimationSource})`
-            : "";
-          const prefix = display.isEstimate ? "~" : "";
-          lines.push(
-            `   Input: ${prefix}${display.value.toLocaleString()} ${sourceLabel}`,
-          );
-        }
-      }
-
-      // Context compaction (server-side)
-      const edits = agent.contextManagement?.appliedEdits ?? [];
-      if (edits.length > 0) {
-        lines.push("   ⚡ Context compacted:");
-        for (const edit of edits) {
-          lines.push(`      ${this.formatContextEdit(edit)}`);
-        }
-      }
-
-      // Summarization compaction (VS Code client-side)
-      if (agent.summarizationDetected && agent.summarizationReduction) {
-        lines.push(
-          `   📋 Summarized: ${agent.summarizationReduction.toLocaleString()} tokens freed`,
-        );
-      }
-
-      lines.push("");
-    }
-
-    if (lines.length > 0) {
-      lines.pop(); // Remove trailing empty line
-    }
-
-    // Add estimation state section
-    const states = Array.from(this.estimationStates.values());
-    if (states.length > 0) {
-      lines.push("");
-      lines.push("📊 Token Estimation:");
-      for (const state of states) {
-        const statusIcon = state.isCurrent ? "🟢" : "🟡";
-        const knownStr = state.knownTokens.toLocaleString();
-        lines.push(
-          `   ${statusIcon} ${state.modelFamily}: ${knownStr} tokens known`,
-        );
-        lines.push(
-          `      (${state.knownMessageCount.toString()} messages cached)`,
-        );
-      }
-    }
-
-    lines.push("");
-    lines.push("Click for details");
-
-    return lines.join("\n");
-  }
-
-  /**
-   * Format a single context edit
-   */
-  private formatContextEdit(edit: ContextManagementEdit): string {
-    const freed = edit.clearedInputTokens.toLocaleString();
-    switch (edit.type) {
-      case "clear_tool_uses_20250919":
-        if (edit.clearedToolUses !== undefined) {
-          return `${edit.clearedToolUses.toString()} tool uses cleared (${freed} freed)`;
-        }
-        return `Tool uses cleared (${freed} freed)`;
-      case "clear_thinking_20251015":
-        if (edit.clearedThinkingTurns !== undefined) {
-          return `${edit.clearedThinkingTurns.toString()} thinking turns cleared (${freed} freed)`;
-        }
-        return `Thinking turns cleared (${freed} freed)`;
-      default:
-        return `${String(edit.type)} (${freed} freed)`;
-    }
-  }
 
   /**
    * Check if an agent has children still in the tree or pending claims
@@ -1433,26 +1204,6 @@ export class TokenStatusBar implements vscode.Disposable {
     }
   }
 
-  /**
-   * Format token count for display.
-   * Uses figure space (U+2007) padding for consistent width to prevent status bar bouncing.
-   * Target widths: "XXX.Xk" (6 chars) for k values, "X.XM" (4 chars) for M values.
-   */
-  private formatTokenCount(count: number, padded = true): string {
-    return formatTokens(count, { padded });
-  }
-
-  /**
-   * Format percentage with consistent width (always 3 chars + %).
-   * Uses figure space padding: " 5%" → "99%"
-   */
-  private formatPercentage(current: number, max: number): string {
-    const figureSpace = "\u2007";
-    const pct = Math.round((current / max) * 100);
-    // Clamp to 0-100 and pad to 3 chars
-    const clamped = Math.min(100, Math.max(0, pct));
-    return `${clamped.toString().padStart(3, figureSpace)}%`;
-  }
 
   /**
    * Schedule auto-hide - currently disabled to keep status bar always visible

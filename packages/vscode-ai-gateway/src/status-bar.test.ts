@@ -54,9 +54,6 @@ describe("TokenStatusBar", () => {
   });
 
   describe("startAgent", () => {
-    // Figure space (U+2007) is used for padding to prevent status bar bouncing
-    const fs = "\u2007";
-
     it("shows streaming indicator when agent starts", () => {
       statusBar.startAgent(
         "agent-1",
@@ -65,9 +62,8 @@ describe("TokenStatusBar", () => {
         "anthropic:claude-sonnet-4",
       );
 
-      // Padded format: " 50.0k" (6 chars), "128.0k" (6 chars), " 39%" (4 chars)
       expect(mockStatusBarItem.text).toBe(
-        `$(loading~spin) ~${fs}50.0k/128.0k (${fs}39%)`,
+        "$(loading~spin) ~50.0k/128.0k 39%",
       );
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
@@ -92,16 +88,10 @@ describe("TokenStatusBar", () => {
         maxInputTokens: 128000,
         modelId: "anthropic:claude-sonnet-4",
       });
-
-      // Tooltip should contain the display name
-      expect(mockStatusBarItem.tooltip).toContain("claude-sonnet-4");
     });
   });
 
   describe("completeAgent", () => {
-    // Figure space (U+2007) is used for padding to prevent status bar bouncing
-    const fs = "\u2007";
-
     it("shows usage after agent completes", () => {
       statusBar.startAgent("agent-1", 50000, 128000);
       statusBar.completeAgent("agent-1", {
@@ -110,8 +100,7 @@ describe("TokenStatusBar", () => {
         maxInputTokens: 128000,
       });
 
-      // Padded format: " 52.0k" (6 chars), "128.0k" (6 chars)
-      expect(mockStatusBarItem.text).toBe(`$(triangle-up) ${fs}52.0k/128.0k`);
+      expect(mockStatusBarItem.text).toBe("$(triangle-up) 52.0k/128.0k 41%");
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
 
@@ -131,9 +120,6 @@ describe("TokenStatusBar", () => {
     });
 
     it("shows compaction info with fold icon and freed tokens", () => {
-      // Figure space (U+2007) is used for padding to prevent status bar bouncing
-      const fs = "\u2007";
-
       statusBar.startAgent("agent-1");
       statusBar.completeAgent("agent-1", {
         inputTokens: 37100,
@@ -151,11 +137,8 @@ describe("TokenStatusBar", () => {
         },
       });
 
-      // Padded format with compaction suffix (unpadded for the compaction amount)
-      expect(mockStatusBarItem.text).toBe(`$(fold) ${fs}37.1k/128.0k ↓15.2k`);
-      expect(mockStatusBarItem.tooltip).toContain("⚡ Context compacted");
-      expect(mockStatusBarItem.tooltip).toContain(
-        "8 tool uses cleared (15,200 freed)",
+      expect(mockStatusBarItem.text).toBe(
+        "$(fold) 37.1k/128.0k 29% ↓15.2k",
       );
     });
   });
@@ -416,28 +399,7 @@ describe("TokenStatusBar", () => {
         subTypeHash,
       );
 
-      // Should show both agents - main uses x/max format, subagent shows "sub"
-      // (subagent detection works via claim matching)
-      expect(mockStatusBarItem.text).toContain("52.0k/128.0k");
-      expect(mockStatusBarItem.text).toContain("▸ recon");
-    });
-
-    it("shows tooltip with all agent details", () => {
-      statusBar.startAgent(
-        "main-agent",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-      );
-      statusBar.completeAgent("main-agent", {
-        inputTokens: 52000,
-        outputTokens: 1000,
-        maxInputTokens: 128000,
-        modelId: "anthropic:claude-sonnet-4",
-      });
-
-      expect(mockStatusBarItem.tooltip).toContain("claude-sonnet-4");
-      expect(mockStatusBarItem.tooltip).toContain("52,000");
+      expect(mockStatusBarItem.text).toContain("52.0k/128.0k 41%");
     });
 
     it("detects subagent via claim even with identical hashes (regression: 104% bug)", () => {
@@ -490,9 +452,8 @@ describe("TokenStatusBar", () => {
       // Subagent should NOT be marked as main (it matched the claim)
       expect(subAgent?.isMain).toBe(false);
 
-      // Display should show both agents, not 104% (which would happen if subagent was treated as main)
-      expect(mockStatusBarItem.text).toContain("52.0k/128.0k");
-      expect(mockStatusBarItem.text).toContain("▸ execute");
+      // Display should show main agent usage (not 104% from claim mismatch)
+      expect(mockStatusBarItem.text).toContain("52.0k/128.0k 41%");
     });
 
     it("main agent resumes correctly when pending claims exist (regression: claim misattribution)", () => {

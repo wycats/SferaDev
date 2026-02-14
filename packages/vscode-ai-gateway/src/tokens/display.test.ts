@@ -105,22 +105,11 @@ describe("formatTokens", () => {
     expect(formatTokens(500)).toBe("500");
   });
 
-  it("pads small numbers when requested", () => {
-    const figureSpace = "\u2007";
-    expect(formatTokens(5, { padded: true })).toBe(
-      `${figureSpace}${figureSpace}5`,
-    );
-  });
-
-  it("formats and pads thousands", () => {
-    const figureSpace = "\u2007";
+  it("formats thousands", () => {
     expect(formatTokens(52300)).toBe("52.3k");
-    expect(formatTokens(52300, { padded: true })).toBe(`${figureSpace}52.3k`);
   });
 
-  it("formats and pads millions", () => {
-    const figureSpace = "\u2007";
+  it("formats millions", () => {
     expect(formatTokens(1200000)).toBe("1.2M");
-    expect(formatTokens(1200000, { padded: true })).toBe(`${figureSpace}1.2M`);
   });
 });
