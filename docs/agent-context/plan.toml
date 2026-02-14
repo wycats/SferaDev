@@ -1724,7 +1724,7 @@ ulid = "01KHA0MWDADE22SR9KA122PWQ0"
 [[epochs]]
 id = "01khc3fjazww6ghx1gdnsjd3jy"
 title = "Internal Release Readiness"
-status = "active"
+status = "completed"
 ulid = "01KHC3FJAZWW6GHX1GDNSJD3JY"
 
 [[epochs.phases]]
@@ -1849,7 +1849,7 @@ ulid = "01KHC3K3G6VZMAT9Z3Q6FCHXJP"
 [[epochs.phases]]
 id = "01khc3gkgyasf7p25m518w3fxr"
 title = "Distribution & Documentation"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHC3GKGYASF7P25M518W3FXR"
 
