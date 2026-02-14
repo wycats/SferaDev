@@ -100,6 +100,10 @@ export interface AgentEntry {
   summarizationDetected?: boolean | undefined;
   /** Tokens freed by summarization (previous - current input tokens) */
   summarizationReduction?: number | undefined;
+  /** Whether this request is a summarization request (detected from message content) */
+  isSummarization?: boolean | undefined;
+  /** Turns remaining before the ↓ suffix fades (set to 2 on summarization detection) */
+  summarizationFadeTurns?: number | undefined;
 }
 
 /** Agent aging configuration */
@@ -126,9 +130,10 @@ export interface EstimationState {
  * Status bar item that displays token usage information with agent tracking.
  *
  * Shows:
- * - Main agent: "52k/128k" (input/max)
- * - With subagent active: "52k/128k | ▸ recon 8k/128k"
- * - With compaction: "$(fold) 52k/128k ↓15k"
+ * - Main agent: "$(debug-breakpoint-function) 52k/128k"
+ * - While streaming: "$(loading~spin) ..."
+ * - While summarizing: "$(sync~spin) summarizing..."
+ * - After compaction: "52k/128k ↓15k" (suffix fades after 2 turns)
  *
  * Agents are tracked and aged based on subsequent requests:
  * - Active agents show full visibility
@@ -376,6 +381,7 @@ export class TokenStatusBar implements vscode.Disposable {
     estimatedDeltaTokens: number | undefined,
     estimationSource: "exact" | "delta" | "estimated" | undefined,
     conversationId: string | undefined,
+    isSummarization: boolean | undefined,
   ): string {
     const agent: AgentEntry = {
       id: agentId,
@@ -400,6 +406,7 @@ export class TokenStatusBar implements vscode.Disposable {
       firstUserMessageHash,
       parentConversationHash: claimMatch.parentConversationHash,
       conversationId,
+      isSummarization: isSummarization ?? false,
     };
 
     this.agents.set(agentId, agent);
@@ -469,6 +476,7 @@ export class TokenStatusBar implements vscode.Disposable {
     firstUserMessageHash?: string,
     estimatedDeltaTokens?: number,
     conversationId?: string,
+    isSummarization?: boolean,
   ): string {
     const now = Date.now();
 
@@ -539,6 +547,7 @@ export class TokenStatusBar implements vscode.Disposable {
           estimatedDeltaTokens,
           undefined, // estimationSource not passed from provider
           conversationId,
+          isSummarization,
         );
       }
     }
@@ -555,6 +564,7 @@ export class TokenStatusBar implements vscode.Disposable {
       existingAgent.maxInputTokens =
         maxTokens ?? existingAgent.maxInputTokens ?? undefined;
       existingAgent.modelId = modelId ?? existingAgent.modelId;
+      existingAgent.isSummarization = isSummarization ?? false;
       existingAgent.systemPromptHash =
         systemPromptHash ?? existingAgent.systemPromptHash;
       existingAgent.agentTypeHash =
@@ -708,6 +718,7 @@ export class TokenStatusBar implements vscode.Disposable {
       firstUserMessageHash,
       parentConversationHash,
       conversationId,
+      isSummarization: isSummarization ?? false,
     };
 
     this.agents.set(agentId, agent);
@@ -786,6 +797,8 @@ export class TokenStatusBar implements vscode.Disposable {
       return;
     }
 
+    let justDetectedSummarization = false;
+
     // Store this turn's tokens
     agent.inputTokens = usage.inputTokens;
     agent.outputTokens = usage.outputTokens;
@@ -803,6 +816,8 @@ export class TokenStatusBar implements vscode.Disposable {
       // Accumulate if multiple summarizations occur
       agent.summarizationReduction =
         (agent.summarizationReduction ?? 0) + reduction;
+      agent.summarizationFadeTurns = 2;
+      justDetectedSummarization = true;
       logger.info(
         `[StatusBar] Summarization detected`,
         JSON.stringify({
@@ -814,6 +829,20 @@ export class TokenStatusBar implements vscode.Disposable {
         }),
       );
     }
+
+    // Fade the ↓ suffix over subsequent turns
+    if (
+      agent.summarizationFadeTurns !== undefined &&
+      agent.summarizationFadeTurns > 0
+    ) {
+      // Don't decrement on the turn that SET it (summarization detection turn)
+      // Only decrement on subsequent turns
+      if (!justDetectedSummarization) {
+        agent.summarizationFadeTurns--;
+      }
+    }
+
+    agent.isSummarization = undefined;
 
     // Use latest actual input tokens (not historical peak).
     // After summarization, context shrinks — the display should reflect that.
@@ -1011,16 +1040,18 @@ export class TokenStatusBar implements vscode.Disposable {
       (a) => a.status === "streaming",
     );
 
+    const hasSummarizingAgents = agentsArray.some(
+      (a) => a.status === "streaming" && a.isSummarization === true,
+    );
+
     const hasServerCompaction =
       (mainAgent?.contextManagement?.appliedEdits.length ?? 0) > 0;
-    const hasSummarization = mainAgent?.summarizationDetected === true;
-    const hasCompaction = hasServerCompaction || hasSummarization;
 
-    let icon = "$(triangle-up)";
-    if (hasStreamingAgents) {
+    let icon = "$(debug-breakpoint-function)";
+    if (hasSummarizingAgents) {
+      icon = "$(sync~spin)";
+    } else if (hasStreamingAgents) {
       icon = "$(loading~spin)";
-    } else if (hasCompaction) {
-      icon = "$(fold)";
     }
 
     let mainText = "";
@@ -1030,7 +1061,12 @@ export class TokenStatusBar implements vscode.Disposable {
       if (display) {
         mainText = this.formatAgentUsage(mainAgent);
 
-        if (hasCompaction) {
+        const showCompactionSuffix =
+          (mainAgent.summarizationFadeTurns !== undefined &&
+            mainAgent.summarizationFadeTurns > 0) ||
+          hasServerCompaction;
+
+        if (showCompactionSuffix) {
           const serverFreed =
             mainAgent.contextManagement?.appliedEdits.reduce(
               (t, e) => t + e.clearedInputTokens,
@@ -1046,7 +1082,11 @@ export class TokenStatusBar implements vscode.Disposable {
     }
 
     if (!mainText && hasStreamingAgents) {
-      this.statusBarItem.text = "$(loading~spin) streaming...";
+      if (hasSummarizingAgents) {
+        this.statusBarItem.text = "$(sync~spin) summarizing...";
+      } else {
+        this.statusBarItem.text = "$(loading~spin) streaming...";
+      }
       this.statusBarItem.tooltip = undefined;
       this.statusBarItem.show();
       return;
@@ -1105,7 +1145,6 @@ export class TokenStatusBar implements vscode.Disposable {
       this.statusBarItem.backgroundColor = undefined;
     }
   }
-
 
   /**
    * Check if an agent has children still in the tree or pending claims
@@ -1203,7 +1242,6 @@ export class TokenStatusBar implements vscode.Disposable {
       this._onDidChangeAgents.fire();
     }
   }
-
 
   /**
    * Schedule auto-hide - currently disabled to keep status bar always visible

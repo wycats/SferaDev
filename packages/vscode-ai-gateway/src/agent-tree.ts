@@ -58,10 +58,35 @@ export class AgentTreeItem extends vscode.TreeItem {
     if (this.agent.maxInputTokens) {
       const max = formatTokens(this.agent.maxInputTokens);
       const pct = Math.round((display.value / this.agent.maxInputTokens) * 100);
-      return `${prefix}${tokens}/${max} · ${pct.toString()}%`;
+      let desc = `${prefix}${tokens}/${max} · ${pct.toString()}%`;
+
+      // Show ↓ suffix while fading
+      const totalFreed = this.getTotalFreedTokens();
+      if (totalFreed > 0 && this.shouldShowCompactionSuffix()) {
+        desc += ` ↓${formatTokens(totalFreed)}`;
+      }
+
+      return desc;
     }
 
     return `${prefix}${tokens}`;
+  }
+
+  private getTotalFreedTokens(): number {
+    const serverFreed =
+      this.agent.contextManagement?.appliedEdits.reduce(
+        (t, e) => t + e.clearedInputTokens,
+        0,
+      ) ?? 0;
+    const summarizationFreed = this.agent.summarizationReduction ?? 0;
+    return serverFreed + summarizationFreed;
+  }
+
+  private shouldShowCompactionSuffix(): boolean {
+    const hasServerCompaction =
+      (this.agent.contextManagement?.appliedEdits.length ?? 0) > 0;
+    const hasFadingReduction = (this.agent.summarizationFadeTurns ?? 0) > 0;
+    return hasServerCompaction || hasFadingReduction;
   }
 
   private formatTooltip(): vscode.MarkdownString {
@@ -148,6 +173,12 @@ export class AgentTreeItem extends vscode.TreeItem {
   private getIcon(): vscode.ThemeIcon {
     switch (this.agent.status) {
       case "streaming":
+        if (this.agent.isSummarization) {
+          return new vscode.ThemeIcon(
+            "sync~spin",
+            new vscode.ThemeColor("charts.yellow"),
+          );
+        }
         return new vscode.ThemeIcon(
           "loading~spin",
           new vscode.ThemeColor("charts.yellow"),
@@ -158,12 +189,7 @@ export class AgentTreeItem extends vscode.TreeItem {
           new vscode.ThemeColor("errorForeground"),
         );
       case "complete": {
-        // Show fold icon if context was compacted (server or summarization)
-        const hasCompaction =
-          (this.agent.contextManagement?.appliedEdits.length ?? 0) > 0 ||
-          this.agent.summarizationDetected === true;
-        const iconName = hasCompaction ? "fold" : "check";
-
+        const iconName = "check";
         // Check context utilization for color
         const display = getDisplayTokens(this.agent);
         const inputTokens = display?.value ?? 0;

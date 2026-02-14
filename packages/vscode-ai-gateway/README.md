@@ -51,16 +51,17 @@ The status bar (bottom-right) is a context window fuel gauge:
 ```
 52.0k/128.0k 41%       — normal (input / max, percentage)
 ~50.0k/128.0k 39%      — streaming (~ = estimated)
-37.1k/128.0k 29% ↓15k  — after context compaction (↓ = tokens freed)
+37.1k/128.0k 29% ↓15k  — after summarization (↓ = tokens freed, fades after 2 turns)
+summarizing...          — VS Code is summarizing the conversation
 streaming...            — streaming, no estimate yet
 ```
 
-| Element | Meaning |
-| ------- | ------- |
-| `52.0k/128.0k` | Input tokens used / context window size |
-| `41%` | Percentage of context window consumed |
-| `~` prefix | Estimated (exact count arrives after response completes) |
-| `↓15k` | Tokens freed by context compaction or summarization |
+| Element        | Meaning                                                  |
+| -------------- | -------------------------------------------------------- |
+| `52.0k/128.0k` | Input tokens used / context window size                  |
+| `41%`          | Percentage of context window consumed                    |
+| `~` prefix     | Estimated (exact count arrives after response completes) |
+| `↓15k`         | Tokens freed by summarization (shown for 2 turns)        |
 
 **Background color** changes with context pressure:
 
@@ -79,9 +80,8 @@ Each agent shows `tokens/max · pct%` (e.g. `52.0k/128.0k · 41%`).
 **Tree structure:**
 
 - **Main agents** at the root, subagents nested underneath
-- **Spinning icon** — actively streaming
+- **Spinning icon** — actively streaming (circular arrows when summarizing)
 - **Check icon** — complete (green < 70%, orange 70–90%, red > 90%)
-- **Fold icon** — context was compacted (server-side or summarization)
 - **Last Session** — shown when idle (agent count, peak context)
 
 **Hover tooltips** show full details: model, status, duration, input/output breakdown, turn count, compaction details, and summarization reduction.

@@ -62,9 +62,7 @@ describe("TokenStatusBar", () => {
         "anthropic:claude-sonnet-4",
       );
 
-      expect(mockStatusBarItem.text).toBe(
-        "$(loading~spin) ~50.0k/128.0k 39%",
-      );
+      expect(mockStatusBarItem.text).toBe("$(loading~spin) ~50.0k/128.0k 39%");
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
 
@@ -72,6 +70,24 @@ describe("TokenStatusBar", () => {
       statusBar.startAgent("agent-1");
 
       expect(mockStatusBarItem.text).toBe("$(loading~spin) streaming...");
+      expect(mockStatusBarItem.show).toHaveBeenCalled();
+    });
+
+    it("shows summarizing indicator when summarization streaming", () => {
+      statusBar.startAgent(
+        "agent-1",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+
+      expect(mockStatusBarItem.text).toBe("$(sync~spin) summarizing...");
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
 
@@ -100,7 +116,9 @@ describe("TokenStatusBar", () => {
         maxInputTokens: 128000,
       });
 
-      expect(mockStatusBarItem.text).toBe("$(triangle-up) 52.0k/128.0k 41%");
+      expect(mockStatusBarItem.text).toBe(
+        "$(debug-breakpoint-function) 52.0k/128.0k 41%",
+      );
       expect(mockStatusBarItem.show).toHaveBeenCalled();
     });
 
@@ -119,7 +137,7 @@ describe("TokenStatusBar", () => {
       expect(lastUsage?.outputTokens).toBe(1000);
     });
 
-    it("shows compaction info with fold icon and freed tokens", () => {
+    it("shows compaction info with freed tokens", () => {
       statusBar.startAgent("agent-1");
       statusBar.completeAgent("agent-1", {
         inputTokens: 37100,
@@ -138,8 +156,31 @@ describe("TokenStatusBar", () => {
       });
 
       expect(mockStatusBarItem.text).toBe(
-        "$(fold) 37.1k/128.0k 29% ↓15.2k",
+        "$(debug-breakpoint-function) 37.1k/128.0k 29% ↓15.2k",
       );
+    });
+
+    it("clears summarization flag after completion", () => {
+      statusBar.startAgent(
+        "agent-1",
+        50000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+      statusBar.completeAgent("agent-1", {
+        inputTokens: 52000,
+        outputTokens: 1500,
+        maxInputTokens: 128000,
+      });
+
+      const agent = statusBar.getAgents()[0];
+      expect(agent?.isSummarization).toBeUndefined();
     });
   });
 
@@ -728,6 +769,82 @@ describe("TokenStatusBar", () => {
       expect(agent?.summarizationDetected).toBe(true);
       // 50000 (first) + 45000 (second) = 95000
       expect(agent?.summarizationReduction).toBe(95000);
+    });
+
+    it("fades compaction suffix after two turns", () => {
+      statusBar.startAgent(
+        "req-1",
+        80000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-fade",
+      );
+      statusBar.completeAgent("req-1", {
+        inputTokens: 80000,
+        outputTokens: 500,
+        maxInputTokens: 128000,
+      });
+
+      statusBar.startAgent(
+        "req-2",
+        85000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-fade",
+      );
+      statusBar.completeAgent("req-2", {
+        inputTokens: 40000,
+        outputTokens: 600,
+        maxInputTokens: 128000,
+      });
+
+      expect(mockStatusBarItem.text).toContain("↓40.0k");
+
+      statusBar.startAgent(
+        "req-3",
+        50000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-fade",
+      );
+      statusBar.completeAgent("req-3", {
+        inputTokens: 50000,
+        outputTokens: 700,
+        maxInputTokens: 128000,
+      });
+
+      expect(mockStatusBarItem.text).toContain("↓40.0k");
+
+      statusBar.startAgent(
+        "req-4",
+        60000,
+        128000,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "conv-fade",
+      );
+      statusBar.completeAgent("req-4", {
+        inputTokens: 60000,
+        outputTokens: 800,
+        maxInputTokens: 128000,
+      });
+
+      expect(mockStatusBarItem.text).not.toContain("↓");
     });
   });
 });

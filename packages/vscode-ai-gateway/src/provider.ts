@@ -76,7 +76,10 @@ import {
 } from "./logger";
 import { ModelsClient } from "./models";
 import { type EnrichedModelData, ModelEnricher } from "./models/enrichment";
-import { executeOpenResponsesChat } from "./provider/openresponses-chat.js";
+import {
+  executeOpenResponsesChat,
+  detectSummarizationRequest,
+} from "./provider/openresponses-chat.js";
 import { extractSystemPrompt } from "./provider/system-prompt.js";
 import {
   computeAgentTypeHash,
@@ -384,6 +387,7 @@ export class VercelAIChatModelProvider
       const firstUserMessageHash = firstUserMessageText
         ? hashUserMessage(firstUserMessageText)
         : undefined;
+      const isSummarizationRequest = detectSummarizationRequest(chatMessages);
       // Compute delta token estimate for resumed conversations.
       // Instead of showing the full re-estimate during streaming (which has
       // systematic error from tool schema multipliers etc.), we estimate only
@@ -420,6 +424,7 @@ export class VercelAIChatModelProvider
         firstUserMessageHash,
         estimatedDeltaTokens,
         conversationId,
+        isSummarizationRequest,
       );
 
       const apiKey = await this.getApiKey(false);
