@@ -20,7 +20,9 @@ describe("TitleGenerator", () => {
     // Create a generator instance to test the private cleanTitle method
     const generator = new TitleGenerator();
     const cleanTitle = (s: string) =>
-      (generator as unknown as { cleanTitle: (s: string) => string }).cleanTitle.call(generator, s);
+      (
+        generator as unknown as { cleanTitle: (s: string) => string }
+      ).cleanTitle.call(generator, s);
 
     it("removes leading and trailing quotes", () => {
       expect(cleanTitle('"Login Bug Fix"')).toBe("Login Bug Fix");
@@ -42,7 +44,9 @@ describe("TitleGenerator", () => {
     });
 
     it("handles combined cleanup", () => {
-      expect(cleanTitle('"Title:   Multiple   Spaces"')).toBe("Multiple Spaces");
+      expect(cleanTitle('"Title:   Multiple   Spaces"')).toBe(
+        "Multiple Spaces",
+      );
     });
 
     it("trims whitespace", () => {

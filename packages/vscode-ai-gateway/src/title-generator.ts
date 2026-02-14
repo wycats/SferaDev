@@ -34,7 +34,8 @@ const TITLE_SYSTEM_PROMPT = `Generate a concise 3-5 word title for this conversa
  */
 export class TitleGenerator {
   private cachedModel: vscode.LanguageModelChat | null = null;
-  private modelSelectionPromise: Promise<vscode.LanguageModelChat | null> | null = null;
+  private modelSelectionPromise: Promise<vscode.LanguageModelChat | null> | null =
+    null;
 
   /**
    * Generate a title for a conversation based on the first user message.

@@ -20,6 +20,7 @@
 | 018 | Status Bar OpenResponses Metadata Enhancements    | [stage-0/018-status-bar-openresponses-metadata.md](stage-0/018-status-bar-openresponses-metadata.md)           |
 | 019 | High-Context Tool Call Failure                    | [stage-0/019-high-context-tool-call-failure.md](stage-0/019-high-context-tool-call-failure.md)                 |
 | 043 | Gateway vs VS Code Token Limit Mismatch           | [stage-0/043-gateway-vs-vscode-token-limit-mismatch.md](stage-0/043-gateway-vs-vscode-token-limit-mismatch.md) |
+| 072 | Conversation-Centric Agent Tree                   | [stage-0/00072-conversation-centric-agent-tree.md](stage-0/00072-conversation-centric-agent-tree.md)           |
 | ref | Reference Stream Mapping                          | [stage-0/ref-stream-mapping.md](stage-0/ref-stream-mapping.md)                                                 |
 
 ## Stage 1

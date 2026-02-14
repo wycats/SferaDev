@@ -1873,3 +1873,165 @@ label = "Review: Verify VSIX installs clean, docs accuracy, end-to-end walkthrou
 status = "completed"
 completion_log = "All 3 Review tasks pass: VSIX installs cleanly (0.3.0, 128 files, 4.28 MB), docs verified accurate against source, CHANGELOG covers all phases."
 ulid = "01KHCXWNNR09DTECGV2MTM94NW"
+
+[[epochs]]
+id = "01khddfgh81dsxc5j0fa4dxby7"
+title = "Conversation-Centric Agent Tree (RFC 00073)"
+status = "active"
+ulid = "01KHDDFGH81DSXC5J0FA4DXBY7"
+
+[[epochs.phases]]
+id = "01khddg37nq5113xdn5nfvqsyr"
+title = "ConversationManager Core"
+status = "active"
+kind = "regular"
+ulid = "01KHDDG37NQ5113XDN5NFVQSYR"
+
+[[epochs.phases.goals]]
+id = "conversation-interface"
+label = "Define Conversation and related interfaces"
+status = "completed"
+completion_log = "Defined Conversation, CompactionEvent, and Subagent interfaces in src/conversation/types.ts"
+ulid = "01KHDDH2EVMFST0F8HWFD3B1NV"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "conversation-manager"
+label = "Implement ConversationManager class"
+status = "completed"
+completion_log = "Implemented ConversationManager class with rebuild, status mapping, workspace folder capture"
+ulid = "01KHDDH7FCY84WXQCDB5C1DQ7F"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "compaction-tracking"
+label = "Track compaction events from summarization"
+status = "completed"
+completion_log = "Tracks both summarization (cumulative) and context management (per-turn) compaction events"
+ulid = "01KHDDHBMZPEM5F6PQQQ18F422"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "subagent-hierarchy"
+label = "Build subagent hierarchy from parent relationships"
+status = "completed"
+completion_log = "Builds nested subagent hierarchy with cycle protection via seen set"
+ulid = "01KHDDHFEHWQK9SV24TCD6M5X7"
+rfc = "00073"
+
+[[epochs.phases.rfcs]]
+id = "00073"
+
+[[epochs.phases]]
+id = "01khddg7tp2djwcgn2theer3ar"
+title = "Tree Item Refactor"
+status = "pending"
+kind = "regular"
+ulid = "01KHDDG7TP2DJWCGN2THEER3AR"
+
+[[epochs.phases.goals]]
+id = "section-headers"
+label = "Implement SectionHeader tree items (Active/History)"
+status = "pending"
+ulid = "01KHDDHSWZNSN5N162YSF90KHX"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "conversation-item"
+label = "Implement ConversationItem tree items"
+status = "pending"
+ulid = "01KHDDHYHRTQCHRP4C8F5PBQG8"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "compaction-item"
+label = "Implement CompactionItem tree items"
+status = "pending"
+ulid = "01KHDDJ2VDT9T2T9Y32CHKB0R0"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "subagent-item"
+label = "Implement SubagentItem with nested children"
+status = "pending"
+ulid = "01KHDDJ70ZRYWR303ZTB9V1271"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "tree-provider-refactor"
+label = "Refactor AgentTreeDataProvider to use ConversationManager"
+status = "pending"
+ulid = "01KHDDJBW5YM1K5YT7XHKWJQZC"
+rfc = "00073"
+
+[[epochs.phases.rfcs]]
+id = "00073"
+
+[[epochs.phases]]
+id = "01khddgdb93f871apk819k8dxh"
+title = "Persistence & Idle Timer"
+status = "pending"
+kind = "regular"
+ulid = "01KHDDGDB93F871APK819K8DXH"
+
+[[epochs.phases.goals]]
+id = "conversation-store"
+label = "Add CONVERSATION_STORE to persistence layer"
+status = "pending"
+ulid = "01KHDDJFW1K86BHGHKE5JAAZRZ"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "persist-on-change"
+label = "Persist conversation metadata on state changes"
+status = "pending"
+ulid = "01KHDDJN38T9NM9C4DBDRT5G6S"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "restore-on-startup"
+label = "Restore conversations on VS Code restart"
+status = "pending"
+ulid = "01KHDDJS503G4M39NPH1NZPV7N"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "idle-timer"
+label = "Implement 5-minute idle timer for Active→History"
+status = "pending"
+ulid = "01KHDDJY8CZAXKJFE4QD64Z72C"
+rfc = "00073"
+
+[[epochs.phases.rfcs]]
+id = "00073"
+
+[[epochs.phases]]
+id = "01khddgmrc2f6qqt3bty3pqth8"
+title = "Workspace Scoping & Trim"
+status = "pending"
+kind = "regular"
+ulid = "01KHDDGMRC2F6QQT3BTY3PQTH8"
+
+[[epochs.phases.goals]]
+id = "track-workspace"
+label = "Track workspaceFolder when conversation starts"
+status = "pending"
+ulid = "01KHDDK2P6MF26V095CQ8K0FHN"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "trim-command"
+label = "Add 'Trim History' command and tree button"
+status = "pending"
+ulid = "01KHDDK6ZKJKT36ZH4C246TSRB"
+rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "workspace-filter"
+label = "Optional workspace filter setting"
+status = "pending"
+ulid = "01KHDDKB6VYBFF7XXAGDYM4DTT"
+rfc = "00073"
+
+[[epochs.phases.rfcs]]
+id = "00073"

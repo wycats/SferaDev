@@ -31,7 +31,10 @@ vi.mock("vscode", () => ({
     }
   },
   ThemeIcon: class {
-    constructor(public id: string, public color?: unknown) {}
+    constructor(
+      public id: string,
+      public color?: unknown,
+    ) {}
   },
   ThemeColor: class {
     constructor(public id: string) {}
@@ -65,7 +68,10 @@ describe("AgentTreeItem", () => {
         name: "claude-sonnet-4",
       });
 
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.label).toBe("Login Bug Fix");
     });
@@ -77,7 +83,10 @@ describe("AgentTreeItem", () => {
         name: "claude-sonnet-4",
       });
 
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.label).toBe("Fix the bug in the login...");
     });
@@ -89,7 +98,10 @@ describe("AgentTreeItem", () => {
         name: "claude-sonnet-4",
       });
 
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.label).toBe("claude-sonnet-4");
     });
@@ -101,7 +113,10 @@ describe("AgentTreeItem", () => {
         name: "model-name",
       });
 
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.label).toBe("AI Generated Title");
     });
@@ -110,14 +125,20 @@ describe("AgentTreeItem", () => {
   describe("contextValue", () => {
     it("sets mainAgent for main agents", () => {
       const agent = createMockAgent({ isMain: true });
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.contextValue).toBe("mainAgent");
     });
 
     it("sets subAgent for subagents", () => {
       const agent = createMockAgent({ isMain: false });
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.contextValue).toBe("subAgent");
     });
@@ -131,14 +152,20 @@ describe("AgentTreeItem", () => {
         outputTokens: 0,
         lastActualInputTokens: 0,
       });
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.description).toBe("streaming...");
     });
 
     it("shows error status when error", () => {
       const agent = createMockAgent({ status: "error" });
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       expect(item.description).toBe("error");
     });
@@ -150,7 +177,10 @@ describe("AgentTreeItem", () => {
         lastActualInputTokens: 50000,
         maxInputTokens: 100000,
       });
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       // Format is "50.0k/100.0k · 50%"
       expect(item.description).toContain("50.0k");
@@ -164,7 +194,10 @@ describe("AgentTreeItem", () => {
       const agent = createMockAgent({
         generatedTitle: "Login Bug Fix",
       });
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       const tooltip = item.tooltip as { value: string };
       expect(tooltip.value).toContain("Login Bug Fix");
@@ -174,7 +207,10 @@ describe("AgentTreeItem", () => {
       const agent = createMockAgent({
         name: "claude-sonnet-4",
       });
-      const item = new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None);
+      const item = new AgentTreeItem(
+        agent,
+        vscode.TreeItemCollapsibleState.None,
+      );
 
       const tooltip = item.tooltip as { value: string };
       expect(tooltip.value).toContain("claude-sonnet-4");

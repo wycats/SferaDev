@@ -29,7 +29,8 @@ export class AgentTreeItem extends vscode.TreeItem {
     // 1. AI-generated title (most descriptive)
     // 2. First user message preview (fallback)
     // 3. Model name (last resort)
-    const label = agent.generatedTitle ?? agent.firstUserMessagePreview ?? agent.name;
+    const label =
+      agent.generatedTitle ?? agent.firstUserMessagePreview ?? agent.name;
     super(label, collapsibleState);
     this.agent = agent;
 
@@ -98,7 +99,8 @@ export class AgentTreeItem extends vscode.TreeItem {
     md.isTrusted = true;
 
     // Show title or preview as header
-    const title = this.agent.generatedTitle ?? this.agent.firstUserMessagePreview;
+    const title =
+      this.agent.generatedTitle ?? this.agent.firstUserMessagePreview;
     if (title) {
       md.appendMarkdown(`### ${title}\n\n`);
     }
