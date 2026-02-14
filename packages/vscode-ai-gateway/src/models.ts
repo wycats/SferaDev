@@ -4,7 +4,11 @@ import { MODELS_CACHE_TTL_MS, MODELS_ENDPOINT } from "./constants";
 import { logger } from "./logger";
 import { ModelFilter } from "./models/filter";
 import type { Model } from "./models/types";
-import { transformRawModelsToChatInfo } from "./models/transform";
+import {
+  transformRawModelsToChatInfo,
+  type TransformOptions,
+} from "./models/transform";
+import { decodeVsCodeModelId } from "./models/vscode-model-id";
 
 export type { Model } from "./models/types";
 
@@ -43,10 +47,23 @@ export class ModelsClient {
   private onModelsUpdated: (() => void) | null = null;
   /** Set of model IDs that the user has explicitly used (sticky selection) */
   private userEnabledModels: Set<string> = new Set();
+  /**
+   * Getter for the last-selected model's encoded VS Code ID.
+   * Set by the provider which owns the workspaceState.
+   */
+  private lastSelectedModelGetter: (() => string | undefined) | null = null;
 
   constructor(configService: ConfigService = new ConfigService()) {
     this.configService = configService;
     this.modelFilter = new ModelFilter(configService);
+  }
+
+  /**
+   * Set a getter for the last-selected model ID (encoded VS Code ID).
+   * Used as a fallback default when no explicit default is configured.
+   */
+  setLastSelectedModelGetter(getter: () => string | undefined): void {
+    this.lastSelectedModelGetter = getter;
   }
 
   /**
@@ -372,6 +389,17 @@ export class ModelsClient {
   }
 
   /**
+   * Invalidate the in-memory cache so the next getModels() call
+   * triggers a background revalidation against the API.
+   */
+  invalidateCache(): void {
+    if (this.memoryCache) {
+      this.memoryCache.fetchedAt = 0;
+      logger.debug("Models cache invalidated — next access will revalidate");
+    }
+  }
+
+  /**
    * Check if the model list has actually changed (not just refreshed).
    * Compares model IDs to avoid unnecessary UI refreshes.
    */
@@ -391,6 +419,23 @@ export class ModelsClient {
   ): LanguageModelChatInformation[] {
     // NOTE: This is intentionally a pure transform and should not depend on auth/network.
     // Tests reach into this private method, so we keep it as a stable seam.
-    return transformRawModelsToChatInfo(data);
+
+    // Default model priority:
+    // 1. Explicit config: vercel.ai.models.default (raw model ID)
+    // 2. Last-selected model from previous chat (encoded → decoded)
+    // 3. First model in API order (handled by transform when no defaultModelId)
+    let defaultModelId = this.modelFilter.getDefaultModel() || undefined;
+    if (!defaultModelId) {
+      const lastSelected = this.lastSelectedModelGetter?.();
+      if (lastSelected) {
+        defaultModelId = decodeVsCodeModelId(lastSelected);
+      }
+    }
+
+    const options: TransformOptions = {
+      defaultModelId,
+      userSelectable: this.configService.modelsUserSelectable,
+    };
+    return transformRawModelsToChatInfo(data, options);
   }
 }

@@ -134,6 +134,10 @@ export class VercelAIChatModelProvider
     this.context = context;
     this.configService = configService;
     this.modelsClient = new ModelsClient(configService);
+    // Wire last-selected model as fallback default (decoded from workspaceState)
+    this.modelsClient.setLastSelectedModelGetter(() =>
+      this.getLastSelectedModelId(),
+    );
     this.tokenCounter = new TokenCounter();
     void this.tokenCounter.initialize();
     this.enricher = new ModelEnricher(configService);
@@ -156,6 +160,16 @@ export class VercelAIChatModelProvider
    */
   setStatusBar(statusBar: TokenStatusBar): void {
     this.statusBar = statusBar;
+  }
+
+  /**
+   * Invalidate the model cache and trigger VS Code to re-resolve models.
+   * Called by the "Refresh Models" command.
+   */
+  refreshModels(): void {
+    this.modelsClient.invalidateCache();
+    this.modelInfoChangeEmitter.fire();
+    logger.info("Model refresh triggered by user command");
   }
 
   async provideLanguageModelChatInformation(

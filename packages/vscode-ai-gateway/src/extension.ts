@@ -113,6 +113,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
   stubProvider.setRealProvider(provider);
 
+  // Register command to refresh models
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vercel.ai.refreshModels", () => {
+      provider.refreshModels();
+    }),
+  );
+
   // First-run experience: detect no-auth and show welcome notification
   void (async () => {
     try {

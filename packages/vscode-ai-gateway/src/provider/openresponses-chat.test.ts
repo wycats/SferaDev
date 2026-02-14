@@ -97,6 +97,23 @@ vi.mock("../utils/stateful-marker.js", () => ({
   findLatestStatefulMarker: vi.fn(() => undefined),
 }));
 
+// Disable retries in tests — all errors are classified as non-retryable
+vi.mock("../utils/retry.js", () => ({
+  classifyForRetry: vi.fn(() => ({
+    retryable: false,
+    maxRetries: 0,
+    reason: "Test — retries disabled",
+  })),
+  calculateRetryDelay: vi.fn(() => 0),
+  DEFAULT_RETRY_CONFIG: {
+    maxRetries: 3,
+    initialDelayMs: 1000,
+    backoffMultiplier: 2,
+    maxDelayMs: 16000,
+    jitterFactor: 0.25,
+  },
+}));
+
 import { OpenResponsesError } from "openresponses-client";
 import { LanguageModelTextPart } from "vscode";
 import { ERROR_MESSAGES } from "../constants.js";

@@ -1800,7 +1800,7 @@ ulid = "01KHC3J3H0TD4ZXGPHKCQRC39Z"
 [[epochs.phases]]
 id = "01khc3gkfxqf829czsgj1xtdtc"
 title = "Error UX & Resilience"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHC3GKFXQF829CZSGJ1XTDTC"
 
@@ -1821,13 +1821,14 @@ ulid = "01KHC3JSMKZBCFX1RNH8M3JMMJ"
 [[epochs.phases.goals]]
 id = "retry-resilience"
 label = "Add retry logic for transient failures (network timeouts, 502/503) with exponential backoff"
-status = "pending"
+status = "completed"
+completion_log = "Retry resilience complete: retry.ts utility with classifyForRetry/calculateRetryDelay/withRetry, wired into openresponses-chat.ts catch block (retries only when eventCount===0 and !responseSent), 33 new tests in retry.test.ts. Full suite: 535 tests, 0 errors."
 ulid = "01KHC3JSNFBM6DNAFSASCW0H4D"
 
 [[epochs.phases]]
 id = "01khc3gkgdbgzr4pybs1rakarb"
 title = "Model Discovery & Selection"
-status = "pending"
+status = "active"
 kind = "regular"
 ulid = "01KHC3GKGDBGZR4PYBS1RAKARB"
 

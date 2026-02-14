@@ -15,8 +15,22 @@ type VSCodeChatModelInfo = LanguageModelChatInformation & {
   isDefaultForLocation?: boolean[];
 };
 
+export interface TransformOptions {
+  /**
+   * The raw model ID (before encoding) to mark as default.
+   * Falls back to the first model if unset or not found.
+   */
+  defaultModelId?: string | undefined;
+  /**
+   * When true, all models are user-selectable in the picker.
+   * When false (default), only the default model is user-selectable.
+   */
+  userSelectable?: boolean | undefined;
+}
+
 export function transformRawModelsToChatInfo(
   data: Model[],
+  options?: TransformOptions,
 ): LanguageModelChatInformation[] {
   const imageInputTags = new Set([
     "vision",
@@ -51,6 +65,16 @@ export function transformRawModelsToChatInfo(
   // length to ensure at least one model is treated as default for any location.
   const DEFAULT_LOCATION_ARRAY_LEN = 32;
 
+  const defaultModelId = options?.defaultModelId ?? "";
+  const userSelectable = options?.userSelectable ?? true;
+
+  // Determine which model index should be the default:
+  // 1. If defaultModelId is set and found, use that model
+  // 2. Otherwise fall back to the first model (index 0)
+  const defaultIndex = defaultModelId
+    ? filteredModels.findIndex((m) => m.id === defaultModelId)
+    : -1;
+
   const models: VSCodeChatModelInfo[] = filteredModels.map((model, index) => {
     const rawId = model.id;
     const identity = parseModelIdentity(rawId);
@@ -69,7 +93,10 @@ export function transformRawModelsToChatInfo(
       CONSERVATIVE_MAX_OUTPUT_TOKENS,
     );
 
-    const isDefault = index === 0;
+    // A model is default if it matches the configured default, or if no
+    // configured default was found, the first model wins.
+    const isDefault =
+      defaultIndex >= 0 ? index === defaultIndex : index === 0;
 
     return {
       // IMPORTANT: VS Code's internal model picker logic appears to key preferences
@@ -85,8 +112,10 @@ export function transformRawModelsToChatInfo(
       maxInputTokens,
       maxOutputTokens,
       tooltip: model.description || "No description available.",
-      // Critical for selection persistence.
-      isUserSelectable: true,
+      // When userSelectable is true, all models appear in the picker.
+      // When false, only the default model is selectable (others hidden until
+      // the user enables them via VS Code's "Manage Models" UI).
+      isUserSelectable: userSelectable || isDefault,
       ...(isDefault
         ? {
             isDefault: true,

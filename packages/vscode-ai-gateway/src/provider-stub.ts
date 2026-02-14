@@ -23,7 +23,10 @@ import type {
 } from "vscode";
 import * as vscode from "vscode";
 import type { Model } from "./models/types";
-import { transformRawModelsToChatInfo } from "./models/transform";
+import {
+  transformRawModelsToChatInfo,
+  type TransformOptions,
+} from "./models/transform";
 
 /** Minimal cache shape — must match ModelsClient's PersistentModelsCache */
 interface CachedModels {
@@ -57,11 +60,26 @@ export class StubProvider
     // Hydrate from globalState so the first resolve returns models instantly.
     const cached = this.context.globalState.get<CachedModels>(MODELS_CACHE_KEY);
     if (cached?.rawModels && cached.rawModels.length > 0) {
-      this.cachedModels = transformRawModelsToChatInfo(cached.rawModels);
+      this.cachedModels = transformRawModelsToChatInfo(
+        cached.rawModels,
+        this.getTransformOptions(),
+      );
     } else if (cached?.models && cached.models.length > 0) {
       // Legacy fallback — these objects may be missing picker-critical metadata.
       this.cachedModels = cached.models;
     }
+  }
+
+  /**
+   * Read transform options directly from VS Code config.
+   * Avoids importing the full ConfigService to keep the stub lightweight.
+   */
+  private getTransformOptions(): TransformOptions {
+    const config = vscode.workspace.getConfiguration("vercel.ai");
+    return {
+      defaultModelId: config.get<string>("models.default", "") || undefined,
+      userSelectable: config.get<boolean>("models.userSelectable", false),
+    };
   }
 
   /** Connect to the full provider once it's loaded */
@@ -90,7 +108,10 @@ export class StubProvider
     // Refresh from globalState in case the real provider updated it.
     const cached = this.context.globalState.get<CachedModels>(MODELS_CACHE_KEY);
     if (cached?.rawModels && cached.rawModels.length > 0) {
-      this.cachedModels = transformRawModelsToChatInfo(cached.rawModels);
+      this.cachedModels = transformRawModelsToChatInfo(
+        cached.rawModels,
+        this.getTransformOptions(),
+      );
     } else if (cached?.models && cached.models.length > 0) {
       this.cachedModels = cached.models;
     }

@@ -104,6 +104,11 @@
         "command": "vercel.ai.exportErrorLogs",
         "title": "Export Error Logs",
         "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercel.ai.refreshModels",
+        "title": "Refresh Models",
+        "category": "Vercel AI Gateway"
       }
     ],
     "menus": {

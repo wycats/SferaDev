@@ -33,6 +33,11 @@ import type { ConfigService } from "../config.js";
 import { ERROR_MESSAGES, EXTENSION_ID } from "../constants.js";
 import { treeDiagnostics } from "../diagnostics/tree-diagnostics.js";
 import {
+  classifyForRetry,
+  calculateRetryDelay,
+  DEFAULT_RETRY_CONFIG,
+} from "../utils/retry.js";
+import {
   extractTokenCountFromError,
   type ExtractedTokenInfo,
   logger,
@@ -125,6 +130,8 @@ export async function executeOpenResponsesChat(
   progress: Progress<LanguageModelResponsePart>,
   token: CancellationToken,
   chatOptions: OpenResponsesChatOptions,
+  /** @internal Current retry attempt (0-based). Do not set externally. */
+  _retryAttempt = 0,
 ): Promise<OpenResponsesChatResult> {
   const {
     configService,
@@ -885,6 +892,47 @@ export async function executeOpenResponsesChat(
     const { userMessage, captureType } = classifyError(error, rawErrorMessage);
 
     logger.error(`[OpenResponses] Request failed: ${rawErrorMessage}`);
+
+    // Retry logic: only retry if no events received (pre-stream failure)
+    // and the error is retryable (transient network/server errors)
+    if (eventCount === 0 && !responseSent) {
+      const retryClassification = classifyForRetry(error);
+      const effectiveMaxRetries = Math.min(
+        retryClassification.maxRetries,
+        DEFAULT_RETRY_CONFIG.maxRetries,
+      );
+
+      if (retryClassification.retryable && _retryAttempt < effectiveMaxRetries) {
+        const delay = calculateRetryDelay(
+          _retryAttempt,
+          DEFAULT_RETRY_CONFIG,
+          retryClassification.suggestedDelayMs,
+        );
+        logger.info(
+          `[Retry] Attempt ${(_retryAttempt + 1).toString()}/${effectiveMaxRetries.toString()} ` +
+            `for ${retryClassification.reason}. Retrying in ${Math.round(delay).toString()}ms...`,
+        );
+
+        // Wait before retrying (respect cancellation)
+        await new Promise<void>((resolve) => setTimeout(resolve, delay));
+
+        // Check if cancelled during wait
+        if (token.isCancellationRequested) {
+          return { success: false, cancelled: true };
+        }
+
+        // Retry the entire request
+        return executeOpenResponsesChat(
+          model,
+          chatMessages,
+          options,
+          progress,
+          token,
+          chatOptions,
+          _retryAttempt + 1,
+        );
+      }
+    }
 
     // Detect auth errors (401) and show actionable message with button
     if (
