@@ -2092,6 +2092,37 @@ kind = "regular"
 ulid = "01KHKNBZWDPKKE7Y95DNQ00PB8"
 
 [[epochs.phases]]
+id = "01khknebhjr8rms0314vsqcatx"
+title = "Persistence & Idle Timer"
+status = "pending"
+kind = "regular"
+ulid = "01KHKNEBHJR8RMS0314VSQCATX"
+
+[[epochs.phases.goals]]
+id = "conversation-store"
+label = "Add CONVERSATION_STORE to persistence layer"
+status = "pending"
+ulid = "01KHKNEPRC2Q9T33AQWPT1EKGB"
+
+[[epochs.phases.goals]]
+id = "persist-on-change"
+label = "Persist conversation metadata on state changes"
+status = "pending"
+ulid = "01KHKNFF9XAW2CB5Y2S77NBXPQ"
+
+[[epochs.phases.goals]]
+id = "restore-on-startup"
+label = "Restore conversations on VS Code restart"
+status = "pending"
+ulid = "01KHKNFFASKEW6B1CNFE2GEG5K"
+
+[[epochs.phases.goals]]
+id = "idle-timer"
+label = "Implement 5-minute idle timer for Active→History"
+status = "pending"
+ulid = "01KHKNFFBCSBHN9YMPBEMQ7R9G"
+
+[[epochs.phases]]
 id = "01khddgdb93f871apk819k8dxh"
 title = "Persistence & Idle Timer"
 status = "completed"
