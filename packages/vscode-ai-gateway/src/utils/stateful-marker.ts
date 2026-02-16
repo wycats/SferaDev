@@ -10,16 +10,16 @@ import type { LanguageModelChatMessage } from "vscode";
  *
  * Standard MIME types like "application/..." are silently dropped.
  */
-export namespace CustomDataPartMimeTypes {
+export const CustomDataPartMimeTypes = {
   /** Anthropic prompt caching breakpoints */
-  export const CacheControl = "cache_control";
+  CacheControl: "cache_control",
   /** Session/response ID for conversation chaining */
-  export const StatefulMarker = "stateful_marker";
+  StatefulMarker: "stateful_marker",
   /** Persisted thinking/reasoning blocks */
-  export const ThinkingData = "thinking";
+  ThinkingData: "thinking",
   /** Anthropic context editing responses */
-  export const ContextManagement = "context_management";
-}
+  ContextManagement: "context_management",
+} as const;
 
 /**
  * @deprecated Use CustomDataPartMimeTypes.StatefulMarker instead
@@ -27,6 +27,8 @@ export namespace CustomDataPartMimeTypes {
 export const STATEFUL_MARKER_MIME = CustomDataPartMimeTypes.StatefulMarker;
 
 const STATEFUL_MARKER_EXTENSION = "sferadev.vscode-ai-gateway";
+
+const ROLE_ASSISTANT: LanguageModelChatMessage["role"] = 2;
 
 export interface StatefulMarker {
   extension: string;
@@ -97,7 +99,7 @@ export function findLatestStatefulMarker(
 ): StatefulMarker | undefined {
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
-    if (!message || message.role !== 2) {
+    if (message?.role !== ROLE_ASSISTANT) {
       continue;
     }
     for (const part of message.content) {
@@ -107,7 +109,7 @@ export function findLatestStatefulMarker(
         typeof part.mimeType === "string" &&
         isStatefulMarkerMime(part.mimeType)
       ) {
-        const data = part.data as Uint8Array;
+        const data = part.data;
         const decoded = decodeStatefulMarker(data);
         if (!decoded) {
           continue;
@@ -134,7 +136,7 @@ export function findLatestStatefulMarker(
 export interface ThinkingData {
   id: string;
   text: string | string[];
-  metadata?: { [key: string]: unknown };
+  metadata?: Record<string, unknown>;
   tokens?: number;
 }
 
@@ -176,15 +178,14 @@ export function decodeThinkingData(data: Uint8Array): ThinkingData | undefined {
     ) {
       return undefined;
     }
-    const container = parsed as ThinkingDataContainer;
-    if (
-      container.type !== CustomDataPartMimeTypes.ThinkingData ||
-      !container.thinking ||
-      typeof container.thinking !== "object"
-    ) {
+    const container = parsed as { type?: unknown; thinking?: unknown };
+    if (container.type !== CustomDataPartMimeTypes.ThinkingData) {
       return undefined;
     }
-    return container.thinking;
+    if (!container.thinking || typeof container.thinking !== "object") {
+      return undefined;
+    }
+    return container.thinking as ThinkingData;
   } catch {
     return undefined;
   }
@@ -199,7 +200,7 @@ export function findThinkingData(
 ): ThinkingData[] {
   const results: ThinkingData[] = [];
   for (const message of messages) {
-    if (message.role !== 2) {
+    if (message.role !== ROLE_ASSISTANT) {
       continue;
     }
     for (const part of message.content) {
@@ -209,7 +210,7 @@ export function findThinkingData(
         typeof part.mimeType === "string" &&
         part.mimeType === CustomDataPartMimeTypes.ThinkingData
       ) {
-        const data = part.data as Uint8Array;
+        const data = part.data;
         const thinking = decodeThinkingData(data);
         if (thinking) {
           results.push(thinking);

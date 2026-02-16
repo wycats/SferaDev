@@ -25,6 +25,7 @@ import {
   type LanguageModelResponsePart,
   LanguageModelTextPart,
   LanguageModelToolCallPart,
+  LanguageModelToolResultPart,
   type Progress,
   type ProvideLanguageModelChatResponseOptions,
   type Uri,
@@ -46,7 +47,7 @@ import {
   ErrorCaptureLogger,
   type ErrorCaptureData,
 } from "../logger/error-capture.js";
-import type { TokenStatusBar } from "../status-bar.js";
+import type { AgentRegistry } from "../agent/index.js";
 import { extractTokenInfoFromDetails } from "./error-extraction.js";
 import { translateRequest } from "./request-builder.js";
 import { type AdaptedEvent, StreamAdapter } from "./stream-adapter.js";
@@ -80,8 +81,8 @@ interface NoResponseDiagnostic {
 export interface OpenResponsesChatOptions {
   /** Configuration service for settings */
   configService: ConfigService;
-  /** Status bar for token display */
-  statusBar: TokenStatusBar | null;
+  /** Agent registry for lifecycle tracking */
+  agentRegistry: AgentRegistry | null;
   /** API key for authentication */
   apiKey: string;
   /** Estimated input tokens (for status bar) */
@@ -92,6 +93,18 @@ export interface OpenResponsesChatOptions {
   conversationId: string;
   /** Global storage location for persistent logs */
   globalStorageUri: Uri;
+  /** Optional callback fired on successful turn completion with accumulated response text */
+  onTurnComplete?: (info: {
+    conversationId: string;
+    text: string;
+    turnNumber: number;
+    /** True if this turn was triggered by tool results rather than a user message */
+    isToolContinuation: boolean;
+    /** Preview of the user message that triggered this response (~80 chars) */
+    userMessagePreview?: string;
+    /** Names of tools called during this response */
+    toolsUsed: string[];
+  }) => void;
 }
 
 /**
@@ -112,6 +125,135 @@ export interface OpenResponsesChatResult {
   finishReason?: AdaptedEvent["finishReason"];
   /** Token info extracted from "input too long" errors */
   tokenInfo?: ExtractedTokenInfo;
+}
+
+/** Extract cached_tokens from usage details. Returns 0 if not present. */
+function extractCachedTokens(details: unknown): number {
+  if (!details || typeof details !== "object" || !("cached_tokens" in details)) {
+    return 0;
+  }
+  const cached = (details as { cached_tokens?: unknown }).cached_tokens;
+  return typeof cached === "number" ? cached : 0;
+}
+
+/**
+ * Detect if this request is a tool continuation (triggered by tool results
+ * rather than a user message).
+ *
+ * A tool continuation is when the last user message contains LanguageModelToolResultPart,
+ * indicating VS Code is sending tool results back to the model for processing.
+ */
+function isToolContinuationRequest(
+  messages: readonly LanguageModelChatMessage[],
+): boolean {
+  // Find the last user message
+  const lastUserMessage = [...messages]
+    .reverse()
+    .find((m) => m.role === vscode.LanguageModelChatMessageRole.User);
+
+  if (!lastUserMessage) {
+    return false;
+  }
+
+  // Check if it contains any tool result parts
+  for (const part of lastUserMessage.content) {
+    if (part instanceof LanguageModelToolResultPart) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Extract a preview of the last user message for activity log display.
+ * Returns undefined for tool continuations (no meaningful user text).
+ * Strips XML tags and truncates to ~80 chars with ellipsis.
+ */
+/**
+ * Extract the user's actual request from a VS Code chat message.
+ *
+ * VS Code Copilot wraps user messages with system-injected XML blocks:
+ *   <reminderInstructions>...</reminderInstructions>
+ *   <context>...</context>
+ *   <userRequest>
+ *   The actual user request here
+ *   </userRequest>
+ *
+ * This function extracts the content from <userRequest> if present,
+ * otherwise falls back to stripping leading XML blocks.
+ */
+function extractLastUserMessagePreview(
+  messages: readonly LanguageModelChatMessage[],
+): string | undefined {
+  // Find the last user message
+  const lastUserMessage = [...messages]
+    .reverse()
+    .find((m) => m.role === vscode.LanguageModelChatMessageRole.User);
+
+  if (!lastUserMessage) {
+    return undefined;
+  }
+
+  // Check if it's a tool continuation (tool results, not user text)
+  for (const part of lastUserMessage.content) {
+    if (part instanceof LanguageModelToolResultPart) {
+      return undefined; // Tool continuations don't have meaningful user text
+    }
+  }
+
+  // Extract text from the message
+  let text = "";
+  for (const part of lastUserMessage.content) {
+    if (part instanceof LanguageModelTextPart) {
+      text += part.value;
+    }
+  }
+
+  if (!text) {
+    return undefined;
+  }
+
+  // First, try to extract content from <userRequest>...</userRequest>
+  // This is the canonical location for the user's actual request in VS Code Copilot
+  const userRequestMatch = /<userRequest>([\s\S]*?)<\/userRequest>/.exec(text);
+  let preview: string;
+  let extractionMethod: "userRequest" | "xml-strip" | "raw";
+
+  if (userRequestMatch?.[1]) {
+    // Found <userRequest> - use its content
+    preview = userRequestMatch[1].trim();
+    extractionMethod = "userRequest";
+  } else {
+    // Fallback: strip leading XML-like blocks (e.g., <environment_info>...</environment_info>)
+    preview = text.replace(/^<[^>]+>[\s\S]*?<\/[^>]+>\s*/g, "");
+    // Also remove standalone opening tags at the start
+    preview = preview.replace(/^<[^>]+>\s*/g, "");
+    // Trim whitespace
+    preview = preview.trim();
+    extractionMethod = "xml-strip";
+
+    // If after stripping XML we have no meaningful content, use raw text
+    if (!preview || preview.length < 5) {
+      preview = text.trim();
+      extractionMethod = "raw";
+    }
+  }
+
+  // Log extraction details at trace level for debugging
+  logger.trace(
+    `[UserMessagePreview] method=${extractionMethod}, ` +
+      `inputLen=${text.length}, outputLen=${preview.length}, ` +
+      `hasUserRequestTag=${userRequestMatch !== null}`,
+  );
+
+  // Truncate to ~80 chars with ellipsis
+  const maxLen = 80;
+  if (preview.length > maxLen) {
+    return preview.slice(0, maxLen).trim() + "...";
+  }
+
+  return preview;
 }
 
 /**
@@ -135,7 +277,7 @@ export async function executeOpenResponsesChat(
 ): Promise<OpenResponsesChatResult> {
   const {
     configService,
-    statusBar,
+    agentRegistry,
     apiKey,
     estimatedInputTokens,
     chatId,
@@ -201,10 +343,10 @@ export async function executeOpenResponsesChat(
   const markAgentComplete = (usage?: Usage) => {
     if (agentCompleted) return;
     agentCompleted = true;
-    if (!statusBar) return;
+    if (!agentRegistry) return;
 
     if (usage) {
-      statusBar.completeAgent(chatId, {
+      agentRegistry.completeAgent(chatId, {
         inputTokens: usage.input_tokens,
         outputTokens: usage.output_tokens,
         maxInputTokens: model.maxInputTokens,
@@ -219,7 +361,7 @@ export async function executeOpenResponsesChat(
       `[OpenResponses] Stream completed without usage data for chat ${chatId}. Using estimated tokens as fallback.`,
     );
 
-    statusBar.completeAgent(chatId, {
+    agentRegistry.completeAgent(chatId, {
       inputTokens: Math.max(estimatedInputTokens, 0),
       outputTokens: 0,
       maxInputTokens: model.maxInputTokens,
@@ -231,13 +373,13 @@ export async function executeOpenResponsesChat(
   const markAgentError = () => {
     if (agentCompleted) return;
     agentCompleted = true;
-    statusBar?.errorAgent(chatId);
+    agentRegistry?.errorAgent(chatId);
   };
 
   const markAgentCancelled = () => {
     if (agentCompleted) return;
     agentCompleted = true;
-    statusBar?.completeAgent(chatId, {
+    agentRegistry?.completeAgent(chatId, {
       inputTokens: Math.max(estimatedInputTokens, 0),
       outputTokens: 0,
       maxInputTokens: model.maxInputTokens,
@@ -273,7 +415,7 @@ export async function executeOpenResponsesChat(
   };
 
   // Investigation logging handle — declared here so it's accessible in catch
-  // eslint-disable-next-line prefer-const
+   
   let investigationHandle: Awaited<
     ReturnType<InvestigationLogger["startRequest"]>
   > | null = null;
@@ -282,7 +424,12 @@ export async function executeOpenResponsesChat(
   let textPartCount = 0;
   let toolsForCapture: unknown[] = [];
   let toolNames: string[] = [];
+  /** Names of tools actually called during this response (for activity log) */
+  const toolsUsed: string[] = [];
   let requestBody: (CreateResponseBody & { caching?: "auto" }) | undefined;
+
+  // Extract last user message preview for activity log display
+  const lastUserMessagePreview = extractLastUserMessagePreview(chatMessages);
 
   const buildErrorCaptureData = (
     errorType: ErrorCaptureData["errorType"],
@@ -293,7 +440,7 @@ export async function executeOpenResponsesChat(
           input_tokens: result.usage.input_tokens,
           output_tokens: result.usage.output_tokens,
           cache_read_input_tokens:
-            result.usage.input_tokens_details?.cached_tokens,
+            extractCachedTokens(result.usage.input_tokens_details),
           output_tokens_details: result.usage.output_tokens_details,
         }
       : null;
@@ -518,6 +665,7 @@ export async function executeOpenResponsesChat(
     toolsForCapture = tools as unknown[];
     toolNames = tools.map((t) => (t as { name?: string }).name ?? "unknown");
     investigationHandle = investigationLogger.startRequest({
+      sessionId,
       conversationId,
       chatId,
       model: model.id,
@@ -567,7 +715,7 @@ export async function executeOpenResponsesChat(
       investigationHandle?.recorder?.recordEvent(eventCount, eventType, event);
 
       // Update agent activity timestamp for subagent selection
-      statusBar?.updateAgentActivity(chatId);
+      agentRegistry?.updateAgentActivity(chatId);
 
       // Track function_call_arguments events - these indicate actual tool calls
       if (eventType.includes("function_call_arguments")) {
@@ -602,6 +750,10 @@ export async function executeOpenResponsesChat(
         // Log part types to diagnose tool call handling
         if (part instanceof LanguageModelToolCallPart) {
           toolCallCount++;
+          // Track tool name for activity log (deduplicated)
+          if (!toolsUsed.includes(part.name)) {
+            toolsUsed.push(part.name);
+          }
           logger.info(
             `[OpenResponses] Emitting tool call #${toolCallCount}: ${part.name} (callId: ${part.callId})`,
           );
@@ -633,7 +785,7 @@ export async function executeOpenResponsesChat(
             );
 
             // Create claim via status bar (which owns the ClaimRegistry)
-            statusBar?.createChildClaim(chatId, expectedChildName);
+            agentRegistry?.createChildClaim(chatId, expectedChildName);
 
             logger.info(
               `[OpenResponses] Detected runSubagent call: "${expectedChildName}"`,
@@ -704,7 +856,27 @@ export async function executeOpenResponsesChat(
         } else if (adapted.cancelled) {
           markAgentCancelled();
         } else {
+          // Capture turn number BEFORE markAgentComplete increments it
+          // turnCount is 0-based before completion, so +1 gives us the current turn
+          const turnNumber =
+            (agentRegistry?.getAgentTurnCount(chatId) ?? 0) + 1;
+
+          // Detect if this was a tool continuation (tool results, not user message)
+          const isToolContinuation = isToolContinuationRequest(chatMessages);
+
           markAgentComplete(adapted.usage);
+
+          // Fire turn-complete callback for turn characterization
+          chatOptions.onTurnComplete?.({
+            conversationId,
+            text: accumulatedText,
+            turnNumber,
+            isToolContinuation,
+            ...(lastUserMessagePreview !== undefined
+              ? { userMessagePreview: lastUserMessagePreview }
+              : {}),
+            toolsUsed,
+          });
         }
 
         // Log summarization timing
@@ -742,7 +914,7 @@ export async function executeOpenResponsesChat(
                 input_tokens: adapted.usage.input_tokens,
                 output_tokens: adapted.usage.output_tokens,
                 cache_read_input_tokens:
-                  adapted.usage.input_tokens_details?.cached_tokens,
+                  extractCachedTokens(adapted.usage.input_tokens_details),
                 output_tokens_details: adapted.usage.output_tokens_details,
               }
             : null,
@@ -801,7 +973,7 @@ export async function executeOpenResponsesChat(
               input_tokens: result.usage.input_tokens,
               output_tokens: result.usage.output_tokens,
               cache_read_input_tokens:
-                result.usage.input_tokens_details?.cached_tokens,
+                extractCachedTokens(result.usage.input_tokens_details),
               output_tokens_details: result.usage.output_tokens_details,
             }
           : null,
@@ -925,7 +1097,7 @@ export async function executeOpenResponsesChat(
         }
 
         // Retry the entire request
-        return executeOpenResponsesChat(
+        return await executeOpenResponsesChat(
           model,
           chatMessages,
           options,
@@ -1010,9 +1182,11 @@ export async function executeOpenResponsesChat(
       investigationHandle?.getEvents() ?? [],
     );
 
-    return tokenInfo
-      ? { success: false, error: userMessage, tokenInfo }
-      : { success: false, error: userMessage };
+    return {
+      success: false,
+      error: userMessage,
+      ...(tokenInfo !== undefined ? { tokenInfo } : {}),
+    };
   } finally {
     // Clear streaming inactivity timer
     if (streamTimeoutId !== null) {
@@ -1020,7 +1194,7 @@ export async function executeOpenResponsesChat(
     }
     abortSubscription.dispose();
     adapter.reset();
-    if (!agentCompleted && statusBar) {
+    if (!agentCompleted && agentRegistry) {
       markAgentError();
     }
   }

@@ -5,7 +5,7 @@
  * (status bar, sidebar, tooltips, diagnostics) use identical computation.
  */
 
-import type { AgentEntry } from "../status-bar.js";
+import type { AgentEntry } from "../agent/index.js";
 
 /**
  * Result of computing which token value to display for an agent.

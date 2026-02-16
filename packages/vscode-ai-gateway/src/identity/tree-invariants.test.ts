@@ -128,7 +128,7 @@ class TestTreeState {
    */
   createChildClaim(parentAgentId: string, expectedChildName: string): boolean {
     const parent = this.agents.get(parentAgentId);
-    if (!parent || !parent.agentTypeHash) return false;
+    if (!parent?.agentTypeHash) return false;
 
     const parentIdentifier = parent.conversationId ?? parent.agentTypeHash;
     this.claimRegistry.createClaim(

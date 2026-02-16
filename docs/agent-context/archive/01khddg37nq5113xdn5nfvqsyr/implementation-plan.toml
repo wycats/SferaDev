@@ -1,0 +1,61 @@
+# READ-ONLY: Use 'exo' CLI to modify this file.
+# Implementation Plan
+
+[phase]
+id = "01khddg37nq5113xdn5nfvqsyr"
+
+[plan]
+
+[[plan.goals]]
+id = "conversation-interface"
+
+[[plan.goals]]
+id = "conversation-manager"
+
+[[plan.goals]]
+id = "compaction-tracking"
+
+[[plan.goals]]
+id = "subagent-hierarchy"
+
+[[plan.goals]]
+id = "section-headers"
+
+[[plan.goals]]
+id = "conversation-item"
+
+[[plan.goals]]
+id = "compaction-item"
+
+[[plan.goals]]
+id = "subagent-item"
+
+[[plan.goals]]
+id = "tree-provider-refactor"
+
+[[plan.goals]]
+id = "conversation-store"
+
+[[plan.goals]]
+id = "persist-on-change"
+
+[[plan.goals]]
+id = "restore-on-startup"
+
+[[plan.goals]]
+id = "idle-timer"
+
+[[plan.goals]]
+id = "track-workspace"
+
+[[plan.goals]]
+id = "trim-command"
+
+[[plan.goals]]
+id = "workspace-filter"
+# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
+
+
+[verification]
+automated = ["Run scripts/verify-phase.sh"]
+manual = []

@@ -275,7 +275,7 @@ export class TokenCounter {
         };
       })();
 
-      loadPromise.catch((error) => {
+      loadPromise.catch((error: unknown) => {
         TokenCounter.loadError =
           error instanceof Error ? error : new Error(String(error));
         logger.warn(

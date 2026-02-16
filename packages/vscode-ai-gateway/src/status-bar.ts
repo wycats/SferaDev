@@ -181,7 +181,13 @@ export class TokenStatusBar implements vscode.Disposable {
   /** Fired when agents are added, updated, or removed */
   readonly onDidChangeAgents = this._onDidChangeAgents.event;
 
-  constructor() {
+  // AgentRegistry reference - when provided, all registry operations delegate to it
+  private _agentRegistry: import("./agent/index.js").AgentRegistry | null =
+    null;
+  private _registryDisposables: vscode.Disposable[] = [];
+
+  constructor(agentRegistry?: import("./agent/index.js").AgentRegistry) {
+    this._agentRegistry = agentRegistry ?? null;
     this.statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
       100,
@@ -190,9 +196,22 @@ export class TokenStatusBar implements vscode.Disposable {
     this.statusBarItem.command = "vercel.ai.agentTree.focus";
     this.hide();
 
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupStaleAgents();
-    }, AGENT_CLEANUP_INTERVAL_MS);
+    // When registry is provided, subscribe to its events and forward to our event emitter
+    if (this._agentRegistry) {
+      this._registryDisposables.push(
+        this._agentRegistry.onDidChangeAgents(() => {
+          // Forward registry events to our subscribers
+          this._onDidChangeAgents.fire();
+          // Update display based on registry state
+          this.updateDisplay();
+        }),
+      );
+    } else {
+      // Only run cleanup interval when using internal state
+      this.cleanupInterval = setInterval(() => {
+        this.cleanupStaleAgents();
+      }, AGENT_CLEANUP_INTERVAL_MS);
+    }
   }
 
   /**
@@ -257,6 +276,11 @@ export class TokenStatusBar implements vscode.Disposable {
   getAgentContext(
     conversationId: string,
   ): { lastActualInputTokens: number; lastMessageCount: number } | undefined {
+    // Delegate to registry when available
+    if (this._agentRegistry) {
+      return this._agentRegistry.getAgentContext(conversationId);
+    }
+
     // First check in-memory agents (current session)
     const agent = this.agentsByConversationId.get(conversationId);
     if (agent && agent.lastActualInputTokens > 0 && agent.lastMessageCount) {
@@ -495,6 +519,26 @@ export class TokenStatusBar implements vscode.Disposable {
     isSummarization?: boolean,
     firstUserMessagePreview?: string,
   ): string {
+    // Delegate to registry when available
+    if (this._agentRegistry) {
+      const canonicalId = this._agentRegistry.startAgent({
+        agentId,
+        ...(estimatedTokens != null ? { estimatedTokens } : {}),
+        ...(maxTokens != null ? { maxTokens } : {}),
+        ...(modelId != null ? { modelId } : {}),
+        ...(systemPromptHash != null ? { systemPromptHash } : {}),
+        ...(agentTypeHash != null ? { agentTypeHash } : {}),
+        ...(firstUserMessageHash != null ? { firstUserMessageHash } : {}),
+        ...(estimatedDeltaTokens != null ? { estimatedDeltaTokens } : {}),
+        ...(conversationId != null ? { conversationId } : {}),
+        ...(isSummarization != null ? { isSummarization } : {}),
+        ...(firstUserMessagePreview != null ? { firstUserMessagePreview } : {}),
+      });
+      // Update display
+      this.updateDisplay();
+      return canonicalId;
+    }
+
     const now = Date.now();
 
     const hasPendingClaims = this.claimRegistry.getPendingClaimCount() > 0;
@@ -681,20 +725,18 @@ export class TokenStatusBar implements vscode.Disposable {
       // (parent agent called runSubagent and created a claim for this child)
       isMain = false;
     } else {
-      // No claim match - treat as main agent
-      if (this.mainAgentId !== null) {
-        const previousMain = this.agents.get(this.mainAgentId);
-        if (previousMain) {
-          previousMain.isMain = false;
-          logger.info(
-            `[StatusBar] Demoted previous main agent`,
-            JSON.stringify({
-              timestamp: now,
-              previousMainId: previousMain.id.slice(-8),
-              newMainId: agentId.slice(-8),
-            }),
-          );
-        }
+      // No claim match - treat as main agent (demote previous main)
+      const previousMain = this.agents.get(this.mainAgentId);
+      if (previousMain) {
+        previousMain.isMain = false;
+        logger.info(
+          `[StatusBar] Demoted previous main agent`,
+          JSON.stringify({
+            timestamp: now,
+            previousMainId: previousMain.id.slice(-8),
+            newMainId: agentId.slice(-8),
+          }),
+        );
       }
       isMain = true;
       this.mainAgentId = agentId;
@@ -872,6 +914,16 @@ export class TokenStatusBar implements vscode.Disposable {
    * Update agent with completed usage
    */
   completeAgent(agentId: string, usage: TokenUsage): void {
+    // Delegate to registry when available
+    if (this._agentRegistry) {
+      this._agentRegistry.completeAgent(agentId, usage);
+      // Store usage for getLastUsage()
+      this.currentUsage = usage;
+      // Update display
+      this.updateDisplay();
+      return;
+    }
+
     const resolvedId = this.resolveAgentId(agentId);
     const agent = this.agents.get(resolvedId);
     if (!agent) {
@@ -1025,6 +1077,13 @@ export class TokenStatusBar implements vscode.Disposable {
    * Mark an agent as errored
    */
   errorAgent(agentId: string): void {
+    // Delegate to registry when available
+    if (this._agentRegistry) {
+      this._agentRegistry.errorAgent(agentId);
+      this.updateDisplay();
+      return;
+    }
+
     const resolvedId = this.resolveAgentId(agentId);
     const agent = this.agents.get(resolvedId);
     const now = Date.now();
@@ -1079,7 +1138,10 @@ export class TokenStatusBar implements vscode.Disposable {
    */
   private updateDisplay(): void {
     this.clearHideTimeout();
-    const agentsArray = Array.from(this.agents.values());
+    // Get agents from registry if available, otherwise from internal state
+    const agentsArray = this._agentRegistry
+      ? this._agentRegistry.getAgents()
+      : Array.from(this.agents.values());
 
     // Debug: Log all agents state
     const agentsSummary = agentsArray.map((a) => ({
@@ -1104,17 +1166,27 @@ export class TokenStatusBar implements vscode.Disposable {
       }),
     );
 
-    let mainAgent = this.mainAgentId ? this.agents.get(this.mainAgentId) : null;
-
-    // If mainAgentId is stale (agent was removed), find the most recent main agent
-    if (!mainAgent && this.agents.size > 0) {
+    // Find main agent - from registry or internal state
+    let mainAgent: import("./agent/index.js").AgentEntry | null | undefined;
+    if (this._agentRegistry) {
+      // When using registry, find main agent from the agents array
       const mainAgents = agentsArray.filter((a) => a.isMain);
       if (mainAgents.length > 0) {
-        // Use the most recently updated main agent
         mainAgent = mainAgents.reduce((latest, a) =>
           a.lastUpdateTime > latest.lastUpdateTime ? a : latest,
         );
-        this.mainAgentId = mainAgent.id;
+      }
+    } else {
+      mainAgent = this.mainAgentId ? this.agents.get(this.mainAgentId) : null;
+      // If mainAgentId is stale (agent was removed), find the most recent main agent
+      if (!mainAgent && this.agents.size > 0) {
+        const mainAgents = agentsArray.filter((a) => a.isMain);
+        if (mainAgents.length > 0) {
+          mainAgent = mainAgents.reduce((latest, a) =>
+            a.lastUpdateTime > latest.lastUpdateTime ? a : latest,
+          );
+          this.mainAgentId = mainAgent.id;
+        }
       }
     }
 
@@ -1356,6 +1428,13 @@ export class TokenStatusBar implements vscode.Disposable {
    * Clear all agents (reset state)
    */
   clearAgents(): void {
+    // Delegate to registry when available
+    if (this._agentRegistry) {
+      this._agentRegistry.clearAgents();
+      this.updateDisplay();
+      return;
+    }
+
     const previousCount = this.agents.size;
     const previousClaimCount = this.claimRegistry.getPendingClaimCount();
     this.agents.clear();
@@ -1403,6 +1482,9 @@ export class TokenStatusBar implements vscode.Disposable {
    * Get all agents for debugging
    */
   getAgents(): AgentEntry[] {
+    if (this._agentRegistry) {
+      return this._agentRegistry.getAgents();
+    }
     return Array.from(this.agents.values());
   }
 
@@ -1463,6 +1545,15 @@ export class TokenStatusBar implements vscode.Disposable {
     parentAgentId: string,
     expectedChildAgentName: string,
   ): void {
+    // Delegate to registry when available
+    if (this._agentRegistry) {
+      this._agentRegistry.createChildClaim(
+        parentAgentId,
+        expectedChildAgentName,
+      );
+      return;
+    }
+
     const resolvedId = this.resolveAgentId(parentAgentId);
     const parentAgent = this.agents.get(resolvedId);
     if (!parentAgent) {
@@ -1537,6 +1628,11 @@ export class TokenStatusBar implements vscode.Disposable {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
+    // Dispose registry subscriptions
+    for (const d of this._registryDisposables) {
+      d.dispose();
+    }
+    this._registryDisposables = [];
     this.claimRegistry.dispose();
     this.agents.clear();
     this._onDidChangeAgents.dispose();

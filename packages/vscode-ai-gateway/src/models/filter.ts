@@ -57,9 +57,9 @@ export class ModelFilter {
 
   private loadConfig(): ModelFilterConfig {
     return {
-      allowlist: this.configService.modelsAllowlist,
-      denylist: this.configService.modelsDenylist,
-      fallbacks: this.configService.modelsFallbacks,
+      allowlist: [],
+      denylist: [],
+      fallbacks: {},
       default: this.configService.modelsDefault,
     };
   }

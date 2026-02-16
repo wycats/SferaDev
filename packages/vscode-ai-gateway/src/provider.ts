@@ -87,8 +87,11 @@ import {
   hashUserMessage,
 } from "./identity";
 import { findLatestStatefulMarker } from "./utils/stateful-marker.js";
+import type { AgentRegistry } from "./agent/index.js";
 import type { TokenStatusBar } from "./status-bar";
+import type { ConversationManager } from "./conversation/index.js";
 import { TokenCounter } from "./tokens/counter";
+import { getTurnCharacterizer } from "./turn-characterizer.js";
 
 function hashMessage(msg: LanguageModelChatRequestMessage): string {
   const payload = {
@@ -131,6 +134,9 @@ export class VercelAIChatModelProvider
   readonly onDidChangeLanguageModelChatInformation =
     this.modelInfoChangeEmitter.event;
   private statusBar: TokenStatusBar | null = null;
+  private agentRegistry: AgentRegistry | null = null;
+  /** Conversation manager for turn characterization updates */
+  private conversationManager: ConversationManager | null = null;
   /** Current agent ID for status bar tracking */
   private currentAgentId: string | null = null;
 
@@ -167,6 +173,21 @@ export class VercelAIChatModelProvider
    */
   setStatusBar(statusBar: TokenStatusBar): void {
     this.statusBar = statusBar;
+  }
+
+  /**
+   * Set the agent registry for lifecycle tracking.
+   */
+  setAgentRegistry(registry: AgentRegistry): void {
+    this.agentRegistry = registry;
+  }
+
+  /**
+   * Set the conversation manager for turn characterization.
+   * Called from extension.ts after tree view is created.
+   */
+  setConversationManager(manager: ConversationManager): void {
+    this.conversationManager = manager;
   }
 
   /**
@@ -372,6 +393,7 @@ export class VercelAIChatModelProvider
       // Start tracking this agent in the status bar
       const toolSetHash = computeToolSetHash(options.tools ?? []);
       const agentTypeHash = computeAgentTypeHash(toolSetHash);
+      // Find the first user message
       const firstUserMessage = chatMessages.find(
         (m) => m.role === LanguageModelChatMessageRole.User,
       );
@@ -387,11 +409,33 @@ export class VercelAIChatModelProvider
       const firstUserMessageHash = firstUserMessageText
         ? hashUserMessage(firstUserMessageText)
         : undefined;
-      // Extract a preview of the first user message for display (first ~50 chars)
-      const firstUserMessagePreview = firstUserMessageText
-        ? firstUserMessageText.slice(0, 50).trim() +
-          (firstUserMessageText.length > 50 ? "..." : "")
-        : undefined;
+      // DEBUG: Dump full user message to see what VS Code sends
+      if (firstUserMessageText) {
+        logger.info(
+          `[DEBUG] Full firstUserMessageText (${firstUserMessageText.length} chars):\n${firstUserMessageText.slice(0, 2000)}${firstUserMessageText.length > 2000 ? "\n... (truncated)" : ""}`,
+        );
+      }
+      // Extract a preview of the first user message for display
+      // Strip leading XML tags to get to the actual user content for the preview
+      let previewText = firstUserMessageText;
+      if (previewText) {
+        // Remove leading XML-like blocks (e.g., <environment_info>...</environment_info>)
+        previewText = previewText.replace(/^<[^>]+>[\s\S]*?<\/[^>]+>\s*/g, "");
+        // Also remove standalone opening tags at the start
+        previewText = previewText.replace(/^<[^>]+>\s*/g, "");
+        // Trim whitespace
+        previewText = previewText.trim();
+      }
+      // If after stripping XML we have meaningful content, use it
+      // Otherwise fall back to the raw text (will be handled by title generator)
+      const firstUserMessagePreview =
+        previewText && previewText.length > 10
+          ? previewText.slice(0, 50).trim() +
+            (previewText.length > 50 ? "..." : "")
+          : firstUserMessageText
+            ? firstUserMessageText.slice(0, 50).trim() +
+              (firstUserMessageText.length > 50 ? "..." : "")
+            : undefined;
       const isSummarizationRequest = detectSummarizationRequest(chatMessages);
       // Compute delta token estimate for resumed conversations.
       // Instead of showing the full re-estimate during streaming (which has
@@ -399,7 +443,7 @@ export class VercelAIChatModelProvider
       // the NEW messages and add that to the last actual from the API.
       // This keeps the display anchored to the accurate API count.
       let estimatedDeltaTokens: number | undefined;
-      const prevContext = this.statusBar?.getAgentContext(conversationId);
+      const prevContext = this.agentRegistry?.getAgentContext(conversationId);
       if (prevContext) {
         const newMessages = chatMessages.slice(prevContext.lastMessageCount);
         let deltaTokens = 0;
@@ -419,19 +463,26 @@ export class VercelAIChatModelProvider
       }
 
       this.currentAgentId = chatId;
-      this.statusBar?.startAgent(
+      this.agentRegistry?.startAgent({
+        agentId: chatId,
         chatId,
         estimatedTokens,
-        maxInputTokens,
-        model.id,
-        systemPromptHash,
+        maxTokens: maxInputTokens,
+        modelId: model.id,
+        ...(systemPromptHash !== undefined ? { systemPromptHash } : {}),
         agentTypeHash,
-        firstUserMessageHash,
-        estimatedDeltaTokens,
+        ...(firstUserMessageHash !== undefined
+          ? { firstUserMessageHash }
+          : {}),
+        ...(estimatedDeltaTokens !== undefined
+          ? { estimatedDeltaTokens }
+          : {}),
         conversationId,
-        isSummarizationRequest,
-        firstUserMessagePreview,
-      );
+        isSummarization: isSummarizationRequest,
+        ...(firstUserMessagePreview !== undefined
+          ? { firstUserMessagePreview }
+          : {}),
+      });
 
       const apiKey = await this.getApiKey(false);
       if (!apiKey) {
@@ -449,9 +500,7 @@ export class VercelAIChatModelProvider
       }
 
       // Lazy enrichment: fetch additional metadata on first use of each model
-      if (this.configService.modelsEnrichmentEnabled) {
-        await this.enrichModelIfNeeded(model.id, apiKey);
-      }
+      await this.enrichModelIfNeeded(model.id, apiKey);
 
       // Execute chat using OpenResponses API
       logger.debug(`[OpenResponses] Executing chat request for ${model.id}`);
@@ -464,12 +513,22 @@ export class VercelAIChatModelProvider
         token,
         {
           configService: this.configService,
-          statusBar: this.statusBar,
+          agentRegistry: this.agentRegistry,
           apiKey,
           estimatedInputTokens: estimatedTokens,
           chatId,
           conversationId,
           globalStorageUri: this.context.globalStorageUri,
+          onTurnComplete: (info) => {
+            void this.handleTurnComplete(
+              info.conversationId,
+              info.text,
+              info.turnNumber,
+              info.isToolContinuation,
+              info.userMessagePreview,
+              info.toolsUsed,
+            );
+          },
         },
       );
 
@@ -516,7 +575,7 @@ export class VercelAIChatModelProvider
       // Mark agent as errored in status bar
       // This ensures agents don't get stuck in 'streaming' state on any error
       if (this.currentAgentId) {
-        this.statusBar?.errorAgent(this.currentAgentId);
+        this.agentRegistry?.errorAgent(this.currentAgentId);
       }
 
       // CRITICAL: Always emit an error response to prevent "no response returned" error.
@@ -533,6 +592,65 @@ export class VercelAIChatModelProvider
       // Clear current request tracking
       this.currentAgentId = null;
       abortSubscription.dispose();
+    }
+  }
+
+  /**
+   * Handle turn completion by generating a characterization label.
+   * Fire-and-forget — errors are logged but don't affect the user.
+   */
+  private async handleTurnComplete(
+    conversationId: string,
+    text: string,
+    turnNumber: number,
+    isToolContinuation: boolean,
+    userMessagePreview: string | undefined,
+    toolsUsed: string[],
+  ): Promise<void> {
+    try {
+      if (!this.conversationManager) {
+        return;
+      }
+
+      // Mark tool continuations in the activity log
+      if (isToolContinuation) {
+        this.conversationManager.markToolContinuation(
+          conversationId,
+          turnNumber,
+        );
+      }
+
+      // Update user message preview if available
+      if (userMessagePreview) {
+        this.conversationManager.setUserMessagePreview(
+          conversationId,
+          turnNumber,
+          userMessagePreview,
+        );
+      }
+
+      // Update tools used on the AI response
+      if (toolsUsed.length > 0) {
+        this.conversationManager.setToolsUsed(
+          conversationId,
+          turnNumber,
+          toolsUsed,
+        );
+      }
+
+      const characterizer = getTurnCharacterizer();
+      const characterization = await characterizer.characterize(text);
+      if (characterization) {
+        this.conversationManager.updateTurnCharacterization(
+          conversationId,
+          turnNumber,
+          characterization,
+        );
+      }
+    } catch (error) {
+      logger.debug(
+        `[Provider] Turn characterization failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 

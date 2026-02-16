@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
+ 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionContext } from "vscode";
 
@@ -43,7 +43,7 @@ vi.mock("vscode", () => ({
   },
 }));
 
-import { TokenStatusBar } from "../status-bar.js";
+import { AgentRegistryImpl } from "../agent/index.js";
 import { AGENT_STATE_STORE } from "./stores.js";
 import { createMockMemento } from "./index.js";
 import { PersistenceManagerImpl } from "./manager.js";
@@ -99,8 +99,8 @@ describe("Agent state persistence", () => {
   it("falls back to persisted state when no in-memory agent exists", async () => {
     const globalState = createMockMemento();
     const workspaceState = createMockMemento();
-    const statusBar = new TokenStatusBar();
-    statusBar.initializePersistence({
+    const registry = new AgentRegistryImpl();
+    registry.initializePersistence({
       globalState,
       workspaceState,
     } as ExtensionContext);
@@ -120,7 +120,7 @@ describe("Agent state persistence", () => {
       },
     });
 
-    expect(statusBar.getAgentContext("conv-1")).toEqual({
+    expect(registry.getAgentContext("conv-1")).toEqual({
       lastActualInputTokens: 900,
       lastMessageCount: 3,
     });
@@ -129,24 +129,19 @@ describe("Agent state persistence", () => {
   it("prefers in-memory agent state over persisted", async () => {
     const globalState = createMockMemento();
     const workspaceState = createMockMemento();
-    const statusBar = new TokenStatusBar();
-    statusBar.initializePersistence({
+    const registry = new AgentRegistryImpl();
+    registry.initializePersistence({
       globalState,
       workspaceState,
     } as ExtensionContext);
 
-    statusBar.startAgent(
-      "agent-1",
-      1000,
-      8000,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      "conv-1",
-    );
-    statusBar.completeAgent("agent-1", {
+    registry.startAgent({
+      agentId: "agent-1",
+      estimatedTokens: 1000,
+      maxTokens: 8000,
+      conversationId: "conv-1",
+    });
+    registry.completeAgent("agent-1", {
       inputTokens: 1500,
       outputTokens: 200,
       messageCount: 5,
@@ -166,7 +161,7 @@ describe("Agent state persistence", () => {
       },
     });
 
-    expect(statusBar.getAgentContext("conv-1")).toEqual({
+    expect(registry.getAgentContext("conv-1")).toEqual({
       lastActualInputTokens: 1500,
       lastMessageCount: 5,
     });
@@ -175,8 +170,8 @@ describe("Agent state persistence", () => {
   it("ignores stale persisted entries", async () => {
     const globalState = createMockMemento();
     const workspaceState = createMockMemento();
-    const statusBar = new TokenStatusBar();
-    statusBar.initializePersistence({
+    const registry = new AgentRegistryImpl();
+    registry.initializePersistence({
       globalState,
       workspaceState,
     } as ExtensionContext);
@@ -201,7 +196,7 @@ describe("Agent state persistence", () => {
       },
     });
 
-    expect(statusBar.getAgentContext("conv-1")).toBeUndefined();
-    expect(statusBar.getAgentContext("conv-2")).toBeUndefined();
+    expect(registry.getAgentContext("conv-1")).toBeUndefined();
+    expect(registry.getAgentContext("conv-2")).toBeUndefined();
   });
 });

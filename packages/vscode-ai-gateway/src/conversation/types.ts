@@ -24,6 +24,8 @@ export interface Conversation {
   totalOutputTokens: number;
   /** Compaction events observed for this conversation. */
   compactionEvents: CompactionEvent[];
+  /** Chronological activity log (messages, responses, compaction, errors). */
+  activityLog: ActivityLogEntry[];
   /** Nested subagent hierarchy. */
   subagents: Subagent[];
   /** Workspace folder that owns the conversation, if available. */
@@ -45,6 +47,118 @@ export interface CompactionEvent {
   /** Optional details about the compaction event. */
   details?: string;
 }
+
+// ── Activity Log ──────────────────────────────────────────────────────
+
+/**
+ * Union of all entries in a conversation's activity log.
+ * Sorted chronologically (newest first in the tree).
+ */
+export type ActivityLogEntry =
+  | UserMessageEntry
+  | AIResponseEntry
+  | CompactionEntry
+  | ErrorEntry;
+
+/**
+ * A single user↔assistant exchange within a conversation.
+ */
+/** State of an AI response in its lifecycle. */
+export type AIResponseState =
+  | "streaming"
+  | "pending-characterization"
+  | "characterized"
+  | "uncharacterized"
+  | "interrupted";
+
+/** A user's message to the AI. */
+export interface UserMessageEntry {
+  type: "user-message";
+  /** Sequence number (1-based, same as turnNumber). */
+  sequenceNumber: number;
+  /** Timestamp (ms) when the message was sent. */
+  timestamp: number;
+  /** Preview of the message text. */
+  preview?: string;
+  /** Token contribution to context (input tokens for this message). */
+  tokenContribution?: number;
+  /**
+   * True if this entry represents a tool continuation (tool results sent back
+   * to the model) rather than an actual user message.
+   */
+  isToolContinuation?: boolean;
+}
+
+/** An AI response to the user. */
+export interface AIResponseEntry {
+  type: "ai-response";
+  /** Sequence number (1-based, same as turnNumber). */
+  sequenceNumber: number;
+  /** Timestamp (ms) when the response started. */
+  timestamp: number;
+  /** Lifecycle state. */
+  state: AIResponseState;
+  /** Short characterization of what happened. */
+  characterization?: string;
+  /** Token contribution (output tokens for this response). */
+  tokenContribution: number;
+  /** Subagents spawned during this response. */
+  subagentIds: string[];
+  /** Names of tools called during this response (e.g., ["read_file", "grep_search"]). */
+  toolsUsed?: string[];
+}
+
+/**
+ * Legacy user↔assistant exchange entry retained for migration/backward compatibility.
+ */
+export interface TurnEntry {
+  type: "turn";
+  /** Sequential turn number (1-based). */
+  turnNumber: number;
+  /** Timestamp (ms) when the turn was recorded. */
+  timestamp: number;
+  /** Short characterization of what happened (from gpt-4o-mini). */
+  characterization?: string;
+  /** Output token count for this turn. */
+  outputTokens: number;
+  /** Subagents spawned during this turn (by conversationId). */
+  subagentIds: string[];
+  /** Whether the turn is currently streaming. */
+  streaming: boolean;
+}
+
+/**
+ * A compaction milestone in the activity log.
+ * Wraps the existing CompactionEvent with a discriminated `type` field.
+ */
+export interface CompactionEntry {
+  type: "compaction";
+  /** Timestamp (ms) when the compaction was observed. */
+  timestamp: number;
+  /** Turn number at the time of compaction. */
+  turnNumber: number;
+  /** Number of tokens freed by compaction. */
+  freedTokens: number;
+  /** Compaction source type. */
+  compactionType: "summarization" | "context_management";
+  /** Optional details about the compaction event. */
+  details?: string;
+}
+
+/**
+ * An error that occurred during a turn.
+ */
+export interface ErrorEntry {
+  type: "error";
+  /** Timestamp (ms) when the error was observed. */
+  timestamp: number;
+  /** Turn number at which the error occurred, if known. */
+  turnNumber?: number;
+  /** Human-readable error description. */
+  message: string;
+}
+
+// ── Subagent ─────────────────────────────────────────────────────────
 
 /**
  * Subagent node used to build the agent hierarchy.

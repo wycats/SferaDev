@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AgentEntry } from "../status-bar.js";
+import type { AgentEntry } from "../agent/index.js";
 import { formatTokens, getDisplayTokens } from "./display.js";
 
 const baseAgent: AgentEntry = {

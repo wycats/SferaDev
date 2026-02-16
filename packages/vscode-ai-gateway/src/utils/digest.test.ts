@@ -5,7 +5,7 @@ import { STATEFUL_MARKER_MIME } from "./stateful-marker";
 describe("Digest Collision Audit", () => {
   // 1. Audit TokenCache behavior (computeNormalizedDigest)
   it("should preserve markdown links in normalized digest", () => {
-    function createTextMsg(text: string, role: number = 1) {
+    function createTextMsg(text: string, role = 1) {
       return {
         role,
         content: [{ value: text }],
@@ -30,7 +30,7 @@ describe("Digest Collision Audit", () => {
 
   // 2. Normalized digest should be stable for identical link text
   it("should keep normalized digest stable for identical markdown links", () => {
-    function createTextMsg(text: string, role: number = 1) {
+    function createTextMsg(text: string, role = 1) {
       return {
         role,
         content: [{ value: text }],

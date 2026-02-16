@@ -33,13 +33,14 @@ vi.mock("vscode", () => ({
       return { dispose: () => {} };
     };
     fire(data: T) {
-      this.listeners.forEach((l) => l(data));
+      this.listeners.forEach((l) => { l(data); });
     }
     dispose() {}
   },
 }));
 
 // Import after mocking
+import { AgentRegistryImpl } from "./agent";
 import { TokenStatusBar } from "./status-bar";
 
 describe("TokenStatusBar", () => {
@@ -50,7 +51,8 @@ describe("TokenStatusBar", () => {
     mockStatusBarItem.text = "";
     mockStatusBarItem.tooltip = "";
     mockStatusBarItem.backgroundColor = undefined;
-    statusBar = new TokenStatusBar();
+    const registry = new AgentRegistryImpl();
+    statusBar = new TokenStatusBar(registry);
   });
 
   describe("startAgent", () => {

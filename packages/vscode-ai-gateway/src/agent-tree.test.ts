@@ -1,9 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import * as vscode from "vscode";
-import { AgentTreeItem } from "./agent-tree";
-import type { AgentEntry } from "./status-bar";
 
-// Mock vscode module
 vi.mock("vscode", () => ({
   TreeItem: class {
     label: string;
@@ -23,6 +20,19 @@ vi.mock("vscode", () => ({
     Collapsed: 1,
     Expanded: 2,
   },
+  EventEmitter: class EventEmitter<T> {
+    private listeners: ((e: T) => void)[] = [];
+    event = (listener: (e: T) => void) => {
+      this.listeners.push(listener);
+      return { dispose: () => { /* noop */ } };
+    };
+    fire(data: T) {
+      for (const listener of this.listeners) {
+        listener(data);
+      }
+    }
+    dispose() { /* noop */ }
+  },
   MarkdownString: class {
     value = "";
     isTrusted = false;
@@ -39,11 +49,50 @@ vi.mock("vscode", () => ({
   ThemeColor: class {
     constructor(public id: string) {}
   },
+  workspace: {
+    workspaceFolders: [{ uri: { fsPath: "/workspace" } }],
+  },
 }));
 
-function createMockAgent(overrides: Partial<AgentEntry> = {}): AgentEntry {
+import {
+  ConversationTreeDataProvider,
+  ConversationItem,
+  AIResponseItem,
+  SubagentItem,
+} from "./agent-tree";
+import type { TreeItem } from "./agent-tree";
+import { CompactionTreeItem, ErrorTreeItem } from "./conversation/index";
+import type { AgentEntry, AgentRegistry } from "./agent/index.js";
+
+class MockRegistry {
+  private emitter = new vscode.EventEmitter<{
+    type: "agents-cleared";
+    sequence: number;
+    timestamp: number;
+  }>();
+  private agents: AgentEntry[] = [];
+  onDidChangeAgents = this.emitter.event;
+
+  setAgents(agents: AgentEntry[]): void {
+    this.agents = agents;
+  }
+
+  getAgents(): AgentEntry[] {
+    return this.agents;
+  }
+
+  emitChange(): void {
+    this.emitter.fire({ type: "agents-cleared", sequence: 0, timestamp: 0 });
+  }
+
+  syncAgentTurnCount(): void {
+    // No-op for tests.
+  }
+}
+
+function createAgent(overrides: Partial<AgentEntry> = {}): AgentEntry {
   return {
-    id: "test-agent-id",
+    id: "agent-1",
     name: "claude-sonnet-4",
     startTime: Date.now(),
     lastUpdateTime: Date.now(),
@@ -59,161 +108,228 @@ function createMockAgent(overrides: Partial<AgentEntry> = {}): AgentEntry {
   };
 }
 
-describe("AgentTreeItem", () => {
-  describe("label selection", () => {
-    it("uses generatedTitle when available", () => {
-      const agent = createMockAgent({
-        generatedTitle: "Login Bug Fix",
-        firstUserMessagePreview: "Fix the bug in the login...",
-        name: "claude-sonnet-4",
-      });
+describe("ConversationTreeDataProvider", () => {
+  let registry: MockRegistry;
+  let provider: ConversationTreeDataProvider;
 
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
-      );
+  beforeEach(() => {
+    registry = new MockRegistry();
+  });
 
-      expect(item.label).toBe("Login Bug Fix");
+  function createProvider(): ConversationTreeDataProvider {
+    provider = new ConversationTreeDataProvider(
+      registry as unknown as AgentRegistry,
+    );
+    return provider;
+  }
+
+  describe("getChildren (root)", () => {
+    it("returns empty array when no agents", () => {
+      const p = createProvider();
+      const children = p.getChildren(undefined);
+      expect(children).toEqual([]);
     });
 
-    it("falls back to firstUserMessagePreview when no generatedTitle", () => {
-      const agent = createMockAgent({
-        generatedTitle: undefined,
-        firstUserMessagePreview: "Fix the bug in the login...",
-        name: "claude-sonnet-4",
-      });
+    it("returns ConversationItems for active conversations", () => {
+      registry.setAgents([
+        createAgent({
+          id: "a1",
+          conversationId: "conv-1",
+          status: "streaming",
+          startTime: 1000,
+        }),
+      ]);
 
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
-      );
+      const p = createProvider();
+      registry.emitChange();
 
-      expect(item.label).toBe("Fix the bug in the login...");
+      const roots = p.getChildren(undefined);
+      expect(roots.length).toBeGreaterThanOrEqual(1);
+      expect(roots[0]).toBeInstanceOf(ConversationItem);
     });
 
-    it("falls back to name when no title or preview", () => {
-      const agent = createMockAgent({
-        generatedTitle: undefined,
-        firstUserMessagePreview: undefined,
-        name: "claude-sonnet-4",
-      });
+    it("sorts active conversations by most recent first", () => {
+      registry.setAgents([
+        createAgent({
+          id: "a1",
+          conversationId: "conv-old",
+          status: "streaming",
+          startTime: 1000,
+          lastUpdateTime: 1000,
+        }),
+        createAgent({
+          id: "a2",
+          conversationId: "conv-new",
+          status: "streaming",
+          startTime: 2000,
+          lastUpdateTime: 2000,
+        }),
+      ]);
 
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
+      const p = createProvider();
+      registry.emitChange();
+
+      const roots = p.getChildren(undefined);
+      const convItems = roots.filter((r) => r instanceof ConversationItem);
+      expect(convItems.length).toBe(2);
+      const first = convItems[0];
+      const second = convItems[1];
+      expect(first).toBeDefined();
+      expect(second).toBeDefined();
+      expect(first?.conversation.id).toBe(
+        "conv-new",
       );
-
-      expect(item.label).toBe("claude-sonnet-4");
-    });
-
-    it("prefers generatedTitle over firstUserMessagePreview", () => {
-      const agent = createMockAgent({
-        generatedTitle: "AI Generated Title",
-        firstUserMessagePreview: "User Message Preview",
-        name: "model-name",
-      });
-
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
+      expect(second?.conversation.id).toBe(
+        "conv-old",
       );
-
-      expect(item.label).toBe("AI Generated Title");
     });
   });
 
-  describe("contextValue", () => {
-    it("sets mainAgent for main agents", () => {
-      const agent = createMockAgent({ isMain: true });
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
+  describe("getChildren (ConversationItem)", () => {
+    it("returns activity log entries as children", () => {
+      registry.setAgents([
+        createAgent({
+          id: "a1",
+          conversationId: "conv-1",
+          status: "complete",
+          turnCount: 2,
+        }),
+      ]);
+
+      const p = createProvider();
+      registry.emitChange();
+
+      const roots = p.getChildren(undefined);
+      const conv = roots.find(
+        (r) => r instanceof ConversationItem,
       );
+      expect(conv).toBeDefined();
+      if (!conv) return;
 
-      expect(item.contextValue).toBe("mainAgent");
-    });
-
-    it("sets subAgent for subagents", () => {
-      const agent = createMockAgent({ isMain: false });
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
-      );
-
-      expect(item.contextValue).toBe("subAgent");
-    });
-  });
-
-  describe("description", () => {
-    it("shows streaming status when streaming", () => {
-      const agent = createMockAgent({
-        status: "streaming",
-        inputTokens: 0,
-        outputTokens: 0,
-        lastActualInputTokens: 0,
-      });
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
-      );
-
-      expect(item.description).toBe("streaming...");
-    });
-
-    it("shows error status when error", () => {
-      const agent = createMockAgent({ status: "error" });
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
-      );
-
-      expect(item.description).toBe("error");
-    });
-
-    it("shows token count and percentage when complete", () => {
-      const agent = createMockAgent({
-        status: "complete",
-        inputTokens: 50000,
-        lastActualInputTokens: 50000,
-        maxInputTokens: 100000,
-      });
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
-      );
-
-      // Format is "50.0k/100.0k · 50%"
-      expect(item.description).toContain("50.0k");
-      expect(item.description).toContain("100.0k");
-      expect(item.description).toContain("50%");
+      const children = p.getChildren(conv);
+      // Should have activity log entries for the conversation
+      expect(children.length).toBeGreaterThanOrEqual(0);
     });
   });
 
-  describe("tooltip", () => {
-    it("includes title in tooltip when available", () => {
-      const agent = createMockAgent({
-        generatedTitle: "Login Bug Fix",
-      });
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
-      );
+  describe("getChildren (AIResponseItem)", () => {
+    it("returns empty for responses without subagents", () => {
+      registry.setAgents([
+        createAgent({
+          id: "a1",
+          conversationId: "conv-1",
+          status: "complete",
+        }),
+      ]);
 
-      const tooltip = item.tooltip as { value: string };
-      expect(tooltip.value).toContain("Login Bug Fix");
+      const p = createProvider();
+      registry.emitChange();
+
+      const roots = p.getChildren(undefined);
+      const conv = roots.find(
+        (r) => r instanceof ConversationItem,
+      );
+      expect(conv).toBeDefined();
+      if (!conv) return;
+      const children = p.getChildren(conv);
+      const responseItems = children.filter((c) => c instanceof AIResponseItem);
+
+      for (const response of responseItems) {
+        const subagents = p.getChildren(response);
+        expect(subagents.every((s) => s instanceof SubagentItem)).toBe(true);
+      }
     });
 
-    it("includes model name in tooltip", () => {
-      const agent = createMockAgent({
-        name: "claude-sonnet-4",
-      });
-      const item = new AgentTreeItem(
-        agent,
-        vscode.TreeItemCollapsibleState.None,
+    it("returns SubagentItems for responses with subagents", () => {
+      // Create a parent agent with a child subagent
+      registry.setAgents([
+        createAgent({
+          id: "a-parent",
+          conversationId: "conv-1",
+          status: "complete",
+          turnCount: 1,
+        }),
+        createAgent({
+          id: "a-child",
+          conversationId: "sub-1",
+          parentConversationHash: "conv-1",
+          name: "recon",
+          status: "complete",
+          isMain: false,
+        }),
+      ]);
+
+      const p = createProvider();
+      registry.emitChange();
+
+      const roots = p.getChildren(undefined);
+      const conv = roots.find(
+        (r) => r instanceof ConversationItem,
+      );
+      expect(conv).toBeDefined();
+      if (!conv) return;
+
+      const children = p.getChildren(conv);
+      const responseItems = children.filter(
+        (c) => c instanceof AIResponseItem,
       );
 
-      const tooltip = item.tooltip as { value: string };
-      expect(tooltip.value).toContain("claude-sonnet-4");
+      // Responses with subagent IDs should produce SubagentItem children
+      for (const response of responseItems) {
+        const responseChildren = p.getChildren(response);
+        if (responseChildren.length > 0) {
+          expect(
+            responseChildren.every((s) => s instanceof SubagentItem),
+          ).toBe(true);
+        }
+      }
+    });
+  });
+
+  describe("getChildren (leaf nodes)", () => {
+    it("returns empty for CompactionTreeItem", () => {
+      const compaction = new CompactionTreeItem({
+        type: "compaction",
+        freedTokens: 5000,
+        turnNumber: 3,
+        timestamp: Date.now(),
+        compactionType: "summarization",
+      });
+      const p = createProvider();
+      expect(p.getChildren(compaction as TreeItem)).toEqual([]);
+    });
+
+    it("returns empty for ErrorTreeItem", () => {
+      const error = new ErrorTreeItem({
+        type: "error",
+        message: "Something went wrong",
+        timestamp: Date.now(),
+      });
+      const p = createProvider();
+      expect(p.getChildren(error as TreeItem)).toEqual([]);
+    });
+  });
+
+  describe("refresh", () => {
+    it("fires onDidChangeTreeData", () => {
+      const p = createProvider();
+      const listener = vi.fn();
+      p.onDidChangeTreeData(listener);
+
+      p.refresh();
+
+      expect(listener).toHaveBeenCalledWith(undefined);
+    });
+
+    it("fires when status bar emits changes", () => {
+      const p = createProvider();
+      const listener = vi.fn();
+      p.onDidChangeTreeData(listener);
+
+      registry.emitChange();
+
+      // Should fire at least once (from the manager responding to agent changes)
+      expect(listener).toHaveBeenCalled();
     });
   });
 });

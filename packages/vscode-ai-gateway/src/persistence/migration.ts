@@ -14,11 +14,11 @@ import { logger } from "../logger.js";
 /**
  * Legacy storage key mappings from old namespace to new namespace.
  */
-const LEGACY_KEY_MAPPINGS: ReadonlyArray<{
+const LEGACY_KEY_MAPPINGS: readonly {
   oldKey: string;
   newKey: string;
   scope: "global" | "workspace";
-}> = [
+}[] = [
   // Models cache (global)
   {
     oldKey: "vercelAiGateway.modelsCache",

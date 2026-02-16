@@ -8,7 +8,7 @@
  * For persistent file-based capture, use the InvestigationLogger.
  */
 
-import type { AgentEntry } from "../status-bar.js";
+import type { AgentEntry } from "../agent/index.js";
 import { logger } from "../logger.js";
 import { safeJsonStringify } from "../utils/serialize.js";
 import type { PendingChildClaim } from "../identity/claim-registry.js";

@@ -46,7 +46,7 @@ export class ModelsClient {
   /** Event callback for when models are updated */
   private onModelsUpdated: (() => void) | null = null;
   /** Set of model IDs that the user has explicitly used (sticky selection) */
-  private userEnabledModels: Set<string> = new Set();
+  private userEnabledModels = new Set<string>();
   /**
    * Getter for the last-selected model's encoded VS Code ID.
    * Set by the provider which owns the workspaceState.

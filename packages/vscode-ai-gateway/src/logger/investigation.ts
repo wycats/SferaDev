@@ -25,6 +25,11 @@ import * as vscode from "vscode";
 import type { InvestigationDetail } from "../config.js";
 import { logger } from "../logger.js";
 import { safeJsonStringify } from "../utils/serialize.js";
+import type {
+  InvestigationEvent,
+  InvestigationEventBase,
+  InvestigationSubscriber,
+} from "./investigation-events.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -187,8 +192,11 @@ export interface InvestigationSSERecorder {
 
 /** Data available at request start (before streaming begins). */
 export interface StartRequestData {
+  sessionId?: string;
   conversationId: string;
   chatId: string;
+  parentChatId?: string | null;
+  agentTypeHash?: string | null;
   model: string;
   estimatedInputTokens: number;
   messageCount: number;
@@ -397,6 +405,7 @@ export class InvestigationRequestHandle {
   private readonly requestStartMs: number;
   private readonly detail: InvestigationDetail;
   private readonly investigationName: string;
+  private readonly emitEventToSubscribers: (event: InvestigationEvent) => void;
 
   /** @internal — use InvestigationLogger.startRequest() */
   constructor(
@@ -405,12 +414,14 @@ export class InvestigationRequestHandle {
     investigationName: string,
     requestStartMs: number,
     sseRecorder: SSERecorderImpl | null,
+    emitEventToSubscribers: (event: InvestigationEvent) => void,
   ) {
     this.startData = startData;
     this.detail = detail;
     this.investigationName = investigationName;
     this.requestStartMs = requestStartMs;
     this.sseRecorder = sseRecorder;
+    this.emitEventToSubscribers = emitEventToSubscribers;
   }
 
   /** The SSE recorder for this request (always present at non-off detail levels). */
@@ -421,6 +432,10 @@ export class InvestigationRequestHandle {
   /** Get buffered SSE events for error capture. Returns empty array if no recorder. */
   getEvents(): readonly SSEEventEntry[] {
     return this.sseRecorder?.getEvents() ?? [];
+  }
+
+  emitEvent(event: InvestigationEvent): void {
+    this.emitEventToSubscribers(event);
   }
 
   /**
@@ -495,6 +510,13 @@ export class InvestigationRequestHandle {
       isSummarization: this.startData.isSummarization,
     };
 
+    const baseEvent = this.getBaseEventFields(ts);
+    this.emitEvent({
+      kind: "request.index",
+      ...baseEvent,
+      entry: indexEntry,
+    });
+
     // Ensure investigation directory exists
     await fs.promises.mkdir(investigationDir, { recursive: true });
 
@@ -543,6 +565,12 @@ export class InvestigationRequestHandle {
       error: result.error,
     };
 
+    this.emitEvent({
+      kind: "request.message-summary",
+      ...baseEvent,
+      summary: messageSummary,
+    });
+
     const messagesJsonlPath = path.join(conversationDir, "messages.jsonl");
     await fs.promises.appendFile(
       messagesJsonlPath,
@@ -582,6 +610,12 @@ export class InvestigationRequestHandle {
       isSummarization: this.startData.isSummarization,
     };
 
+    this.emitEvent({
+      kind: "request.full",
+      ...baseEvent,
+      capture: fullCapture,
+    });
+
     const chatJsonPath = path.join(messagesDir, `${safeChatId}.json`);
     await fs.promises.writeFile(
       chatJsonPath,
@@ -598,8 +632,27 @@ export class InvestigationRequestHandle {
         const sseJsonlPath = path.join(messagesDir, `${safeChatId}.sse.jsonl`);
         const sseLines = events.map((e) => safeJsonStringify(e)).join("\n");
         await fs.promises.writeFile(sseJsonlPath, `${sseLines}\n`, "utf8");
+
+        for (const entry of events) {
+          this.emitEvent({
+            kind: "request.sse",
+            ...this.getBaseEventFields(entry.ts),
+            entry,
+          });
+        }
       }
     }
+  }
+
+  private getBaseEventFields(ts: string): Omit<InvestigationEventBase, "kind"> {
+    return {
+      ts,
+      sessionId: this.startData.sessionId ?? this.startData.conversationId,
+      conversationId: this.startData.conversationId,
+      chatId: this.startData.chatId,
+      parentChatId: this.startData.parentChatId ?? null,
+      agentTypeHash: this.startData.agentTypeHash ?? null,
+    };
   }
 }
 
@@ -617,6 +670,29 @@ export class InvestigationRequestHandle {
  * their own handle with isolated state.
  */
 export class InvestigationLogger {
+  // Static so subscribers see events from any InvestigationLogger instance.
+  private static readonly subscribers = new Set<InvestigationSubscriber>();
+
+  subscribe(subscriber: InvestigationSubscriber): vscode.Disposable {
+    InvestigationLogger.subscribers.add(subscriber);
+    return new vscode.Disposable(() => {
+      InvestigationLogger.subscribers.delete(subscriber);
+    });
+  }
+
+  emitEvent(event: InvestigationEvent): void {
+    for (const subscriber of InvestigationLogger.subscribers) {
+      try {
+        subscriber.onEvent(event);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Unknown subscriber error";
+        logger.error(
+          `[InvestigationLogger] Subscriber error for ${event.kind}: ${message}`,
+        );
+      }
+    }
+  }
   /**
    * Begin tracking a request. Returns a per-request handle with an SSE
    * recorder, or null if investigation logging is disabled.
@@ -643,6 +719,7 @@ export class InvestigationLogger {
       investigationName,
       requestStartMs,
       sseRecorder,
+      this.emitEvent.bind(this),
     );
   }
 }

@@ -1,317 +1,84 @@
 /**
- * Agent Tree View
+ * Conversation-Centric Agent Tree View (RFC 00073)
  *
- * Provides a VS Code TreeView showing the agent hierarchy with token usage.
- * Displays main agent and subagents with their status and token counts.
+ * Provides a VS Code TreeView showing conversations as the primary
+ * hierarchy, with activity log entries (turns, compaction, errors)
+ * as children, and subagents nested under their spawning turns.
  */
 
 import * as vscode from "vscode";
-import type { AgentEntry, TokenStatusBar } from "./status-bar.js";
-import type { SessionStats } from "./persistence/index.js";
-import { formatTokens, getDisplayTokens } from "./tokens/display.js";
+import type { AgentRegistry } from "./agent/index.js";
+import {
+  ConversationManager,
+  ConversationItem,
+  AIResponseItem,
+  TurnItem,
+  CompactionTreeItem,
+  ErrorTreeItem,
+  SubagentItem,
+  HistoryItem,
+  SectionHeaderItem,
+  ToolContinuationItem,
+  UserMessageItem,
+} from "./conversation/index.js";
+import type { Conversation } from "./conversation/index.js";
+import {
+  buildTree,
+  groupByUserMessage,
+  type TreeNode,
+  type TreeResult,
+} from "./conversation/build-tree.js";
 
 /**
- * Union type for all tree items in the agent tree
+ * Union type for all tree items in the conversation tree
  */
-export type TreeItem = AgentTreeItem | LastSessionTreeItem;
+export type TreeItem =
+  | ConversationItem
+  | UserMessageItem
+  | ToolContinuationItem
+  | AIResponseItem
+  | TurnItem
+  | CompactionTreeItem
+  | ErrorTreeItem
+  | SubagentItem
+  | HistoryItem
+  | SectionHeaderItem;
 
 /**
- * Tree item representing an agent in the hierarchy
+ * Tree data provider using ConversationManager as data source.
+ *
+ * Root: active ConversationItems + SectionHeaderItem (History) if idle/archived exist.
+ * ConversationItem children: windowed activity log + HistoryItem.
+ * AIResponseItem children: SubagentItems (resolved from response's subagentIds).
+ * TurnItem children: SubagentItems (legacy).
+ * SubagentItem children: nested SubagentItems.
+ * HistoryItem children: older activity log entries.
+ * SectionHeaderItem children: idle/archived ConversationItems.
  */
-export class AgentTreeItem extends vscode.TreeItem {
-  public readonly agent: AgentEntry;
-
-  constructor(
-    agent: AgentEntry,
-    collapsibleState: vscode.TreeItemCollapsibleState,
-  ) {
-    // Use the best available label:
-    // 1. AI-generated title (most descriptive)
-    // 2. First user message preview (fallback)
-    // 3. Model name (last resort)
-    const label =
-      agent.generatedTitle ?? agent.firstUserMessagePreview ?? agent.name;
-    super(label, collapsibleState);
-    this.agent = agent;
-
-    this.id = agent.id;
-    this.contextValue = agent.isMain ? "mainAgent" : "subAgent";
-
-    // Set description (shown after label)
-    this.description = this.formatDescription();
-
-    // Set tooltip with full details
-    this.tooltip = this.formatTooltip();
-
-    // Set icon based on status
-    this.iconPath = this.getIcon();
-  }
-
-  private formatDescription(): string {
-    const display = getDisplayTokens(this.agent);
-
-    if (this.agent.status === "error") {
-      return "error";
-    }
-
-    if (!display) {
-      return "streaming...";
-    }
-
-    const tokens = formatTokens(display.value);
-
-    if (this.agent.maxInputTokens) {
-      const max = formatTokens(this.agent.maxInputTokens);
-      const pct = Math.round((display.value / this.agent.maxInputTokens) * 100);
-      let desc = `${tokens}/${max} · ${pct.toString()}%`;
-
-      // Show ↓ suffix while fading
-      const totalFreed = this.getTotalFreedTokens();
-      if (totalFreed > 0 && this.shouldShowCompactionSuffix()) {
-        desc += ` ↓${formatTokens(totalFreed)}`;
-      }
-
-      return desc;
-    }
-
-    return tokens;
-  }
-
-  private getTotalFreedTokens(): number {
-    const serverFreed =
-      this.agent.contextManagement?.appliedEdits.reduce(
-        (t, e) => t + e.clearedInputTokens,
-        0,
-      ) ?? 0;
-    const summarizationFreed = this.agent.summarizationReduction ?? 0;
-    return serverFreed + summarizationFreed;
-  }
-
-  private shouldShowCompactionSuffix(): boolean {
-    const hasServerCompaction =
-      (this.agent.contextManagement?.appliedEdits.length ?? 0) > 0;
-    const hasFadingReduction = (this.agent.summarizationFadeTurns ?? 0) > 0;
-    return hasServerCompaction || hasFadingReduction;
-  }
-
-  private formatTooltip(): vscode.MarkdownString {
-    const md = new vscode.MarkdownString();
-    md.isTrusted = true;
-
-    // Show title or preview as header
-    const title =
-      this.agent.generatedTitle ?? this.agent.firstUserMessagePreview;
-    if (title) {
-      md.appendMarkdown(`### ${title}\n\n`);
-    }
-
-    md.appendMarkdown(
-      `**${this.agent.isMain ? "Main Agent" : "Subagent"}:** ${this.agent.name}\n\n`,
-    );
-
-    md.appendMarkdown(`**Status:** ${this.agent.status}\n\n`);
-
-    if (this.agent.modelId) {
-      md.appendMarkdown(`**Model:** ${this.agent.modelId}\n\n`);
-    }
-
-    if (this.agent.status === "streaming") {
-      const display = getDisplayTokens(this.agent);
-      if (display) {
-        const label = display.isEstimate ? "Estimated Input" : "Input";
-        md.appendMarkdown(
-          `**${label}:** ${display.value.toLocaleString()} tokens\n\n`,
-        );
-      }
-    } else {
-      // Show accumulated totals for multi-turn conversations
-      if (this.agent.turnCount > 1) {
-        md.appendMarkdown(`**Turns:** ${this.agent.turnCount}\n\n`);
-        md.appendMarkdown(
-          `**Input:** ${this.agent.lastActualInputTokens.toLocaleString()}\n\n`,
-        );
-        md.appendMarkdown(
-          `**Total Output:** ${this.agent.totalOutputTokens.toLocaleString()}\n\n`,
-        );
-        md.appendMarkdown(
-          `**Last Turn:** ${this.agent.inputTokens.toLocaleString()} in, ${this.agent.outputTokens.toLocaleString()} out\n\n`,
-        );
-      } else {
-        md.appendMarkdown(
-          `**Input Tokens:** ${this.agent.inputTokens.toLocaleString()}\n\n`,
-        );
-        md.appendMarkdown(
-          `**Output Tokens:** ${this.agent.outputTokens.toLocaleString()}\n\n`,
-        );
-      }
-    }
-
-    if (this.agent.maxInputTokens) {
-      md.appendMarkdown(
-        `**Max Input:** ${this.agent.maxInputTokens.toLocaleString()}\n\n`,
-      );
-    }
-
-    // Context management info (server-side compaction)
-    if (this.agent.contextManagement?.appliedEdits.length) {
-      const edits = this.agent.contextManagement.appliedEdits;
-      const freedTokens = edits.reduce(
-        (sum, e) => sum + e.clearedInputTokens,
-        0,
-      );
-      md.appendMarkdown(
-        `**Context Compaction:** ${edits.length} edit(s), freed ${freedTokens.toLocaleString()} tokens\n\n`,
-      );
-    }
-
-    // Summarization compaction (VS Code client-side)
-    if (this.agent.summarizationDetected && this.agent.summarizationReduction) {
-      md.appendMarkdown(
-        `**Summarized:** Context reduced by ${this.agent.summarizationReduction.toLocaleString()} tokens\n\n`,
-      );
-    }
-
-    // Timing info
-    const elapsed = Date.now() - this.agent.startTime;
-    md.appendMarkdown(`**Duration:** ${this.formatDuration(elapsed)}\n\n`);
-
-    if (this.agent.dimmed) {
-      md.appendMarkdown(`*Dimmed (older request)*\n\n`);
-    }
-
-    return md;
-  }
-
-  private getIcon(): vscode.ThemeIcon {
-    switch (this.agent.status) {
-      case "streaming":
-        if (this.agent.isSummarization) {
-          return new vscode.ThemeIcon(
-            "sync~spin",
-            new vscode.ThemeColor("charts.yellow"),
-          );
-        }
-        return new vscode.ThemeIcon(
-          "loading~spin",
-          new vscode.ThemeColor("charts.yellow"),
-        );
-      case "error":
-        return new vscode.ThemeIcon(
-          "error",
-          new vscode.ThemeColor("errorForeground"),
-        );
-      case "complete": {
-        const iconName = "check";
-        // Check context utilization for color
-        const display = getDisplayTokens(this.agent);
-        const inputTokens = display?.value ?? 0;
-        if (this.agent.maxInputTokens && inputTokens) {
-          const pct = inputTokens / this.agent.maxInputTokens;
-          if (pct > 0.9) {
-            return new vscode.ThemeIcon(
-              iconName,
-              new vscode.ThemeColor("charts.red"),
-            );
-          }
-          if (pct > 0.7) {
-            return new vscode.ThemeIcon(
-              iconName,
-              new vscode.ThemeColor("charts.orange"),
-            );
-          }
-        }
-        return new vscode.ThemeIcon(
-          iconName,
-          new vscode.ThemeColor("charts.green"),
-        );
-      }
-    }
-  }
-
-  private formatDuration(ms: number): string {
-    if (ms < 1000) {
-      return `${ms}ms`;
-    }
-    if (ms < 60000) {
-      return `${(ms / 1000).toFixed(1)}s`;
-    }
-    const mins = Math.floor(ms / 60000);
-    const secs = Math.round((ms % 60000) / 1000);
-    return `${mins}m ${secs}s`;
-  }
-}
-
-/**
- * Tree item showing last session stats when no active agents
- */
-class LastSessionTreeItem extends vscode.TreeItem {
-  constructor(stats: SessionStats) {
-    super("Last Session", vscode.TreeItemCollapsibleState.None);
-
-    const tokens = formatTokens(stats.maxObservedInputTokens);
-
-    this.description = `${stats.agentCount} agent${stats.agentCount !== 1 ? "s" : ""}, ${tokens} context tokens`;
-    this.tooltip = this.formatTooltip(stats);
-    this.iconPath = new vscode.ThemeIcon(
-      "history",
-      new vscode.ThemeColor("descriptionForeground"),
-    );
-    this.contextValue = "lastSession";
-  }
-
-  private formatTooltip(stats: SessionStats): vscode.MarkdownString {
-    const md = new vscode.MarkdownString();
-    md.appendMarkdown(`### Last Session\n\n`);
-    md.appendMarkdown(`**Agents:** ${stats.agentCount}\n\n`);
-    md.appendMarkdown(`**Main Agent Turns:** ${stats.mainAgentTurns}\n\n`);
-    md.appendMarkdown(
-      `**Max Context:** ${stats.maxObservedInputTokens.toLocaleString()} tokens\n\n`,
-    );
-    md.appendMarkdown(
-      `**Total Output:** ${stats.totalOutputTokens.toLocaleString()} tokens\n\n`,
-    );
-    if (stats.modelId) {
-      md.appendMarkdown(`**Model:** ${stats.modelId}\n\n`);
-    }
-    const date = new Date(stats.timestamp);
-    md.appendMarkdown(`*${date.toLocaleString()}*`);
-    return md;
-  }
-}
-
-/**
- * Tree data provider for the agent hierarchy
- */
-export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
+export class ConversationTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<
     TreeItem | undefined | null
   >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  private statusBar: TokenStatusBar | null = null;
+  private manager: ConversationManager;
   private disposables: vscode.Disposable[] = [];
 
-  /**
-   * Connect to a TokenStatusBar to receive agent updates
-   */
-  setStatusBar(statusBar: TokenStatusBar): void {
-    // Clean up previous subscription
-    for (const d of this.disposables) {
-      d.dispose();
-    }
-    this.disposables = [];
+  constructor(registry: AgentRegistry) {
+    this.manager = new ConversationManager(registry);
 
-    this.statusBar = statusBar;
-
-    // Subscribe to agent changes
     this.disposables.push(
-      statusBar.onDidChangeAgents(() => {
+      this.manager.onDidChangeConversations(() => {
         this._onDidChangeTreeData.fire(undefined);
       }),
     );
+  }
 
-    // Initial refresh
-    this._onDidChangeTreeData.fire(undefined);
+  /**
+   * Get the ConversationManager for external use (e.g., turn characterization).
+   */
+  getManager(): ConversationManager {
+    return this.manager;
   }
 
   getTreeItem(element: TreeItem): vscode.TreeItem {
@@ -319,179 +86,156 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
   }
 
   getChildren(element?: TreeItem): TreeItem[] {
-    if (!this.statusBar) {
-      return [];
-    }
-
-    const allAgents = this.statusBar.getAgents();
-
-    // When idle (no active streaming), filter to only the most recent
-    // conversation's agents. This prevents showing a composite of agents
-    // from all past conversations. Applied to both root and child lookups.
-    const isIdle = this.statusBar.getActiveAgentId() === null;
-    const lastConversationId = this.statusBar.getLastActiveConversationId();
-
-    const agents =
-      isIdle && lastConversationId
-        ? allAgents.filter(
-            (a) =>
-              a.conversationId === lastConversationId ||
-              a.parentConversationHash === lastConversationId,
-          )
-        : allAgents;
-
     if (!element) {
-      if (agents.length === 0) {
-        // Show last session stats if available
-        const lastSession = this.statusBar.getLastSessionStats();
-        if (lastSession) {
-          return [new LastSessionTreeItem(lastSession)];
-        }
-        return [];
-      }
-
-      // Build set of valid parent identifiers (conversationId or agentTypeHash)
-      const parentIdentifiers = new Set<string>();
-      for (const agent of agents) {
-        if (agent.conversationId) {
-          parentIdentifiers.add(agent.conversationId);
-        }
-        if (agent.agentTypeHash) {
-          parentIdentifiers.add(agent.agentTypeHash);
-        }
-      }
-
-      // Root level: agents with no parent conversation OR orphaned agents
-      // (agents whose parentConversationHash doesn't match any existing agent)
-      const rootAgents = agents.filter(
-        (a) =>
-          !a.parentConversationHash ||
-          !parentIdentifiers.has(a.parentConversationHash),
-      );
-
-      // Sort by start time (most recent first)
-      const sortByTime = (a: AgentEntry, b: AgentEntry) =>
-        b.startTime - a.startTime;
-
-      return rootAgents
-        .sort(sortByTime)
-        .map(
-          (agent) =>
-            new AgentTreeItem(
-              agent,
-              this.hasChildren(agent, agents)
-                ? vscode.TreeItemCollapsibleState.Expanded
-                : vscode.TreeItemCollapsibleState.None,
-            ),
-        );
+      return this.getRootChildren();
     }
 
-    // LastSessionTreeItem has no children
-    if (!(element instanceof AgentTreeItem)) {
+    if (element instanceof ConversationItem) {
+      return this.getConversationChildren(element);
+    }
+
+    if (element instanceof UserMessageItem) {
+      return this.getUserMessageChildren(element);
+    }
+
+    if (element instanceof TurnItem) {
+      return this.getTurnChildren(element);
+    }
+
+    if (element instanceof AIResponseItem) {
+      return this.getAIResponseChildren(element);
+    }
+
+    if (element instanceof SubagentItem) {
+      return element.subagent.children.map((child) => new SubagentItem(child));
+    }
+
+    if (element instanceof HistoryItem) {
+      const conversation = this.manager
+        .getConversations()
+        .find((c) => c.id === element.conversationId);
+      const nodes = groupByUserMessage(element.entries);
+      return treeNodesToItems(nodes, element.conversationId, conversation);
+    }
+
+    if (element instanceof SectionHeaderItem) {
+      return element.conversations.map((conv) => new ConversationItem(conv));
+    }
+
+    return [];
+  }
+
+  private getRootChildren(): TreeItem[] {
+    const conversations = this.manager.getConversations();
+
+    if (conversations.length === 0) {
       return [];
     }
 
-    // Get children of this element (use filtered agents to prevent cross-conversation leaks)
-    const childAgents = this.getChildAgents(element.agent, agents);
+    const { active, history } =
+      SectionHeaderItem.partitionConversations(conversations);
 
-    // Sort by start time (most recent first)
-    childAgents.sort((a, b) => b.startTime - a.startTime);
+    // Sort active by most recent first
+    active.sort((a, b) => b.lastActiveTime - a.lastActiveTime);
 
-    return childAgents.map(
-      (agent) => new AgentTreeItem(agent, vscode.TreeItemCollapsibleState.None),
+    const items: TreeItem[] = active.map((conv) => new ConversationItem(conv));
+
+    if (history.length > 0) {
+      // Sort history by most recent first
+      history.sort((a, b) => b.lastActiveTime - a.lastActiveTime);
+      items.push(new SectionHeaderItem(history));
+    }
+
+    return items;
+  }
+
+  private getConversationChildren(element: ConversationItem): TreeItem[] {
+    const conversation = element.conversation;
+    const result = buildTree(conversation.activityLog);
+
+    return treeResultToItems(result, conversation.id, conversation);
+  }
+
+  private getTurnChildren(element: TurnItem): TreeItem[] {
+    const conversation = this.manager
+      .getConversations()
+      .find((c) => c.id === element.conversationId);
+
+    if (!conversation) {
+      return [];
+    }
+
+    const subagents = SubagentItem.resolveSubagents(
+      element.turn.subagentIds,
+      conversation.subagents,
     );
+
+    return subagents.map((sub) => new SubagentItem(sub));
+  }
+
+  private getAIResponseChildren(element: AIResponseItem): TreeItem[] {
+    const conversation = this.manager
+      .getConversations()
+      .find((c) => c.id === element.conversationId);
+
+    if (!conversation) {
+      return [];
+    }
+
+    const subagents = SubagentItem.resolveSubagents(
+      element.entry.subagentIds,
+      conversation.subagents,
+    );
+
+    return subagents.map((sub) => new SubagentItem(sub));
   }
 
   /**
-   * Check if an agent has any children (linked via conversationId or agentTypeHash)
+   * Get children for a UserMessageItem (AI responses with same sequenceNumber).
    */
-  private hasChildren(agent: AgentEntry, allAgents: AgentEntry[]): boolean {
-    // Check for children linked via stable conversationId (preferred)
-    if (agent.conversationId) {
-      if (
-        allAgents.some(
-          (a) =>
-            a.parentConversationHash === agent.conversationId &&
-            a.id !== agent.id,
-        )
-      ) {
-        return true;
-      }
+  private getUserMessageChildren(element: UserMessageItem): TreeItem[] {
+    const conversation = this.manager
+      .getConversations()
+      .find((c) => c.id === element.conversationId);
+
+    if (!conversation) {
+      return [];
     }
-    // Check for children linked via agentTypeHash
-    // (fallback when conversationId is not yet available)
-    if (agent.agentTypeHash) {
-      if (
-        allAgents.some(
-          (a) =>
-            a.parentConversationHash === agent.agentTypeHash &&
-            a.id !== agent.id,
-        )
-      ) {
-        return true;
+
+    // Return tree items for each child (AI responses and tool continuations)
+    return element.children.map((child) => {
+      if (child.type === "ai-response") {
+        const subagents = SubagentItem.resolveSubagents(
+          child.entry.subagentIds,
+          conversation.subagents,
+        );
+        return new AIResponseItem(
+          child.entry,
+          element.conversationId,
+          subagents,
+        );
+      } else if (child.type === "error") {
+        return new ErrorTreeItem(child.entry);
+      } else {
+        // tool-continuation
+        return new ToolContinuationItem(
+          child.entry,
+          element.conversationId,
+          child.tools,
+        );
       }
-    }
-    return false;
+    });
   }
 
   /**
-   * Get child agents linked to a parent (via conversationId or agentTypeHash)
-   */
-  private getChildAgents(
-    parent: AgentEntry,
-    allAgents: AgentEntry[],
-  ): AgentEntry[] {
-    const children: AgentEntry[] = [];
-    const seenIds = new Set<string>();
-
-    // Children linked via stable conversationId (preferred)
-    if (parent.conversationId) {
-      for (const agent of allAgents) {
-        if (
-          agent.parentConversationHash === parent.conversationId &&
-          !seenIds.has(agent.id) &&
-          agent.id !== parent.id
-        ) {
-          children.push(agent);
-          seenIds.add(agent.id);
-        }
-      }
-    }
-
-    // Children linked via agentTypeHash
-    // (fallback when conversationId is not yet available)
-    if (parent.agentTypeHash) {
-      for (const agent of allAgents) {
-        if (
-          agent.parentConversationHash === parent.agentTypeHash &&
-          !seenIds.has(agent.id) &&
-          agent.id !== parent.id
-        ) {
-          children.push(agent);
-          seenIds.add(agent.id);
-        }
-      }
-    }
-
-    return children;
-  }
-
-  /**
-   * Get parent for tree navigation
-   */
-  getParent(_element: AgentTreeItem): AgentTreeItem | null | undefined {
-    // Flat structure for now
-    return null;
-  }
-
-  /**
-   * Refresh the tree view
+   * Refresh the tree view.
    */
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
   }
 
   dispose(): void {
+    this.manager.dispose();
     for (const d of this.disposables) {
       d.dispose();
     }
@@ -499,15 +243,104 @@ export class AgentTreeDataProvider implements vscode.TreeDataProvider<TreeItem> 
   }
 }
 
+// Re-export for backward compatibility
+export {
+  ConversationItem,
+  TurnItem,
+  SubagentItem,
+  UserMessageItem,
+  AIResponseItem,
+};
+
+// ── Pure Tree → VS Code TreeItem Mapping ─────────────────────────────
+
 /**
- * Create and register the agent tree view
+ * Map a full TreeResult (from buildTree) to VS Code TreeItems.
+ * This is the thin presentation layer — all logic lives in build-tree.ts.
  */
-export function createAgentTreeView(statusBar: TokenStatusBar): {
+function treeResultToItems(
+  result: TreeResult,
+  conversationId: string,
+  conversation?: Conversation,
+): TreeItem[] {
+  const items = treeNodesToItems(result.topLevel, conversationId, conversation);
+
+  // The history node in the pure tree becomes a HistoryItem
+  // (buildTree already appends it to topLevel, but it uses a plain { kind: "history", count }
+  //  — we need to replace it with a real HistoryItem that holds the entries for expansion)
+  for (let i = 0; i < items.length; i++) {
+    const node = result.topLevel[i];
+    if (node?.kind === "history") {
+      items[i] = new HistoryItem(result.historyEntries, conversationId);
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Map an array of TreeNodes to VS Code TreeItems.
+ * Used for both the main window and history expansion.
+ */
+function treeNodesToItems(
+  nodes: TreeNode[],
+  conversationId: string,
+  conversation?: Conversation,
+): TreeItem[] {
+  return nodes.map((node) =>
+    treeNodeToItem(node, conversationId, conversation),
+  );
+}
+
+/**
+ * Map a single TreeNode to a VS Code TreeItem.
+ */
+function treeNodeToItem(
+  node: TreeNode,
+  conversationId: string,
+  _conversation?: Conversation,
+): TreeItem {
+  switch (node.kind) {
+    case "user-message": {
+      // Map TreeChild[] to UserMessageChild[] for the UserMessageItem constructor
+      const children = node.children.map((child) => {
+        if (child.kind === "ai-response") {
+          return { type: "ai-response" as const, entry: child.entry };
+        } else if (child.kind === "error") {
+          return { type: "error" as const, entry: child.entry };
+        } else {
+          return {
+            type: "tool-continuation" as const,
+            entry: child.entry,
+            tools: child.tools,
+          };
+        }
+      });
+      return new UserMessageItem(
+        node.entry,
+        conversationId,
+        children,
+        node.hasError,
+      );
+    }
+    case "compaction":
+      return new CompactionTreeItem(node.entry);
+    case "error":
+      return new ErrorTreeItem(node.entry);
+    case "history":
+      // Placeholder — caller replaces with real HistoryItem that has entries
+      return new HistoryItem([], conversationId);
+  }
+}
+
+/**
+ * Create and register the agent tree view.
+ */
+export function createAgentTreeView(registry: AgentRegistry): {
   treeView: vscode.TreeView<TreeItem>;
-  provider: AgentTreeDataProvider;
+  provider: ConversationTreeDataProvider;
 } {
-  const provider = new AgentTreeDataProvider();
-  provider.setStatusBar(statusBar);
+  const provider = new ConversationTreeDataProvider(registry);
 
   const treeView = vscode.window.createTreeView("vercel.ai.agentTree", {
     treeDataProvider: provider,

@@ -34,24 +34,11 @@ export interface TranslateRequestResult {
 export function translateRequest(
   messages: readonly LanguageModelChatMessage[],
   options: ProvideLanguageModelChatResponseOptions,
-  configService: ConfigService,
+  _configService: ConfigService,
 ): TranslateRequestResult {
   const input: ItemParam[] = [];
 
-  // Handle system prompt from config
-  const systemPromptEnabled = configService.systemPromptEnabled;
-  const systemPromptMessage = configService.systemPromptMessage;
   let instructions: string | undefined;
-
-  if (systemPromptEnabled && systemPromptMessage.trim()) {
-    // VS Code does not provide a system/developer role in LanguageModelChatMessageRole.
-    // System prompts are passed via options (config-driven here), so we map them to
-    // OpenResponses `instructions` instead of synthesizing a message.
-    // If VS Code introduces system/developer roles in the future, they will be mapped
-    // explicitly in translateMessage via resolveOpenResponsesRole().
-    // Use instructions field for system prompt (OpenResponses preferred approach)
-    instructions = systemPromptMessage;
-  }
 
   // Handle VS Code System role (proposed API): VS Code Copilot sends the system
   // prompt using role=3 (System). We extract it and use the `instructions` field.

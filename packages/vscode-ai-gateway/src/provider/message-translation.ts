@@ -70,6 +70,14 @@ export function sanitizeSpecialTokens(text: string): string {
   return sanitized;
 }
 
+function getConstructorName(value: unknown): string {
+  if (!value || typeof value !== "object") {
+    return "null";
+  }
+  const ctor = (value as { constructor?: { name?: unknown } }).constructor;
+  return typeof ctor?.name === "string" ? ctor.name : "null";
+}
+
 /**
  * Resolve a VS Code chat message role to an OpenResponses role.
  *
@@ -220,7 +228,7 @@ export function translateMessage(
       logger.warn(
         `[OpenResponses] Unrecognized message part type. ` +
           `Keys: [${Object.keys(part as object).join(", ")}], ` +
-          `Proto: ${Object.getPrototypeOf(part)?.constructor?.name ?? "null"}`,
+          `Proto: ${getConstructorName(Object.getPrototypeOf(part))}`,
       );
     }
   }
@@ -300,7 +308,7 @@ export function createMessageItem(
       if (part.type === "input_text") {
         return part.text.length > 0;
       }
-      return part.type === "input_image";
+      return true;
     });
     if (filtered.length === 0) return null;
     return {

@@ -66,8 +66,8 @@ export default tseslint.config(
           allowRegExp: false,
         },
       ],
-      // Allow non-null assertions in specific cases (VS Code APIs often require them)
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      // No non-null assertions — use guards, early returns, or restructure instead
+      "@typescript-eslint/no-non-null-assertion": "error",
       // Deprecated APIs are intentionally used during migration
       "@typescript-eslint/no-deprecated": "warn",
       // Allow getters that return literals (common pattern for config defaults)

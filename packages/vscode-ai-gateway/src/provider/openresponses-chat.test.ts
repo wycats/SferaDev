@@ -169,6 +169,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
+      getAgentTurnCount: vi.fn().mockReturnValue(0),
     };
 
     hoisted.createClient.mockReturnValue({
@@ -198,7 +199,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        statusBar,
+        agentRegistry: statusBar,
       } as never,
     );
 
@@ -221,6 +222,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
+      getAgentTurnCount: vi.fn().mockReturnValue(0),
     };
 
     hoisted.createClient.mockReturnValue({
@@ -245,7 +247,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        statusBar,
+        agentRegistry: statusBar,
       } as never,
     );
 
@@ -258,6 +260,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
+      getAgentTurnCount: vi.fn().mockReturnValue(0),
     };
 
     hoisted.createClient.mockReturnValue({
@@ -281,7 +284,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        statusBar,
+        agentRegistry: statusBar,
       } as never,
     );
 
@@ -294,6 +297,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
+      getAgentTurnCount: vi.fn().mockReturnValue(0),
     };
 
     hoisted.createClient.mockReturnValue({
@@ -310,7 +314,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        statusBar,
+        agentRegistry: statusBar,
       } as never,
     );
 
@@ -324,6 +328,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
+      getAgentTurnCount: vi.fn().mockReturnValue(0),
     };
 
     hoisted.createClient.mockReturnValue({
@@ -338,7 +343,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        statusBar,
+        agentRegistry: statusBar,
       } as never,
     );
 
@@ -387,6 +392,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
     completeAgent: vi.fn(),
     errorAgent: vi.fn(),
     createChildClaim: vi.fn(),
+    getAgentTurnCount: vi.fn().mockReturnValue(0),
   };
 
   beforeEach(() => {
@@ -417,7 +423,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(hoisted.mockStartRequest).toHaveBeenCalledTimes(1);
@@ -459,7 +465,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(hoisted.mockComplete).toHaveBeenCalledTimes(1);
@@ -495,7 +501,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(hoisted.mockComplete).toHaveBeenCalledTimes(1);
@@ -527,7 +533,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(hoisted.mockComplete).toHaveBeenCalledTimes(1);
@@ -575,7 +581,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     // 3 events recorded
@@ -621,7 +627,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     // No recorder calls, no complete calls
@@ -792,6 +798,7 @@ describe("error classification and user-friendly messages", () => {
     updateAgentActivity: vi.fn(),
     completeAgent: vi.fn(),
     errorAgent: vi.fn(),
+    getAgentTurnCount: vi.fn().mockReturnValue(0),
   };
 
   beforeEach(() => {
@@ -813,7 +820,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       progress,
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(result.success).toBe(false);
@@ -843,7 +850,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       progress,
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(result.success).toBe(false);
@@ -867,7 +874,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(result.success).toBe(false);
@@ -887,7 +894,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(result.success).toBe(false);
@@ -907,7 +914,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(result.success).toBe(false);
@@ -927,7 +934,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(result.success).toBe(false);
@@ -947,7 +954,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     expect(result.success).toBe(false);
@@ -971,7 +978,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     // Raw message should be logged, not the friendly one
@@ -1011,7 +1018,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, statusBar } as never,
+      { ...baseChatOptions, agentRegistry: statusBar } as never,
     );
 
     // ErrorCaptureLogger should have been called for stream-level error

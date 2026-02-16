@@ -57,6 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
     { VercelAIChatModelProvider },
     { TokenStatusBar },
     { createAgentTreeView },
+    { AgentRegistryImpl },
   ] = await Promise.all([
     import("./auth"),
     import("./config"),
@@ -65,6 +66,7 @@ export async function activate(context: vscode.ExtensionContext) {
     import("./provider"),
     import("./status-bar"),
     import("./agent-tree"),
+    import("./agent/registry-impl"),
   ]);
 
   logger.info(
@@ -86,17 +88,31 @@ export async function activate(context: vscode.ExtensionContext) {
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (workspaceRoot) {
     treeDiagnostics.initialize(workspaceRoot);
+    // Initialize tree change logging (writes to .logs/tree-changes.jsonl)
+    const { initializeTreeChangeLog } =
+      await import("./diagnostics/tree-change-log.js");
+    initializeTreeChangeLog(workspaceRoot);
   }
 
+  const agentRegistry = new AgentRegistryImpl();
+  agentRegistry.initializePersistence(context);
+  context.subscriptions.push(agentRegistry);
+
   // Create the token status bar
-  const statusBar = new TokenStatusBar();
+  const statusBar = new TokenStatusBar(agentRegistry);
   statusBar.initializePersistence(context);
   context.subscriptions.push(statusBar);
 
   // Create the agent tree view
-  const { treeView, provider: treeProvider } = createAgentTreeView(statusBar);
+  const { treeView, provider: treeProvider } =
+    createAgentTreeView(agentRegistry);
   context.subscriptions.push(treeView);
   context.subscriptions.push(treeProvider);
+
+  // Initialize conversation tree persistence
+  const { createPersistenceManager } = await import("./persistence/index.js");
+  const persistenceManager = createPersistenceManager(context);
+  treeProvider.getManager().initializePersistence(persistenceManager);
 
   // Register refresh command for agent tree
   context.subscriptions.push(
@@ -108,7 +124,9 @@ export async function activate(context: vscode.ExtensionContext) {
   // Create the full provider and connect it to the stub.
   // The stub was already registered to win the boot-speed race.
   const provider = new VercelAIChatModelProvider(context, configService);
+  provider.setAgentRegistry(agentRegistry);
   provider.setStatusBar(statusBar);
+  provider.setConversationManager(treeProvider.getManager());
   context.subscriptions.push(provider);
 
   stubProvider.setRealProvider(provider);
@@ -372,7 +390,7 @@ export async function activate(context: vscode.ExtensionContext) {
       const t3 = performance.now() - start3;
 
       const allCorrect =
-        result1 === true && result2 === true && result3 === false;
+        result1 && result2 && !result3;
       const icon = allCorrect ? "$(check)" : "$(error)";
 
       const details = [

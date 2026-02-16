@@ -190,7 +190,7 @@ describe("decodeStatefulMarker", () => {
 describe("findLatestStatefulMarker", () => {
   function createMessage(
     role: number,
-    parts: Array<{ value?: string; data?: Uint8Array; mimeType?: string }>,
+    parts: { value?: string; data?: Uint8Array; mimeType?: string }[],
   ) {
     return {
       role,

@@ -81,6 +81,13 @@ function buildDigestPart(
   }
   if ("data" in part && "mimeType" in part) {
     const data = part.data;
+    if (!(data instanceof Uint8Array)) {
+      return {
+        type: "data",
+        mimeType: part.mimeType,
+        dataSize: 0,
+      };
+    }
     // For normalized digest, hash the actual data bytes
     // For raw digest, just use size (faster, sufficient for debugging)
     const dataDigest = options.includeDataDigest
@@ -165,13 +172,12 @@ export function computeNormalizedDigest(
   for (const part of parts) {
     const last = normalizedContent[normalizedContent.length - 1];
     if (
-      last &&
-      last["type"] === "text" &&
+      last?.["type"] === "text" &&
       part["type"] === "text" &&
       typeof last["value"] === "string" &&
       typeof part["value"] === "string"
     ) {
-      (last as { value: string })["value"] += part["value"];
+      (last as { value: string }).value += part["value"];
     } else {
       normalizedContent.push(part);
     }

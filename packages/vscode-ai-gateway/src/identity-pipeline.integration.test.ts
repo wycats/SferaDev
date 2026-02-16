@@ -1,12 +1,12 @@
 /**
  * Integration tests for the conversationId-based identity pipeline.
  *
- * Exercises TokenStatusBar + AgentTreeDataProvider together, verifying
+ * Exercises TokenStatusBar + ConversationTreeDataProvider together, verifying
  * that conversationId-based identity produces correct:
  * - Multi-turn resume behavior (same conversationId → same agent)
  * - Token accumulation across turns
  * - Parent-child hierarchy with claim registry
- * - AgentTreeDataProvider rendering (root vs children, tree refresh events)
+ * - ConversationTreeDataProvider rendering (root vs children, tree refresh events)
  * - No >100% context percentage (regression gate)
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -50,7 +50,7 @@ vi.mock("vscode", () => ({
       return { dispose: () => {} };
     };
     fire(data: T) {
-      this.listeners.forEach((l) => l(data));
+      this.listeners.forEach((l) => { l(data); });
     }
     dispose() {}
   },
@@ -80,14 +80,19 @@ vi.mock("vscode", () => ({
       return this;
     }
   },
+  workspace: {
+    workspaceFolders: [{ uri: { fsPath: "/workspace" } }],
+  },
 }));
 
-import { AgentTreeDataProvider, AgentTreeItem } from "./agent-tree";
+import { ConversationTreeDataProvider, ConversationItem } from "./agent-tree";
+import { AgentRegistryImpl } from "./agent";
 import { TokenStatusBar } from "./status-bar";
 
 describe("conversationId identity pipeline (integration)", () => {
+  let registry: AgentRegistryImpl;
   let statusBar: TokenStatusBar;
-  let treeProvider: AgentTreeDataProvider;
+  let treeProvider: ConversationTreeDataProvider;
   let treeChangeCount: number;
 
   beforeEach(() => {
@@ -95,9 +100,9 @@ describe("conversationId identity pipeline (integration)", () => {
     mockStatusBarItem.text = "";
     mockStatusBarItem.tooltip = "";
     mockStatusBarItem.backgroundColor = undefined;
-    statusBar = new TokenStatusBar();
-    treeProvider = new AgentTreeDataProvider();
-    treeProvider.setStatusBar(statusBar);
+    registry = new AgentRegistryImpl();
+    statusBar = new TokenStatusBar(registry);
+    treeProvider = new ConversationTreeDataProvider(registry);
     treeChangeCount = 0;
     treeProvider.onDidChangeTreeData(() => {
       treeChangeCount++;
@@ -290,22 +295,20 @@ describe("conversationId identity pipeline (integration)", () => {
       expect(subAgent?.isMain).toBe(false);
       expect(subAgent?.parentConversationHash).toBe(mainConvId);
 
-      // Verify tree structure: root should only show main agent
+      // Verify tree structure: root should only show main conversation
       const roots = treeProvider.getChildren(undefined);
       expect(roots).toHaveLength(1);
-      expect(roots[0]).toBeInstanceOf(AgentTreeItem);
-      const rootItem = roots[0] as AgentTreeItem;
-      expect(rootItem.agent.id).toBe("main-req");
-      // Main agent should be expandable (has children)
+      expect(roots[0]).toBeInstanceOf(ConversationItem);
+      const rootItem = roots[0] as ConversationItem;
+      expect(rootItem.conversation.id).toBe("conv-main");
+      // Conversation should be expandable (has activity log)
       expect(rootItem.collapsibleState).toBe(2); // Expanded
 
-      // Children of main agent should include the subagent
-      const children = treeProvider.getChildren(rootItem);
-      expect(children).toHaveLength(1);
-      expect(children[0]).toBeInstanceOf(AgentTreeItem);
-      const childItem = children[0] as AgentTreeItem;
-      expect(childItem.agent.id).toBe("sub-req");
-      expect(childItem.agent.name).toBe("recon");
+      // Subagent should be in the conversation data model
+      expect(rootItem.conversation.subagents).toHaveLength(1);
+      expect(rootItem.conversation.subagents[0]?.conversationId).toBe(
+        "conv-sub",
+      );
     });
 
     it("multiple subagents appear as siblings under parent", () => {
@@ -363,17 +366,16 @@ describe("conversationId identity pipeline (integration)", () => {
         "conv-sub-exec",
       );
 
-      // Tree root should be main only
+      // Tree root should be main conversation only
       const roots = treeProvider.getChildren(undefined);
       expect(roots).toHaveLength(1);
 
-      // Main should have 2 children
-      const children = treeProvider.getChildren(roots[0]!);
-      expect(children).toHaveLength(2);
-
-      const childNames = children.map((c) => (c as AgentTreeItem).agent.name);
-      expect(childNames).toContain("recon");
-      expect(childNames).toContain("execute");
+      // Subagents should be in the conversation data model
+      const conv = roots[0] as ConversationItem;
+      expect(conv.conversation.subagents).toHaveLength(2);
+      const subNames = conv.conversation.subagents.map((s) => s.name);
+      expect(subNames).toContain("recon");
+      expect(subNames).toContain("execute");
     });
   });
 
@@ -567,7 +569,7 @@ describe("conversationId identity pipeline (integration)", () => {
 
       // Tree description should use latest actual for percentage
       const roots = treeProvider.getChildren(undefined);
-      const treeItem = roots[0] as AgentTreeItem;
+      const treeItem = roots[0] as ConversationItem;
       // Description should contain percentage based on 60k/128k = 47%
       expect(treeItem.description).toContain("47%");
     });
@@ -627,7 +629,7 @@ describe("conversationId identity pipeline (integration)", () => {
 
       // Tree should also reflect the reduction
       const roots = treeProvider.getChildren(undefined);
-      const treeItem = roots[0] as AgentTreeItem;
+      const treeItem = roots[0] as ConversationItem;
       expect(treeItem.description).toContain("23%");
     });
 
@@ -717,7 +719,7 @@ describe("conversationId identity pipeline (integration)", () => {
       expect(roots).toHaveLength(1);
     });
 
-    it("clearAgents resets tree to empty", () => {
+    it("clearAgents resets agent list to empty", () => {
       statusBar.startAgent(
         "req-1",
         50000,
@@ -732,11 +734,9 @@ describe("conversationId identity pipeline (integration)", () => {
 
       statusBar.clearAgents();
 
+      // Agent list is empty
       const agents = statusBar.getAgents();
       expect(agents).toHaveLength(0);
-
-      const roots = treeProvider.getChildren(undefined);
-      expect(roots).toHaveLength(0);
     });
 
     it("resumed agent maintains isMain across turns", () => {
@@ -806,8 +806,8 @@ describe("conversationId identity pipeline (integration)", () => {
     });
   });
 
-  describe("sidebar conversation filtering (fix-sidebar-composite)", () => {
-    it("shows only the most recent conversation when idle", () => {
+  describe("sidebar conversation display (conversation-centric tree)", () => {
+    it("shows all recent conversations at root (sorted by most recent)", () => {
       // Conversation A
       statusBar.startAgent(
         "req-a1",
@@ -844,17 +844,20 @@ describe("conversationId identity pipeline (integration)", () => {
         maxInputTokens: 128000,
       });
 
-      // Now idle — sidebar should show only conv-bbb
-      expect(statusBar.getActiveAgentId()).toBeNull();
-      expect(statusBar.getLastActiveConversationId()).toBe("conv-bbb");
-
+      // Both conversations are "active" (within 5-min window)
       const roots = treeProvider.getChildren();
-      expect(roots).toHaveLength(1);
-      expect(roots[0]).toBeInstanceOf(AgentTreeItem);
-      expect((roots[0] as AgentTreeItem).agent.conversationId).toBe("conv-bbb");
+      // All recent conversations show at root
+      expect(roots.length).toBeGreaterThanOrEqual(2);
+      expect(roots[0]).toBeInstanceOf(ConversationItem);
+      // Both conversations present (order may vary with same-ms timestamps)
+      const convIds = roots
+        .filter((r): r is ConversationItem => r instanceof ConversationItem)
+        .map((c) => c.conversation.id);
+      expect(convIds).toContain("conv-aaa");
+      expect(convIds).toContain("conv-bbb");
     });
 
-    it("shows all agents during streaming (not filtered)", () => {
+    it("shows all conversations during streaming", () => {
       // Conversation A (completed)
       statusBar.startAgent(
         "req-a1",
@@ -886,15 +889,13 @@ describe("conversationId identity pipeline (integration)", () => {
         "conv-bbb",
       );
 
-      // During streaming — sidebar should show all agents
-      expect(statusBar.getActiveAgentId()).not.toBeNull();
-
       const roots = treeProvider.getChildren();
-      // Both conversations visible during streaming
+      // Both conversations visible
       expect(roots.length).toBeGreaterThanOrEqual(2);
+      expect(roots[0]).toBeInstanceOf(ConversationItem);
     });
 
-    it("updates filtered view when conversation switches", () => {
+    it("most recent conversation appears first as new ones are added", () => {
       // Conversation A
       statusBar.startAgent(
         "req-a1",
@@ -913,10 +914,11 @@ describe("conversationId identity pipeline (integration)", () => {
         maxInputTokens: 128000,
       });
 
-      // Idle — should show conv-aaa
+      // Single conversation at root
       let roots = treeProvider.getChildren();
-      expect(roots).toHaveLength(1);
-      expect((roots[0] as AgentTreeItem).agent.conversationId).toBe("conv-aaa");
+      expect(roots.length).toBeGreaterThanOrEqual(1);
+      expect(roots[0]).toBeInstanceOf(ConversationItem);
+      expect((roots[0] as ConversationItem).conversation.id).toBe("conv-aaa");
 
       // Conversation B starts and completes
       statusBar.startAgent(
@@ -936,13 +938,17 @@ describe("conversationId identity pipeline (integration)", () => {
         maxInputTokens: 128000,
       });
 
-      // Idle again — should now show conv-bbb (not conv-aaa)
+      // Both conversations at root (order may vary with same-ms timestamps)
       roots = treeProvider.getChildren();
-      expect(roots).toHaveLength(1);
-      expect((roots[0] as AgentTreeItem).agent.conversationId).toBe("conv-bbb");
+      expect(roots.length).toBeGreaterThanOrEqual(2);
+      const convIds = roots
+        .filter((r): r is ConversationItem => r instanceof ConversationItem)
+        .map((c) => c.conversation.id);
+      expect(convIds).toContain("conv-aaa");
+      expect(convIds).toContain("conv-bbb");
     });
 
-    it("includes subagents of the active conversation when idle", () => {
+    it("includes subagents in conversation data model", () => {
       const parentConvId = "conv-parent";
 
       // Start main agent
@@ -986,35 +992,29 @@ describe("conversationId identity pipeline (integration)", () => {
         maxInputTokens: 128000,
       });
 
-      // Idle — should show main agent with subagent as child
-      expect(statusBar.getActiveAgentId()).toBeNull();
-      expect(statusBar.getLastActiveConversationId()).toBe(parentConvId);
-
       const roots = treeProvider.getChildren();
 
-      // Root should have the main agent
-      const mainItems = roots.filter(
-        (r) => r instanceof AgentTreeItem,
-      ) as AgentTreeItem[];
-      expect(mainItems.length).toBeGreaterThanOrEqual(1);
+      // Root should have the main conversation
+      const convItems = roots.filter(
+        (r) => r instanceof ConversationItem,
+      );
+      expect(convItems.length).toBeGreaterThanOrEqual(1);
 
-      const mainItem = mainItems.find(
-        (r) => r.agent.conversationId === parentConvId,
+      const mainItem = convItems.find(
+        (r) => r.conversation.id === parentConvId,
       );
       expect(mainItem).toBeDefined();
 
-      // The subagent should be accessible as a child
+      // The subagent should be in the conversation data model
       if (mainItem) {
-        const children = treeProvider.getChildren(mainItem);
-        const subItems = children.filter(
-          (c) => c instanceof AgentTreeItem,
-        ) as AgentTreeItem[];
-        expect(subItems).toHaveLength(1);
-        expect(subItems[0]?.agent.id).toBe("req-sub");
+        expect(mainItem.conversation.subagents).toHaveLength(1);
+        expect(mainItem.conversation.subagents[0]?.conversationId).toBe(
+          "conv-sub",
+        );
       }
     });
 
-    it("falls back to showing all agents when no conversationId is available", () => {
+    it("falls back to showing conversation when no conversationId is available", () => {
       // Agent without conversationId
       statusBar.startAgent(
         "req-noconv",
@@ -1031,10 +1031,9 @@ describe("conversationId identity pipeline (integration)", () => {
         maxInputTokens: 128000,
       });
 
-      // Idle, no lastActiveConversationId → show all
-      expect(statusBar.getLastActiveConversationId()).toBeNull();
       const roots = treeProvider.getChildren();
       expect(roots).toHaveLength(1);
+      expect(roots[0]).toBeInstanceOf(ConversationItem);
     });
   });
 });

@@ -20,6 +20,23 @@ const TITLE_GENERATION_TIMEOUT_MS = 5000;
 const TITLE_SYSTEM_PROMPT = `Generate a concise 3-5 word title for this conversation. Output ONLY the title, no quotes or punctuation.`;
 
 /**
+ * System prompt for environment/context messages.
+ * These are typically workspace info, OS info, etc. that VS Code sends automatically.
+ */
+const ENVIRONMENT_TITLE_PROMPT = `This is development environment context (OS, workspace, files). Generate a 3-5 word title describing the project or environment. Output ONLY the title, no quotes or punctuation.`;
+
+/**
+ * Patterns that indicate the message is environment/context info rather than a user question.
+ */
+const ENVIRONMENT_PATTERNS = [
+  /^<environment_info>/i,
+  /^<workspace_info>/i,
+  /^<context>/i,
+  /^The user's current OS is:/i,
+  /^I am working in a workspace/i,
+];
+
+/**
  * Generates a short title for a conversation using a Copilot model.
  *
  * This service uses VS Code's Language Model API to find a free Copilot model
@@ -51,6 +68,18 @@ export class TitleGenerator {
         return undefined;
       }
 
+      // Detect if this is an environment/context message
+      const isEnvironmentMessage = this.isEnvironmentMessage(firstUserMessage);
+      const prompt = isEnvironmentMessage
+        ? ENVIRONMENT_TITLE_PROMPT
+        : TITLE_SYSTEM_PROMPT;
+
+      if (isEnvironmentMessage) {
+        logger.debug(
+          "[TitleGenerator] Detected environment message, using environment prompt",
+        );
+      }
+
       // Truncate long messages to save tokens
       const truncatedMessage =
         firstUserMessage.length > MAX_MESSAGE_LENGTH
@@ -60,7 +89,7 @@ export class TitleGenerator {
       // Create the request
       const messages: vscode.LanguageModelChatMessage[] = [
         vscode.LanguageModelChatMessage.User(
-          `${TITLE_SYSTEM_PROMPT}\n\nUser message: ${truncatedMessage}`,
+          `${prompt}\n\nUser message: ${truncatedMessage}`,
         ),
       ];
 
@@ -201,6 +230,15 @@ export class TitleGenerator {
   }
 
   /**
+   * Check if a message is environment/context info rather than a user question.
+   * These messages are typically sent automatically by VS Code with workspace info.
+   */
+  private isEnvironmentMessage(message: string): boolean {
+    const trimmed = message.trim();
+    return ENVIRONMENT_PATTERNS.some((pattern) => pattern.test(trimmed));
+  }
+
+  /**
    * Clear the cached model (useful for testing or when models change).
    */
   clearCache(): void {
@@ -218,8 +256,6 @@ let titleGeneratorInstance: TitleGenerator | null = null;
  * Get the singleton title generator instance.
  */
 export function getTitleGenerator(): TitleGenerator {
-  if (!titleGeneratorInstance) {
-    titleGeneratorInstance = new TitleGenerator();
-  }
+  titleGeneratorInstance ??= new TitleGenerator();
   return titleGeneratorInstance;
 }

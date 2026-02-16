@@ -23,7 +23,7 @@ export class ClaimRegistry {
 
   constructor() {
     // Clean up expired claims every 10 seconds
-    this.cleanupInterval = setInterval(() => this.cleanupExpired(), 10_000);
+    this.cleanupInterval = setInterval(() => { this.cleanupExpired(); }, 10_000);
   }
 
   /**

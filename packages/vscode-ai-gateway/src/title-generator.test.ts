@@ -57,7 +57,7 @@ describe("TitleGenerator", () => {
   describe("clearCache", () => {
     it("does not throw when called", () => {
       const generator = new TitleGenerator();
-      expect(() => generator.clearCache()).not.toThrow();
+      expect(() => { generator.clearCache(); }).not.toThrow();
     });
 
     it("can be called multiple times", () => {

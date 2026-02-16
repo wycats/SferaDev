@@ -2,17 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("vscode", () => ({
   EventEmitter: class EventEmitter<T> {
-    private listeners: Array<(e: T) => void> = [];
+    private listeners: ((e: T) => void)[] = [];
     event = (listener: (e: T) => void) => {
       this.listeners.push(listener);
-      return { dispose: () => {} };
+      return { dispose: () => { /* noop */ } };
     };
     fire(data: T) {
       for (const listener of this.listeners) {
         listener(data);
       }
     }
-    dispose() {}
+    dispose() { /* noop */ }
   },
   workspace: {
     workspaceFolders: [{ uri: { fsPath: "/workspace" } }],
@@ -21,11 +21,14 @@ vi.mock("vscode", () => ({
 
 import * as vscode from "vscode";
 import { ConversationManager } from "./manager";
-import type { AgentEntry } from "../status-bar";
-import type { TokenStatusBar } from "../status-bar";
+import type { AgentEntry, AgentRegistry } from "../agent/index.js";
 
-class MockStatusBar {
-  private emitter = new vscode.EventEmitter<void>();
+class MockRegistry {
+  private emitter = new vscode.EventEmitter<{
+    type: "agents-cleared";
+    sequence: number;
+    timestamp: number;
+  }>();
   private agents: AgentEntry[] = [];
   onDidChangeAgents = this.emitter.event;
 
@@ -38,7 +41,11 @@ class MockStatusBar {
   }
 
   emitChange(): void {
-    this.emitter.fire();
+    this.emitter.fire({ type: "agents-cleared", sequence: 0, timestamp: 0 });
+  }
+
+  syncAgentTurnCount(): void {
+    // No-op for tests.
   }
 }
 
@@ -60,11 +67,20 @@ function createAgent(overrides: Partial<AgentEntry> = {}): AgentEntry {
   };
 }
 
+/** Get the first conversation from the manager, asserting it exists. */
+function firstConversation(manager: ConversationManager) {
+  const conversations = manager.getConversations();
+  const first = conversations[0];
+  expect(first).toBeDefined();
+  if (!first) throw new Error("Expected at least one conversation");
+  return first;
+}
+
 describe("ConversationManager", () => {
-  let statusBar: MockStatusBar;
+  let registry: MockRegistry;
 
   beforeEach(() => {
-    statusBar = new MockStatusBar();
+    registry = new MockRegistry();
   });
 
   it("builds conversations with subagent hierarchy", () => {
@@ -95,9 +111,9 @@ describe("ConversationManager", () => {
       outputTokens: 80,
     });
 
-    statusBar.setAgents([root, child]);
+    registry.setAgents([root, child]);
     const manager = new ConversationManager(
-      statusBar as unknown as TokenStatusBar,
+      registry as unknown as AgentRegistry,
     );
 
     const conversations = manager.getConversations();
@@ -119,9 +135,9 @@ describe("ConversationManager", () => {
       turnCount: 2,
     });
 
-    statusBar.setAgents([agent]);
+    registry.setAgents([agent]);
     const manager = new ConversationManager(
-      statusBar as unknown as TokenStatusBar,
+      registry as unknown as AgentRegistry,
     );
 
     let conversation = manager.getConversations()[0];
@@ -136,7 +152,7 @@ describe("ConversationManager", () => {
       ],
     };
 
-    statusBar.emitChange();
+    registry.emitChange();
 
     conversation = manager.getConversations()[0];
     expect(conversation?.compactionEvents).toHaveLength(3);
@@ -159,9 +175,9 @@ describe("ConversationManager", () => {
       },
     });
 
-    statusBar.setAgents([agent]);
+    registry.setAgents([agent]);
     const manager = new ConversationManager(
-      statusBar as unknown as TokenStatusBar,
+      registry as unknown as AgentRegistry,
     );
 
     let conversation = manager.getConversations()[0];
@@ -175,7 +191,7 @@ describe("ConversationManager", () => {
         { type: "clear_thinking_20251015", clearedInputTokens: 50 },
       ],
     };
-    statusBar.emitChange();
+    registry.emitChange();
 
     conversation = manager.getConversations()[0];
     // Should have 2 events: one from turn 1 (100), one from turn 2 (50)
@@ -207,9 +223,9 @@ describe("ConversationManager", () => {
       isMain: false,
     });
 
-    statusBar.setAgents([root, child, grandchild]);
+    registry.setAgents([root, child, grandchild]);
     const manager = new ConversationManager(
-      statusBar as unknown as TokenStatusBar,
+      registry as unknown as AgentRegistry,
     );
 
     const conversations = manager.getConversations();
@@ -229,9 +245,9 @@ describe("ConversationManager", () => {
       status: "streaming",
     });
 
-    statusBar.setAgents([agent]);
+    registry.setAgents([agent]);
     const manager = new ConversationManager(
-      statusBar as unknown as TokenStatusBar,
+      registry as unknown as AgentRegistry,
     );
 
     const conversation = manager.getConversations()[0];
@@ -245,9 +261,9 @@ describe("ConversationManager", () => {
       status: "error",
     });
 
-    statusBar.setAgents([agent]);
+    registry.setAgents([agent]);
     const manager = new ConversationManager(
-      statusBar as unknown as TokenStatusBar,
+      registry as unknown as AgentRegistry,
     );
 
     const conversation = manager.getConversations()[0];
@@ -266,9 +282,9 @@ describe("ConversationManager", () => {
       lastUpdateTime: now.getTime(),
     });
 
-    statusBar.setAgents([agent]);
+    registry.setAgents([agent]);
     const manager = new ConversationManager(
-      statusBar as unknown as TokenStatusBar,
+      registry as unknown as AgentRegistry,
     );
 
     let conversation = manager.getConversations()[0];
@@ -276,11 +292,282 @@ describe("ConversationManager", () => {
 
     // 5 minutes + 1 second to exceed the idle threshold
     agent.lastUpdateTime = now.getTime() - (5 * 60 * 1000 + 1000);
-    statusBar.emitChange();
+    registry.emitChange();
 
     conversation = manager.getConversations()[0];
     expect(conversation?.status).toBe("idle");
 
     vi.useRealTimers();
+  });
+
+  it("builds activity log with message/response entries on turnCount increase", () => {
+    const agent = createAgent({
+      turnCount: 1,
+      outputTokens: 50,
+      status: "complete",
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    let conversation = firstConversation(manager);
+    expect(conversation.activityLog).toHaveLength(2);
+    expect(conversation.activityLog[0]).toMatchObject({
+      type: "user-message",
+      sequenceNumber: 1,
+    });
+    expect(conversation.activityLog[1]).toMatchObject({
+      type: "ai-response",
+      sequenceNumber: 1,
+      state: "pending-characterization",
+      tokenContribution: 50,
+    });
+
+    // Simulate a second turn
+    agent.turnCount = 2;
+    agent.outputTokens = 80;
+    registry.emitChange();
+
+    conversation = firstConversation(manager);
+    expect(conversation.activityLog).toHaveLength(4);
+    const response = conversation.activityLog.find(
+      (entry) => entry.type === "ai-response" && entry.sequenceNumber === 2,
+    );
+    expect(response).toMatchObject({
+      type: "ai-response",
+      sequenceNumber: 2,
+      state: "pending-characterization",
+      tokenContribution: 80,
+    });
+  });
+
+  it("marks latest response as streaming when agent is streaming", () => {
+    const agent = createAgent({ turnCount: 1, status: "streaming" });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversation = firstConversation(manager);
+    const response = conversation.activityLog.find(
+      (entry) => entry.type === "ai-response" && entry.sequenceNumber === 1,
+    );
+    expect(response).toMatchObject({
+      type: "ai-response",
+      sequenceNumber: 1,
+      state: "streaming",
+    });
+  });
+
+  it("creates activity log entries when streaming starts (turnCount=0)", () => {
+    // When streaming starts, turnCount is still 0 (incremented on completion)
+    const agent = createAgent({ turnCount: 0, status: "streaming" });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversation = firstConversation(manager);
+    expect(conversation.activityLog).toHaveLength(2);
+
+    const userMessage = conversation.activityLog.find(
+      (entry) => entry.type === "user-message" && entry.sequenceNumber === 1,
+    );
+    expect(userMessage).toMatchObject({
+      type: "user-message",
+      sequenceNumber: 1,
+    });
+
+    const response = conversation.activityLog.find(
+      (entry) => entry.type === "ai-response" && entry.sequenceNumber === 1,
+    );
+    expect(response).toMatchObject({
+      type: "ai-response",
+      sequenceNumber: 1,
+      state: "streaming",
+    });
+  });
+
+  it("finalizes streaming response when agent completes", () => {
+    const agent = createAgent({
+      turnCount: 1,
+      status: "streaming",
+      outputTokens: 0,
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    let conversation = firstConversation(manager);
+    const streamingResponse = conversation.activityLog.find(
+      (entry) => entry.type === "ai-response" && entry.sequenceNumber === 1,
+    );
+    expect(streamingResponse).toMatchObject({ state: "streaming" });
+
+    // Agent completes
+    agent.status = "complete";
+    agent.outputTokens = 120;
+    registry.emitChange();
+
+    conversation = firstConversation(manager);
+    const response = conversation.activityLog.find(
+      (entry) => entry.type === "ai-response" && entry.sequenceNumber === 1,
+    );
+    expect(response).toMatchObject({
+      state: "pending-characterization",
+      tokenContribution: 120,
+    });
+  });
+
+  it("adds error entry when agent errors", () => {
+    const agent = createAgent({ turnCount: 1, status: "error" });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversation = firstConversation(manager);
+    // Should have message + response + error
+    const errors = conversation.activityLog.filter((e) => e.type === "error");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      type: "error",
+      turnNumber: 1,
+      message: "Request failed",
+    });
+  });
+
+  it("does not duplicate error entries on subsequent rebuilds", () => {
+    const agent = createAgent({ turnCount: 1, status: "error" });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    // Trigger rebuild again
+    registry.emitChange();
+    registry.emitChange();
+
+    const conversation = firstConversation(manager);
+    const errors = conversation.activityLog.filter((e) => e.type === "error");
+    expect(errors).toHaveLength(1);
+  });
+
+  it("syncs compaction events into activity log", () => {
+    const agent = createAgent({
+      turnCount: 2,
+      summarizationReduction: 5000,
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversation = firstConversation(manager);
+    const compactions = conversation.activityLog.filter(
+      (e) => e.type === "compaction",
+    );
+    expect(compactions).toHaveLength(1);
+    expect(compactions[0]).toMatchObject({
+      type: "compaction",
+      compactionType: "summarization",
+      freedTokens: 5000,
+    });
+  });
+
+  it("updates response characterization", () => {
+    const agent = createAgent({ turnCount: 1 });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversationId = firstConversation(manager).id;
+    manager.updateTurnCharacterization(conversationId, 1, "Fixed login bug");
+
+    const conversation = firstConversation(manager);
+    const response = conversation.activityLog.find(
+      (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+    );
+    expect(response).toMatchObject({
+      type: "ai-response",
+      characterization: "Fixed login bug",
+      state: "characterized",
+    });
+  });
+
+  it("sets user message preview", () => {
+    const agent = createAgent({ turnCount: 1 });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversationId = firstConversation(manager).id;
+    manager.setUserMessagePreview(
+      conversationId,
+      1,
+      "How do I fix the login bug?",
+    );
+
+    const conversation = firstConversation(manager);
+    const userMessage = conversation.activityLog.find(
+      (e) => e.type === "user-message" && e.sequenceNumber === 1,
+    );
+    expect(userMessage).toMatchObject({
+      type: "user-message",
+      preview: "How do I fix the login bug?",
+    });
+  });
+
+  it("sets tools used on AI response", () => {
+    const agent = createAgent({ turnCount: 1 });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversationId = firstConversation(manager).id;
+    manager.setToolsUsed(conversationId, 1, [
+      "read_file",
+      "grep_search",
+      "replace_string_in_file",
+    ]);
+
+    const conversation = firstConversation(manager);
+    const response = conversation.activityLog.find(
+      (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+    );
+    expect(response).toMatchObject({
+      type: "ai-response",
+      toolsUsed: ["read_file", "grep_search", "replace_string_in_file"],
+    });
+  });
+
+  it("does not overwrite existing user message preview", () => {
+    const agent = createAgent({
+      turnCount: 2,
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversationId = firstConversation(manager).id;
+    // First set should work (turn 2 has no preview initially)
+    manager.setUserMessagePreview(conversationId, 2, "First preview");
+    // Second set should be ignored (preview already exists)
+    manager.setUserMessagePreview(conversationId, 2, "Second preview");
+
+    const conversation = firstConversation(manager);
+    const userMessage = conversation.activityLog.find(
+      (e) => e.type === "user-message" && e.sequenceNumber === 2,
+    );
+    expect(userMessage).toMatchObject({
+      type: "user-message",
+      preview: "First preview",
+    });
   });
 });

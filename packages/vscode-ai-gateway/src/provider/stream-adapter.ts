@@ -65,12 +65,11 @@ import {
   CustomDataPartMimeTypes,
   encodeStatefulMarker,
   encodeThinkingData,
-  STATEFUL_MARKER_MIME,
 } from "../utils/stateful-marker.js";
 
 // Hardcoded to avoid runtime import issues with vscode.LanguageModelChatRole
 // 2 = Assistant
-const ROLE_ASSISTANT = 2;
+const ROLE_ASSISTANT: LanguageModelChatMessage["role"] = 2;
 
 /** Minimum characters to buffer before emitting a ThinkingPart */
 const THINKING_BUFFER_THRESHOLD = 20;
@@ -542,7 +541,7 @@ export class StreamAdapter {
     );
 
     if (response.id) {
-      const modelId = response.model ?? this.model ?? "unknown";
+      const modelId = response.model;
       const marker = encodeStatefulMarker(modelId, {
         provider: "openresponses",
         modelId,
@@ -550,7 +549,12 @@ export class StreamAdapter {
         sessionId: this.conversationId, // Stable UUID per conversation
         responseId: response.id,
       });
-      parts.push(new LanguageModelDataPart(marker, STATEFUL_MARKER_MIME));
+      parts.push(
+        new LanguageModelDataPart(
+          marker,
+          CustomDataPartMimeTypes.StatefulMarker,
+        ),
+      );
       logger.debug(
         `[OpenResponses] Emitting stateful marker with responseId=${response.id}`,
       );
@@ -574,9 +578,7 @@ export class StreamAdapter {
     const rawErrorMessage =
       responseError?.message ?? "Response generation failed";
     const errorCode =
-      responseError?.code !== undefined
-        ? String(responseError.code)
-        : undefined;
+      responseError?.code !== undefined ? responseError.code : undefined;
 
     if (this.isCancellationError(rawErrorMessage, errorCode)) {
       return {
