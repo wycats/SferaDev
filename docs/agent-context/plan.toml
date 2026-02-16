@@ -1945,7 +1945,8 @@ ulid = "01KHHMAHDWK90VT5D35JCM1AA4"
 [[epochs.phases.goals]]
 id = "log-consolidate"
 label = "Unified log: follow causedByChatId to one place with full request/response/SSE details"
-status = "pending"
+status = "completed"
+completion_log = "Unified event stream complete: ULID eventIds, registry event bridge, tree change bridge, unified JSONL subscriber, session lifecycle events, all wired in extension.ts. 706/706 tests pass."
 ulid = "01KHJ0GZHHQVE81MDVDV5ADJ3G"
 
 [[epochs.phases.goals]]

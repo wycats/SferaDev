@@ -611,6 +611,62 @@ id = "statusbar-demotion"
 [[plan.goals]]
 id = "log-consolidate"
 
+[[plan.goals.tasks]]
+id = "add-event-id"
+title = "Add eventId (ULID) to InvestigationEventBase and populate on every emit"
+status = "completed"
+completed_at = "2026-02-16T06:19:45.890520085+00:00"
+completion_log = "Created utils/ulid.ts with monotonic ULID generator. Added eventId to InvestigationEventBase, populated in getBaseEventFields() and stamped in emitEvent()."
+
+[[plan.goals.tasks]]
+id = "registry-event-kinds"
+title = "Add registry event kinds (agent.started, agent.completed, agent.errored, agent.updated, agent.removed) to InvestigationEventKind"
+status = "completed"
+completed_at = "2026-02-16T06:19:50.530161390+00:00"
+completion_log = "Added agent.started/completed/errored/updated/removed and session.start/end to InvestigationEventKind. Created corresponding interfaces with proper fields."
+
+[[plan.goals.tasks]]
+id = "registry-event-bridge"
+title = "Create RegistryEventBridge subscriber that translates AgentRegistryEvents into InvestigationEvents"
+status = "completed"
+completed_at = "2026-02-16T06:19:55.237874216+00:00"
+completion_log = "Created logger/registry-event-bridge.ts: createRegistryEventBridge() subscribes to registry.onDidChangeAgents and translates each event type to InvestigationEvents."
+
+[[plan.goals.tasks]]
+id = "tree-change-bridge"
+title = "Emit tree.change InvestigationEvents from TreeChangeLogger (bridge to unified stream)"
+status = "completed"
+completed_at = "2026-02-16T06:21:03.357933868+00:00"
+completion_log = "Created logger/tree-change-bridge.ts: createTreeChangeBridge() returns TreeChangeEventEmitter. Added setEventEmitter() to TreeChangeLogger. Bridge emits tree.change events with causedByChatId."
+
+[[plan.goals.tasks]]
+id = "lifecycle-events"
+title = "Add lifecycle event kinds (session.start, session.end) and emit on activation/deactivation"
+status = "completed"
+completed_at = "2026-02-16T06:21:08.273239222+00:00"
+completion_log = "session.start emitted on activation, session.end emitted via disposable on deactivation. Both carry extensionVersion and sessionId."
+
+[[plan.goals.tasks]]
+id = "unified-jsonl"
+title = "Create UnifiedLogSubscriber that writes all events to .logs/{investigation}/events.jsonl"
+status = "completed"
+completed_at = "2026-02-16T06:21:16.436202287+00:00"
+completion_log = "Created logger/unified-log-subscriber.ts: createUnifiedLogSubscriber() writes all events to .logs/{investigation}/events.jsonl via sync appendFile."
+
+[[plan.goals.tasks]]
+id = "wire-extension"
+title = "Wire bridges and subscriber in extension.ts activation"
+status = "completed"
+completed_at = "2026-02-16T06:17:46.914848184+00:00"
+completion_log = "Wired all bridges and subscriber in extension.ts: InvestigationLogger, unified JSONL subscriber, registry event bridge, tree change bridge, session.start/end events. All 683 tests pass."
+
+[[plan.goals.tasks]]
+id = "tests"
+title = "Tests for event bridge, unified subscriber, and eventId generation"
+status = "completed"
+completed_at = "2026-02-16T06:25:01.794359778+00:00"
+completion_log = "Created 3 test files: ulid.test.ts (4 tests), registry-event-bridge.test.ts (7 tests), tree-change-bridge.test.ts (5 tests), unified-log-subscriber.test.ts (5 tests). All 706 tests pass across 47 files."
+
 [[plan.goals]]
 id = "log-cli"
 

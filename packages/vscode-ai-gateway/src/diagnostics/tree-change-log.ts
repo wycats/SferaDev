@@ -128,10 +128,27 @@ export interface SubagentSnapshot {
 // Logger
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Callback for bridging tree changes into the unified event stream. */
+export type TreeChangeEventEmitter = (
+  event: TreeChangeEvent,
+  change: ChangeDetails,
+  snapshot: TreeSnapshot,
+  causedByChatId?: string,
+) => void;
+
 class TreeChangeLogger {
   private logPath: string | null = null;
   private enabled = false;
   private previousSnapshot: TreeSnapshot | null = null;
+  private eventEmitter: TreeChangeEventEmitter | null = null;
+
+  /**
+   * Set a callback that will be invoked for every tree change,
+   * bridging tree changes into the unified InvestigationEvent stream.
+   */
+  setEventEmitter(emitter: TreeChangeEventEmitter): void {
+    this.eventEmitter = emitter;
+  }
 
   /**
    * Initialize the logger for a workspace.
@@ -183,6 +200,11 @@ class TreeChangeLogger {
       fs.appendFileSync(this.logPath, safeJsonStringify(entry) + "\n", "utf8");
     } catch {
       // Silently fail on write errors
+    }
+
+    // Bridge to unified event stream
+    if (this.eventEmitter) {
+      this.eventEmitter(event, change, snapshot, causedByChatId);
     }
 
     this.previousSnapshot = snapshot;

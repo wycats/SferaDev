@@ -9,16 +9,30 @@ import type {
   ChangeDetails,
   TreeSnapshot,
 } from "../diagnostics/tree-change-log.js";
+import type { TokenUsage } from "../agent/types.js";
 
 export type InvestigationEventKind =
+  // Request lifecycle (emitted by InvestigationRequestHandle)
   | "request.index"
   | "request.message-summary"
   | "request.full"
   | "request.sse"
-  | "tree.change";
+  // Tree changes (emitted by TreeChangeLogger bridge)
+  | "tree.change"
+  // Agent registry (emitted by RegistryEventBridge)
+  | "agent.started"
+  | "agent.completed"
+  | "agent.errored"
+  | "agent.updated"
+  | "agent.removed"
+  // Lifecycle (emitted by extension activation/deactivation)
+  | "session.start"
+  | "session.end";
 
 export interface InvestigationEventBase {
   kind: InvestigationEventKind;
+  /** Monotonic, lexicographically sortable event identifier (ULID). */
+  eventId: string;
   ts: string;
   sessionId: string;
   conversationId: string;
@@ -56,12 +70,75 @@ export interface InvestigationTreeChangeEvent extends InvestigationEventBase {
   snapshot?: TreeSnapshot;
 }
 
+// ── Agent Registry Events ────────────────────────────────────────────
+
+export interface InvestigationAgentStartedEvent extends InvestigationEventBase {
+  kind: "agent.started";
+  agentId: string;
+  canonicalAgentId: string;
+  isMain: boolean;
+  isResume: boolean;
+  parentConversationHash?: string | null;
+}
+
+export interface InvestigationAgentCompletedEvent extends InvestigationEventBase {
+  kind: "agent.completed";
+  agentId: string;
+  canonicalAgentId: string;
+  usage: TokenUsage;
+  turnCount: number;
+  summarizationDetected: boolean;
+}
+
+export interface InvestigationAgentErroredEvent extends InvestigationEventBase {
+  kind: "agent.errored";
+  agentId: string;
+  canonicalAgentId: string;
+}
+
+export interface InvestigationAgentUpdatedEvent extends InvestigationEventBase {
+  kind: "agent.updated";
+  agentId: string;
+  canonicalAgentId: string;
+  updateType:
+    | "turn-count-sync"
+    | "title-generated"
+    | "child-linked"
+    | "main-demoted";
+}
+
+export interface InvestigationAgentRemovedEvent extends InvestigationEventBase {
+  kind: "agent.removed";
+  agentId: string;
+  reason: "aged" | "cleared";
+}
+
+// ── Lifecycle Events ─────────────────────────────────────────────────
+
+export interface InvestigationSessionStartEvent extends InvestigationEventBase {
+  kind: "session.start";
+  extensionVersion: string;
+}
+
+export interface InvestigationSessionEndEvent extends InvestigationEventBase {
+  kind: "session.end";
+}
+
+// ── Union ────────────────────────────────────────────────────────────
+
 export type InvestigationEvent =
   | InvestigationIndexEvent
   | InvestigationMessageSummaryEvent
   | InvestigationFullRequestEvent
   | InvestigationSseEvent
-  | InvestigationTreeChangeEvent;
+  | InvestigationTreeChangeEvent
+  | InvestigationAgentStartedEvent
+  | InvestigationAgentCompletedEvent
+  | InvestigationAgentErroredEvent
+  | InvestigationAgentUpdatedEvent
+  | InvestigationAgentRemovedEvent
+  | InvestigationSessionStartEvent
+  | InvestigationSessionEndEvent;
 
 export interface InvestigationSubscriber {
   onEvent(event: InvestigationEvent): void;

@@ -98,6 +98,80 @@ export async function activate(context: vscode.ExtensionContext) {
   agentRegistry.initializePersistence(context);
   context.subscriptions.push(agentRegistry);
 
+  // =====================================================================
+  // Unified Event Stream: wire bridges and subscriber
+  //
+  // All events (request lifecycle, registry changes, tree changes) flow
+  // through InvestigationLogger.emitEvent() → subscribers. The unified
+  // JSONL subscriber writes them to .logs/{investigation}/events.jsonl.
+  // =====================================================================
+  const [
+    { InvestigationLogger },
+    { createRegistryEventBridge },
+    { createTreeChangeBridge },
+    { createUnifiedLogSubscriber },
+    { getTreeChangeLogger },
+  ] = await Promise.all([
+    import("./logger/investigation.js"),
+    import("./logger/registry-event-bridge.js"),
+    import("./logger/tree-change-bridge.js"),
+    import("./logger/unified-log-subscriber.js"),
+    import("./diagnostics/tree-change-log.js"),
+  ]);
+
+  const investigationLogger = new InvestigationLogger();
+  const sessionId = vscode.env.sessionId;
+
+  // Subscribe the unified JSONL writer
+  const unifiedSubscriber = createUnifiedLogSubscriber();
+  if (unifiedSubscriber) {
+    context.subscriptions.push(
+      investigationLogger.subscribe(unifiedSubscriber),
+    );
+  }
+
+  // Bridge registry events → unified stream
+  context.subscriptions.push(
+    createRegistryEventBridge(
+      agentRegistry,
+      sessionId,
+      investigationLogger.emitEvent.bind(investigationLogger),
+    ),
+  );
+
+  // Bridge tree changes → unified stream
+  getTreeChangeLogger().setEventEmitter(
+    createTreeChangeBridge(
+      sessionId,
+      investigationLogger.emitEvent.bind(investigationLogger),
+    ),
+  );
+
+  // Emit session.start
+  investigationLogger.emitEvent({
+    kind: "session.start",
+    eventId: "", // stamped by emitEvent
+    ts: new Date().toISOString(),
+    sessionId,
+    conversationId: sessionId,
+    chatId: sessionId,
+    extensionVersion: version,
+  });
+
+  // Emit session.end on deactivation (via disposable)
+  context.subscriptions.push({
+    dispose() {
+      investigationLogger.emitEvent({
+        kind: "session.end",
+        eventId: "",
+        ts: new Date().toISOString(),
+        sessionId,
+        conversationId: sessionId,
+        chatId: sessionId,
+      });
+    },
+  });
+
   // Create the token status bar
   const statusBar = new TokenStatusBar(agentRegistry);
   statusBar.initializePersistence(context);

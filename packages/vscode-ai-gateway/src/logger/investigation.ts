@@ -25,6 +25,7 @@ import * as vscode from "vscode";
 import type { InvestigationDetail } from "../config.js";
 import { logger } from "../logger.js";
 import { safeJsonStringify } from "../utils/serialize.js";
+import { ulid } from "../utils/ulid.js";
 import type {
   InvestigationEvent,
   InvestigationEventBase,
@@ -646,6 +647,7 @@ export class InvestigationRequestHandle {
 
   private getBaseEventFields(ts: string): Omit<InvestigationEventBase, "kind"> {
     return {
+      eventId: ulid(),
       ts,
       sessionId: this.startData.sessionId ?? this.startData.conversationId,
       conversationId: this.startData.conversationId,
@@ -681,6 +683,10 @@ export class InvestigationLogger {
   }
 
   emitEvent(event: InvestigationEvent): void {
+    // Stamp eventId if the caller didn't provide one
+    if (!event.eventId) {
+      (event as { eventId: string }).eventId = ulid();
+    }
     for (const subscriber of InvestigationLogger.subscribers) {
       try {
         subscriber.onEvent(event);

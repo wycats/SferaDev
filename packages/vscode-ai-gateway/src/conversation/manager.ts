@@ -55,8 +55,9 @@ export class ConversationManager implements vscode.Disposable {
   /** Conversations restored from persistence (shown as archived until active) */
   private restoredConversations = new Map<string, Conversation>();
 
-  private readonly _onDidChangeConversations =
-    new vscode.EventEmitter<string | undefined>();
+  private readonly _onDidChangeConversations = new vscode.EventEmitter<
+    string | undefined
+  >();
   readonly onDidChangeConversations = this._onDidChangeConversations.event;
 
   constructor(private registry: AgentRegistry) {
