@@ -283,7 +283,10 @@ const migrateConversationTree = (
           }
 
           // Fix streaming state on restore - should be interrupted
-          if (typedEntry.type === "ai-response" && record["state"] === "streaming") {
+          if (
+            typedEntry.type === "ai-response" &&
+            record["state"] === "streaming"
+          ) {
             record["state"] = "interrupted";
           }
 

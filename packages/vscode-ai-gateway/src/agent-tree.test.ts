@@ -24,14 +24,20 @@ vi.mock("vscode", () => ({
     private listeners: ((e: T) => void)[] = [];
     event = (listener: (e: T) => void) => {
       this.listeners.push(listener);
-      return { dispose: () => { /* noop */ } };
+      return {
+        dispose: () => {
+          /* noop */
+        },
+      };
     };
     fire(data: T) {
       for (const listener of this.listeners) {
         listener(data);
       }
     }
-    dispose() { /* noop */ }
+    dispose() {
+      /* noop */
+    }
   },
   MarkdownString: class {
     value = "";
@@ -176,12 +182,8 @@ describe("ConversationTreeDataProvider", () => {
       const second = convItems[1];
       expect(first).toBeDefined();
       expect(second).toBeDefined();
-      expect(first?.conversation.id).toBe(
-        "conv-new",
-      );
-      expect(second?.conversation.id).toBe(
-        "conv-old",
-      );
+      expect(first?.conversation.id).toBe("conv-new");
+      expect(second?.conversation.id).toBe("conv-old");
     });
   });
 
@@ -200,9 +202,7 @@ describe("ConversationTreeDataProvider", () => {
       registry.emitChange();
 
       const roots = p.getChildren(undefined);
-      const conv = roots.find(
-        (r) => r instanceof ConversationItem,
-      );
+      const conv = roots.find((r) => r instanceof ConversationItem);
       expect(conv).toBeDefined();
       if (!conv) return;
 
@@ -226,9 +226,7 @@ describe("ConversationTreeDataProvider", () => {
       registry.emitChange();
 
       const roots = p.getChildren(undefined);
-      const conv = roots.find(
-        (r) => r instanceof ConversationItem,
-      );
+      const conv = roots.find((r) => r instanceof ConversationItem);
       expect(conv).toBeDefined();
       if (!conv) return;
       const children = p.getChildren(conv);
@@ -263,24 +261,20 @@ describe("ConversationTreeDataProvider", () => {
       registry.emitChange();
 
       const roots = p.getChildren(undefined);
-      const conv = roots.find(
-        (r) => r instanceof ConversationItem,
-      );
+      const conv = roots.find((r) => r instanceof ConversationItem);
       expect(conv).toBeDefined();
       if (!conv) return;
 
       const children = p.getChildren(conv);
-      const responseItems = children.filter(
-        (c) => c instanceof AIResponseItem,
-      );
+      const responseItems = children.filter((c) => c instanceof AIResponseItem);
 
       // Responses with subagent IDs should produce SubagentItem children
       for (const response of responseItems) {
         const responseChildren = p.getChildren(response);
         if (responseChildren.length > 0) {
-          expect(
-            responseChildren.every((s) => s instanceof SubagentItem),
-          ).toBe(true);
+          expect(responseChildren.every((s) => s instanceof SubagentItem)).toBe(
+            true,
+          );
         }
       }
     });

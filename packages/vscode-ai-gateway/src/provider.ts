@@ -471,12 +471,8 @@ export class VercelAIChatModelProvider
         modelId: model.id,
         ...(systemPromptHash !== undefined ? { systemPromptHash } : {}),
         agentTypeHash,
-        ...(firstUserMessageHash !== undefined
-          ? { firstUserMessageHash }
-          : {}),
-        ...(estimatedDeltaTokens !== undefined
-          ? { estimatedDeltaTokens }
-          : {}),
+        ...(firstUserMessageHash !== undefined ? { firstUserMessageHash } : {}),
+        ...(estimatedDeltaTokens !== undefined ? { estimatedDeltaTokens } : {}),
         conversationId,
         isSummarization: isSummarizationRequest,
         ...(firstUserMessagePreview !== undefined

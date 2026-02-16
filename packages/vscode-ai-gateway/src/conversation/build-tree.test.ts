@@ -298,10 +298,7 @@ function cycle<T>(arr: T[], index: number, length = MAX_ENTRIES): T {
   return value;
 }
 
-function windowedAt(
-  windowed: ActivityLogEntry[],
-  i: number,
-): ActivityLogEntry {
+function windowedAt(windowed: ActivityLogEntry[], i: number): ActivityLogEntry {
   const entry = windowed[i];
   if (!entry) {
     throw new Error(`windowed[${i}] is undefined`);

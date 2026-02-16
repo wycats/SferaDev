@@ -129,7 +129,11 @@ export interface OpenResponsesChatResult {
 
 /** Extract cached_tokens from usage details. Returns 0 if not present. */
 function extractCachedTokens(details: unknown): number {
-  if (!details || typeof details !== "object" || !("cached_tokens" in details)) {
+  if (
+    !details ||
+    typeof details !== "object" ||
+    !("cached_tokens" in details)
+  ) {
     return 0;
   }
   const cached = (details as { cached_tokens?: unknown }).cached_tokens;
@@ -415,7 +419,7 @@ export async function executeOpenResponsesChat(
   };
 
   // Investigation logging handle — declared here so it's accessible in catch
-   
+
   let investigationHandle: Awaited<
     ReturnType<InvestigationLogger["startRequest"]>
   > | null = null;
@@ -439,8 +443,9 @@ export async function executeOpenResponsesChat(
       ? {
           input_tokens: result.usage.input_tokens,
           output_tokens: result.usage.output_tokens,
-          cache_read_input_tokens:
-            extractCachedTokens(result.usage.input_tokens_details),
+          cache_read_input_tokens: extractCachedTokens(
+            result.usage.input_tokens_details,
+          ),
           output_tokens_details: result.usage.output_tokens_details,
         }
       : null;
@@ -913,8 +918,9 @@ export async function executeOpenResponsesChat(
             ? {
                 input_tokens: adapted.usage.input_tokens,
                 output_tokens: adapted.usage.output_tokens,
-                cache_read_input_tokens:
-                  extractCachedTokens(adapted.usage.input_tokens_details),
+                cache_read_input_tokens: extractCachedTokens(
+                  adapted.usage.input_tokens_details,
+                ),
                 output_tokens_details: adapted.usage.output_tokens_details,
               }
             : null,
@@ -972,8 +978,9 @@ export async function executeOpenResponsesChat(
           ? {
               input_tokens: result.usage.input_tokens,
               output_tokens: result.usage.output_tokens,
-              cache_read_input_tokens:
-                extractCachedTokens(result.usage.input_tokens_details),
+              cache_read_input_tokens: extractCachedTokens(
+                result.usage.input_tokens_details,
+              ),
               output_tokens_details: result.usage.output_tokens_details,
             }
           : null,

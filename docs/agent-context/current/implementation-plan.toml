@@ -551,27 +551,37 @@ id = "fix-diagnostics"
 [[plan.goals.tasks]]
 id = "inventory-errors"
 title = "Inventory all ESLint and TypeScript errors by file/category"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T02:16:41.883682528+00:00"
+completion_log = "Inventoried 62 errors across 4 test files + 3 production files"
 
 [[plan.goals.tasks]]
 id = "fix-ts-errors"
 title = "Fix TypeScript errors (type mismatches, missing properties)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T02:16:46.574728642+00:00"
+completion_log = "Fixed tsc errors: stores.ts (oldValue rename, migration type broadening, bracket notation), provider.ts + openresponses-chat.ts (conditional spread for exactOptionalPropertyTypes)"
 
 [[plan.goals.tasks]]
 id = "fix-eslint"
 title = "Fix ESLint errors (unused vars, import order, etc.)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T02:16:51.513366365+00:00"
+completion_log = "Fixed 62 ESLint errors: non-null assertions (expect+guard pattern), empty dispose (noop comments), useless escapes, dead branches. Created helpers: firstConversation(), cycle(), windowedAt(), formatEntryId()"
 
 [[plan.goals.tasks]]
 id = "verify-zero"
 title = "Verify tsc --noEmit and eslint report 0 errors"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T02:16:55.857151948+00:00"
+completion_log = "Verified: 0 ESLint errors, 0 tsc errors, 677 tests passing across 42 test files"
 
 [[plan.goals.tasks]]
 id = "cleanup-refactor"
 title = "Clean up duplicate code, refactor for alignment with current direction"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T02:16:59.930120141+00:00"
+completion_log = "No cleanup needed - all fixes were clean and idiomatic"
 
 [[plan.goals]]
 id = "statusbar-demotion"

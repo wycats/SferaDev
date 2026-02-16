@@ -569,9 +569,9 @@ describe("ConversationItem.windowActivityLog", () => {
     );
     expect(userMessages).toHaveLength(20);
     // Should be the 20 most recent (exchanges 6-25) in chronological order
-    expect(
-      userMessages.map((m) => (m).sequenceNumber),
-    ).toEqual(Array.from({ length: 20 }, (_, i) => i + 6));
+    expect(userMessages.map((m) => m.sequenceNumber)).toEqual(
+      Array.from({ length: 20 }, (_, i) => i + 6),
+    );
     expect(result.hasHistory).toBe(true);
   });
 

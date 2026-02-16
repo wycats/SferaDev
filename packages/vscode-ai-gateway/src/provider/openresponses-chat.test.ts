@@ -165,7 +165,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
   });
 
   it("completes agent on done event without usage", async () => {
-    const statusBar = {
+    const registry = {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
@@ -199,13 +199,13 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        agentRegistry: statusBar,
+        agentRegistry: registry,
       } as never,
     );
 
-    expect(statusBar.completeAgent).toHaveBeenCalledTimes(1);
-    expect(statusBar.errorAgent).not.toHaveBeenCalled();
-    const calls = statusBar.completeAgent.mock.calls as [
+    expect(registry.completeAgent).toHaveBeenCalledTimes(1);
+    expect(registry.errorAgent).not.toHaveBeenCalled();
+    const calls = registry.completeAgent.mock.calls as [
       string,
       { inputTokens: number; outputTokens: number },
     ][];
@@ -218,7 +218,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
   });
 
   it("errors agent on error event", async () => {
-    const statusBar = {
+    const registry = {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
@@ -247,16 +247,16 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        agentRegistry: statusBar,
+        agentRegistry: registry,
       } as never,
     );
 
-    expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
-    expect(statusBar.completeAgent).not.toHaveBeenCalled();
+    expect(registry.errorAgent).toHaveBeenCalledTimes(1);
+    expect(registry.completeAgent).not.toHaveBeenCalled();
   });
 
   it("completes agent on cancellation", async () => {
-    const statusBar = {
+    const registry = {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
@@ -284,16 +284,16 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        agentRegistry: statusBar,
+        agentRegistry: registry,
       } as never,
     );
 
-    expect(statusBar.errorAgent).not.toHaveBeenCalled();
-    expect(statusBar.completeAgent).toHaveBeenCalledTimes(1);
+    expect(registry.errorAgent).not.toHaveBeenCalled();
+    expect(registry.completeAgent).toHaveBeenCalledTimes(1);
   });
 
   it("errors agent on no-content response", async () => {
-    const statusBar = {
+    const registry = {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
@@ -314,17 +314,17 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        agentRegistry: statusBar,
+        agentRegistry: registry,
       } as never,
     );
 
     expect(progress.report).toHaveBeenCalledTimes(1);
-    expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
-    expect(statusBar.completeAgent).not.toHaveBeenCalled();
+    expect(registry.errorAgent).toHaveBeenCalledTimes(1);
+    expect(registry.completeAgent).not.toHaveBeenCalled();
   });
 
   it("logs a diagnostic on no-content response", async () => {
-    const statusBar = {
+    const registry = {
       updateAgentActivity: vi.fn(),
       completeAgent: vi.fn(),
       errorAgent: vi.fn(),
@@ -343,7 +343,7 @@ describe("executeOpenResponsesChat terminal completion", () => {
       createToken() as never,
       {
         ...baseChatOptions,
-        agentRegistry: statusBar,
+        agentRegistry: registry,
       } as never,
     );
 
@@ -387,7 +387,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
 
   const createProgress = () => ({ report: vi.fn() });
 
-  const statusBar = {
+  const registry = {
     updateAgentActivity: vi.fn(),
     completeAgent: vi.fn(),
     errorAgent: vi.fn(),
@@ -423,7 +423,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(hoisted.mockStartRequest).toHaveBeenCalledTimes(1);
@@ -465,7 +465,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(hoisted.mockComplete).toHaveBeenCalledTimes(1);
@@ -501,7 +501,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(hoisted.mockComplete).toHaveBeenCalledTimes(1);
@@ -533,7 +533,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(hoisted.mockComplete).toHaveBeenCalledTimes(1);
@@ -581,7 +581,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     // 3 events recorded
@@ -627,7 +627,7 @@ describe("executeOpenResponsesChat investigation logging", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     // No recorder calls, no complete calls
@@ -794,7 +794,7 @@ describe("error classification and user-friendly messages", () => {
 
   const createProgress = () => ({ report: vi.fn() });
 
-  const statusBar = {
+  const registry = {
     updateAgentActivity: vi.fn(),
     completeAgent: vi.fn(),
     errorAgent: vi.fn(),
@@ -820,7 +820,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       progress,
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(result.success).toBe(false);
@@ -850,7 +850,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       progress,
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(result.success).toBe(false);
@@ -874,7 +874,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(result.success).toBe(false);
@@ -894,7 +894,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(result.success).toBe(false);
@@ -914,7 +914,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(result.success).toBe(false);
@@ -934,7 +934,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(result.success).toBe(false);
@@ -954,7 +954,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     expect(result.success).toBe(false);
@@ -978,7 +978,7 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     // Raw message should be logged, not the friendly one
@@ -1018,11 +1018,11 @@ describe("error classification and user-friendly messages", () => {
       options as never,
       createProgress(),
       createToken() as never,
-      { ...baseChatOptions, agentRegistry: statusBar } as never,
+      { ...baseChatOptions, agentRegistry: registry } as never,
     );
 
     // ErrorCaptureLogger should have been called for stream-level error
     // (The mock is auto-created by the vi.mock for error-capture.js)
-    expect(statusBar.errorAgent).toHaveBeenCalledTimes(1);
+    expect(registry.errorAgent).toHaveBeenCalledTimes(1);
   });
 });

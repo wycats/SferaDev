@@ -1922,40 +1922,35 @@ kind = "regular"
 ulid = "01KHDDG7TP2DJWCGN2THEER3AR"
 
 [[epochs.phases.goals]]
-id = "fix-diagnostics"
-label = "Fix all ESLint/TypeScript errors to restore useful diagnostics"
-status = "pending"
-ulid = "01KHHQ3TM9BN42E3YKB1B86HAM"
-
-[[epochs.phases.goals]]
 id = "statusbar-demotion"
-label = "Demote StatusBar to pure UI subscriber: provider/openresponses-chat call Registry directly"
+label = "Strip lifecycle logic from StatusBar: make AgentRegistry the unambiguous owner"
 status = "pending"
 ulid = "01KHJ0GTNBT1NAABTPF7FF7FWM"
 
 [[epochs.phases.goals]]
+id = "tree-inspector"
+label = "Tree node inspector: click any node → ephemeral doc with full contents (shared perception)"
+status = "pending"
+ulid = "01KHHMBEQ5YCJF0EV4VPFXKGM1"
+
+[[epochs.phases.goals]]
 id = "log-event-schema"
-label = "Add event stream schema to InvestigationLogger (non-request events)"
+label = "Event causality: every tree change carries causedByChatId linking to the request that produced it"
 status = "pending"
 ulid = "01KHHMAHDWK90VT5D35JCM1AA4"
 
 [[epochs.phases.goals]]
 id = "log-consolidate"
-label = "Consolidate all logging into InvestigationLogger: wire producers, add subscribers, delete legacy systems"
+label = "Unified log: follow causedByChatId to one place with full request/response/SSE details"
 status = "pending"
 ulid = "01KHJ0GZHHQVE81MDVDV5ADJ3G"
 
 [[epochs.phases.goals]]
-id = "log-cli"
-label = "CLI tool for querying unified event stream: list, show, filter, export"
-status = "pending"
-ulid = "01KHJ0H4T0W0J6BCCBJ00WW2V9"
-
-[[epochs.phases.goals]]
-id = "tree-inspector"
-label = "Tree node inspector: click node → ephemeral file with contents"
-status = "pending"
-ulid = "01KHHMBEQ5YCJF0EV4VPFXKGM1"
+id = "fix-diagnostics"
+label = "Fix all ESLint/TypeScript errors to restore useful diagnostics"
+status = "completed"
+completion_log = "Zero lint/tsc errors across entire codebase. Fixed 62 errors in 4 test files + 3 production files. Committed as 8c10258."
+ulid = "01KHHQ3TM9BN42E3YKB1B86HAM"
 
 [[epochs.phases.goals]]
 id = "registry-core"
@@ -2073,6 +2068,12 @@ label = "Design unified logging architecture (InvestigationLogger as source, out
 status = "completed"
 completion_log = "Unified logging architecture designed: InvestigationEvent union, InvestigationSubscriber interface, subscribe() method, ADR documented"
 ulid = "01KHHMACQ6XQT2FPPR532TS8W2"
+
+[[epochs.phases.goals]]
+id = "log-cli"
+label = "CLI tool for querying unified event stream (deferred: not part of core inspectability flow)"
+status = "pending"
+ulid = "01KHJ0H4T0W0J6BCCBJ00WW2V9"
 
 [[epochs.phases.rfcs]]
 id = "00073"

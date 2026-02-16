@@ -47,12 +47,12 @@ vi.mock("vscode", () => ({
     private listeners: ((e: T) => void)[] = [];
     event = (listener: (e: T) => void) => {
       this.listeners.push(listener);
-      return { dispose: () => {} };
+      return { dispose: () => { /* noop */ } };
     };
     fire(data: T) {
       this.listeners.forEach((l) => { l(data); });
     }
-    dispose() {}
+    dispose() { /* noop */ }
   },
   TreeItemCollapsibleState: {
     None: 0,
@@ -114,35 +114,33 @@ describe("conversationId identity pipeline (integration)", () => {
       const conversationId = "conv-abc-123";
 
       // Turn 1: new agent
-      const turn1Id = statusBar.startAgent(
-        "req-turn1",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-hash",
-        "type-hash",
-        "user-msg-hash",
-        undefined,
+      const turn1Id = registry.startAgent({
+        agentId: "req-turn1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-hash",
+        agentTypeHash: "type-hash",
+        firstUserMessageHash: "user-msg-hash",
         conversationId,
-      );
-      statusBar.completeAgent("req-turn1", {
+      });
+      registry.completeAgent("req-turn1", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Turn 2: same conversationId → should resume, not create new
-      const turn2Id = statusBar.startAgent(
-        "req-turn2",
-        55000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-hash",
-        "type-hash",
-        "user-msg-hash",
-        undefined,
+      const turn2Id = registry.startAgent({
+        agentId: "req-turn2",
+        estimatedTokens: 55000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-hash",
+        agentTypeHash: "type-hash",
+        firstUserMessageHash: "user-msg-hash",
         conversationId,
-      );
+      });
 
       // Should return the original agent ID (aliased)
       expect(turn1Id).toBe("req-turn1");
@@ -158,36 +156,28 @@ describe("conversationId identity pipeline (integration)", () => {
       const conversationId = "conv-accum";
 
       // Turn 1
-      statusBar.startAgent(
-        "req-1",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+      registry.startAgent({
+        agentId: "req-1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
         conversationId,
-      );
-      statusBar.completeAgent("req-1", {
+      });
+      registry.completeAgent("req-1", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Turn 2: resumed by conversationId
-      statusBar.startAgent(
-        "req-2",
-        55000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+      registry.startAgent({
+        agentId: "req-2",
+        estimatedTokens: 55000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
         conversationId,
-      );
-      statusBar.completeAgent("req-2", {
+      });
+      registry.completeAgent("req-2", {
         inputTokens: 58000,
         outputTokens: 1500,
         maxInputTokens: 128000,
@@ -195,7 +185,11 @@ describe("conversationId identity pipeline (integration)", () => {
 
       const agents = statusBar.getAgents();
       expect(agents).toHaveLength(1);
-      const agent = agents[0]!;
+      const agent = agents[0];
+      expect(agent).toBeDefined();
+      if (!agent) {
+        throw new Error("Expected agent to be defined");
+      }
 
       // turnCount should be 2
       expect(agent.turnCount).toBe(2);
@@ -209,37 +203,31 @@ describe("conversationId identity pipeline (integration)", () => {
     });
 
     it("creates separate agents for different conversationIds", () => {
-      statusBar.startAgent(
-        "req-a",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        "type-a",
-        undefined,
-        undefined,
-        "conv-A",
-      );
-      statusBar.completeAgent("req-a", {
+      registry.startAgent({
+        agentId: "req-a",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        agentTypeHash: "type-a",
+        conversationId: "conv-A",
+      });
+      registry.completeAgent("req-a", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Create claim so second agent isn't treated as main replacement
-      statusBar.createChildClaim("req-a", "other");
+      registry.createChildClaim("req-a", "other");
 
-      statusBar.startAgent(
-        "req-b",
-        30000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        "type-b",
-        undefined,
-        undefined,
-        "conv-B",
-      );
+      registry.startAgent({
+        agentId: "req-b",
+        estimatedTokens: 30000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        agentTypeHash: "type-b",
+        conversationId: "conv-B",
+      });
 
       const agents = statusBar.getAgents();
       expect(agents).toHaveLength(2);
@@ -252,38 +240,34 @@ describe("conversationId identity pipeline (integration)", () => {
       const subConvId = "conv-sub";
 
       // Main agent starts and completes
-      statusBar.startAgent(
-        "main-req",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "main-sys",
-        "main-type",
-        undefined,
-        undefined,
-        mainConvId,
-      );
-      statusBar.completeAgent("main-req", {
+      registry.startAgent({
+        agentId: "main-req",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "main-sys",
+        agentTypeHash: "main-type",
+        conversationId: mainConvId,
+      });
+      registry.completeAgent("main-req", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Parent creates a claim for expected child
-      statusBar.createChildClaim("main-req", "recon");
+      registry.createChildClaim("main-req", "recon");
 
       // Subagent starts with different type hash → matches claim
-      statusBar.startAgent(
-        "sub-req",
-        8000,
-        128000,
-        "recon-model",
-        "sub-sys",
-        "sub-type",
-        undefined,
-        undefined,
-        subConvId,
-      );
+      registry.startAgent({
+        agentId: "sub-req",
+        estimatedTokens: 8000,
+        maxTokens: 128000,
+        modelId: "recon-model",
+        systemPromptHash: "sub-sys",
+        agentTypeHash: "sub-type",
+        conversationId: subConvId,
+      });
 
       // Verify agent hierarchy
       const agents = statusBar.getAgents();
@@ -314,57 +298,48 @@ describe("conversationId identity pipeline (integration)", () => {
     it("multiple subagents appear as siblings under parent", () => {
       const mainConvId = "conv-main-multi";
 
-      statusBar.startAgent(
-        "main",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        "main-type",
-        undefined,
-        undefined,
-        mainConvId,
-      );
-      statusBar.completeAgent("main", {
+      registry.startAgent({
+        agentId: "main",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        agentTypeHash: "main-type",
+        conversationId: mainConvId,
+      });
+      registry.completeAgent("main", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Create claims for two subagents
-      statusBar.createChildClaim("main", "recon");
-      statusBar.createChildClaim("main", "execute");
+      registry.createChildClaim("main", "recon");
+      registry.createChildClaim("main", "execute");
 
       // First subagent
-      statusBar.startAgent(
-        "sub-recon",
-        8000,
-        128000,
-        "recon-model",
-        undefined,
-        "recon-type",
-        undefined,
-        undefined,
-        "conv-sub-recon",
-      );
-      statusBar.completeAgent("sub-recon", {
+      registry.startAgent({
+        agentId: "sub-recon",
+        estimatedTokens: 8000,
+        maxTokens: 128000,
+        modelId: "recon-model",
+        agentTypeHash: "recon-type",
+        conversationId: "conv-sub-recon",
+      });
+      registry.completeAgent("sub-recon", {
         inputTokens: 8500,
         outputTokens: 500,
         maxInputTokens: 128000,
       });
 
       // Second subagent
-      statusBar.startAgent(
-        "sub-exec",
-        12000,
-        128000,
-        "exec-model",
-        undefined,
-        "exec-type",
-        undefined,
-        undefined,
-        "conv-sub-exec",
-      );
+      registry.startAgent({
+        agentId: "sub-exec",
+        estimatedTokens: 12000,
+        maxTokens: 128000,
+        modelId: "exec-model",
+        agentTypeHash: "exec-type",
+        conversationId: "conv-sub-exec",
+      });
 
       // Tree root should be main conversation only
       const roots = treeProvider.getChildren(undefined);
@@ -382,14 +357,22 @@ describe("conversationId identity pipeline (integration)", () => {
   describe("tree refresh events", () => {
     it("fires onDidChangeTreeData on startAgent", () => {
       const countBefore = treeChangeCount;
-      statusBar.startAgent("agent-1", 50000, 128000);
+      registry.startAgent({
+        agentId: "agent-1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+      });
       expect(treeChangeCount).toBeGreaterThan(countBefore);
     });
 
     it("fires onDidChangeTreeData on completeAgent", () => {
-      statusBar.startAgent("agent-1", 50000, 128000);
+      registry.startAgent({
+        agentId: "agent-1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+      });
       const countBefore = treeChangeCount;
-      statusBar.completeAgent("agent-1", {
+      registry.completeAgent("agent-1", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
@@ -399,34 +382,24 @@ describe("conversationId identity pipeline (integration)", () => {
 
     it("fires onDidChangeTreeData on resume", () => {
       const convId = "conv-refresh";
-      statusBar.startAgent(
-        "req-1",
-        50000,
-        128000,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-1", {
+      registry.startAgent({
+        agentId: "req-1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        conversationId: convId,
+      });
+      registry.completeAgent("req-1", {
         inputTokens: 52000,
         outputTokens: 1000,
       });
 
       const countBefore = treeChangeCount;
-      statusBar.startAgent(
-        "req-2",
-        55000,
-        128000,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
+      registry.startAgent({
+        agentId: "req-2",
+        estimatedTokens: 55000,
+        maxTokens: 128000,
+        conversationId: convId,
+      });
       expect(treeChangeCount).toBeGreaterThan(countBefore);
     });
   });
@@ -435,25 +408,25 @@ describe("conversationId identity pipeline (integration)", () => {
     it("never shows >100% for a single agent", () => {
       const convId = "conv-pct";
 
-      statusBar.startAgent(
-        "req-1",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-1", {
+      registry.startAgent({
+        agentId: "req-1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-1", {
         inputTokens: 100000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       const agents = statusBar.getAgents();
-      const agent = agents[0]!;
+      const agent = agents[0];
+      expect(agent).toBeDefined();
+      if (!agent) {
+        throw new Error("Expected agent to be defined");
+      }
       const pct = Math.round(
         ((agent.turnCount > 1
           ? agent.lastActualInputTokens
@@ -468,34 +441,30 @@ describe("conversationId identity pipeline (integration)", () => {
       const mainConvId = "conv-main-pct";
 
       // Main agent
-      statusBar.startAgent(
-        "main-req",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        "main-type",
-        undefined,
-        undefined,
-        mainConvId,
-      );
-      statusBar.completeAgent("main-req", {
+      registry.startAgent({
+        agentId: "main-req",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        agentTypeHash: "main-type",
+        conversationId: mainConvId,
+      });
+      registry.completeAgent("main-req", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Claim + subagent with very different token count
-      statusBar.createChildClaim("main-req", "recon");
-      statusBar.startAgent(
-        "sub-req",
-        8000,
-        128000,
-        "recon",
-        undefined,
-        "sub-type",
-      );
-      statusBar.completeAgent("sub-req", {
+      registry.createChildClaim("main-req", "recon");
+      registry.startAgent({
+        agentId: "sub-req",
+        estimatedTokens: 8000,
+        maxTokens: 128000,
+        modelId: "recon",
+        agentTypeHash: "sub-type",
+      });
+      registry.completeAgent("sub-req", {
         inputTokens: 8500,
         outputTokens: 500,
         maxInputTokens: 128000,
@@ -503,21 +472,37 @@ describe("conversationId identity pipeline (integration)", () => {
 
       // Main agent should still show 52k/128k, not inflated by subagent
       const agents = statusBar.getAgents();
-      const mainAgent = agents.find((a) => a.id === "main-req")!;
+      const mainAgent = agents.find((a) => a.id === "main-req");
+      expect(mainAgent).toBeDefined();
+      if (!mainAgent) {
+        throw new Error("Expected main agent to be defined");
+      }
       expect(mainAgent.inputTokens).toBe(52000);
       expect(mainAgent.maxInputTokens).toBe(128000);
+      const mainMaxInputTokens = mainAgent.maxInputTokens;
+      if (!mainMaxInputTokens) {
+        throw new Error("Expected main agent maxInputTokens to be defined");
+      }
 
       const mainPct = Math.round(
-        (mainAgent.inputTokens / mainAgent.maxInputTokens!) * 100,
+        (mainAgent.inputTokens / mainMaxInputTokens) * 100,
       );
       expect(mainPct).toBe(41); // 52000/128000 = 40.6%
       expect(mainPct).toBeLessThanOrEqual(100);
 
       // Subagent should have its own independent percentage
-      const subAgent = agents.find((a) => a.id === "sub-req")!;
+      const subAgent = agents.find((a) => a.id === "sub-req");
+      expect(subAgent).toBeDefined();
+      if (!subAgent) {
+        throw new Error("Expected subagent to be defined");
+      }
       expect(subAgent.inputTokens).toBe(8500);
+      const subMaxInputTokens = subAgent.maxInputTokens;
+      if (!subMaxInputTokens) {
+        throw new Error("Expected subagent maxInputTokens to be defined");
+      }
       const subPct = Math.round(
-        (subAgent.inputTokens / subAgent.maxInputTokens!) * 100,
+        (subAgent.inputTokens / subMaxInputTokens) * 100,
       );
       expect(subPct).toBe(7); // 8500/128000 = 6.6%
     });
@@ -526,42 +511,37 @@ describe("conversationId identity pipeline (integration)", () => {
       const convId = "conv-multiturn-pct";
 
       // Turn 1: high input
-      statusBar.startAgent(
-        "req-1",
-        100000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-1", {
+      registry.startAgent({
+        agentId: "req-1",
+        estimatedTokens: 100000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-1", {
         inputTokens: 100000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Turn 2: lower input (e.g., after summarization/compaction)
-      statusBar.startAgent(
-        "req-2",
-        60000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-2", {
+      registry.startAgent({
+        agentId: "req-2",
+        estimatedTokens: 60000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-2", {
         inputTokens: 60000,
         outputTokens: 800,
         maxInputTokens: 128000,
       });
-
-      const agent = statusBar.getAgents()[0]!;
+      const agent = statusBar.getAgents()[0];
+      expect(agent).toBeDefined();
+      if (!agent) {
+        throw new Error("Expected agent to be defined");
+      }
       expect(agent.turnCount).toBe(2);
       // lastActualInputTokens should be 60000 (latest turn), not 100000 (peak)
       // After summarization, context shrinks and the display should reflect that
@@ -578,52 +558,56 @@ describe("conversationId identity pipeline (integration)", () => {
       const convId = "conv-summarization-boundary";
 
       // Turn 1: near context limit (120k/128k = 94%)
-      statusBar.startAgent(
-        "req-pre-summ",
-        120000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-pre-summ", {
+      registry.startAgent({
+        agentId: "req-pre-summ",
+        estimatedTokens: 120000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-pre-summ", {
         inputTokens: 120000,
         outputTokens: 2000,
         maxInputTokens: 128000,
       });
 
       // Verify pre-summarization state
-      let agent = statusBar.getAgents()[0]!;
+      let agent = statusBar.getAgents()[0];
+      expect(agent).toBeDefined();
+      if (!agent) {
+        throw new Error("Expected agent to be defined");
+      }
       expect(agent.lastActualInputTokens).toBe(120000);
 
       // Turn 2: VS Code summarizes → context drops to 30k (77% reduction)
-      statusBar.startAgent(
-        "req-post-summ",
-        30000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-post-summ", {
+      registry.startAgent({
+        agentId: "req-post-summ",
+        estimatedTokens: 30000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-post-summ", {
         inputTokens: 30000,
         outputTokens: 500,
         maxInputTokens: 128000,
       });
 
-      agent = statusBar.getAgents()[0]!;
+      agent = statusBar.getAgents()[0];
+      expect(agent).toBeDefined();
+      if (!agent) {
+        throw new Error("Expected agent to be defined");
+      }
       expect(agent.turnCount).toBe(2);
       // After summarization, display should show 30k (not stuck at 120k)
       expect(agent.lastActualInputTokens).toBe(30000);
       // Percentage should be 30k/128k = 23%, not 94%
+      const maxInputTokens = agent.maxInputTokens;
+      if (!maxInputTokens) {
+        throw new Error("Expected agent maxInputTokens to be defined");
+      }
       const pct = Math.round(
-        (agent.lastActualInputTokens / agent.maxInputTokens!) * 100,
+        (agent.lastActualInputTokens / maxInputTokens) * 100,
       );
       expect(pct).toBe(23);
 
@@ -637,55 +621,47 @@ describe("conversationId identity pipeline (integration)", () => {
       const convId = "conv-delta-base";
 
       // Turn 1: 100k input
-      statusBar.startAgent(
-        "req-t1",
-        100000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-t1", {
+      registry.startAgent({
+        agentId: "req-t1",
+        estimatedTokens: 100000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-t1", {
         inputTokens: 100000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Turn 2: after summarization, context drops to 40k
-      statusBar.startAgent(
-        "req-t2",
-        40000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-t2", {
+      registry.startAgent({
+        agentId: "req-t2",
+        estimatedTokens: 40000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-t2", {
         inputTokens: 40000,
         outputTokens: 800,
         maxInputTokens: 128000,
       });
 
       // Turn 3: streaming with delta — base should be 40k (latest), not 100k (peak)
-      statusBar.startAgent(
-        "req-t3",
-        45000, // full estimate
-        128000,
-        "anthropic:claude-sonnet-4",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        convId,
-      );
+      registry.startAgent({
+        agentId: "req-t3",
+        estimatedTokens: 45000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        conversationId: convId,
+      });
 
-      const agent = statusBar.getAgents()[0]!;
+      const agent = statusBar.getAgents()[0];
+      expect(agent).toBeDefined();
+      if (!agent) {
+        throw new Error("Expected agent to be defined");
+      }
       expect(agent.status).toBe("streaming");
       // lastActualInputTokens should be 40k (from turn 2 completion)
       expect(agent.lastActualInputTokens).toBe(40000);
@@ -698,13 +674,13 @@ describe("conversationId identity pipeline (integration)", () => {
   describe("edge cases", () => {
     it("agent without conversationId still works (fallback behavior)", () => {
       // First request without conversationId
-      statusBar.startAgent(
-        "req-no-conv",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-      );
-      statusBar.completeAgent("req-no-conv", {
+      registry.startAgent({
+        agentId: "req-no-conv",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+      });
+      registry.completeAgent("req-no-conv", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
@@ -720,19 +696,14 @@ describe("conversationId identity pipeline (integration)", () => {
     });
 
     it("clearAgents resets agent list to empty", () => {
-      statusBar.startAgent(
-        "req-1",
-        50000,
-        128000,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        "conv-1",
-      );
+      registry.startAgent({
+        agentId: "req-1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        conversationId: "conv-1",
+      });
 
-      statusBar.clearAgents();
+      registry.clearAgents();
 
       // Agent list is empty
       const agents = statusBar.getAgents();
@@ -742,39 +713,35 @@ describe("conversationId identity pipeline (integration)", () => {
     it("resumed agent maintains isMain across turns", () => {
       const convId = "conv-main-persist";
 
-      statusBar.startAgent(
-        "req-1",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys",
-        "type",
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-1", {
+      registry.startAgent({
+        agentId: "req-1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys",
+        agentTypeHash: "type",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-1", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Create a claim (shouldn't affect main agent resume)
-      statusBar.createChildClaim("req-1", "recon");
+      registry.createChildClaim("req-1", "recon");
 
       // Turn 2: resume with same conversationId
-      statusBar.startAgent(
-        "req-2",
-        55000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys",
-        "type",
-        undefined,
-        undefined,
-        convId,
-      );
-      statusBar.completeAgent("req-2", {
+      registry.startAgent({
+        agentId: "req-2",
+        estimatedTokens: 55000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys",
+        agentTypeHash: "type",
+        conversationId: convId,
+      });
+      registry.completeAgent("req-2", {
         inputTokens: 58000,
         outputTokens: 1500,
         maxInputTokens: 128000,
@@ -787,17 +754,15 @@ describe("conversationId identity pipeline (integration)", () => {
 
       // Claim should still be pending (not consumed by main agent)
       // Verify by starting a real subagent
-      statusBar.startAgent(
-        "recon-req",
-        8000,
-        128000,
-        "recon",
-        "diff-sys",
-        "diff-type",
-        undefined,
-        undefined,
-        "conv-recon",
-      );
+      registry.startAgent({
+        agentId: "recon-req",
+        estimatedTokens: 8000,
+        maxTokens: 128000,
+        modelId: "recon",
+        systemPromptHash: "diff-sys",
+        agentTypeHash: "diff-type",
+        conversationId: "conv-recon",
+      });
 
       const agentsAfter = statusBar.getAgents();
       const recon = agentsAfter.find((a) => a.id === "recon-req");
@@ -809,36 +774,34 @@ describe("conversationId identity pipeline (integration)", () => {
   describe("sidebar conversation display (conversation-centric tree)", () => {
     it("shows all recent conversations at root (sorted by most recent)", () => {
       // Conversation A
-      statusBar.startAgent(
-        "req-a1",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-a",
-        "type-a",
-        "msg-a",
-        undefined,
-        "conv-aaa",
-      );
-      statusBar.completeAgent("req-a1", {
+      registry.startAgent({
+        agentId: "req-a1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-a",
+        agentTypeHash: "type-a",
+        firstUserMessageHash: "msg-a",
+        conversationId: "conv-aaa",
+      });
+      registry.completeAgent("req-a1", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Conversation B (becomes the most recent)
-      statusBar.startAgent(
-        "req-b1",
-        30000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-b",
-        "type-b",
-        "msg-b",
-        undefined,
-        "conv-bbb",
-      );
-      statusBar.completeAgent("req-b1", {
+      registry.startAgent({
+        agentId: "req-b1",
+        estimatedTokens: 30000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-b",
+        agentTypeHash: "type-b",
+        firstUserMessageHash: "msg-b",
+        conversationId: "conv-bbb",
+      });
+      registry.completeAgent("req-b1", {
         inputTokens: 32000,
         outputTokens: 500,
         maxInputTokens: 128000,
@@ -859,35 +822,33 @@ describe("conversationId identity pipeline (integration)", () => {
 
     it("shows all conversations during streaming", () => {
       // Conversation A (completed)
-      statusBar.startAgent(
-        "req-a1",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-a",
-        "type-a",
-        "msg-a",
-        undefined,
-        "conv-aaa",
-      );
-      statusBar.completeAgent("req-a1", {
+      registry.startAgent({
+        agentId: "req-a1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-a",
+        agentTypeHash: "type-a",
+        firstUserMessageHash: "msg-a",
+        conversationId: "conv-aaa",
+      });
+      registry.completeAgent("req-a1", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
       });
 
       // Conversation B (still streaming)
-      statusBar.startAgent(
-        "req-b1",
-        30000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-b",
-        "type-b",
-        "msg-b",
-        undefined,
-        "conv-bbb",
-      );
+      registry.startAgent({
+        agentId: "req-b1",
+        estimatedTokens: 30000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-b",
+        agentTypeHash: "type-b",
+        firstUserMessageHash: "msg-b",
+        conversationId: "conv-bbb",
+      });
 
       const roots = treeProvider.getChildren();
       // Both conversations visible
@@ -897,18 +858,17 @@ describe("conversationId identity pipeline (integration)", () => {
 
     it("most recent conversation appears first as new ones are added", () => {
       // Conversation A
-      statusBar.startAgent(
-        "req-a1",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-a",
-        "type-a",
-        "msg-a",
-        undefined,
-        "conv-aaa",
-      );
-      statusBar.completeAgent("req-a1", {
+      registry.startAgent({
+        agentId: "req-a1",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-a",
+        agentTypeHash: "type-a",
+        firstUserMessageHash: "msg-a",
+        conversationId: "conv-aaa",
+      });
+      registry.completeAgent("req-a1", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
@@ -921,18 +881,17 @@ describe("conversationId identity pipeline (integration)", () => {
       expect((roots[0] as ConversationItem).conversation.id).toBe("conv-aaa");
 
       // Conversation B starts and completes
-      statusBar.startAgent(
-        "req-b1",
-        30000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-b",
-        "type-b",
-        "msg-b",
-        undefined,
-        "conv-bbb",
-      );
-      statusBar.completeAgent("req-b1", {
+      registry.startAgent({
+        agentId: "req-b1",
+        estimatedTokens: 30000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-b",
+        agentTypeHash: "type-b",
+        firstUserMessageHash: "msg-b",
+        conversationId: "conv-bbb",
+      });
+      registry.completeAgent("req-b1", {
         inputTokens: 32000,
         outputTokens: 500,
         maxInputTokens: 128000,
@@ -952,41 +911,39 @@ describe("conversationId identity pipeline (integration)", () => {
       const parentConvId = "conv-parent";
 
       // Start main agent
-      statusBar.startAgent(
-        "req-main",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-main",
-        "type-main",
-        "msg-main",
-        undefined,
-        parentConvId,
-      );
+      registry.startAgent({
+        agentId: "req-main",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-main",
+        agentTypeHash: "type-main",
+        firstUserMessageHash: "msg-main",
+        conversationId: parentConvId,
+      });
 
       // Register a subagent claim via the public API
-      statusBar.createChildClaim("req-main", "recon");
+      registry.createChildClaim("req-main", "recon");
 
       // Start subagent (matches claim — different agentTypeHash triggers claim path)
-      statusBar.startAgent(
-        "req-sub",
-        10000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-sub",
-        "type-sub",
-        "msg-sub",
-        undefined,
-        "conv-sub",
-      );
+      registry.startAgent({
+        agentId: "req-sub",
+        estimatedTokens: 10000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-sub",
+        agentTypeHash: "type-sub",
+        firstUserMessageHash: "msg-sub",
+        conversationId: "conv-sub",
+      });
 
       // Complete both
-      statusBar.completeAgent("req-sub", {
+      registry.completeAgent("req-sub", {
         inputTokens: 12000,
         outputTokens: 200,
         maxInputTokens: 128000,
       });
-      statusBar.completeAgent("req-main", {
+      registry.completeAgent("req-main", {
         inputTokens: 55000,
         outputTokens: 1500,
         maxInputTokens: 128000,
@@ -1016,16 +973,16 @@ describe("conversationId identity pipeline (integration)", () => {
 
     it("falls back to showing conversation when no conversationId is available", () => {
       // Agent without conversationId
-      statusBar.startAgent(
-        "req-noconv",
-        50000,
-        128000,
-        "anthropic:claude-sonnet-4",
-        "sys-a",
-        "type-a",
-        "msg-a",
-      );
-      statusBar.completeAgent("req-noconv", {
+      registry.startAgent({
+        agentId: "req-noconv",
+        estimatedTokens: 50000,
+        maxTokens: 128000,
+        modelId: "anthropic:claude-sonnet-4",
+        systemPromptHash: "sys-a",
+        agentTypeHash: "type-a",
+        firstUserMessageHash: "msg-a",
+      });
+      registry.completeAgent("req-noconv", {
         inputTokens: 52000,
         outputTokens: 1000,
         maxInputTokens: 128000,
