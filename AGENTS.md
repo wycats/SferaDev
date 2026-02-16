@@ -133,10 +133,12 @@ A three-phase micro-loop for implementing discrete units of work (features, migr
 ## Reference: File Structure
 
 - `docs/agent-context/`: The Brain.
+  - `HANDOFF.md`: **Start here** — active work, design principles, key decisions.
   - `plan.toml`: The Big Picture.
     - `current/implementation-plan.toml`: The Now.
 - `docs/rfcs/`: The History (Laws).
 - `docs/manual/`: The Reality (Code).
+- `.github/instructions/`: Path-scoped Copilot instructions (auto-included by file type).
 - `exo`: The Tool.
 <!-- core end -->
 
