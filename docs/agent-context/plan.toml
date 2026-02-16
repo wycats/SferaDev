@@ -1924,7 +1924,8 @@ ulid = "01KHDDG7TP2DJWCGN2THEER3AR"
 [[epochs.phases.goals]]
 id = "statusbar-demotion"
 label = "Strip lifecycle logic from StatusBar: make AgentRegistry the unambiguous owner"
-status = "pending"
+status = "completed"
+completion_log = "Demoted TokenStatusBar to pure UI subscriber. Removed all lifecycle methods (startAgent, completeAgent, errorAgent, createChildClaim, clearAgents). Class now subscribes to AgentRegistry.onDidChangeAgents events. Tests updated across 4 files. status-bar.ts: 1642→408 lines (-75%). All 677 tests pass. Committed as b479ad9."
 ulid = "01KHJ0GTNBT1NAABTPF7FF7FWM"
 
 [[epochs.phases.goals]]
