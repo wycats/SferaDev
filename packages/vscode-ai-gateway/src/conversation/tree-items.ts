@@ -5,7 +5,7 @@
  * and produces a VS Code TreeItem for display.
  */
 
-import * as vscode from "vscode";
+import * as vscode from "vscode"
 import type {
   ActivityLogEntry,
   AIResponseEntry,
@@ -15,8 +15,9 @@ import type {
   Subagent,
   TurnEntry,
   UserMessageEntry,
-} from "./types.js";
-import { formatTokens } from "../tokens/display.js";
+} from "./types.js"
+import { formatTokens } from "../tokens/display.js"
+import { inspectorUri } from "../inspector/uri.js"
 
 // ── UserMessageItem ──────────────────────────────────────────────────
 
@@ -88,6 +89,14 @@ export class UserMessageItem extends vscode.TreeItem {
         hasError ? "errorForeground" : "descriptionForeground",
       ),
     );
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [
+        inspectorUri(conversationId, "user-message", entry.sequenceNumber),
+      ],
+    };
   }
 
   private static formatDescription(
@@ -148,6 +157,14 @@ export class ToolContinuationItem extends vscode.TreeItem {
       "tools",
       new vscode.ThemeColor("descriptionForeground"),
     );
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [
+        inspectorUri(conversationId, "tool-continuation", entry.sequenceNumber),
+      ],
+    };
   }
 
   private static formatLabel(sequenceNumber: number, tools: string[]): string {
@@ -211,6 +228,14 @@ export class AIResponseItem extends vscode.TreeItem {
     this.contextValue = "ai-response";
     this.description = AIResponseItem.formatDescription(entry);
     this.iconPath = AIResponseItem.getIcon(entry);
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [
+        inspectorUri(conversationId, "ai-response", entry.sequenceNumber),
+      ],
+    };
   }
 
   private static isPendingWithinTimeout(entry: AIResponseEntry): boolean {
@@ -339,6 +364,12 @@ export class TurnItem extends vscode.TreeItem {
       hasSubagents,
       isPendingCharacterization,
     );
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [inspectorUri(conversationId, "turn", turn.turnNumber)],
+    };
   }
 
   private static formatDescription(
@@ -404,8 +435,9 @@ export class TurnItem extends vscode.TreeItem {
  */
 export class CompactionTreeItem extends vscode.TreeItem {
   readonly entry: CompactionEntry;
+  readonly conversationId: string;
 
-  constructor(entry: CompactionEntry) {
+  constructor(entry: CompactionEntry, conversationId: string) {
     const verb =
       entry.compactionType === "summarization"
         ? "Compacted"
@@ -415,11 +447,18 @@ export class CompactionTreeItem extends vscode.TreeItem {
     super(label, vscode.TreeItemCollapsibleState.None);
 
     this.entry = entry;
+    this.conversationId = conversationId;
     this.contextValue = "compaction";
     this.iconPath = new vscode.ThemeIcon(
       "fold-down",
       new vscode.ThemeColor("descriptionForeground"),
     );
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [inspectorUri(conversationId, "compaction", entry.turnNumber)],
+    };
 
     if (entry.details) {
       this.tooltip = entry.details;
@@ -437,8 +476,9 @@ export class CompactionTreeItem extends vscode.TreeItem {
  */
 export class ErrorTreeItem extends vscode.TreeItem {
   readonly entry: ErrorEntry;
+  readonly conversationId: string;
 
-  constructor(entry: ErrorEntry) {
+  constructor(entry: ErrorEntry, conversationId: string) {
     const truncatedMessage =
       entry.message.length > 60
         ? entry.message.slice(0, 57) + "..."
@@ -448,11 +488,19 @@ export class ErrorTreeItem extends vscode.TreeItem {
     super(label, vscode.TreeItemCollapsibleState.None);
 
     this.entry = entry;
+    this.conversationId = conversationId;
     this.contextValue = "error";
     this.iconPath = new vscode.ThemeIcon(
       "error",
       new vscode.ThemeColor("errorForeground"),
     );
+
+    const identifier = entry.turnNumber ?? entry.timestamp;
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [inspectorUri(conversationId, "error", identifier)],
+    };
 
     // Full message in tooltip
     const md = new vscode.MarkdownString();
@@ -487,6 +535,12 @@ export class ConversationItem extends vscode.TreeItem {
     this.description = ConversationItem.formatDescription(conversation);
     this.iconPath = ConversationItem.getIcon(conversation);
     this.tooltip = ConversationItem.formatTooltip(conversation);
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [inspectorUri(conversation.id, "conversation")],
+    };
   }
 
   private static formatDescription(conversation: Conversation): string {
@@ -701,6 +755,12 @@ export class HistoryItem extends vscode.TreeItem {
       "history",
       new vscode.ThemeColor("descriptionForeground"),
     );
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [inspectorUri(conversationId, "history")],
+    };
   }
 }
 
@@ -716,8 +776,9 @@ export class HistoryItem extends vscode.TreeItem {
  */
 export class SubagentItem extends vscode.TreeItem {
   readonly subagent: Subagent;
+  readonly conversationId: string;
 
-  constructor(subagent: Subagent) {
+  constructor(subagent: Subagent, conversationId: string) {
     const collapsibleState =
       subagent.children.length > 0
         ? vscode.TreeItemCollapsibleState.Collapsed
@@ -726,9 +787,18 @@ export class SubagentItem extends vscode.TreeItem {
     super(subagent.name, collapsibleState);
 
     this.subagent = subagent;
+    this.conversationId = conversationId;
     this.contextValue = "subagent";
     this.description = SubagentItem.formatDescription(subagent);
     this.iconPath = SubagentItem.getIcon(subagent);
+
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Node",
+      arguments: [
+        inspectorUri(conversationId, "subagent", subagent.conversationId),
+      ],
+    };
   }
 
   private static formatDescription(subagent: Subagent): string {

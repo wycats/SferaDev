@@ -1,9 +1,9 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as vscode from "vscode";
-import { EXTENSION_ID, VENDOR_ID, VSCODE_EXTENSION_ID } from "./constants";
-import { initializeOutputChannel, logger } from "./logger";
-import { StubProvider } from "./provider-stub";
+import * as fs from "fs"
+import * as path from "path"
+import * as vscode from "vscode"
+import { EXTENSION_ID, VENDOR_ID, VSCODE_EXTENSION_ID } from "./constants"
+import { initializeOutputChannel, logger } from "./logger"
+import { StubProvider } from "./provider-stub"
 
 const loadSerialize = (() => {
   let cached: Promise<{ tryStringify: (value: unknown) => string }> | undefined;
@@ -108,6 +108,44 @@ export async function activate(context: vscode.ExtensionContext) {
     createAgentTreeView(agentRegistry);
   context.subscriptions.push(treeView);
   context.subscriptions.push(treeProvider);
+
+  // Register the inspector content provider
+  const { InspectorContentProvider, INSPECTOR_SCHEME } =
+    await import("./inspector/content-provider.js");
+  const inspectorProvider = new InspectorContentProvider(() =>
+    treeProvider.getManager().getConversations(),
+  );
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(
+      INSPECTOR_SCHEME,
+      inspectorProvider,
+    ),
+  );
+  context.subscriptions.push(inspectorProvider);
+
+  // Refresh inspector when conversations change
+  context.subscriptions.push(
+    treeProvider.getManager().onDidChangeConversations(() => {
+      inspectorProvider.refresh();
+    }),
+  );
+
+  // Register the inspect node command
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "vercel.ai.inspectNode",
+      async (uri: vscode.Uri) => {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(doc, {
+          viewColumn: vscode.ViewColumn.Beside,
+          preserveFocus: true,
+          preview: true,
+        });
+        // Set language to markdown for syntax highlighting
+        await vscode.languages.setTextDocumentLanguage(doc, "markdown");
+      },
+    ),
+  );
 
   // Initialize conversation tree persistence
   const { createPersistenceManager } = await import("./persistence/index.js");
@@ -389,8 +427,7 @@ export async function activate(context: vscode.ExtensionContext) {
       const result3 = detectSummarizationRequest(normalMessages);
       const t3 = performance.now() - start3;
 
-      const allCorrect =
-        result1 && result2 && !result3;
+      const allCorrect = result1 && result2 && !result3;
       const icon = allCorrect ? "$(check)" : "$(error)";
 
       const details = [

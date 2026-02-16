@@ -2,6 +2,18 @@ import { beforeEach, describe, it, expect, vi } from "vitest";
 import * as vscode from "vscode";
 
 vi.mock("vscode", () => ({
+  Uri: {
+    parse: (s: string) => {
+      const url = new URL(s)
+      return {
+        scheme: url.protocol.slice(0, -1),
+        authority: url.hostname,
+        path: url.pathname,
+        query: url.search,
+        toString: () => s,
+      }
+    },
+  },
   TreeItem: class {
     label: string;
     collapsibleState: number;
@@ -282,23 +294,29 @@ describe("ConversationTreeDataProvider", () => {
 
   describe("getChildren (leaf nodes)", () => {
     it("returns empty for CompactionTreeItem", () => {
-      const compaction = new CompactionTreeItem({
-        type: "compaction",
-        freedTokens: 5000,
-        turnNumber: 3,
-        timestamp: Date.now(),
-        compactionType: "summarization",
-      });
+      const compaction = new CompactionTreeItem(
+        {
+          type: "compaction",
+          freedTokens: 5000,
+          turnNumber: 3,
+          timestamp: Date.now(),
+          compactionType: "summarization",
+        },
+        "conv-1",
+      );
       const p = createProvider();
       expect(p.getChildren(compaction as TreeItem)).toEqual([]);
     });
 
     it("returns empty for ErrorTreeItem", () => {
-      const error = new ErrorTreeItem({
-        type: "error",
-        message: "Something went wrong",
-        timestamp: Date.now(),
-      });
+      const error = new ErrorTreeItem(
+        {
+          type: "error",
+          message: "Something went wrong",
+          timestamp: Date.now(),
+        },
+        "conv-1",
+      );
       const p = createProvider();
       expect(p.getChildren(error as TreeItem)).toEqual([]);
     });

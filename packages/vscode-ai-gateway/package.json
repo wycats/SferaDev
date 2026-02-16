@@ -86,6 +86,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "vercel.ai.inspectNode",
+        "title": "Inspect Tree Node",
+        "category": "Vercel AI Gateway"
+      },
+      {
         "command": "vercel.ai.dumpDiagnostics",
         "title": "Dump Agent Tree Diagnostics",
         "category": "Vercel AI Gateway"

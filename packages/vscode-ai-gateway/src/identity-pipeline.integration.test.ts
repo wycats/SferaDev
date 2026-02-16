@@ -24,6 +24,18 @@ const mockStatusBarItem = {
 };
 
 vi.mock("vscode", () => ({
+  Uri: {
+    parse: (s: string) => {
+      const url = new URL(s)
+      return {
+        scheme: url.protocol.slice(0, -1),
+        authority: url.hostname,
+        path: url.pathname,
+        query: url.search,
+        toString: () => s,
+      }
+    },
+  },
   window: {
     createStatusBarItem: vi.fn(() => mockStatusBarItem),
   },
@@ -47,12 +59,20 @@ vi.mock("vscode", () => ({
     private listeners: ((e: T) => void)[] = [];
     event = (listener: (e: T) => void) => {
       this.listeners.push(listener);
-      return { dispose: () => { /* noop */ } };
+      return {
+        dispose: () => {
+          /* noop */
+        },
+      };
     };
     fire(data: T) {
-      this.listeners.forEach((l) => { l(data); });
+      this.listeners.forEach((l) => {
+        l(data);
+      });
     }
-    dispose() { /* noop */ }
+    dispose() {
+      /* noop */
+    }
   },
   TreeItemCollapsibleState: {
     None: 0,
@@ -952,9 +972,7 @@ describe("conversationId identity pipeline (integration)", () => {
       const roots = treeProvider.getChildren();
 
       // Root should have the main conversation
-      const convItems = roots.filter(
-        (r) => r instanceof ConversationItem,
-      );
+      const convItems = roots.filter((r) => r instanceof ConversationItem);
       expect(convItems.length).toBeGreaterThanOrEqual(1);
 
       const mainItem = convItems.find(

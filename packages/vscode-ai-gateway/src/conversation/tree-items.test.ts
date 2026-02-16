@@ -1,6 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("vscode", () => ({
+  Uri: {
+    parse: (s: string) => {
+      const url = new URL(s)
+      return {
+        scheme: url.protocol.slice(0, -1),
+        authority: url.hostname,
+        path: url.pathname,
+        query: url.search,
+        toString: () => s,
+      }
+    },
+  },
   TreeItem: class TreeItem {
     label: string | undefined;
     description: string | undefined;
@@ -304,7 +316,7 @@ describe("CompactionTreeItem", () => {
       compactionType: "summarization",
     };
 
-    const item = new CompactionTreeItem(entry);
+    const item = new CompactionTreeItem(entry, "conv-1");
     expect(item.label).toBe("↓ Compacted 30.0k (turn 8)");
     expect((item.iconPath as { id: string }).id).toBe("fold-down");
     expect(item.contextValue).toBe("compaction");
@@ -320,7 +332,7 @@ describe("CompactionTreeItem", () => {
       details: "edits:2",
     };
 
-    const item = new CompactionTreeItem(entry);
+    const item = new CompactionTreeItem(entry, "conv-1");
     expect(item.label).toBe("↓ Context managed 5.0k (turn 3)");
     expect(item.tooltip).toBe("edits:2");
   });
@@ -335,7 +347,7 @@ describe("ErrorTreeItem", () => {
       message: "Rate limit exceeded",
     };
 
-    const item = new ErrorTreeItem(entry);
+    const item = new ErrorTreeItem(entry, "conv-1");
     expect(item.label).toBe("✗ Rate limit exceeded");
     expect((item.iconPath as { id: string }).id).toBe("error");
     expect(item.contextValue).toBe("error");
@@ -349,7 +361,7 @@ describe("ErrorTreeItem", () => {
         "This is a very long error message that should be truncated to prevent the tree from becoming too wide and unreadable",
     };
 
-    const item = new ErrorTreeItem(entry);
+    const item = new ErrorTreeItem(entry, "conv-1");
     expect((item.label as string).length).toBeLessThanOrEqual(62); // "✗ " + 57 + "..."
     expect((item.label as string).endsWith("...")).toBe(true);
   });
@@ -681,7 +693,7 @@ function makeSubagent(overrides: Partial<Subagent> = {}): Subagent {
 describe("SubagentItem", () => {
   it("uses subagent name as label", () => {
     const sub = makeSubagent({ name: "execute" });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.label).toBe("execute");
   });
 
@@ -690,13 +702,13 @@ describe("SubagentItem", () => {
       tokens: { input: 5000, output: 3000 },
       status: "complete",
     });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.description).toBe("8.0k · complete");
   });
 
   it("shows streaming description for streaming subagent", () => {
     const sub = makeSubagent({ status: "streaming" });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.description).toBe("streaming...");
     expect((item.iconPath as { id: string }).id).toBe("loading~spin");
   });
@@ -706,7 +718,7 @@ describe("SubagentItem", () => {
       tokens: { input: 2000, output: 500 },
       status: "error",
     });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.description).toBe("2.5k · error");
     expect((item.iconPath as { id: string }).id).toBe("error");
   });
@@ -716,13 +728,13 @@ describe("SubagentItem", () => {
       tokens: { input: 0, output: 0 },
       status: "error",
     });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.description).toBe("error");
   });
 
   it("shows green check icon for completed subagent", () => {
     const sub = makeSubagent({ status: "complete" });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect((item.iconPath as { id: string }).id).toBe("check");
     expect(
       (item.iconPath as { id: string; color: { id: string } }).color.id,
@@ -735,19 +747,19 @@ describe("SubagentItem", () => {
       name: "recon-worker",
     });
     const sub = makeSubagent({ children: [child] });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.collapsibleState).toBe(1); // Collapsed
   });
 
   it("is not collapsible when it has no children", () => {
     const sub = makeSubagent({ children: [] });
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.collapsibleState).toBe(0); // None
   });
 
   it("has contextValue 'subagent'", () => {
     const sub = makeSubagent();
-    const item = new SubagentItem(sub);
+    const item = new SubagentItem(sub, "conv-1");
     expect(item.contextValue).toBe("subagent");
   });
 });

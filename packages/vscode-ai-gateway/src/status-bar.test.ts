@@ -30,12 +30,20 @@ vi.mock("vscode", () => ({
     private listeners: ((e: T) => void)[] = [];
     event = (listener: (e: T) => void) => {
       this.listeners.push(listener);
-      return { dispose: () => { /* noop */ } };
+      return {
+        dispose: () => {
+          /* noop */
+        },
+      };
     };
     fire(data: T) {
-      this.listeners.forEach((l) => { l(data); });
+      this.listeners.forEach((l) => {
+        l(data);
+      });
     }
-    dispose() { /* noop */ }
+    dispose() {
+      /* noop */
+    }
   },
 }));
 

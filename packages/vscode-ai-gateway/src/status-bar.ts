@@ -18,11 +18,7 @@ import type {
 } from "./persistence/index.js";
 import { formatTokens, getDisplayTokens } from "./tokens/display.js";
 import type { AgentRegistry } from "./agent/registry.js";
-import type {
-  AgentEntry,
-  EstimationState,
-  TokenUsage,
-} from "./agent/types.js";
+import type { AgentEntry, EstimationState, TokenUsage } from "./agent/types.js";
 
 /**
  * Status bar item that displays token usage information.

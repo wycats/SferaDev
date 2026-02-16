@@ -6,8 +6,8 @@
  * as children, and subagents nested under their spawning turns.
  */
 
-import * as vscode from "vscode";
-import type { AgentRegistry } from "./agent/index.js";
+import * as vscode from "vscode"
+import type { AgentRegistry } from "./agent/index.js"
 import {
   ConversationManager,
   ConversationItem,
@@ -20,14 +20,14 @@ import {
   SectionHeaderItem,
   ToolContinuationItem,
   UserMessageItem,
-} from "./conversation/index.js";
-import type { Conversation } from "./conversation/index.js";
+} from "./conversation/index.js"
+import type { Conversation } from "./conversation/index.js"
 import {
   buildTree,
   groupByUserMessage,
   type TreeNode,
   type TreeResult,
-} from "./conversation/build-tree.js";
+} from "./conversation/build-tree.js"
 
 /**
  * Union type for all tree items in the conversation tree
@@ -107,7 +107,9 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
     }
 
     if (element instanceof SubagentItem) {
-      return element.subagent.children.map((child) => new SubagentItem(child));
+      return element.subagent.children.map(
+        (child) => new SubagentItem(child, element.conversationId),
+      );
     }
 
     if (element instanceof HistoryItem) {
@@ -170,7 +172,9 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
       conversation.subagents,
     );
 
-    return subagents.map((sub) => new SubagentItem(sub));
+    return subagents.map(
+      (sub) => new SubagentItem(sub, element.conversationId),
+    );
   }
 
   private getAIResponseChildren(element: AIResponseItem): TreeItem[] {
@@ -187,7 +191,9 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
       conversation.subagents,
     );
 
-    return subagents.map((sub) => new SubagentItem(sub));
+    return subagents.map(
+      (sub) => new SubagentItem(sub, element.conversationId),
+    );
   }
 
   /**
@@ -215,7 +221,7 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
           subagents,
         );
       } else if (child.type === "error") {
-        return new ErrorTreeItem(child.entry);
+        return new ErrorTreeItem(child.entry, element.conversationId);
       } else {
         // tool-continuation
         return new ToolContinuationItem(
@@ -324,9 +330,9 @@ function treeNodeToItem(
       );
     }
     case "compaction":
-      return new CompactionTreeItem(node.entry);
+      return new CompactionTreeItem(node.entry, conversationId);
     case "error":
-      return new ErrorTreeItem(node.entry);
+      return new ErrorTreeItem(node.entry, conversationId);
     case "history":
       // Placeholder — caller replaces with real HistoryItem that has entries
       return new HistoryItem([], conversationId);
