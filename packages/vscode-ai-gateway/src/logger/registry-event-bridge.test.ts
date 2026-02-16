@@ -54,10 +54,8 @@ describe("createRegistryEventBridge", () => {
   beforeEach(() => {
     registry = createMockRegistry();
     emitted = [];
-    createRegistryEventBridge(
-      registry as any,
-      sessionId,
-      (e) => emitted.push(e),
+    createRegistryEventBridge(registry as any, sessionId, (e) =>
+      emitted.push(e),
     );
   });
 

@@ -159,38 +159,48 @@ The Agent Token UI provides **glanceable status** for users working with AI agen
 
 When the UI is wrong, we have rich diagnostic data. **Use it before asking the user for screenshots.**
 
-#### The Narrative Tool
+#### The Event Query Tool
 
 ```bash
-node scripts/analyze-agent-logs.ts /path/to/workspace --narrative
+# Session overview: requests, tokens, errors
+node scripts/query-events.ts session
+
+# Last 20 events
+node scripts/query-events.ts tail
+
+# All events for a specific request
+node scripts/query-events.ts request <chatId>
+
+# Causality trace: what did a request cause?
+node scripts/query-events.ts trace <chatId>
+
+# All errors
+node scripts/query-events.ts errors
+
+# List conversations with request counts
+node scripts/query-events.ts conversations
+
+# Full-text search
+node scripts/query-events.ts search <text>
+
+# Event kind distribution
+node scripts/query-events.ts kinds
 ```
 
-This outputs a **unified timeline** that correlates:
+Global filters: `--since 5m`, `--kind agent.errored`, `--conversation <id>`, `--json`
 
-- Our extension's tree snapshots (agent state, claims, invariants)
-- VS Code's internal request logs (model calls, tool invocations)
-
-#### What the Narrative Shows
-
-```
-16:10:08.691 [CLAIM_CREATED] anthropic/claude-opus-4.5 (main) expecting "review"
-16:10:08.763 [AGENT_COMPLETED] anthropic/claude-opus-4.5 (main)
-             └─ VS Code: ccreq:246e2ddf | 8334ms | [panel/editAgent-external]
-
---- Final Tree State ---
-├─ [main] (1036918f) ✓ 69.1k [3]
-└─ [sub] (6760da7c) ✓ 71.4k [1]    ← BUG: should be child of main!
-```
+The tool reads `.logs/{investigation}/events.jsonl` (default investigation: `default`).
+Use `--investigation <name>` to query a specific investigation.
 
 #### Proactive Debugging Checklist
 
 Before asking the user, check:
 
-1. **Run the narrative**: `node scripts/analyze-agent-logs.ts . --narrative`
-2. **Check Final Tree State**: Are agents at the correct hierarchy level?
-3. **Check for orphan subagents**: `parentConversationHash: null` on non-main agents = bug
-4. **Check claims**: Was a CLAIM_CREATED event logged before the subagent started?
-5. **Check invariant violations**: Look for `⚠️ N violation(s)` in the timeline
+1. **Run session overview**: `node scripts/query-events.ts session`
+2. **Check for errors**: `node scripts/query-events.ts errors`
+3. **Trace a problematic request**: `node scripts/query-events.ts trace <chatId>`
+4. **Check for orphan subagents**: `node scripts/query-events.ts search "parentChatId":null`
+5. **Check summarization events**: `node scripts/query-events.ts search summarization`
 
 #### Common Issues & Where to Look
 

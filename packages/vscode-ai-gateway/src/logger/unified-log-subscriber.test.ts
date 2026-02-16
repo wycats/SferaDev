@@ -84,8 +84,8 @@ describe("createUnifiedLogSubscriber", () => {
     subscriber?.onEvent(event);
 
     expect(hoisted.mockAppendFileSync).toHaveBeenCalledTimes(1);
-    const [filePath, content, encoding] =
-      hoisted.mockAppendFileSync.mock.calls[0] as [string, string, string];
+    const [filePath, content, encoding] = hoisted.mockAppendFileSync.mock
+      .calls[0] as [string, string, string];
     expect(filePath).toContain("events.jsonl");
     expect(encoding).toBe("utf8");
     expect(content).toContain('"kind":"session.start"');
