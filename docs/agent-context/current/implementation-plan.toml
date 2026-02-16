@@ -17,6 +17,71 @@ id = "restore-on-startup"
 
 [[plan.goals]]
 id = "idle-timer"
+
+[[plan.goals]]
+id = "verify-events-jsonl"
+
+[[plan.goals.tasks]]
+id = "extract-event-writer"
+title = "Extract EventWriter + ConfigSource interfaces, wire with defaults"
+status = "completed"
+completed_at = "2026-02-16T18:21:31.892774964+00:00"
+completion_log = "Extracted EventWriter (ensureDir + append) and LogConfig (logDirectory, investigationName, workspaceRoot) interfaces. Added createFsEventWriter() and createVscodeLogConfig() production defaults. createUnifiedLogSubscriber() now accepts optional { writer, config } — zero-arg call from extension.ts unchanged. tsc clean."
+
+[[plan.goals.tasks]]
+id = "fail-on-null-subscriber"
+title = "Make subscriber creation fail loudly instead of returning null"
+status = "completed"
+completed_at = "2026-02-16T18:22:34.939096139+00:00"
+completion_log = "Added diagnostic logging: (1) subscriber warns with config details when log dir can't be resolved, (2) subscriber logs the resolved events.jsonl path on success, (3) extension.ts warns when subscriber is null. All three failure modes now visible in output channel."
+
+[[plan.goals.tasks]]
+id = "interface-test-helpers"
+title = "Create test helpers for EventWriter and ConfigSource"
+status = "completed"
+completed_at = "2026-02-16T18:23:23.106949568+00:00"
+completion_log = "Created unified-log-subscriber.test-helpers.ts with: TestEventWriter (in-memory, tracks dirs/written/lines/events, eventsOfKind filter, targetFile assertion, injectable errors), testLogConfig() factory with sensible defaults, testEvent() factory with auto-incrementing IDs. tsc clean."
+
+[[plan.goals.tasks]]
+id = "rewrite-subscriber-tests"
+title = "Rewrite subscriber tests using interface helpers (no mocks)"
+status = "completed"
+completed_at = "2026-02-16T18:27:12.425249050+00:00"
+completion_log = "Rewrote unified-log-subscriber.test.ts: 6 old mock-based tests → 13 interface-driven tests using TestEventWriter + testLogConfig + testEvent helpers. Tests cover: valid config, dir creation, file path resolution, JSONL append, multi-event ordering, write errors, ensureDir errors, null/empty logDirectory, missing workspace root, relative vs absolute paths, eventsOfKind filtering. Only remaining mocks: vscode (import satisfaction) and logger (import satisfaction) — neither participates in assertions. 713/713 tests pass, tsc clean."
+
+[[plan.goals.tasks]]
+id = "build-verify"
+title = "Build, install, reload, verify events.jsonl exists"
+status = "completed"
+completed_at = "2026-02-16T18:29:13.773645659+00:00"
+completion_log = "Built, installed, verified. events.jsonl at .reference/SferaDev/.logs/summ-debug/events.jsonl has 1461 events across 7 kinds (tree.change, request.*, agent.*). Most recent event timestamp 2026-02-16T18:28:52Z confirms real-time writing. No session.start because extension was already activated before rebuild — that's expected. The subscriber works end-to-end."
+
+[[plan.goals]]
+id = "tree-change-op-types"
+
+[[plan.goals]]
+id = "tree-snapshot-lifecycle"
+
+[[plan.goals]]
+id = "tree-change-typed-ops"
+
+[[plan.goals]]
+id = "remove-tree-changes-file"
+
+[[plan.goals]]
+id = "remove-tree-change-bridge"
+
+[[plan.goals]]
+id = "cli-tree-command"
+
+[[plan.goals]]
+id = "cli-conversation-command"
+
+[[plan.goals]]
+id = "fork-detection"
+
+[[plan.goals]]
+id = "cli-self-describing"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

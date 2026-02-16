@@ -128,6 +128,11 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
       investigationLogger.subscribe(unifiedSubscriber),
     );
+  } else {
+    logger.warn(
+      "[UnifiedLog] Subscriber not created — events.jsonl will NOT be written. " +
+        "Check vercel.ai.logging.fileDirectory setting and workspace folders.",
+    );
   }
 
   // Bridge registry events → unified stream

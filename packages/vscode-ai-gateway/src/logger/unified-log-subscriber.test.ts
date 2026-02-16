@@ -1,26 +1,20 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hoisted mocks
+// Module-level mocks — satisfy imports that reach into vscode internals.
+//
+// These are NOT used in test assertions. They exist solely because the
+// production module imports vscode (for createVscodeLogConfig) and the
+// logger (which uses vscode.window). Our tests bypass both via interfaces.
+//
+// JIT note: when createVscodeLogConfig moves to its own file, the vscode
+// mock here can be removed entirely.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const hoisted = vi.hoisted(() => {
-  const mockMkdirSync = vi.fn();
-  const mockAppendFileSync = vi.fn();
-  const mockGetConfiguration = vi.fn();
-
-  return { mockMkdirSync, mockAppendFileSync, mockGetConfiguration };
-});
-
-vi.mock("node:fs", () => ({
-  mkdirSync: hoisted.mockMkdirSync,
-  appendFileSync: hoisted.mockAppendFileSync,
-}));
 
 vi.mock("vscode", () => ({
   workspace: {
-    getConfiguration: hoisted.mockGetConfiguration,
-    workspaceFolders: [{ uri: { fsPath: "/workspace" } }],
+    getConfiguration: () => ({ get: () => undefined }),
+    workspaceFolders: [],
   },
 }));
 
@@ -35,101 +29,194 @@ vi.mock("../logger.js", () => ({
 }));
 
 import { createUnifiedLogSubscriber } from "./unified-log-subscriber.js";
-import type { InvestigationEvent } from "./investigation-events.js";
+import {
+  TestEventWriter,
+  testLogConfig,
+  testEvent,
+} from "./unified-log-subscriber.test-helpers.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tests
+// Tests — interface-driven, no fs or vscode mocks
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("createUnifiedLogSubscriber", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    hoisted.mockGetConfiguration.mockReturnValue({
-      get: (key: string) => {
-        if (key === "logging.fileDirectory") return ".logs";
-        if (key === "investigation.name") return "test-investigation";
-        return undefined;
-      },
-    });
-  });
-
   it("returns a subscriber when config is valid", () => {
-    const subscriber = createUnifiedLogSubscriber();
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig(),
+    });
+
     expect(subscriber).not.toBeNull();
     expect(subscriber).toHaveProperty("onEvent");
   });
 
   it("creates the investigation directory on construction", () => {
-    createUnifiedLogSubscriber();
-    expect(hoisted.mockMkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining("test-investigation"),
-      { recursive: true },
-    );
+    const writer = new TestEventWriter();
+    createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({ investigationName: "my-investigation" }),
+    });
+
+    expect(writer.dirs).toHaveLength(1);
+    expect(writer.dirs[0]).toContain("my-investigation");
+  });
+
+  it("writes to events.jsonl inside the investigation directory", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({
+        logDirectory: "/logs",
+        investigationName: "inv1",
+      }),
+    });
+
+    subscriber?.onEvent(testEvent());
+
+    expect(writer.targetFile).toBe("/logs/inv1/events.jsonl");
   });
 
   it("appends JSONL on onEvent", () => {
-    const subscriber = createUnifiedLogSubscriber();
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig(),
+    });
     expect(subscriber).not.toBeNull();
 
-    const event: InvestigationEvent = {
-      kind: "session.start",
-      eventId: "01TEST",
-      ts: "2026-01-01T00:00:00.000Z",
-      sessionId: "s1",
-      conversationId: "c1",
-      chatId: "ch1",
-      extensionVersion: "1.0.0",
-    };
+    subscriber!.onEvent(
+      testEvent({ kind: "session.start", extensionVersion: "1.0.0" }),
+    );
 
-    subscriber?.onEvent(event);
+    expect(writer.events).toHaveLength(1);
+    expect(writer.events[0]!.kind).toBe("session.start");
+    // Raw line ends with newline
+    expect(writer.written[0]!.line.endsWith("\n")).toBe(true);
+  });
 
-    expect(hoisted.mockAppendFileSync).toHaveBeenCalledTimes(1);
-    const [filePath, content, encoding] = hoisted.mockAppendFileSync.mock
-      .calls[0] as [string, string, string];
-    expect(filePath).toContain("events.jsonl");
-    expect(encoding).toBe("utf8");
-    expect(content).toContain('"kind":"session.start"');
-    expect(content.endsWith("\n")).toBe(true);
+  it("appends multiple events in order", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig(),
+    })!;
+
+    subscriber.onEvent(
+      testEvent({ kind: "session.start", extensionVersion: "1.0.0" }),
+    );
+    subscriber.onEvent(testEvent({ kind: "session.end" }));
+
+    expect(writer.events).toHaveLength(2);
+    expect(writer.events[0]!.kind).toBe("session.start");
+    expect(writer.events[1]!.kind).toBe("session.end");
   });
 
   it("silently handles write errors", () => {
-    hoisted.mockAppendFileSync.mockImplementation(() => {
-      throw new Error("disk full");
-    });
+    const writer = new TestEventWriter();
+    writer.appendError = new Error("disk full");
 
-    const subscriber = createUnifiedLogSubscriber();
-    const event: InvestigationEvent = {
-      kind: "session.end",
-      eventId: "01TEST2",
-      ts: "2026-01-01T00:00:01.000Z",
-      sessionId: "s1",
-      conversationId: "c1",
-      chatId: "ch1",
-    };
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig(),
+    });
 
     // Should not throw
-    expect(() => subscriber?.onEvent(event)).not.toThrow();
+    expect(() => subscriber?.onEvent(testEvent())).not.toThrow();
   });
 
-  it("returns null when mkdirSync fails", () => {
-    hoisted.mockMkdirSync.mockImplementation(() => {
-      throw new Error("permission denied");
+  it("returns null when ensureDir fails", () => {
+    const writer = new TestEventWriter();
+    writer.ensureDirError = new Error("permission denied");
+
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig(),
     });
 
-    const subscriber = createUnifiedLogSubscriber();
     expect(subscriber).toBeNull();
   });
 
-  it("returns null when log directory config is empty string", () => {
-    hoisted.mockGetConfiguration.mockReturnValue({
-      get: (key: string) => {
-        if (key === "logging.fileDirectory") return "";
-        if (key === "investigation.name") return "test";
-        return undefined;
-      },
+  it("returns null when log directory is null", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({ logDirectory: null }),
     });
 
-    const subscriber = createUnifiedLogSubscriber();
     expect(subscriber).toBeNull();
+    expect(writer.dirs).toHaveLength(0);
+  });
+
+  it("returns null when log directory is empty string", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({ logDirectory: "" }),
+    });
+
+    expect(subscriber).toBeNull();
+  });
+
+  it("returns null when relative path and no workspace root", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({
+        logDirectory: ".logs",
+        workspaceRoot: null,
+      }),
+    });
+
+    expect(subscriber).toBeNull();
+  });
+
+  it("resolves relative log directory against workspace root", () => {
+    const writer = new TestEventWriter();
+    createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({
+        logDirectory: ".logs",
+        workspaceRoot: "/my/workspace",
+        investigationName: "default",
+      }),
+    });
+
+    expect(writer.dirs[0]).toBe("/my/workspace/.logs/default");
+  });
+
+  it("uses absolute log directory as-is", () => {
+    const writer = new TestEventWriter();
+    createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({
+        logDirectory: "/absolute/logs",
+        workspaceRoot: "/ignored",
+        investigationName: "inv",
+      }),
+    });
+
+    expect(writer.dirs[0]).toBe("/absolute/logs/inv");
+  });
+
+  it("eventsOfKind filters correctly", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig(),
+    })!;
+
+    subscriber.onEvent(
+      testEvent({ kind: "session.start", extensionVersion: "1.0.0" }),
+    );
+    subscriber.onEvent(testEvent({ kind: "session.end" }));
+    subscriber.onEvent(
+      testEvent({ kind: "session.start", extensionVersion: "2.0.0" }),
+    );
+
+    const starts = writer.eventsOfKind("session.start");
+    expect(starts).toHaveLength(2);
+    expect(starts[0]!.extensionVersion).toBe("1.0.0");
+    expect(starts[1]!.extensionVersion).toBe("2.0.0");
   });
 });

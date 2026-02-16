@@ -311,26 +311,26 @@ The `trace` command is especially powerful — it shows you the **cause → effe
 
 Users describe problems in UI terms. Here's how to translate:
 
-| User says | Query | What to look for |
-|---|---|---|
-| "My context jumped" | `tail --count 10` | `request.index` events — compare `actualInputTokens` across consecutive requests |
-| "The subagent disappeared" | `search removed` | `agent.removed` events — check the `reason` field |
-| "Something got summarized" | `search summarization` | `agent.completed` with `summarizationDetected=true`, or `request.index` with `isSummarization=true` |
-| "It's making duplicate requests" | `kinds` then `tail` | Multiple `agent.started` events with similar timing — check if identity matching failed |
-| "The tree looks wrong" | `search tree.change` | `tree.change` events — check `causedByChatId` to see what triggered each change |
-| "It errored but I didn't see why" | `errors` | `agent.errored` events, then `request <chatId>` for the full request context |
-| "It feels slow" | `session` | Check `durationMs` in `request.index` entries — are individual requests slow, or is there a pattern? |
+| User says                         | Query                  | What to look for                                                                                     |
+| --------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| "My context jumped"               | `tail --count 10`      | `request.index` events — compare `actualInputTokens` across consecutive requests                     |
+| "The subagent disappeared"        | `search removed`       | `agent.removed` events — check the `reason` field                                                    |
+| "Something got summarized"        | `search summarization` | `agent.completed` with `summarizationDetected=true`, or `request.index` with `isSummarization=true`  |
+| "It's making duplicate requests"  | `kinds` then `tail`    | Multiple `agent.started` events with similar timing — check if identity matching failed              |
+| "The tree looks wrong"            | `search tree.change`   | `tree.change` events — check `causedByChatId` to see what triggered each change                      |
+| "It errored but I didn't see why" | `errors`               | `agent.errored` events, then `request <chatId>` for the full request context                         |
+| "It feels slow"                   | `session`              | Check `durationMs` in `request.index` entries — are individual requests slow, or is there a pattern? |
 
 ### Investigation Detail Levels
 
 The event stream's richness depends on the `vercel.ai.investigation.detail` setting:
 
-| Level | What's captured | When to use |
-|---|---|---|
-| `off` | Agent lifecycle + tree changes only | Normal operation |
-| `index` | + One-line-per-request (timing, tokens, status) | Lightweight monitoring |
-| `messages` | + Full message summaries per conversation | Debugging conversation flow |
-| `full` | + Raw SSE event streams | Deep protocol debugging |
+| Level      | What's captured                                 | When to use                 |
+| ---------- | ----------------------------------------------- | --------------------------- |
+| `off`      | Agent lifecycle + tree changes only             | Normal operation            |
+| `index`    | + One-line-per-request (timing, tokens, status) | Lightweight monitoring      |
+| `messages` | + Full message summaries per conversation       | Debugging conversation flow |
+| `full`     | + Raw SSE event streams                         | Deep protocol debugging     |
 
 When a user reports a problem, if the detail level was `off`, you'll only have agent lifecycle events. You can still diagnose many issues from those, but for token-level problems, suggest they set `vercel.ai.investigation.detail` to `index` and reproduce.
 
@@ -346,13 +346,13 @@ These are logged on every tree change via `status-bar.ts`. Use the `vercel.ai.du
 
 ### Common Issues
 
-| Symptom | Query | Likely Cause |
-|---|---|---|
-| Subagent at root level | `search parentConversationHash` | Claim not created or expired (90s timeout) |
-| Wrong percentage | `request <chatId> --json` | `maxInputTokens` not set — model info not enriched |
-| Agent stuck streaming | `tail --kind agent.started` | No matching `agent.completed` — completion event lost |
-| Duplicate agents | `conversations` | Same conversation appearing twice — identity matching failure |
-| Token jumps >40% | `tail --count 5` | Compare consecutive `request.index` tokens — state amnesia (see Critical Knowledge) |
+| Symptom                | Query                           | Likely Cause                                                                        |
+| ---------------------- | ------------------------------- | ----------------------------------------------------------------------------------- |
+| Subagent at root level | `search parentConversationHash` | Claim not created or expired (90s timeout)                                          |
+| Wrong percentage       | `request <chatId> --json`       | `maxInputTokens` not set — model info not enriched                                  |
+| Agent stuck streaming  | `tail --kind agent.started`     | No matching `agent.completed` — completion event lost                               |
+| Duplicate agents       | `conversations`                 | Same conversation appearing twice — identity matching failure                       |
+| Token jumps >40%       | `tail --count 5`                | Compare consecutive `request.index` tokens — state amnesia (see Critical Knowledge) |
 
 ---
 
