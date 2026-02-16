@@ -198,7 +198,7 @@
     "test:integration": "pnpm build && pnpm exec tsc -p tsconfig.test.json && node scripts/test-integration.js",
     "test:integration:headed": "pnpm build && pnpm exec tsc -p tsconfig.test.json && node scripts/test-integration.js --headed",
     "test:watch": "vitest",
-    "analyze:logs": "node scripts/analyze-agent-logs.ts",
+    "analyze:logs": "node ../../scripts/query-events.ts",
     "clean": "rm -rf out",
     "prepackage": "pnpm run build",
     "package": "vsce package --no-dependencies",

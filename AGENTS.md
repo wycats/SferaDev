@@ -140,6 +140,35 @@ A three-phase micro-loop for implementing discrete units of work (features, migr
 - `exo`: The Tool.
 <!-- core end -->
 
-# Project Mission
+# Project: Vercel AI Gateway for VS Code
 
-Unknown Mission
+A VS Code extension that provides AI models via the Vercel AI Gateway using the OpenResponses wire protocol. The extension registers as a `vscode.lm` language model provider, making Vercel-hosted models (Claude, GPT, Gemini, etc.) available to any VS Code chat participant.
+
+## Repository Structure
+
+| Path | Purpose |
+|---|---|
+| `packages/vscode-ai-gateway/` | The VS Code extension (TypeScript, esbuild, Vitest) |
+| `packages/openresponses-client/` | Generated OpenResponses API types and client |
+| `scripts/` | Developer tools (event query, API horizon scanner) |
+| `docs/rfcs/` | Decision records (RFC process) |
+| `docs/agent-context/` | Phase planning and execution state |
+
+## Key Commands
+
+```bash
+# Build and install the extension
+cd packages/vscode-ai-gateway && pnpm build
+
+# Run tests (706 tests, 48 files)
+cd packages/vscode-ai-gateway && pnpm test
+
+# Query the unified event stream
+node scripts/query-events.ts session
+
+# Type check
+cd packages/vscode-ai-gateway && pnpm tsc
+```
+
+See `packages/vscode-ai-gateway/AGENTS.md` for detailed extension architecture.
+See `packages/openresponses-client/AGENTS.md` for the wire protocol package.
