@@ -2,21 +2,10 @@
 # Implementation Plan
 
 [phase]
-id = "01khddgdb93f871apk819k8dxh"
+id = "01khknbzwdpkke7y95dnq00pb8"
 
 [plan]
-[[plan.goals]]
-id = "conversation-store"
-
-[[plan.goals]]
-id = "persist-on-change"
-
-[[plan.goals]]
-id = "restore-on-startup"
-
-[[plan.goals]]
-id = "idle-timer"
-
+# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
 [verification]

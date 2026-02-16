@@ -2086,7 +2086,7 @@ id = "00073"
 [[epochs.phases]]
 id = "01khknbzwdpkke7y95dnq00pb8"
 title = "Collaborative UI Refinements"
-status = "pending"
+status = "active"
 goals = []
 kind = "regular"
 ulid = "01KHKNBZWDPKKE7Y95DNQ00PB8"
@@ -2094,7 +2094,7 @@ ulid = "01KHKNBZWDPKKE7Y95DNQ00PB8"
 [[epochs.phases]]
 id = "01khddgdb93f871apk819k8dxh"
 title = "Persistence & Idle Timer"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHDDGDB93F871APK819K8DXH"
 

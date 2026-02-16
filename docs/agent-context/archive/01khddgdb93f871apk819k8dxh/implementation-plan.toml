@@ -1,0 +1,24 @@
+# READ-ONLY: Use 'exo' CLI to modify this file.
+# Implementation Plan
+
+[phase]
+id = "01khddgdb93f871apk819k8dxh"
+
+[plan]
+[[plan.goals]]
+id = "conversation-store"
+
+[[plan.goals]]
+id = "persist-on-change"
+
+[[plan.goals]]
+id = "restore-on-startup"
+
+[[plan.goals]]
+id = "idle-timer"
+
+
+
+[verification]
+automated = ["Run scripts/verify-phase.sh"]
+manual = []
