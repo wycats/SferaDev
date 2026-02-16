@@ -1917,7 +1917,7 @@ id = "00073"
 [[epochs.phases]]
 id = "01khddg7tp2djwcgn2theer3ar"
 title = "Tree Item Refactor"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHDDG7TP2DJWCGN2THEER3AR"
 
@@ -2086,7 +2086,7 @@ id = "00073"
 [[epochs.phases]]
 id = "01khddgdb93f871apk819k8dxh"
 title = "Persistence & Idle Timer"
-status = "pending"
+status = "active"
 kind = "regular"
 ulid = "01KHDDGDB93F871APK819K8DXH"
 
