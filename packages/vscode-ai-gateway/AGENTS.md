@@ -15,20 +15,20 @@ Activation is two-phase for boot speed:
 
 The wiring connects these subsystems:
 
-| Subsystem | Entry Point | Purpose |
-|---|---|---|
-| **Provider** | `src/provider.ts` | Language model provider (request building, streaming, token tracking) |
-| **Agent Registry** | `src/agent/registry-impl.ts` | Tracks active agents and their token state |
-| **Status Bar** | `src/status-bar.ts` | Glanceable token usage display |
-| **Conversation Tree** | `src/agent-tree.ts` | TreeView showing conversations, activity logs, subagents |
-| **Inspector** | `src/inspector/content-provider.ts` | Read-only document provider for inspecting tree nodes |
-| **Identity** | `src/identity/` | Agent identity resolution (claim registry, hash matching) |
-| **Token Counter** | `src/tokens/counter.ts` | Token estimation with model-specific tokenizers |
-| **Diagnostics** | `src/diagnostics/` | Tree snapshots, invariant checks, change logging |
-| **Logger** | `src/logger/` | Investigation logging, unified event stream |
-| **Persistence** | `src/persistence/` | Conversation state storage and migration |
-| **Conversation** | `src/conversation/` | Conversation data model, tree building, tree items |
-| **Models** | `src/models/` | Model metadata enrichment, filtering, identity |
+| Subsystem             | Entry Point                         | Purpose                                                               |
+| --------------------- | ----------------------------------- | --------------------------------------------------------------------- |
+| **Provider**          | `src/provider.ts`                   | Language model provider (request building, streaming, token tracking) |
+| **Agent Registry**    | `src/agent/registry-impl.ts`        | Tracks active agents and their token state                            |
+| **Status Bar**        | `src/status-bar.ts`                 | Glanceable token usage display                                        |
+| **Conversation Tree** | `src/agent-tree.ts`                 | TreeView showing conversations, activity logs, subagents              |
+| **Inspector**         | `src/inspector/content-provider.ts` | Read-only document provider for inspecting tree nodes                 |
+| **Identity**          | `src/identity/`                     | Agent identity resolution (claim registry, hash matching)             |
+| **Token Counter**     | `src/tokens/counter.ts`             | Token estimation with model-specific tokenizers                       |
+| **Diagnostics**       | `src/diagnostics/`                  | Tree snapshots, invariant checks, change logging                      |
+| **Logger**            | `src/logger/`                       | Investigation logging, unified event stream                           |
+| **Persistence**       | `src/persistence/`                  | Conversation state storage and migration                              |
+| **Conversation**      | `src/conversation/`                 | Conversation data model, tree building, tree items                    |
+| **Models**            | `src/models/`                       | Model metadata enrichment, filtering, identity                        |
 
 ### Source Layout
 
@@ -128,6 +128,7 @@ src/
 `extractSystemPrompt()` in `src/provider/system-prompt.ts` extracts system prompts from VS Code's proposed System role (role=3). **Do not remove this function.**
 
 Without it:
+
 - System prompts get translated as regular messages
 - Claude sees incorrect conversation structure
 - Tool calling breaks
@@ -138,16 +139,17 @@ This extension communicates with the Vercel AI Gateway using the **OpenResponses
 
 Key differences:
 
-| Aspect | OpenResponses (correct) | Chat Completions (wrong) |
-|---|---|---|
-| Endpoint | `/v1/responses` | `/v1/chat/completions` |
-| User content | `{ type: "input_text", text: "..." }` | `{ role: "user", content: "..." }` |
-| Assistant content | `{ type: "output_text", text: "..." }` | `{ role: "assistant", content: "..." }` |
-| Tool definition | Flat: `{ type: "function", name: "...", parameters: {...} }` | Nested: `{ type: "function", function: { name: "..." } }` |
+| Aspect            | OpenResponses (correct)                                      | Chat Completions (wrong)                                  |
+| ----------------- | ------------------------------------------------------------ | --------------------------------------------------------- |
+| Endpoint          | `/v1/responses`                                              | `/v1/chat/completions`                                    |
+| User content      | `{ type: "input_text", text: "..." }`                        | `{ role: "user", content: "..." }`                        |
+| Assistant content | `{ type: "output_text", text: "..." }`                       | `{ role: "assistant", content: "..." }`                   |
+| Tool definition   | Flat: `{ type: "function", name: "...", parameters: {...} }` | Nested: `{ type: "function", function: { name: "..." } }` |
 
 **Mixing up `input_text` vs `output_text` causes HTTP 400 errors.**
 
 When working on the provider:
+
 - **DO** refer to `../../packages/openresponses-client/docs/OPENRESPONSES-SPEC.md`
 - **DO** use the OpenAPI schema at `../../packages/openresponses-client/openapi.json`
 - **DO** use types from the `openresponses-client` package
@@ -159,6 +161,7 @@ When working on the provider:
 If the status bar shows massive jumps (e.g., 20k→40k) or underestimates by >40%, the cause is almost certainly **state amnesia** — the extension forgot previous conversation state and re-estimated from scratch.
 
 **Do not tune constants in `src/tokens/counter.ts`** for large errors. Instead:
+
 1. Check `AgentRegistry` — are agent entries persisting across turns?
 2. Check `recordActual` — is it being called with API-reported token counts?
 3. Check conversation identity — is the same conversation being matched?
@@ -182,11 +185,13 @@ History
 ```
 
 Key types in `src/conversation/types.ts`:
+
 - `Conversation` — top-level conversation with token state, activity log, subagents
 - `ActivityLogEntry` — union of UserMessage, AIResponse, Compaction, Error, Turn, ToolContinuation
 - `Subagent` — nested agent with its own token tracking
 
 Tree construction in `src/conversation/build-tree.ts`:
+
 - `buildTree()` — converts flat activity log into hierarchical tree nodes
 - `groupByUserMessage()` — groups responses under their originating user message
 - Property-based tests verify 12+ structural invariants
@@ -207,6 +212,7 @@ Agents are identified by conversation hash (derived from VS Code's internal conv
 4. **Registry update** — `AgentRegistryImpl` tracks the agent's lifecycle
 
 Key files:
+
 - `src/identity/claim-registry.ts` — Pending child claims with 90-second expiry
 - `src/identity/hash-utils.ts` — Deterministic hashing for agent type identification
 
@@ -218,20 +224,20 @@ All observable events flow through `InvestigationLogger` → subscribers → `.l
 
 ### Event Kinds (12)
 
-| Kind | Source | Data |
-|---|---|---|
-| `session.start` | Extension activation | Extension version |
-| `session.end` | Extension deactivation | — |
-| `agent.started` | Registry bridge | Agent ID, isMain, isResume |
-| `agent.completed` | Registry bridge | Usage (tokens), turn count, summarization detected |
-| `agent.errored` | Registry bridge | Agent ID |
-| `agent.updated` | Registry bridge | Update type |
-| `agent.removed` | Registry bridge | Removal reason |
-| `request.index` | Investigation logger | Status, model, tokens, duration, isSummarization |
-| `request.message-summary` | Investigation logger | Per-conversation message summaries |
-| `request.full` | Investigation logger | Full request/response bodies |
-| `request.sse` | Investigation logger | Raw SSE events |
-| `tree.change` | Tree change bridge | Change event, causedByChatId |
+| Kind                      | Source                 | Data                                               |
+| ------------------------- | ---------------------- | -------------------------------------------------- |
+| `session.start`           | Extension activation   | Extension version                                  |
+| `session.end`             | Extension deactivation | —                                                  |
+| `agent.started`           | Registry bridge        | Agent ID, isMain, isResume                         |
+| `agent.completed`         | Registry bridge        | Usage (tokens), turn count, summarization detected |
+| `agent.errored`           | Registry bridge        | Agent ID                                           |
+| `agent.updated`           | Registry bridge        | Update type                                        |
+| `agent.removed`           | Registry bridge        | Removal reason                                     |
+| `request.index`           | Investigation logger   | Status, model, tokens, duration, isSummarization   |
+| `request.message-summary` | Investigation logger   | Per-conversation message summaries                 |
+| `request.full`            | Investigation logger   | Full request/response bodies                       |
+| `request.sse`             | Investigation logger   | Raw SSE events                                     |
+| `tree.change`             | Tree change bridge     | Change event, causedByChatId                       |
 
 ### Event Base Fields
 
@@ -254,37 +260,99 @@ Filters: `--since 5m`, `--kind agent.errored`, `--conversation <id>`, `--json`, 
 
 ---
 
-## Diagnostics
+## Debugging Workflow: Shared Perception
 
-### Tree Diagnostics (`src/diagnostics/tree-diagnostics.ts`)
+The logging infrastructure exists so that you and the user can have a **shared view** of what the extension is doing. When the user describes a problem ("my context window jumped", "the subagent disappeared", "something feels slow"), you should be able to independently verify what happened from the event stream — not guess, not ask for screenshots, not read raw files line by line.
 
-`TreeDiagnostics` creates snapshots of the agent tree state and checks invariants:
+### The Principle
 
-- **Snapshots** contain: agents (with full token state), pending claims, tree text visualization
+The user sees the UI (status bar, tree view, chat behavior). You see the event stream. Together, you can triangulate what happened. The workflow is:
+
+1. **User describes what they see** — "My token count jumped from 20k to 60k after the last turn"
+2. **You query the event stream** — Look at the actual data to confirm or refine their observation
+3. **You correlate** — Match what the logs show to what the user described
+4. **You explain from evidence** — "I can see that agent.completed at 10:04:02 reported 58k input tokens, and the previous turn was 19k. The request.index shows isSummarization=false, so this wasn't a compaction reset — it looks like the conversation history grew by 39k tokens in one turn, which suggests a large tool result was included."
+
+### When the User Reports a Problem
+
+**Always query the event stream first.** Don't ask the user to describe what they see in more detail until you've looked at the data yourself.
+
+```bash
+# Step 1: Get the big picture
+node scripts/query-events.ts session
+
+# Step 2: Look for obvious problems
+node scripts/query-events.ts errors
+
+# Step 3: Look at recent activity
+node scripts/query-events.ts tail --count 30
+```
+
+From the session overview, you'll know: how many requests happened, how many errored, whether summarization was triggered, and the total token budget. This is usually enough to orient yourself.
+
+### Tracing a Specific Problem
+
+When the user points to a specific moment ("the third request did something weird"), use the conversation and request commands to zoom in:
+
+```bash
+# Find the conversation
+node scripts/query-events.ts conversations
+
+# Get all events for that conversation
+node scripts/query-events.ts tail --conversation <id>
+
+# If you have a chatId, trace its full causality chain
+node scripts/query-events.ts trace <chatId>
+```
+
+The `trace` command is especially powerful — it shows you the **cause → effect chain**: which agent.started triggered which tree.changes, which request.index recorded the result. This lets you reconstruct the sequence of events that led to what the user observed.
+
+### Connecting User Language to Event Data
+
+Users describe problems in UI terms. Here's how to translate:
+
+| User says | Query | What to look for |
+|---|---|---|
+| "My context jumped" | `tail --count 10` | `request.index` events — compare `actualInputTokens` across consecutive requests |
+| "The subagent disappeared" | `search removed` | `agent.removed` events — check the `reason` field |
+| "Something got summarized" | `search summarization` | `agent.completed` with `summarizationDetected=true`, or `request.index` with `isSummarization=true` |
+| "It's making duplicate requests" | `kinds` then `tail` | Multiple `agent.started` events with similar timing — check if identity matching failed |
+| "The tree looks wrong" | `search tree.change` | `tree.change` events — check `causedByChatId` to see what triggered each change |
+| "It errored but I didn't see why" | `errors` | `agent.errored` events, then `request <chatId>` for the full request context |
+| "It feels slow" | `session` | Check `durationMs` in `request.index` entries — are individual requests slow, or is there a pattern? |
+
+### Investigation Detail Levels
+
+The event stream's richness depends on the `vercel.ai.investigation.detail` setting:
+
+| Level | What's captured | When to use |
+|---|---|---|
+| `off` | Agent lifecycle + tree changes only | Normal operation |
+| `index` | + One-line-per-request (timing, tokens, status) | Lightweight monitoring |
+| `messages` | + Full message summaries per conversation | Debugging conversation flow |
+| `full` | + Raw SSE event streams | Deep protocol debugging |
+
+When a user reports a problem, if the detail level was `off`, you'll only have agent lifecycle events. You can still diagnose many issues from those, but for token-level problems, suggest they set `vercel.ai.investigation.detail` to `index` and reproduce.
+
+### Tree Diagnostics
+
+`TreeDiagnostics` (`src/diagnostics/tree-diagnostics.ts`) provides a complementary view — snapshots of the agent tree state at each change:
+
+- **Snapshots**: agents with full token state, pending claims, tree text visualization
 - **Invariant checks**: exactly one main agent, no orphan subagents, valid parent references
 - **Tree text**: human-readable ASCII tree for logging
 
-Snapshots are logged on every tree change via `status-bar.ts`.
-
-### Debugging Checklist
-
-Before asking the user for information:
-
-1. **Query the event stream**: `node scripts/query-events.ts session`
-2. **Check for errors**: `node scripts/query-events.ts errors`
-3. **Trace a request**: `node scripts/query-events.ts trace <chatId>`
-4. **Check summarization**: `node scripts/query-events.ts search summarization`
-5. **Dump diagnostics**: Run the `vercel.ai.dumpDiagnostics` command
+These are logged on every tree change via `status-bar.ts`. Use the `vercel.ai.dumpDiagnostics` command to write a full diagnostic dump to `.logs/`.
 
 ### Common Issues
 
-| Symptom | Check | Likely Cause |
+| Symptom | Query | Likely Cause |
 |---|---|---|
-| Subagent at root level | `parentConversationHash` in agent entry | Claim not created or expired |
-| Wrong percentage | `maxInputTokens` in agent entry | Model info not enriched |
-| Agent stuck streaming | `status` field in agent entry | Completion event not received |
-| Duplicate agents | Agent IDs in registry | Identity matching failure |
-| Token jumps >40% | `recordActual` calls | State amnesia (see above) |
+| Subagent at root level | `search parentConversationHash` | Claim not created or expired (90s timeout) |
+| Wrong percentage | `request <chatId> --json` | `maxInputTokens` not set — model info not enriched |
+| Agent stuck streaming | `tail --kind agent.started` | No matching `agent.completed` — completion event lost |
+| Duplicate agents | `conversations` | Same conversation appearing twice — identity matching failure |
+| Token jumps >40% | `tail --count 5` | Compare consecutive `request.index` tokens — state amnesia (see Critical Knowledge) |
 
 ---
 
@@ -300,28 +368,28 @@ Before asking the user for information:
 
 ## Configuration (package.json contributes)
 
-| Setting | Default | Purpose |
-|---|---|---|
-| `vercel.ai.endpoint` | `https://ai-gateway.vercel.sh` | Gateway endpoint URL |
-| `vercel.ai.models.default` | `""` | Default model ID |
-| `vercel.ai.logging.level` | `"warn"` | Output channel verbosity |
-| `vercel.ai.models.userSelectable` | `false` | Show all models in picker |
-| `vercel.ai.investigation.name` | `"default"` | Investigation scope name |
-| `vercel.ai.investigation.detail` | `"off"` | Investigation detail level (off/index/messages/full) |
+| Setting                           | Default                        | Purpose                                              |
+| --------------------------------- | ------------------------------ | ---------------------------------------------------- |
+| `vercel.ai.endpoint`              | `https://ai-gateway.vercel.sh` | Gateway endpoint URL                                 |
+| `vercel.ai.models.default`        | `""`                           | Default model ID                                     |
+| `vercel.ai.logging.level`         | `"warn"`                       | Output channel verbosity                             |
+| `vercel.ai.models.userSelectable` | `false`                        | Show all models in picker                            |
+| `vercel.ai.investigation.name`    | `"default"`                    | Investigation scope name                             |
+| `vercel.ai.investigation.detail`  | `"off"`                        | Investigation detail level (off/index/messages/full) |
 
 ### Commands
 
-| Command | Purpose |
-|---|---|
-| `vercel.ai.manage` | Manage authentication |
-| `vercel.ai.showTokenDetails` | Show token usage details |
-| `vercel.ai.refreshAgentTree` | Refresh agent tree view |
-| `vercel.ai.inspectNode` | Inspect a tree node |
-| `vercel.ai.dumpDiagnostics` | Dump agent tree diagnostics to `.logs/` |
-| `vercel.ai.testSummarizationDetection` | Test summarization detection |
-| `vercel.ai.investigation.prune` | Prune investigation logs |
-| `vercel.ai.exportErrorLogs` | Export error logs |
-| `vercel.ai.refreshModels` | Refresh model list |
+| Command                                | Purpose                                 |
+| -------------------------------------- | --------------------------------------- |
+| `vercel.ai.manage`                     | Manage authentication                   |
+| `vercel.ai.showTokenDetails`           | Show token usage details                |
+| `vercel.ai.refreshAgentTree`           | Refresh agent tree view                 |
+| `vercel.ai.inspectNode`                | Inspect a tree node                     |
+| `vercel.ai.dumpDiagnostics`            | Dump agent tree diagnostics to `.logs/` |
+| `vercel.ai.testSummarizationDetection` | Test summarization detection            |
+| `vercel.ai.investigation.prune`        | Prune investigation logs                |
+| `vercel.ai.exportErrorLogs`            | Export error logs                       |
+| `vercel.ai.refreshModels`              | Refresh model list                      |
 
 ---
 
