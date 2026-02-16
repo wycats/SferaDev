@@ -146,13 +146,13 @@ A VS Code extension that provides AI models via the Vercel AI Gateway using the 
 
 ## Repository Structure
 
-| Path | Purpose |
-|---|---|
-| `packages/vscode-ai-gateway/` | The VS Code extension (TypeScript, esbuild, Vitest) |
-| `packages/openresponses-client/` | Generated OpenResponses API types and client |
-| `scripts/` | Developer tools (event query, API horizon scanner) |
-| `docs/rfcs/` | Decision records (RFC process) |
-| `docs/agent-context/` | Phase planning and execution state |
+| Path                             | Purpose                                             |
+| -------------------------------- | --------------------------------------------------- |
+| `packages/vscode-ai-gateway/`    | The VS Code extension (TypeScript, esbuild, Vitest) |
+| `packages/openresponses-client/` | Generated OpenResponses API types and client        |
+| `scripts/`                       | Developer tools (event query, API horizon scanner)  |
+| `docs/rfcs/`                     | Decision records (RFC process)                      |
+| `docs/agent-context/`            | Phase planning and execution state                  |
 
 ## Key Commands
 

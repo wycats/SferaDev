@@ -110,7 +110,11 @@ function parseTime(value: string): number {
     const amount = parseInt(relativeMatch[1]!, 10);
     const unit = relativeMatch[2]!;
     const ms =
-      unit === "s" ? amount * 1000 : unit === "m" ? amount * 60000 : amount * 3600000;
+      unit === "s"
+        ? amount * 1000
+        : unit === "m"
+          ? amount * 60000
+          : amount * 3600000;
     return Date.now() - ms;
   }
   // Otherwise parse as ISO date
@@ -175,7 +179,8 @@ function formatEvent(e: EventBase): string {
       const entry = (e as any).entry;
       const status = entry?.status ?? "?";
       const model = entry?.model ?? "?";
-      const inp = entry?.actualInputTokens ?? entry?.estimatedInputTokens ?? "?";
+      const inp =
+        entry?.actualInputTokens ?? entry?.estimatedInputTokens ?? "?";
       const out = entry?.actualOutputTokens ?? "?";
       const dur = entry?.durationMs ? `${entry.durationMs}ms` : "?";
       const summ = entry?.isSummarization ? " [SUMMARIZATION]" : "";
@@ -193,7 +198,9 @@ function formatEvent(e: EventBase): string {
 
     case "tree.change": {
       const tc = e as any;
-      const caused = tc.causedByChatId ? `  caused-by=${tc.causedByChatId.slice(-12)}` : "";
+      const caused = tc.causedByChatId
+        ? `  caused-by=${tc.causedByChatId.slice(-12)}`
+        : "";
       return `${time} [${id}] TREE CHANGE    ${tc.event}${caused}`;
     }
 
@@ -266,7 +273,9 @@ function cmdSession(events: EventBase[]): void {
   console.log(`Sessions:       ${sessions.size}`);
   console.log(`Conversations:  ${conversations.size}`);
   console.log(`Duration:       ${durationMin} min`);
-  console.log(`Time range:     ${formatTime(first.ts)} → ${formatTime(last.ts)}`);
+  console.log(
+    `Time range:     ${formatTime(first.ts)} → ${formatTime(last.ts)}`,
+  );
   console.log(`Total events:   ${events.length}`);
   console.log();
   console.log("--- Requests ---");
@@ -467,7 +476,9 @@ function cmdKinds(events: EventBase[]): void {
 
   const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
   for (const [kind, count] of sorted) {
-    const bar = "█".repeat(Math.min(50, Math.round((count / events.length) * 50)));
+    const bar = "█".repeat(
+      Math.min(50, Math.round((count / events.length) * 50)),
+    );
     console.log(`${kind.padEnd(24)} ${String(count).padStart(6)}  ${bar}`);
   }
 }
@@ -510,12 +521,7 @@ function resolveEventsFile(flags: Record<string, string>): string {
   // Try workspace-relative first, then absolute
   const candidates = [
     path.resolve(logDir, investigation, "events.jsonl"),
-    path.resolve(
-      process.cwd(),
-      logDir,
-      investigation,
-      "events.jsonl",
-    ),
+    path.resolve(process.cwd(), logDir, investigation, "events.jsonl"),
   ];
 
   for (const candidate of candidates) {
