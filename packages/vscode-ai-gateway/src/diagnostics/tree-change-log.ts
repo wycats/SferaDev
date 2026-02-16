@@ -50,6 +50,8 @@ export interface TreeChangeEntry {
   event: TreeChangeEvent;
   change: ChangeDetails;
   snapshot: TreeSnapshot;
+  /** The VS Code chat ID of the request that caused this tree change. */
+  causedByChatId?: string;
 }
 
 export interface ChangeDetails {
@@ -164,6 +166,7 @@ class TreeChangeLogger {
     event: TreeChangeEvent,
     change: ChangeDetails,
     snapshot: TreeSnapshot,
+    causedByChatId?: string,
   ): void {
     if (!this.enabled || !this.logPath) return;
 
@@ -172,6 +175,7 @@ class TreeChangeLogger {
       event,
       change,
       snapshot,
+      ...(causedByChatId ? { causedByChatId } : {}),
     };
 
     try {
@@ -188,7 +192,7 @@ class TreeChangeLogger {
    * Log changes by diffing current state against previous snapshot.
    * This is the main entry point called when conversations change.
    */
-  logChanges(conversations: Conversation[]): void {
+  logChanges(conversations: Conversation[], causedByChatId?: string): void {
     if (!this.enabled) return;
 
     const snapshot = this.buildSnapshot(conversations);
@@ -204,6 +208,7 @@ class TreeChangeLogger {
             count: conversations.length,
           },
           snapshot,
+          causedByChatId,
         );
       }
       this.previousSnapshot = snapshot;
@@ -214,7 +219,7 @@ class TreeChangeLogger {
     const changes = this.detectChanges(previous, snapshot, conversations);
 
     for (const { event, change } of changes) {
-      this.log(event, change, snapshot);
+      this.log(event, change, snapshot, causedByChatId);
     }
 
     this.previousSnapshot = snapshot;

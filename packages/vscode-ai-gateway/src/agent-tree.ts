@@ -6,8 +6,8 @@
  * as children, and subagents nested under their spawning turns.
  */
 
-import * as vscode from "vscode"
-import type { AgentRegistry } from "./agent/index.js"
+import * as vscode from "vscode";
+import type { AgentRegistry } from "./agent/index.js";
 import {
   ConversationManager,
   ConversationItem,
@@ -20,14 +20,14 @@ import {
   SectionHeaderItem,
   ToolContinuationItem,
   UserMessageItem,
-} from "./conversation/index.js"
-import type { Conversation } from "./conversation/index.js"
+} from "./conversation/index.js";
+import type { Conversation } from "./conversation/index.js";
 import {
   buildTree,
   groupByUserMessage,
   type TreeNode,
   type TreeResult,
-} from "./conversation/build-tree.js"
+} from "./conversation/build-tree.js";
 
 /**
  * Union type for all tree items in the conversation tree

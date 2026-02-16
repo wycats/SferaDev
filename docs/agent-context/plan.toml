@@ -1931,13 +1931,15 @@ ulid = "01KHJ0GTNBT1NAABTPF7FF7FWM"
 [[epochs.phases.goals]]
 id = "tree-inspector"
 label = "Tree node inspector: click any node → ephemeral doc with full contents (shared perception)"
-status = "pending"
+status = "completed"
+completion_log = "Implemented tree node inspector. Virtual document provider (vercel-ai-inspector scheme) renders full node contents as read-only Markdown. 9 pure render functions cover all entry types. Click commands on all data nodes (SectionHeaderItem excluded). Live refresh via onDidChangeConversations. 6 new tests, 683 total pass. Committed as d831c0a."
 ulid = "01KHHMBEQ5YCJF0EV4VPFXKGM1"
 
 [[epochs.phases.goals]]
 id = "log-event-schema"
 label = "Event causality: every tree change carries causedByChatId linking to the request that produced it"
-status = "pending"
+status = "completed"
+completion_log = "Event causality chain complete: chatId flows from AgentRegistryEvent → ConversationManager.rebuild() → TreeChangeLogger.logChanges() → TreeChangeEntry.causedByChatId + InvestigationEventBase.causedByChatId. Every tree change now carries the chatId of the request that produced it. Deferred: lifecycle events, eventId ULID, registry-event-bridge (orthogonal to causality chain). 683 tests pass."
 ulid = "01KHHMAHDWK90VT5D35JCM1AA4"
 
 [[epochs.phases.goals]]

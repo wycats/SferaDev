@@ -1,9 +1,9 @@
-import * as fs from "fs"
-import * as path from "path"
-import * as vscode from "vscode"
-import { EXTENSION_ID, VENDOR_ID, VSCODE_EXTENSION_ID } from "./constants"
-import { initializeOutputChannel, logger } from "./logger"
-import { StubProvider } from "./provider-stub"
+import * as fs from "fs";
+import * as path from "path";
+import * as vscode from "vscode";
+import { EXTENSION_ID, VENDOR_ID, VSCODE_EXTENSION_ID } from "./constants";
+import { initializeOutputChannel, logger } from "./logger";
+import { StubProvider } from "./provider-stub";
 
 const loadSerialize = (() => {
   let cached: Promise<{ tryStringify: (value: unknown) => string }> | undefined;

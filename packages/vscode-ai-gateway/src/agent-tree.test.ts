@@ -4,14 +4,14 @@ import * as vscode from "vscode";
 vi.mock("vscode", () => ({
   Uri: {
     parse: (s: string) => {
-      const url = new URL(s)
+      const url = new URL(s);
       return {
         scheme: url.protocol.slice(0, -1),
         authority: url.hostname,
         path: url.pathname,
         query: url.search,
         toString: () => s,
-      }
+      };
     },
   },
   TreeItem: class {

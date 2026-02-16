@@ -25,6 +25,8 @@ export interface InvestigationEventBase {
   chatId: string;
   parentChatId?: string | null;
   agentTypeHash?: string | null;
+  /** The chat ID of the request that caused this event (for tree→request causality). */
+  causedByChatId?: string | null;
 }
 
 export interface InvestigationIndexEvent extends InvestigationEventBase {

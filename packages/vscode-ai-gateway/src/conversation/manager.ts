@@ -55,13 +55,16 @@ export class ConversationManager implements vscode.Disposable {
   /** Conversations restored from persistence (shown as archived until active) */
   private restoredConversations = new Map<string, Conversation>();
 
-  private readonly _onDidChangeConversations = new vscode.EventEmitter<void>();
+  private readonly _onDidChangeConversations =
+    new vscode.EventEmitter<string | undefined>();
   readonly onDidChangeConversations = this._onDidChangeConversations.event;
 
   constructor(private registry: AgentRegistry) {
     this.disposables.push(
-      registry.onDidChangeAgents((_event: AgentRegistryEvent) => {
-        this.rebuild();
+      registry.onDidChangeAgents((event: AgentRegistryEvent) => {
+        const chatId =
+          "chatId" in event ? (event.chatId as string | undefined) : undefined;
+        this.rebuild(chatId);
       }),
     );
 
@@ -222,7 +225,7 @@ export class ConversationManager implements vscode.Disposable {
     }, 0);
   }
 
-  private rebuild(): void {
+  private rebuild(causedByChatId?: string): void {
     const agents = this.registry.getAgents();
 
     const parentIdentifiers = new Set<string>();
@@ -305,9 +308,12 @@ export class ConversationManager implements vscode.Disposable {
     this.persistConversations();
 
     // Log tree changes for debugging
-    getTreeChangeLogger().logChanges(Array.from(nextConversations.values()));
+    getTreeChangeLogger().logChanges(
+      Array.from(nextConversations.values()),
+      causedByChatId,
+    );
 
-    this._onDidChangeConversations.fire();
+    this._onDidChangeConversations.fire(causedByChatId);
   }
 
   private pruneCompactionState(): void {
@@ -718,7 +724,7 @@ export class ConversationManager implements vscode.Disposable {
     if (response) {
       response.characterization = characterization;
       response.state = "characterized";
-      this._onDidChangeConversations.fire();
+      this._onDidChangeConversations.fire(undefined);
       return;
     }
 
@@ -729,7 +735,7 @@ export class ConversationManager implements vscode.Disposable {
 
     if (legacyTurn) {
       legacyTurn.characterization = characterization;
-      this._onDidChangeConversations.fire();
+      this._onDidChangeConversations.fire(undefined);
     }
   }
 
@@ -750,7 +756,7 @@ export class ConversationManager implements vscode.Disposable {
 
     if (userMessage) {
       userMessage.isToolContinuation = true;
-      this._onDidChangeConversations.fire();
+      this._onDidChangeConversations.fire(undefined);
     }
   }
 
@@ -775,7 +781,7 @@ export class ConversationManager implements vscode.Disposable {
 
     if (userMessage && !userMessage.preview) {
       userMessage.preview = preview;
-      this._onDidChangeConversations.fire();
+      this._onDidChangeConversations.fire(undefined);
     }
   }
 
@@ -800,7 +806,7 @@ export class ConversationManager implements vscode.Disposable {
 
     if (response) {
       response.toolsUsed = toolsUsed;
-      this._onDidChangeConversations.fire();
+      this._onDidChangeConversations.fire(undefined);
     }
   }
 

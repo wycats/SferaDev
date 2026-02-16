@@ -5,7 +5,7 @@
  * and produces a VS Code TreeItem for display.
  */
 
-import * as vscode from "vscode"
+import * as vscode from "vscode";
 import type {
   ActivityLogEntry,
   AIResponseEntry,
@@ -15,9 +15,9 @@ import type {
   Subagent,
   TurnEntry,
   UserMessageEntry,
-} from "./types.js"
-import { formatTokens } from "../tokens/display.js"
-import { inspectorUri } from "../inspector/uri.js"
+} from "./types.js";
+import { formatTokens } from "../tokens/display.js";
+import { inspectorUri } from "../inspector/uri.js";
 
 // ── UserMessageItem ──────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("vscode", () => ({
   Uri: {
@@ -24,13 +24,13 @@ import type {
   ActivityLogEntry,
   Conversation,
   TurnEntry,
-} from "../conversation/types.js"
+} from "../conversation/types.js";
 import {
   InspectorContentProvider,
   parseInspectorUri,
-} from "./content-provider.js"
-import { inspectorUri } from "./uri.js"
-import { renderTurn } from "./render.js"
+} from "./content-provider.js";
+import { inspectorUri } from "./uri.js";
+import { renderTurn } from "./render.js";
 
 function makeConversation(): Conversation {
   const activityLog: ActivityLogEntry[] = [

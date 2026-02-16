@@ -1,5 +1,5 @@
-import * as vscode from "vscode"
-import { INSPECTOR_SCHEME } from "./content-provider.js"
+import * as vscode from "vscode";
+import { INSPECTOR_SCHEME } from "./content-provider.js";
 
 export function inspectorUri(
   conversationId: string,

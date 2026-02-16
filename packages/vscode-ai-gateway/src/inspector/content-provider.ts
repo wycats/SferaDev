@@ -1,4 +1,4 @@
-import * as vscode from "vscode"
+import * as vscode from "vscode";
 import type {
   ActivityLogEntry,
   AIResponseEntry,
@@ -8,8 +8,8 @@ import type {
   Subagent,
   TurnEntry,
   UserMessageEntry,
-} from "../conversation/types.js"
-import { buildTree, groupByUserMessage } from "../conversation/build-tree.js"
+} from "../conversation/types.js";
+import { buildTree, groupByUserMessage } from "../conversation/build-tree.js";
 import {
   renderAIResponse,
   renderCompaction,
@@ -20,9 +20,9 @@ import {
   renderToolContinuation,
   renderTurn,
   renderUserMessage,
-} from "./render.js"
+} from "./render.js";
 
-export const INSPECTOR_SCHEME = "vercel-ai-inspector"
+export const INSPECTOR_SCHEME = "vercel-ai-inspector";
 
 export interface InspectorTarget {
   conversationId: string;
@@ -31,121 +31,123 @@ export interface InspectorTarget {
 }
 
 export function parseInspectorUri(uri: vscode.Uri): InspectorTarget | null {
-  if (uri.scheme !== INSPECTOR_SCHEME) return null
+  if (uri.scheme !== INSPECTOR_SCHEME) return null;
 
-  const segments = uri.path.split("/").filter(Boolean)
-  if (segments.length < 2) return null
+  const segments = uri.path.split("/").filter(Boolean);
+  if (segments.length < 2) return null;
 
-  const conversationId = decodeURIComponent(segments[0] ?? "")
-  const entryType = decodeURIComponent(segments[1] ?? "")
-  const identifier = segments[2] ? decodeURIComponent(segments[2]) : undefined
+  const conversationId = decodeURIComponent(segments[0] ?? "");
+  const entryType = decodeURIComponent(segments[1] ?? "");
+  const identifier = segments[2] ? decodeURIComponent(segments[2]) : undefined;
 
-  if (!conversationId || !entryType) return null
+  if (!conversationId || !entryType) return null;
 
   if (identifier === undefined) {
-    return { conversationId, entryType }
+    return { conversationId, entryType };
   }
 
-  return { conversationId, entryType, identifier }
+  return { conversationId, entryType, identifier };
 }
 
 export class InspectorContentProvider
   implements vscode.TextDocumentContentProvider
 {
-  private _onDidChange = new vscode.EventEmitter<vscode.Uri>()
-  readonly onDidChange = this._onDidChange.event
-  private openUris = new Set<string>()
+  private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
+  readonly onDidChange = this._onDidChange.event;
+  private openUris = new Set<string>();
 
   constructor(private readonly getConversations: () => Conversation[]) {}
 
   provideTextDocumentContent(uri: vscode.Uri): string {
-    this.openUris.add(uri.toString())
+    this.openUris.add(uri.toString());
 
-    const parsed = parseInspectorUri(uri)
+    const parsed = parseInspectorUri(uri);
     if (!parsed) {
-      return "Not found"
+      return "Not found";
     }
 
     const conversation = this.getConversations().find(
       (entry) => entry.id === parsed.conversationId,
-    )
+    );
     if (!conversation) {
-      return "Not found"
+      return "Not found";
     }
 
     switch (parsed.entryType) {
       case "conversation":
-        return renderConversation(conversation)
+        return renderConversation(conversation);
       case "history": {
-        const historyEntries = buildTree(conversation.activityLog).historyEntries
-        return renderHistory(historyEntries, conversation)
+        const historyEntries = buildTree(
+          conversation.activityLog,
+        ).historyEntries;
+        return renderHistory(historyEntries, conversation);
       }
       case "user-message": {
         const entry =
           parsed.identifier === undefined
             ? undefined
-            : findUserMessage(conversation.activityLog, parsed.identifier)
-        return entry ? renderUserMessage(entry, conversation) : "Not found"
+            : findUserMessage(conversation.activityLog, parsed.identifier);
+        return entry ? renderUserMessage(entry, conversation) : "Not found";
       }
       case "tool-continuation": {
         const match =
           parsed.identifier === undefined
             ? undefined
-            : findToolContinuation(conversation.activityLog, parsed.identifier)
+            : findToolContinuation(conversation.activityLog, parsed.identifier);
         return match
           ? renderToolContinuation(match.entry, match.tools, conversation)
-          : "Not found"
+          : "Not found";
       }
       case "ai-response": {
         const entry =
           parsed.identifier === undefined
             ? undefined
-            : findAIResponse(conversation.activityLog, parsed.identifier)
-        return entry ? renderAIResponse(entry, conversation) : "Not found"
+            : findAIResponse(conversation.activityLog, parsed.identifier);
+        return entry ? renderAIResponse(entry, conversation) : "Not found";
       }
       case "compaction": {
         const entry =
           parsed.identifier === undefined
             ? undefined
-            : findCompaction(conversation.activityLog, parsed.identifier)
-        return entry ? renderCompaction(entry, conversation) : "Not found"
+            : findCompaction(conversation.activityLog, parsed.identifier);
+        return entry ? renderCompaction(entry, conversation) : "Not found";
       }
       case "error": {
         const entry =
           parsed.identifier === undefined
             ? undefined
-            : findError(conversation.activityLog, parsed.identifier)
-        return entry ? renderError(entry, conversation) : "Not found"
+            : findError(conversation.activityLog, parsed.identifier);
+        return entry ? renderError(entry, conversation) : "Not found";
       }
       case "subagent": {
         const entry =
           parsed.identifier === undefined
             ? undefined
-            : findSubagent(conversation.subagents, parsed.identifier)
-        return entry ? renderSubagent(entry, conversation) : "Not found"
+            : findSubagent(conversation.subagents, parsed.identifier);
+        return entry ? renderSubagent(entry, conversation) : "Not found";
       }
       case "turn": {
         const entry =
           parsed.identifier === undefined
             ? undefined
-            : findTurn(conversation.activityLog, parsed.identifier)
-        return entry ? renderTurn(entry, conversation) : "Not found"
+            : findTurn(conversation.activityLog, parsed.identifier);
+        return entry ? renderTurn(entry, conversation) : "Not found";
       }
       default:
-        return "Not found"
+        return "Not found";
     }
   }
 
   /** Call when conversations change to refresh open inspector documents */
   refresh(): void {
     for (const uri of this.openUris) {
-      this._onDidChange.fire(vscode.Uri.parse(uri))
+      this._onDidChange.fire(vscode.Uri.parse(uri));
     }
   }
 
   dispose(): void {
-    this.openUris.clear()
-    this._onDidChange.dispose()
+    this.openUris.clear();
+    this._onDidChange.dispose();
   }
 }
 

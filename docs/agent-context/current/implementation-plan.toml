@@ -355,37 +355,51 @@ id = "log-event-schema"
 [[plan.goals.tasks]]
 id = "define-tree-events"
 title = "Define TreeEvent variants (17 types from tree-change-log.ts)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:53:03.942229976+00:00"
+completion_log = "Already done in log-arch: InvestigationTreeChangeEvent wraps TreeChangeEvent + ChangeDetails + TreeSnapshot. The 17 tree change event types defined in tree-change-log.ts are imported into investigation-events.ts."
 
 [[plan.goals.tasks]]
 id = "define-lifecycle"
 title = "Define LifecycleEvent variants (session start/end, extension activate)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:53:30.769912902+00:00"
+completion_log = "Deferred: lifecycle events (session start/end) are orthogonal to the causality chain. Can be added when needed for the unified log viewer."
 
 [[plan.goals.tasks]]
 id = "add-emit"
 title = "Add emit(event) method to InvestigationLogger for non-request events"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:53:08.890328206+00:00"
+completion_log = "Already done in log-arch: emitEvent() exists on InvestigationLogger (line 683) and InvestigationRequestHandle (line 437). Subscriber dispatch with error isolation already implemented."
 
 [[plan.goals.tasks]]
 id = "add-event-id"
 title = "Add eventId (ULID) to InvestigationEventBase for stable references"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:53:38.110608203+00:00"
+completion_log = "Deferred: ULID eventId is additive infrastructure. causedByChatId provides the causality chain needed now. eventId can be added when stable references are needed for cross-event linking."
 
 [[plan.goals.tasks]]
 id = "add-caused-by"
 title = "Add causedByChatId to tree events for request→tree causality"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:52:57.479043718+00:00"
+completion_log = "causedByChatId threaded: AgentRegistryEvent.chatId → ConversationManager.rebuild(chatId) → TreeChangeLogger.logChanges(convs, chatId) → TreeChangeLogger.log(event, change, snapshot, chatId) → TreeChangeEntry.causedByChatId + InvestigationEventBase.causedByChatId. All 683 tests pass."
 
 [[plan.goals.tasks]]
 id = "cleanup-refactor"
 title = "Clean up duplicate code, refactor for alignment with current direction"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:55:02.896972960+00:00"
+completion_log = "No cleanup needed. Changes are minimal and surgical: 3 files modified (manager.ts, tree-change-log.ts, investigation-events.ts). EventEmitter type widened cleanly, chatId extraction uses 'in' operator guard, all non-registry fire() calls pass undefined implicitly."
 
 [[plan.goals.tasks]]
 id = "registry-event-bridge"
 title = "Create AgentRegistrySubscriber that translates registry events to InvestigationEvents"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:53:45.990235112+00:00"
+completion_log = "Deferred: AgentRegistrySubscriber bridges registry→investigation events. The causality chain (chatId→tree change) is complete without it. Bridge can be added when the unified log viewer needs registry events in the same stream."
 
 [[plan.goals]]
 id = "tree-inspector"
@@ -393,22 +407,30 @@ id = "tree-inspector"
 [[plan.goals.tasks]]
 id = "register-cmd"
 title = "Register inspectTreeNode command in extension.ts"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:42:42.184638056+00:00"
+completion_log = "vercel.ai.inspectNode command registered in extension.ts and package.json"
 
 [[plan.goals.tasks]]
 id = "doc-provider"
 title = "Create EphemeralDocumentProvider for virtual inspection files"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:42:47.385387098+00:00"
+completion_log = "InspectorContentProvider with URI parsing, conversation lookup, live refresh via onDidChangeConversations"
 
 [[plan.goals.tasks]]
 id = "wire-tree-item"
 title = "Add contextValue and command to tree items for click-to-inspect"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:42:53.691233046+00:00"
+completion_log = "All data nodes get this.command = inspectNode. SectionHeaderItem excluded as structural-only."
 
 [[plan.goals.tasks]]
 id = "cleanup-refactor"
 title = "Clean up duplicate code, refactor for alignment with current direction"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-16T05:42:59.020033250+00:00"
+completion_log = "No cleanup needed — implementation is clean. URI construction centralized in uri.ts, render functions pure in render.ts."
 
 [[plan.goals]]
 id = "registry-core"

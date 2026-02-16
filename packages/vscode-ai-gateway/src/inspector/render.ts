@@ -8,8 +8,8 @@ import type {
   Subagent,
   TurnEntry,
   UserMessageEntry,
-} from "../conversation/types.js"
-import { formatTokens } from "../tokens/display.js"
+} from "../conversation/types.js";
+import { formatTokens } from "../tokens/display.js";
 
 function renderHeader(title: string, level: number): string {
   const prefix = "#".repeat(Math.min(Math.max(level, 1), 6));
