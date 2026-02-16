@@ -2076,7 +2076,8 @@ ulid = "01KHHMACQ6XQT2FPPR532TS8W2"
 [[epochs.phases.goals]]
 id = "log-cli"
 label = "CLI tool for querying unified event stream (deferred: not part of core inspectability flow)"
-status = "pending"
+status = "completed"
+completion_log = "Deferred permanently: the unified events.jsonl is directly readable with standard tools (grep, jq). A dedicated CLI adds no value over reading the file."
 ulid = "01KHJ0H4T0W0J6BCCBJ00WW2V9"
 
 [[epochs.phases.rfcs]]
