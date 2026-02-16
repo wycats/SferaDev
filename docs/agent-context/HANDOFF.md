@@ -98,10 +98,10 @@ These emerged through dialogue and are non-negotiable:
   wasn't working in a different workspace (the parent `exo2/` repo) but it
   works fine when the extension's workspace has folders configured.
 
-- **4.3 GB of stale logs were deleted** — `.reference/SferaDev/.logs/` (3.3 GB)
-  and `exo2/.logs/` (1 GB including 982 MB `tree-changes.jsonl`). This is why
-  the RFC says "no events.jsonl" — it was true at the time of investigation
-  but has been resolved.
+- **Stale logs and investigation docs were deleted** — 4.3 GB of stale log
+  files and outdated investigation documents (`docs/investigation/`) were
+  removed. They're in git history if raw data is ever needed, but their
+  conclusions reflected an earlier architecture and would actively mislead.
 
 - **Event sourcing over full snapshots** — RFC 00075 chose deltas (`tree.change`
   with typed `op`) + periodic rollup snapshots (`tree.snapshot`) over the
@@ -123,6 +123,6 @@ These emerged through dialogue and are non-negotiable:
 
 1. `exo status` — see where we are
 2. `packages/vscode-ai-gateway/AGENTS.md` — full architecture reference
-3. `docs/rfcs/stage-0/00075-shared-perception-event-sourced-tree-and-cli.md` — the active RFC
+3. `docs/rfcs/stage-2/00075-shared-perception-event-sourced-tree-and-cli.md` — the active RFC (stage-2: detailed spec)
 4. `.github/instructions/testing.instructions.md` — mock reduction policy
 5. `exo task list` — current tasks (if any are in progress)
