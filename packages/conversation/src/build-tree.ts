@@ -157,6 +157,40 @@ interface UserMessageGroup {
  * - AI responses before any user message are orphans (shown flat — degenerate case).
  */
 export function groupByUserMessage(entries: ActivityLogEntry[]): TreeNode[] {
+  // Sort entries so that within the same sequence number, user messages come
+  // before AI responses. The streaming branch in the manager creates the AI
+  // response before the user message (it streams first, then turnCount
+  // increments and the user message is created). Without this sort, the AI
+  // response gets consumed by the *previous* user message group instead of
+  // the new one.
+  //
+  // Only user-message and ai-response entries have sequenceNumber; compaction
+  // and error entries use turnNumber (or none). We preserve original order for
+  // entries without sequenceNumber.
+  const getSeq = (e: ActivityLogEntry): number | undefined => {
+    if (e.type === "user-message" || e.type === "ai-response") {
+      return e.sequenceNumber;
+    }
+    return undefined;
+  };
+
+  const sorted = [...entries].sort((a, b) => {
+    const seqA = getSeq(a);
+    const seqB = getSeq(b);
+    // If either lacks a sequence number, preserve original order
+    if (seqA === undefined || seqB === undefined) return 0;
+    // Different sequence numbers: preserve original order
+    if (seqA !== seqB) return 0;
+    // Same sequence number: sort by type priority
+    const rank = (e: ActivityLogEntry): number => {
+      if (e.type === "user-message" && !e.isToolContinuation) return 0;
+      if (e.type === "ai-response") return 1;
+      if (e.type === "user-message" && e.isToolContinuation) return 2;
+      return 3; // error, compaction (shouldn't reach here due to getSeq check)
+    };
+    return rank(a) - rank(b);
+  });
+
   const groups: UserMessageGroup[] = [];
   let currentGroup: UserMessageGroup | null = null;
   let lastAIResponseTools: string[] = [];
@@ -170,8 +204,8 @@ export function groupByUserMessage(entries: ActivityLogEntry[]): TreeNode[] {
   // Orphan AI responses (before any user message)
   const orphanResponses: { entry: AIResponseEntry; sourceIndex: number }[] = [];
 
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries.at(i);
+  for (let i = 0; i < sorted.length; i++) {
+    const entry = sorted.at(i);
     if (!entry) continue;
 
     if (entry.type === "user-message") {

@@ -1244,4 +1244,195 @@ describe("Activity Tree Properties", () => {
       { numRuns: NUM_RUNS },
     );
   });
+
+  it("P21: AI response children have seq >= their parent user message seq", () => {
+    fc.assert(
+      fc.property(arbActivityLog, (log) => {
+        const result = buildTree(log);
+
+        for (const node of getUserMessageNodes(result)) {
+          const parentSeq = node.entry.sequenceNumber;
+          for (const child of node.children) {
+            if (child.kind === "ai-response") {
+              expect(
+                child.entry.sequenceNumber >= parentSeq,
+                counterexample(
+                  "P21: AI response seq >= parent user message seq",
+                  log,
+                  result,
+                  `AI(${child.entry.sequenceNumber}) < U(${parentSeq})`,
+                ),
+              ).toBe(true);
+            }
+          }
+        }
+      }),
+      { numRuns: NUM_RUNS },
+    );
+  });
+});
+
+// =====================================================================
+// Regression Tests
+// =====================================================================
+
+describe("Regression: streaming AI response before user message", () => {
+  it("AI response created before its user message groups correctly", () => {
+    // Reproduces the bug where the streaming branch creates an AI response
+    // for turn N+1 before the user message for turn N+1 exists. When the
+    // turn completes, the user message is appended after the AI response
+    // in the log array. Without the sort fix in groupByUserMessage, the
+    // AI response gets consumed by the previous user message group.
+    const log: ActivityLogEntry[] = [
+      // Turn 1: normal user message + response
+      {
+        type: "user-message",
+        sequenceNumber: 1,
+        timestamp: 1000,
+        preview: "First message",
+      },
+      {
+        type: "ai-response",
+        sequenceNumber: 1,
+        timestamp: 1100,
+        state: "characterized",
+        characterization: "First response",
+        tokenContribution: 100,
+        subagentIds: [],
+      },
+      // Turn 2: AI response was created during streaming BEFORE the user message
+      // (this is the order the manager produces)
+      {
+        type: "ai-response",
+        sequenceNumber: 2,
+        timestamp: 2000,
+        state: "pending-characterization",
+        tokenContribution: 200,
+        subagentIds: [],
+      },
+      {
+        type: "user-message",
+        sequenceNumber: 2,
+        timestamp: 2100,
+        preview: "Second message",
+      },
+    ];
+
+    const result = buildTree(log);
+    const userNodes = result.topLevel.filter(
+      (n): n is Extract<TreeNode, { kind: "user-message" }> =>
+        n.kind === "user-message",
+    );
+
+    // Both user messages should exist as top-level nodes
+    expect(userNodes).toHaveLength(2);
+
+    // Find the groups by sequence number (topLevel is reverse chronological)
+    const group1 = userNodes.find((n) => n.entry.sequenceNumber === 1)!;
+    const group2 = userNodes.find((n) => n.entry.sequenceNumber === 2)!;
+
+    // The AI response for seq 2 should be in group 2, NOT group 1
+    const group1Responses = group1.children.filter(
+      (c): c is Extract<TreeChild, { kind: "ai-response" }> =>
+        c.kind === "ai-response",
+    );
+    const group2Responses = group2.children.filter(
+      (c): c is Extract<TreeChild, { kind: "ai-response" }> =>
+        c.kind === "ai-response",
+    );
+
+    expect(group1Responses).toHaveLength(1);
+    expect(group1Responses[0]!.entry.sequenceNumber).toBe(1);
+
+    expect(group2Responses).toHaveLength(1);
+    expect(group2Responses[0]!.entry.sequenceNumber).toBe(2);
+  });
+
+  it("multi-turn tool continuation followed by new user message", () => {
+    // Reproduces the exact scenario from the bug report:
+    // User message #7 → AI response #8 → tool continuation #8 →
+    // AI response #9 → tool continuation #9 → AI response #10 →
+    // NEW user message #10 (not a continuation!)
+    const log: ActivityLogEntry[] = [
+      {
+        type: "user-message",
+        sequenceNumber: 7,
+        timestamp: 7000,
+        preview: "Use the CLI",
+      },
+      {
+        type: "ai-response",
+        sequenceNumber: 8,
+        timestamp: 8000,
+        state: "characterized",
+        tokenContribution: 100,
+        subagentIds: [],
+        toolsUsed: ["run_in_terminal"],
+      },
+      {
+        type: "user-message",
+        sequenceNumber: 8,
+        timestamp: 8100,
+        isToolContinuation: true,
+      },
+      {
+        type: "ai-response",
+        sequenceNumber: 9,
+        timestamp: 9000,
+        state: "characterized",
+        tokenContribution: 100,
+        subagentIds: [],
+      },
+      {
+        type: "user-message",
+        sequenceNumber: 9,
+        timestamp: 9100,
+        isToolContinuation: true,
+      },
+      // AI response #10 created during streaming BEFORE user message #10
+      {
+        type: "ai-response",
+        sequenceNumber: 10,
+        timestamp: 10000,
+        state: "pending-characterization",
+        tokenContribution: 200,
+        subagentIds: [],
+        toolsUsed: ["run_in_terminal"],
+      },
+      // New user message #10 (NOT a continuation)
+      {
+        type: "user-message",
+        sequenceNumber: 10,
+        timestamp: 10100,
+        preview: "The tree isn't rendering correctly",
+      },
+    ];
+
+    const result = buildTree(log);
+    const userNodes = result.topLevel.filter(
+      (n): n is Extract<TreeNode, { kind: "user-message" }> =>
+        n.kind === "user-message",
+    );
+
+    // Should have exactly 2 top-level user messages: #7 and #10
+    expect(userNodes).toHaveLength(2);
+
+    const group7 = userNodes.find((n) => n.entry.sequenceNumber === 7)!;
+    const group10 = userNodes.find((n) => n.entry.sequenceNumber === 10)!;
+
+    expect(group7).toBeDefined();
+    expect(group10).toBeDefined();
+
+    // Group 7 should have: AI#8, tool-cont#8, AI#9, tool-cont#9
+    // Group 10 should have: AI#10
+    const group7AISeqs = group7.children
+      .filter((c) => c.kind === "ai-response")
+      .map((c) => (c as Extract<TreeChild, { kind: "ai-response" }>).entry.sequenceNumber);
+    const group10AISeqs = group10.children
+      .filter((c) => c.kind === "ai-response")
+      .map((c) => (c as Extract<TreeChild, { kind: "ai-response" }>).entry.sequenceNumber);
+
+    expect(group7AISeqs).toEqual([8, 9]);
+    expect(group10AISeqs).toEqual([10]);
+  });
 });
