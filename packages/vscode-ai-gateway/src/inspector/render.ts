@@ -429,44 +429,191 @@ export function renderHistory(
  *
  * This handles legacy persisted data that used JSON.stringify on the
  * raw LanguageModelToolResultPart.content array.
+ *
+ * Strategy:
+ * 1. If not JSON, return as-is
+ * 2. Extract all string values from JSON recursively
+ * 3. Prefer strings that look like content (long, contains markdown)
+ * 4. If extracted content looks like markdown, render as markdown
  */
 function extractToolResultContent(result: string): {
   content: string;
-  format: "text" | "json" | "extracted";
+  format: "text" | "json" | "markdown";
 } {
-  // Quick check: if it doesn't look like JSON, it's plain text
+  // Quick check: if it doesn't look like JSON, check for markdown
   const trimmed = result.trim();
   if (!trimmed.startsWith("[") && !trimmed.startsWith("{")) {
-    return { content: result, format: "text" };
+    const format = looksLikeMarkdown(result) ? "markdown" : "text";
+    return { content: result, format };
   }
 
   try {
     const parsed = JSON.parse(trimmed) as unknown;
 
-    // Check for VS Code internal format: array with $mid and value fields
-    if (Array.isArray(parsed)) {
-      const textParts: string[] = [];
-      for (const item of parsed) {
-        if (
-          typeof item === "object" &&
-          item !== null &&
-          "value" in item &&
-          typeof (item as { value: unknown }).value === "string"
-        ) {
-          textParts.push((item as { value: string }).value);
-        }
-      }
-      if (textParts.length > 0) {
-        return { content: textParts.join("\n"), format: "extracted" };
-      }
+    // Extract all string values from the JSON
+    const strings = extractStringsFromJson(parsed);
+
+    // Find the best content candidate
+    const content = selectBestContent(strings);
+
+    if (content !== null) {
+      const format = looksLikeMarkdown(content) ? "markdown" : "text";
+      return { content, format };
     }
 
-    // It's valid JSON but not the VS Code format — pretty-print it
+    // No good string content found — pretty-print the JSON
     return { content: JSON.stringify(parsed, null, 2), format: "json" };
   } catch {
-    // Not valid JSON — treat as plain text
-    return { content: result, format: "text" };
+    // Not valid JSON — check for markdown
+    const format = looksLikeMarkdown(result) ? "markdown" : "text";
+    return { content: result, format };
   }
+}
+
+/**
+ * Recursively extract all string values from a JSON structure.
+ * Returns strings with their "depth" (how nested they are) and key name if available.
+ */
+function extractStringsFromJson(
+  value: unknown,
+  depth = 0,
+  key?: string,
+): Array<{ value: string; depth: number; key?: string }> {
+  if (typeof value === "string") {
+    // With exactOptionalPropertyTypes, we must not include key if undefined
+    const result: { value: string; depth: number; key?: string } = {
+      value,
+      depth,
+    };
+    if (key !== undefined) {
+      result.key = key;
+    }
+    return [result];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) =>
+      extractStringsFromJson(item, depth + 1, `[${index.toString()}]`),
+    );
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return Object.entries(value).flatMap(([k, v]) =>
+      extractStringsFromJson(v, depth + 1, k),
+    );
+  }
+
+  return [];
+}
+
+/**
+ * Select the best content string from extracted values.
+ * Prefers: longer strings, strings with markdown, strings from "value"/"content" keys.
+ */
+function selectBestContent(
+  strings: Array<{ value: string; depth: number; key?: string }>,
+): string | null {
+  if (strings.length === 0) return null;
+
+  // Filter out very short strings (likely metadata)
+  const candidates = strings.filter((s) => s.value.length > 20);
+  if (candidates.length === 0) {
+    // Fall back to longest string if all are short
+    const longest = strings.reduce((a, b) =>
+      a.value.length > b.value.length ? a : b,
+    );
+    return longest.value.length > 0 ? longest.value : null;
+  }
+
+  // Score each candidate
+  const scored = candidates.map((s) => ({
+    ...s,
+    score: scoreContent(s.value, s.key),
+  }));
+
+  // Sort by score descending
+  scored.sort((a, b) => b.score - a.score);
+
+  // If top candidate has markdown, return it
+  // If multiple candidates have similar scores, join them
+  const best = scored[0];
+  if (best === undefined) return null;
+
+  // Check if there are multiple high-scoring candidates (within 50% of best)
+  const threshold = best.score * 0.5;
+  const topCandidates = scored.filter((s) => s.score >= threshold);
+
+  if (topCandidates.length > 1 && topCandidates.every((c) => c.score > 10)) {
+    // Multiple good candidates — join them
+    return topCandidates.map((c) => c.value).join("\n\n");
+  }
+
+  return best.value;
+}
+
+/**
+ * Score a string based on how likely it is to be the main content.
+ */
+function scoreContent(value: string, key?: string): number {
+  let score = 0;
+
+  // Length bonus (logarithmic to avoid huge strings dominating)
+  score += Math.log10(value.length + 1) * 10;
+
+  // Markdown indicators
+  if (looksLikeMarkdown(value)) {
+    score += 50;
+  }
+
+  // Key name hints
+  const contentKeys = ["value", "content", "text", "body", "message", "result"];
+  if (key && contentKeys.includes(key.toLowerCase())) {
+    score += 30;
+  }
+
+  // Penalty for keys that suggest metadata
+  const metadataKeys = ["id", "type", "mime", "mimeType", "$mid", "kind"];
+  if (key && metadataKeys.includes(key.toLowerCase())) {
+    score -= 50;
+  }
+
+  // Penalty for strings that look like IDs or paths
+  if (/^[a-f0-9-]{20,}$/i.test(value)) {
+    score -= 40; // UUID-like
+  }
+  if (/^(file|https?):\/\//.test(value)) {
+    score -= 20; // URL
+  }
+
+  return score;
+}
+
+/**
+ * Heuristically detect if a string looks like markdown content.
+ */
+function looksLikeMarkdown(text: string): boolean {
+  // Check for common markdown patterns
+  const patterns = [
+    /^#{1,6}\s+\S/m, // Headers: # Header
+    /^```[\s\S]*?```/m, // Code blocks
+    /^[-*+]\s+\S/m, // Unordered lists
+    /^\d+\.\s+\S/m, // Ordered lists
+    /\[.+?\]\(.+?\)/, // Links: [text](url)
+    /^\s*>\s+\S/m, // Blockquotes
+    /\*\*.+?\*\*/, // Bold
+    /`.+?`/, // Inline code
+    /^\|.+\|$/m, // Tables
+  ];
+
+  let matches = 0;
+  for (const pattern of patterns) {
+    if (pattern.test(text)) {
+      matches++;
+    }
+  }
+
+  // Consider it markdown if it has 2+ patterns or is long with 1 pattern
+  return matches >= 2 || (matches >= 1 && text.length > 200);
 }
 
 export function renderToolCall(
@@ -496,13 +643,19 @@ export function renderToolCall(
     output += renderTable([
       ["Lines", lineCount.toString()],
       ["Characters", charCount.toString()],
-      ...(format === "extracted" ? [["Note", "Extracted from legacy format"] as [string, string]] : []),
+      ["Format", format],
     ]);
 
     output += renderHeader("Content", 3);
-    // Use appropriate code fence based on format
-    const lang = format === "json" ? "json" : "";
-    output += "```" + lang + "\n" + content + "\n```\n\n";
+    if (format === "markdown") {
+      // Render markdown directly (it will be rendered by the preview)
+      output += content + "\n\n";
+    } else if (format === "json") {
+      output += "```json\n" + content + "\n```\n\n";
+    } else {
+      // Plain text — use code fence to preserve formatting
+      output += "```\n" + content + "\n```\n\n";
+    }
   } else {
     output += renderHeader("Response", 2);
     output += "*No result captured (tool may still be executing)*\n\n";
