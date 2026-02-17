@@ -2142,7 +2142,7 @@ ulid = "01KHKT6KREM61STZZ09F5YPV9W"
 [[epochs.phases]]
 id = "01khknebhjr8rms0314vsqcatx"
 title = "Package Extraction: Clean Boundaries"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHKNEBHJR8RMS0314VSQCATX"
 
@@ -2227,28 +2227,31 @@ id = "00073"
 [[epochs.phases]]
 id = "01khddgmrc2f6qqt3bty3pqth8"
 title = "Workspace Scoping & Trim"
-status = "pending"
+status = "active"
 kind = "regular"
 ulid = "01KHDDGMRC2F6QQT3BTY3PQTH8"
 
 [[epochs.phases.goals]]
 id = "track-workspace"
 label = "Track workspaceFolder when conversation starts"
-status = "pending"
+status = "abandoned"
+completion_log = "Deferring to focus on tree view quality"
 ulid = "01KHDDK2P6MF26V095CQ8K0FHN"
 rfc = "00073"
 
 [[epochs.phases.goals]]
 id = "trim-command"
 label = "Add 'Trim History' command and tree button"
-status = "pending"
+status = "abandoned"
+completion_log = "Deferring"
 ulid = "01KHDDK6ZKJKT36ZH4C246TSRB"
 rfc = "00073"
 
 [[epochs.phases.goals]]
 id = "workspace-filter"
 label = "Optional workspace filter setting"
-status = "pending"
+status = "abandoned"
+completion_log = "Deferring"
 ulid = "01KHDDKB6VYBFF7XXAGDYM4DTT"
 rfc = "00073"
 
@@ -2270,6 +2273,14 @@ status = "pending"
 goals = []
 kind = "regular"
 ulid = "01KHMKBCG8SK5FFWXSK5681N8P"
+
+[[epochs.phases]]
+id = "01khmq13h67bycp3jx59rs7mf2"
+title = "Tree View Quality: Structure, Summarization, and Detail"
+status = "pending"
+goals = []
+kind = "regular"
+ulid = "01KHMQ13H67BYCP3JX59RS7MF2"
 
 [[epochs]]
 id = "01khetjx8p8yawtehsa3c264ck"

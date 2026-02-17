@@ -1,0 +1,72 @@
+# READ-ONLY: Use 'exo' CLI to modify this file.
+# Implementation Plan
+
+[phase]
+id = "01khknebhjr8rms0314vsqcatx"
+
+[plan]
+[[plan.goals]]
+id = "conversation-store"
+
+[[plan.goals]]
+id = "persist-on-change"
+
+[[plan.goals]]
+id = "restore-on-startup"
+
+[[plan.goals]]
+id = "idle-timer"
+
+[[plan.goals]]
+id = "rewrite-extension"
+
+[[plan.goals.tasks]]
+id = "audit-all-importers-of-shim-files"
+title = "Audit all importers of shim files"
+status = "completed"
+completed_at = "2026-02-17T01:49:26.742760640+00:00"
+completion_log = "Audited all importers. 2 files import build-tree shim, 7 files import types shim, 4 files import barrel. TurnEntry used by: tree-items.ts, manager.ts, render.ts, content-provider.ts, content-provider.test.ts (all within extension). Plan: TurnEntry stays in types.ts but types.ts becomes a local-only file (not a shim)."
+
+[[plan.goals.tasks]]
+id = "rewrite-all-imports-to-vercel-conversation-move-turnentry-local-delete-shims-update-barrel"
+title = "Rewrite all imports to @vercel/conversation, move TurnEntry local, delete shims, update barrel"
+status = "completed"
+completed_at = "2026-02-17T01:55:25.432990784+00:00"
+completion_log = "Rewrote 13 files: 12 import rewrites + 1 shim deletion. types.ts now local-only (TurnEntry). build-tree.ts deleted. index.ts barrel updated. All 3 packages type-check clean."
+
+[[plan.goals.tasks]]
+id = "tsc-tests-perception-smoke-test"
+title = "tsc + tests + perception smoke test"
+status = "completed"
+completed_at = "2026-02-17T01:56:19.161065398+00:00"
+completion_log = "All 3 packages type-check. 690 extension + 18 conversation = 708 tests pass. Perception smoke test works from new CLI path."
+
+[[plan.goals]]
+id = "remove-script-shim"
+
+[[plan.goals.tasks]]
+id = "find-all-references-to-scripts-query-events-ts"
+title = "Find all references to scripts/query-events.ts"
+status = "completed"
+completed_at = "2026-02-17T01:57:23.347645762+00:00"
+completion_log = "Found refs in: exosuit.toml (task), AGENTS.md (root, 1 ref), packages/vscode-ai-gateway/AGENTS.md (14 refs), packages/vscode-ai-gateway/package.json (analyze:logs script), docs/agent-context/HANDOFF.md (2 refs). RFC stage-2/00075 has historical refs (leave as-is, it's a decision record)."
+
+[[plan.goals.tasks]]
+id = "delete-shim-update-agents-md-exosuit-toml-package-json"
+title = "Delete shim, update AGENTS.md + exosuit.toml + package.json"
+status = "completed"
+completed_at = "2026-02-17T02:00:58.587284600+00:00"
+completion_log = "Deleted scripts/query-events.ts. Updated: exosuit.toml, root AGENTS.md, extension AGENTS.md (14 refs), extension package.json (analyze:logs), HANDOFF.md (2 refs), CLI usage comment. Left RFC 00075 refs as-is (historical record)."
+
+[[plan.goals.tasks]]
+id = "verify-cli-works-from-new-path"
+title = "Verify CLI works from new path"
+status = "completed"
+completed_at = "2026-02-17T02:01:35.382355709+00:00"
+completion_log = "CLI works from new path. Old scripts/query-events.ts correctly fails. exo run query-events doesn't pass args (exo CLI limitation, not our issue)."
+
+
+
+[verification]
+automated = ["Run scripts/verify-phase.sh"]
+manual = []
