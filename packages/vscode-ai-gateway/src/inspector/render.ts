@@ -126,15 +126,73 @@ function renderAIResponseSection(
     ["toolsUsed", formatValue(entry.toolsUsed)],
   ];
 
-  return (
+  let output =
     renderHeader(
       `AI Response #${entry.sequenceNumber.toString()}`,
       headingLevel,
-    ) +
-    renderTable(rows) +
-    renderHeader("Raw", headingLevel + 1) +
-    renderJsonBlock(entry)
-  );
+    ) + renderTable(rows);
+
+  // Render response text if present
+  if (entry.responseText && entry.responseText.length > 0) {
+    output += renderHeader("Response", headingLevel + 1);
+    const { content, format } = extractToolResultContent(entry.responseText);
+    if (format === "markdown") {
+      output += content + "\n\n";
+    } else {
+      output += content + "\n\n";
+    }
+  }
+
+  // Render tool calls with extracted results
+  if (entry.toolCalls && entry.toolCalls.length > 0) {
+    output += renderHeader("Tool Calls", headingLevel + 1);
+    for (const toolCall of entry.toolCalls) {
+      output += renderToolCallInline(toolCall, headingLevel + 2);
+    }
+  }
+
+  // Raw JSON at the bottom for debugging
+  output += renderHeader("Raw", headingLevel + 1);
+  output += renderJsonBlock(entry);
+
+  return output;
+}
+
+/**
+ * Render a tool call inline within an AI response section.
+ * More compact than the full renderToolCall export.
+ */
+function renderToolCallInline(
+  toolCall: ToolCallDetail,
+  headingLevel: number,
+): string {
+  let output = renderHeader(`${toolCall.name}`, headingLevel);
+
+  // Arguments as compact JSON
+  output += renderHeader("Arguments", headingLevel + 1);
+  output += renderJsonBlock(toolCall.args);
+
+  // Result with smart extraction
+  if (toolCall.result !== undefined) {
+    output += renderHeader("Result", headingLevel + 1);
+    const { content, format } = extractToolResultContent(toolCall.result);
+
+    if (format === "markdown") {
+      // Render markdown directly
+      output += content + "\n\n";
+    } else if (format === "json") {
+      output += "```json\n" + content + "\n```\n\n";
+    } else {
+      // Plain text — check if it's short enough to show inline
+      if (content.length < 500 && !content.includes("\n")) {
+        output += content + "\n\n";
+      } else {
+        output += "```\n" + content + "\n```\n\n";
+      }
+    }
+  }
+
+  return output;
 }
 
 function renderToolContinuationSection(
