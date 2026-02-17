@@ -147,6 +147,65 @@ title = "Update property tests P2/P6/P7/P9/P11/P19/P20 for new nesting structure
 status = "completed"
 completed_at = "2026-02-17T06:43:26.224520485+00:00"
 completion_log = "P2 updated. P6/P7/P20 removed. P9/P11 simplified. P19 rewritten for nested toolCalls. 20/20 conversation tests + 741 extension tests pass."
+
+[[plan.goals]]
+id = "characterization-reliability"
+
+[[plan.goals.tasks]]
+id = "store-response-data"
+title = "Store all response data on AIResponseEntry (text, usage, finishReason, responseId)"
+status = "completed"
+completed_at = "2026-02-17T17:31:50.025570718+00:00"
+completion_log = "Added responseText, usage, finishReason, responseId, characterizationError to AIResponseEntry. Wired through onTurnComplete callback. Added setResponseData() to manager."
+
+[[plan.goals.tasks]]
+id = "fix-characterizer-timeout"
+title = "Fix broken timeout: wire CancellationTokenSource to sendRequest"
+status = "completed"
+completed_at = "2026-02-17T17:43:05.221824683+00:00"
+completion_log = "Rewrote sendRequestWithTimeout to use CancellationTokenSource.token passed directly to model.sendRequest. Timeout now properly cancels the in-flight request."
+
+[[plan.goals.tasks]]
+id = "retry-with-backoff"
+title = "Add retry with backoff (3 attempts: 1s, 3s, 8s) and structured result type"
+status = "completed"
+completed_at = "2026-02-17T17:43:18.648693984+00:00"
+completion_log = "Added retry loop with RETRY_DELAYS_MS=[1000,3000,8000]. Returns CharacterizationResult{characterization?,error?} instead of string|undefined. All attempts logged."
+
+[[plan.goals.tasks]]
+id = "preview-labels"
+title = "Preview-based interim labels: ⋯ prefix + first chars, labeling/failed in description, dimmed icon"
+status = "completed"
+completed_at = "2026-02-17T17:43:32.829383735+00:00"
+completion_log = "Added generatePreview() for ⋯-prefixed labels from responseText. Description shows 'labeling' when pending, 'labeling failed' when uncharacterized with error. Dimmed icon for pending state."
+
+[[plan.goals.tasks]]
+id = "eliminate-response-n"
+title = "Eliminate Response #N fallback entirely — always use preview"
+status = "completed"
+completed_at = "2026-02-17T17:43:44.727697801+00:00"
+completion_log = "Removed 'Response #N' fallback entirely. Label cascade: interrupted → characterized → preview-based → bare ⋯. Updated 2 existing tests, added 3 new tests."
+
+[[plan.goals.tasks]]
+id = "characterization-failure-handling"
+title = "Handle characterization failure: store error, transition to uncharacterized state"
+status = "completed"
+completed_at = "2026-02-17T17:31:59.731208068+00:00"
+completion_log = "Added markCharacterizationFailed() to manager. Provider now always transitions out of pending-characterization — either to characterized or uncharacterized with error."
+
+[[plan.goals.tasks]]
+id = "update-tests"
+title = "Update tests for new characterizer return type, retry, preview labels, stored data"
+status = "completed"
+completed_at = "2026-02-17T17:43:57.339618219+00:00"
+completion_log = "Updated 2 existing tests for new label behavior. Added 3 new AIResponseItem tests (preview with text, pending with text, labeling failed). Added 8 generatePreview unit tests. 773 tests pass, tsc clean."
+
+[[plan.goals.tasks]]
+id = "doc-type-aware-preview"
+title = "Document type-aware preview interface as follow-up RFC/idea"
+status = "completed"
+completed_at = "2026-02-17T17:44:10.759267177+00:00"
+completion_log = "Created docs/ideas/type-aware-preview-interface.md with PreviewStrategy interface design, strategy selection table, ToolPreview details, and integration notes."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

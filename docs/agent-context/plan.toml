@@ -2324,9 +2324,17 @@ ulid = "01KHMVKT1E1FV31Z0JC44H9N3B"
 [[epochs.phases.goals]]
 id = "nest-tools-under-ai"
 label = "Nest tool calls under AI responses: collapsible parent with tool-call children, hidden tool-continuations"
-status = "pending"
+status = "completed"
+completion_log = "All 4 tasks complete. Tool calls nest under AI responses as collapsible children, tool continuations hidden. Committed as 7adb7ca + 42f6030."
 ulid = "01KHN406MY2F78A8HMF2BY0JY1"
 rfc = "00073"
+
+[[epochs.phases.goals]]
+id = "characterization-reliability"
+label = "Characterization reliability: fix timeout, retry, preview labels, store all response data"
+status = "completed"
+completion_log = "All 8 tasks complete. Fixed broken timeout (CancellationTokenSource), added retry with backoff (3 attempts), structured CharacterizationResult type, preview-based interim labels (⋯ prefix), eliminated Response #N, stored all response data (text, usage, finishReason, responseId), labeling/failed description states, documented type-aware preview follow-up. 773 tests pass, tsc clean."
+ulid = "01KHPAFE7076YF065X1HP9SETZ"
 
 [[epochs]]
 id = "01khetjx8p8yawtehsa3c264ck"

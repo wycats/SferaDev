@@ -132,6 +132,28 @@ export interface AIResponseEntry {
    * Derived from toolCalls for backward compatibility.
    */
   toolsUsed?: string[];
+
+  // ── Stored response data (populated at turn completion) ──────────
+
+  /**
+   * Full accumulated response text from the model.
+   * Stored for preview generation and inspector display.
+   */
+  responseText?: string;
+  /**
+   * Token usage reported by the API for this turn.
+   * Input tokens reflect the full context sent; output tokens are this response.
+   */
+  usage?: { inputTokens: number; outputTokens: number };
+  /** Finish reason reported by the API (e.g., "stop", "tool-calls", "length"). */
+  finishReason?: string;
+  /** Response ID from the API. */
+  responseId?: string;
+  /**
+   * Error message if characterization failed.
+   * Stored so the inspector can show why labeling didn't work.
+   */
+  characterizationError?: string;
 }
 
 /**

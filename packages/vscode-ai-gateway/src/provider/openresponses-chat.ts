@@ -115,6 +115,12 @@ export interface OpenResponsesChatOptions {
      * Present only when isToolContinuation is true.
      */
     toolResults?: Map<string, string>;
+    /** Token usage from the API response */
+    usage?: { inputTokens: number; outputTokens: number };
+    /** Finish reason from the API */
+    finishReason?: string;
+    /** Response ID from the API */
+    responseId?: string;
   }) => void;
 }
 
@@ -952,6 +958,18 @@ export async function executeOpenResponsesChat(
             ...(toolResults !== undefined && toolResults.size > 0
               ? { toolResults }
               : {}),
+            ...(adapted.usage !== undefined && {
+              usage: {
+                inputTokens: adapted.usage.input_tokens,
+                outputTokens: adapted.usage.output_tokens,
+              },
+            }),
+            ...(adapted.finishReason !== undefined && {
+              finishReason: adapted.finishReason,
+            }),
+            ...(adapted.responseId !== undefined && {
+              responseId: adapted.responseId,
+            }),
           });
         }
 

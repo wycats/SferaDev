@@ -68,6 +68,7 @@ import {
   SectionHeaderItem,
   ToolContinuationItem,
   UserMessageItem,
+  generatePreview,
   type UserMessageChild,
 } from "./tree-items";
 
@@ -234,11 +235,10 @@ describe("AIResponseItem", () => {
     expect((item.iconPath as { id: string }).id).toBe("chat-sparkle");
   });
 
-  it("falls back to Response #N label without characterization", () => {
+  it("shows bare ⋯ label when uncharacterized with no response text", () => {
     const response: AIResponseEntry = {
       type: "ai-response",
       sequenceNumber: 5,
-      // Use old timestamp so it's past the pending timeout
       timestamp: Date.now() - 60_000,
       tokenContribution: 800,
       subagentIds: [],
@@ -246,9 +246,25 @@ describe("AIResponseItem", () => {
     };
 
     const item = new AIResponseItem(response, "conv-1", [], []);
-    expect(item.label).toBe("Response #5");
-    // No #N in description when there's no characterization (would be redundant)
+    expect(item.label).toBe("⋯");
     expect(item.description).toBe("+800");
+  });
+
+  it("shows preview-based label when uncharacterized with response text", () => {
+    const response: AIResponseEntry = {
+      type: "ai-response",
+      sequenceNumber: 5,
+      timestamp: Date.now() - 60_000,
+      tokenContribution: 800,
+      subagentIds: [],
+      state: "uncharacterized",
+      responseText: "I've refactored the authentication middleware to use JWT tokens",
+      characterizationError: "All attempts failed",
+    };
+
+    const item = new AIResponseItem(response, "conv-1", [], []);
+    expect(item.label).toBe("⋯ I've refactored…");
+    expect(item.description).toBe("labeling failed · +800");
   });
 
   it("shows streaming icon for streaming responses", () => {
@@ -265,7 +281,7 @@ describe("AIResponseItem", () => {
     expect((item.iconPath as { id: string }).id).toBe("loading~spin");
   });
 
-  it("shows muted icon when characterization is pending", () => {
+  it("shows muted icon and ⋯ label when characterization is pending (no text)", () => {
     const response: AIResponseEntry = {
       type: "ai-response",
       sequenceNumber: 2,
@@ -276,9 +292,31 @@ describe("AIResponseItem", () => {
     };
 
     const item = new AIResponseItem(response, "conv-1", [], []);
-    // Pending shows muted sparkle (no spinner), label shows ellipsis
+    // Pending shows muted sparkle (no spinner), label shows bare ⋯
     expect((item.iconPath as { id: string }).id).toBe("chat-sparkle");
-    expect(item.label).toBe("#2 ⋯");
+    expect(item.label).toBe("⋯");
+    expect(item.description).toBe("labeling · +500");
+  });
+
+  it("shows preview label and 'labeling' description when pending with text", () => {
+    const response: AIResponseEntry = {
+      type: "ai-response",
+      sequenceNumber: 2,
+      timestamp: Date.now(),
+      tokenContribution: 500,
+      subagentIds: [],
+      state: "pending-characterization",
+      responseText: "I investigated the failing test and found the root cause",
+      toolsUsed: ["read_file", "grep_search"],
+    };
+
+    const item = new AIResponseItem(response, "conv-1", [], []);
+    expect(item.label).toBe("⋯ I investigated…");
+    expect(item.description).toBe("labeling · read_file, grep_search · +500");
+    // Dimmed icon
+    expect((item.iconPath as { id: string; color?: { id: string } }).color?.id).toBe(
+      "descriptionForeground",
+    );
   });
 
   it("is collapsible when it has subagents", () => {
@@ -986,5 +1024,51 @@ describe("SectionHeaderItem.partitionConversations", () => {
     const result = SectionHeaderItem.partitionConversations(convs);
     expect(result.active).toHaveLength(2);
     expect(result.history).toHaveLength(0);
+  });
+});
+
+describe("generatePreview", () => {
+  it("returns undefined for undefined input", () => {
+    expect(generatePreview(undefined)).toBeUndefined();
+  });
+
+  it("returns undefined for empty string", () => {
+    expect(generatePreview("")).toBeUndefined();
+  });
+
+  it("returns undefined for whitespace-only input", () => {
+    expect(generatePreview("  \n\n  ")).toBeUndefined();
+  });
+
+  it("returns full text when shorter than max", () => {
+    expect(generatePreview("Short text", 20)).toBe("Short text");
+  });
+
+  it("truncates at word boundary with ellipsis", () => {
+    const result = generatePreview(
+      "I've refactored the authentication middleware to use JWT tokens",
+      15,
+    );
+    expect(result).toBe("I've refactored…");
+  });
+
+  it("strips leading markdown headings", () => {
+    const result = generatePreview("## Summary\nHere is the result", 15);
+    expect(result).toBe("Summary\nHere…");
+  });
+
+  it("strips leading whitespace and newlines", () => {
+    const result = generatePreview("\n\n  Hello world", 20);
+    expect(result).toBe("Hello world");
+  });
+
+  it("strips leading bold markers", () => {
+    const result = generatePreview("**Important** notice about the change", 15);
+    expect(result).toBe("Important**…");
+  });
+
+  it("respects custom maxChars", () => {
+    const result = generatePreview("Hello beautiful world", 5);
+    expect(result).toBe("Hello…");
   });
 });

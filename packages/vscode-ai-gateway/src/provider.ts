@@ -548,16 +548,7 @@ export class VercelAIChatModelProvider
           conversationId,
           globalStorageUri: this.context.globalStorageUri,
           onTurnComplete: (info) => {
-            void this.handleTurnComplete(
-              info.conversationId,
-              info.text,
-              info.turnNumber,
-              info.isToolContinuation,
-              info.userMessagePreview,
-              info.toolsUsed,
-              info.toolCalls,
-              info.toolResults,
-            );
+            void this.handleTurnComplete(info);
           },
         },
       );
@@ -629,20 +620,37 @@ export class VercelAIChatModelProvider
    * Handle turn completion by generating a characterization label.
    * Fire-and-forget — errors are logged but don't affect the user.
    */
-  private async handleTurnComplete(
-    conversationId: string,
-    text: string,
-    turnNumber: number,
-    isToolContinuation: boolean,
-    userMessagePreview: string | undefined,
-    toolsUsed: string[],
+  private async handleTurnComplete(info: {
+    conversationId: string;
+    text: string;
+    turnNumber: number;
+    isToolContinuation: boolean;
+    userMessagePreview?: string;
+    toolsUsed: string[];
     toolCalls: {
       callId: string;
       name: string;
       args: Record<string, unknown>;
-    }[],
-    toolResults?: Map<string, string>,
-  ): Promise<void> {
+    }[];
+    toolResults?: Map<string, string>;
+    usage?: { inputTokens: number; outputTokens: number };
+    finishReason?: string;
+    responseId?: string;
+  }): Promise<void> {
+    const {
+      conversationId,
+      text,
+      turnNumber,
+      isToolContinuation,
+      userMessagePreview,
+      toolsUsed,
+      toolCalls,
+      toolResults,
+      usage,
+      finishReason,
+      responseId,
+    } = info;
+
     try {
       if (!this.conversationManager) {
         return;
@@ -690,18 +698,44 @@ export class VercelAIChatModelProvider
         );
       }
 
+      // Store all response data on the entry (text, usage, finishReason, responseId)
+      this.conversationManager.setResponseData(
+        conversationId,
+        turnNumber,
+        text,
+        usage,
+        finishReason,
+        responseId,
+      );
+
+      // Generate characterization label (with retry)
       const characterizer = getTurnCharacterizer();
-      const characterization = await characterizer.characterize(text);
-      if (characterization) {
+      const result = await characterizer.characterize(text);
+      if (result.characterization) {
         this.conversationManager.updateTurnCharacterization(
           conversationId,
           turnNumber,
-          characterization,
+          result.characterization,
+        );
+      } else {
+        // Characterization failed — store the error and mark as uncharacterized
+        this.conversationManager.markCharacterizationFailed(
+          conversationId,
+          turnNumber,
+          result.error ?? "Unknown error",
         );
       }
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error);
       logger.debug(
-        `[Provider] Turn characterization failed: ${error instanceof Error ? error.message : String(error)}`,
+        `[Provider] Turn characterization failed: ${message}`,
+      );
+      // Ensure we don't leave the entry stuck in pending-characterization
+      this.conversationManager?.markCharacterizationFailed(
+        conversationId,
+        turnNumber,
+        message,
       );
     }
   }

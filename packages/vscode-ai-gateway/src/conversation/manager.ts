@@ -868,6 +868,69 @@ export class ConversationManager implements vscode.Disposable {
   }
 
   /**
+   * Store all response data on an AI response entry.
+   * Called at turn completion to persist the full response text, usage, etc.
+   */
+  setResponseData(
+    conversationId: string,
+    turnNumber: number,
+    responseText: string,
+    usage?: { inputTokens: number; outputTokens: number },
+    finishReason?: string,
+    responseId?: string,
+  ): void {
+    const log = this.activityLogs.get(conversationId);
+    if (!log) {
+      return;
+    }
+
+    const response = log.find(
+      (entry): entry is AIResponseEntry =>
+        entry.type === "ai-response" && entry.sequenceNumber === turnNumber,
+    );
+
+    if (response) {
+      response.responseText = responseText;
+      if (usage) {
+        response.usage = usage;
+      }
+      if (finishReason) {
+        response.finishReason = finishReason;
+      }
+      if (responseId) {
+        response.responseId = responseId;
+      }
+      // Don't fire change event here — the caller will fire it
+      // after characterization completes or fails.
+    }
+  }
+
+  /**
+   * Mark an AI response as having failed characterization.
+   * Transitions state to "uncharacterized" and stores the error message.
+   */
+  markCharacterizationFailed(
+    conversationId: string,
+    turnNumber: number,
+    error: string,
+  ): void {
+    const log = (this.activityLogs.get(conversationId) ?? []) as (
+      | ActivityLogEntry
+      | TurnEntry
+    )[];
+
+    const response = log.find(
+      (entry): entry is AIResponseEntry =>
+        entry.type === "ai-response" && entry.sequenceNumber === turnNumber,
+    );
+    if (response) {
+      response.state = "uncharacterized";
+      response.characterizationError = error;
+      this._onDidChangeConversations.fire(undefined);
+    }
+  }
+
+  /**
    * Mark a turn as a tool continuation (triggered by tool results, not user message).
    * Called when the provider detects tool result parts in the request.
    */

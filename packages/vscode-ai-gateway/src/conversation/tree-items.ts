@@ -297,16 +297,78 @@ export class ToolCallResponseItem extends vscode.TreeItem {
 
 // ── AIResponseItem ───────────────────────────────────────────────────
 
-/** How long to show spinner for pending characterization (ms) */
-const AI_RESPONSE_CHARACTERIZATION_TIMEOUT_MS = 10_000;
+/**
+ * Maximum number of meaningful characters to show in a preview label.
+ * The preview is prefixed with "⋯ " and suffixed with "…" when truncated.
+ */
+const PREVIEW_MAX_CHARS = 15;
+
+/**
+ * Generate a preview label from response text.
+ *
+ * Extracts the first meaningful characters, skipping leading whitespace
+ * and common markdown artifacts. Returns `undefined` if no meaningful
+ * content can be extracted.
+ *
+ * @example
+ * ```
+ * generatePreview("I've refactored the auth middleware to use JWT tokens")
+ * // → "I've refactored…"
+ *
+ * generatePreview("  \n\n")
+ * // → undefined
+ * ```
+ */
+export function generatePreview(
+  responseText: string | undefined,
+  maxChars = PREVIEW_MAX_CHARS,
+): string | undefined {
+  if (!responseText) {
+    return undefined;
+  }
+
+  // Strip leading whitespace and common markdown noise
+  const cleaned = responseText
+    .replace(/^[\s\n\r]+/, "")
+    .replace(/^#+\s*/, "") // leading headings
+    .replace(/^\*{1,3}/, "") // leading bold/italic markers
+    .trim();
+
+  if (cleaned.length === 0) {
+    return undefined;
+  }
+
+  if (cleaned.length <= maxChars) {
+    return cleaned;
+  }
+
+  // Truncate at a word boundary if possible
+  const truncated = cleaned.slice(0, maxChars);
+  const lastSpace = truncated.lastIndexOf(" ");
+  const breakPoint = lastSpace > maxChars * 0.4 ? lastSpace : maxChars;
+
+  return cleaned.slice(0, breakPoint) + "…";
+}
 
 /**
  * Tree item for an AI response in the activity log.
  *
- * Label: characterization or "Response #N".
- * Description: "#N · +Xk".
- * Icon: $(chat-sparkle) by default, $(loading~spin) if streaming,
- *       $(sync~spin) if pending characterization (within timeout window).
+ * Label states:
+ * - Streaming:              "streaming..."
+ * - Characterized:          "Refactored auth middleware"
+ * - Pending (with preview): "⋯ I've refactored…"        (dimmed)
+ * - Pending (no preview):   "⋯"                          (dimmed)
+ * - Failed (with preview):  "⋯ I've refactored…"
+ * - Failed (no preview):    "⋯"
+ * - Interrupted:            "#N (interrupted)"
+ *
+ * Description states:
+ * - Pending:  "labeling · read_file, grep_search · +1.2k"
+ * - Failed:   "labeling failed · read_file · +1.2k"
+ * - Normal:   "#N · read_file, grep_search · +1.2k"
+ *
+ * Icon: $(chat-sparkle) default, $(loading~spin) streaming,
+ *       dimmed $(chat-sparkle) pending, $(warning) interrupted.
  */
 export class AIResponseItem extends vscode.TreeItem {
   readonly entry: AIResponseEntry;
@@ -345,13 +407,12 @@ export class AIResponseItem extends vscode.TreeItem {
     };
   }
 
-  private static isPendingWithinTimeout(entry: AIResponseEntry): boolean {
-    return (
-      entry.state === "pending-characterization" &&
-      Date.now() - entry.timestamp < AI_RESPONSE_CHARACTERIZATION_TIMEOUT_MS
-    );
-  }
-
+  /**
+   * Build the label for an AI response entry.
+   *
+   * Priority: interrupted → characterized → preview-based → bare "⋯"
+   * "Response #N" is never used.
+   */
   private static getLabel(entry: AIResponseEntry): string {
     if (entry.state === "interrupted") {
       return `#${entry.sequenceNumber.toString()} (interrupted)`;
@@ -361,20 +422,36 @@ export class AIResponseItem extends vscode.TreeItem {
       return entry.characterization;
     }
 
-    // Pending characterization - show ellipsis to indicate "thinking"
-    if (AIResponseItem.isPendingWithinTimeout(entry)) {
-      return `#${entry.sequenceNumber.toString()} ⋯`;
+    // For pending or uncharacterized: use preview from stored response text
+    const preview = generatePreview(entry.responseText);
+    if (preview) {
+      return `⋯ ${preview}`;
     }
 
-    return `Response #${entry.sequenceNumber.toString()}`;
+    // Absolute fallback — no text available at all
+    return "⋯";
   }
 
+  /**
+   * Build the description string.
+   *
+   * When characterized: "#N · tools · +Xk"
+   * When pending:       "labeling · tools · +Xk"
+   * When failed:        "labeling failed · tools · +Xk"
+   */
   private static formatDescription(entry: AIResponseEntry): string {
     const parts: string[] = [];
 
-    // Only show sequence number if we have a characterization (otherwise redundant)
+    // Status prefix based on state
     if (entry.characterization) {
       parts.push(`#${entry.sequenceNumber.toString()}`);
+    } else if (entry.state === "pending-characterization") {
+      parts.push("labeling");
+    } else if (
+      entry.state === "uncharacterized" &&
+      entry.characterizationError
+    ) {
+      parts.push("labeling failed");
     }
 
     // Show tools used (abbreviated if many)
@@ -402,8 +479,8 @@ export class AIResponseItem extends vscode.TreeItem {
       );
     }
 
-    // Pending characterization within timeout - use muted sparkle (no spinner)
-    if (AIResponseItem.isPendingWithinTimeout(entry)) {
+    // Pending characterization — dimmed to indicate in-progress labeling
+    if (entry.state === "pending-characterization") {
       return new vscode.ThemeIcon(
         "chat-sparkle",
         new vscode.ThemeColor("descriptionForeground"),
