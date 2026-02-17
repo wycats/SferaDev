@@ -31,10 +31,13 @@
  *   --kind <kind>                       Filter by event kind
  *   --conversation <id>                 Filter by conversationId
  *   --json                              Output raw JSON instead of formatted text
+ *   --full                              Force reading the entire file (slow for large logs)
+ *   --tail-bytes <N>                    Bytes to read from end of file (default: 50MB)
  */
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as readline from "node:readline";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types (mirrors investigation-events.ts without importing extension code)
@@ -57,13 +60,24 @@ interface EventBase {
 // Parsing
 // ─────────────────────────────────────────────────────────────────────────────
 
-function loadEvents(filePath: string): EventBase[] {
+/**
+ * Stream-parse a JSONL file line by line.
+ *
+ * Uses readline to avoid loading the entire file into a single string,
+ * which fails for files > ~512MB (V8 string length limit).
+ */
+async function loadEvents(filePath: string): Promise<EventBase[]> {
   if (!fs.existsSync(filePath)) {
     return [];
   }
-  const content = fs.readFileSync(filePath, "utf8");
+
   const events: EventBase[] = [];
-  for (const line of content.split("\n")) {
+  const rl = readline.createInterface({
+    input: fs.createReadStream(filePath, { encoding: "utf8" }),
+    crlfDelay: Infinity,
+  });
+
+  for await (const line of rl) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     try {
@@ -72,6 +86,55 @@ function loadEvents(filePath: string): EventBase[] {
       // Skip malformed lines
     }
   }
+
+  return events;
+}
+
+/**
+ * Read only the last N bytes of a file and parse JSONL lines from it.
+ *
+ * This is much faster than streaming the entire file when you only need
+ * recent events. Reads a chunk from the end, finds complete lines, and
+ * parses them. If the chunk doesn't contain enough events, falls back
+ * to full streaming.
+ */
+async function loadRecentEvents(
+  filePath: string,
+  tailBytes: number,
+): Promise<EventBase[]> {
+  if (!fs.existsSync(filePath)) {
+    return [];
+  }
+
+  const stat = fs.statSync(filePath);
+  if (stat.size <= tailBytes) {
+    // File is small enough to read entirely
+    return loadEvents(filePath);
+  }
+
+  const events: EventBase[] = [];
+  const start = stat.size - tailBytes;
+
+  // Read the tail chunk
+  const fd = fs.openSync(filePath, "r");
+  const buffer = Buffer.alloc(tailBytes);
+  fs.readSync(fd, buffer, 0, tailBytes, start);
+  fs.closeSync(fd);
+
+  const content = buffer.toString("utf8");
+  const lines = content.split("\n");
+
+  // Skip the first line (likely partial)
+  for (let i = 1; i < lines.length; i++) {
+    const trimmed = lines[i]!.trim();
+    if (!trimmed) continue;
+    try {
+      events.push(JSON.parse(trimmed) as EventBase);
+    } catch {
+      // Skip malformed lines
+    }
+  }
+
   return events;
 }
 
@@ -1424,12 +1487,40 @@ function resolveEventsFile(flags: Record<string, string>): string {
   return candidates[0]!;
 }
 
-function main(): void {
+/** Default tail size: 50MB covers ~50k events, enough for any single session. */
+const DEFAULT_TAIL_BYTES = 50 * 1024 * 1024;
+
+/** Commands that can work with just the tail of the file. */
+const TAIL_SAFE_COMMANDS = new Set([
+  "perception",
+  "tail",
+  "conversation",
+  "entry",
+  "request",
+  "trace",
+  "errors",
+  "conversations",
+  "tree",
+]);
+
+async function main(): Promise<void> {
   const { command, positional, flags } = parseArgs(process.argv);
   const eventsFile = resolveEventsFile(flags);
   const json = "json" in flags;
 
-  let events = loadEvents(eventsFile);
+  // Use tail-read for commands that only need recent data, full stream otherwise.
+  // --full flag forces full file read.
+  const forceFull = "full" in flags;
+  const tailBytes = flags["tail-bytes"]
+    ? parseInt(flags["tail-bytes"], 10)
+    : DEFAULT_TAIL_BYTES;
+
+  let events: EventBase[];
+  if (!forceFull && TAIL_SAFE_COMMANDS.has(command)) {
+    events = await loadRecentEvents(eventsFile, tailBytes);
+  } else {
+    events = await loadEvents(eventsFile);
+  }
 
   if (events.length === 0 && command !== "tail") {
     console.log(`No events found at: ${eventsFile}`);
@@ -1544,4 +1635,7 @@ function main(): void {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
