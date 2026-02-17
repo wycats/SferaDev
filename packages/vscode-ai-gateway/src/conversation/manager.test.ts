@@ -847,11 +847,7 @@ describe("ConversationManager", () => {
       store.setCalls = [];
 
       const conversationId = firstConversation(manager).id;
-      manager.updateTurnCharacterization(
-        conversationId,
-        1,
-        "Fixed login bug",
-      );
+      manager.updateTurnCharacterization(conversationId, 1, "Fixed login bug");
 
       // Should have persisted once after characterization
       expect(store.setCalls).toHaveLength(1);
@@ -909,11 +905,7 @@ describe("ConversationManager", () => {
       const conversationId = firstConversation(manager).id;
       // Simulate the real flow: setResponseData then characterize
       manager.setResponseData(conversationId, 1, "I fixed the bug by...");
-      manager.updateTurnCharacterization(
-        conversationId,
-        1,
-        "Fixed login bug",
-      );
+      manager.updateTurnCharacterization(conversationId, 1, "Fixed login bug");
 
       expect(store.setCalls).toHaveLength(1);
       const persisted = store.setCalls[0]!;

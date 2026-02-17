@@ -418,6 +418,57 @@ export function renderHistory(
   return output;
 }
 
+/**
+ * Extract readable content from a tool result string.
+ *
+ * Tool results can be stored in several formats:
+ * 1. Plain text (ideal) — return as-is
+ * 2. JSON-stringified VS Code internal format — extract .value fields
+ *    e.g., [{"$mid":21,"value":"actual content",...}]
+ * 3. JSON data — pretty-print it
+ *
+ * This handles legacy persisted data that used JSON.stringify on the
+ * raw LanguageModelToolResultPart.content array.
+ */
+function extractToolResultContent(result: string): {
+  content: string;
+  format: "text" | "json" | "extracted";
+} {
+  // Quick check: if it doesn't look like JSON, it's plain text
+  const trimmed = result.trim();
+  if (!trimmed.startsWith("[") && !trimmed.startsWith("{")) {
+    return { content: result, format: "text" };
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+
+    // Check for VS Code internal format: array with $mid and value fields
+    if (Array.isArray(parsed)) {
+      const textParts: string[] = [];
+      for (const item of parsed) {
+        if (
+          typeof item === "object" &&
+          item !== null &&
+          "value" in item &&
+          typeof (item as { value: unknown }).value === "string"
+        ) {
+          textParts.push((item as { value: string }).value);
+        }
+      }
+      if (textParts.length > 0) {
+        return { content: textParts.join("\n"), format: "extracted" };
+      }
+    }
+
+    // It's valid JSON but not the VS Code format — pretty-print it
+    return { content: JSON.stringify(parsed, null, 2), format: "json" };
+  } catch {
+    // Not valid JSON — treat as plain text
+    return { content: result, format: "text" };
+  }
+}
+
 export function renderToolCall(
   toolCall: ToolCallDetail,
   aiResponse: AIResponseEntry,
@@ -436,18 +487,22 @@ export function renderToolCall(
   output += renderJsonBlock(toolCall.args);
 
   if (toolCall.result !== undefined) {
-    output += renderHeader("Response", 2);
-    const lines = toolCall.result.split("\n");
+    const { content, format } = extractToolResultContent(toolCall.result);
+    const lines = content.split("\n");
     const lineCount = lines.length;
-    const charCount = toolCall.result.length;
+    const charCount = content.length;
+
+    output += renderHeader("Response", 2);
     output += renderTable([
       ["Lines", lineCount.toString()],
       ["Characters", charCount.toString()],
+      ...(format === "extracted" ? [["Note", "Extracted from legacy format"] as [string, string]] : []),
     ]);
 
     output += renderHeader("Content", 3);
-    // Render as code block for readability
-    output += "```\n" + toolCall.result + "\n```\n\n";
+    // Use appropriate code fence based on format
+    const lang = format === "json" ? "json" : "";
+    output += "```" + lang + "\n" + content + "\n```\n\n";
   } else {
     output += renderHeader("Response", 2);
     output += "*No result captured (tool may still be executing)*\n\n";

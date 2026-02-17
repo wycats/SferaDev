@@ -246,9 +246,10 @@ export class ToolCallItem extends vscode.TreeItem {
     this.contextValue = "tool-call";
 
     // Description: result summary if available, otherwise call ID
-    this.description = result !== undefined
-      ? summarizeToolResult(name, result)
-      : `#${callId.slice(0, 8)}`;
+    this.description =
+      result !== undefined
+        ? summarizeToolResult(name, result)
+        : `#${callId.slice(0, 8)}`;
 
     this.iconPath = new vscode.ThemeIcon(
       toolIcon(name),

@@ -210,11 +210,10 @@ export async function activate(context: vscode.ExtensionContext) {
         const doc = await vscode.workspace.openTextDocument(uri);
         await vscode.languages.setTextDocumentLanguage(doc, "markdown");
         // Open as rendered markdown preview for readability
-        await vscode.commands.executeCommand(
-          "markdown.showPreview",
-          uri,
-          { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
-        );
+        await vscode.commands.executeCommand("markdown.showPreview", uri, {
+          viewColumn: vscode.ViewColumn.Beside,
+          preserveFocus: true,
+        });
       },
     ),
   );

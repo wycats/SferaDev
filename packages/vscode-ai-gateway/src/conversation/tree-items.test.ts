@@ -359,9 +359,7 @@ describe("AIResponseItem", () => {
 
     const item = new AIResponseItem(response, "conv-1", [], []);
     // Should use the primary tool's icon (read_file → go-to-file)
-    expect(
-      (item.iconPath as { id: string }).id,
-    ).toBe("go-to-file");
+    expect((item.iconPath as { id: string }).id).toBe("go-to-file");
   });
 
   it("uses chat-sparkle icon when no tools were called", () => {
@@ -376,9 +374,7 @@ describe("AIResponseItem", () => {
     };
 
     const item = new AIResponseItem(response, "conv-1", [], []);
-    expect(
-      (item.iconPath as { id: string }).id,
-    ).toBe("chat-sparkle");
+    expect((item.iconPath as { id: string }).id).toBe("chat-sparkle");
   });
 });
 

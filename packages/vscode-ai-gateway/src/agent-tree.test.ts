@@ -351,19 +351,31 @@ describe("ConversationTreeDataProvider", () => {
 
   describe("ToolCallItem", () => {
     it("renders with tool name and args preview in label", () => {
-      const item = new ToolCallItem("call-id-123", "read_file", {
-        filePath: "/src/foo.ts",
-        lines: [1, 10],
-      }, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        {
+          filePath: "/src/foo.ts",
+          lines: [1, 10],
+        },
+        "conv-1",
+        1,
+      );
 
       expect(item.label).toContain("read_file");
       expect(item.label).toContain("/src/foo.ts");
     });
 
     it("shows tool-specific icon (search for grep_search)", () => {
-      const item = new ToolCallItem("call-id-123", "grep_search", {
-        query: "test",
-      }, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "grep_search",
+        {
+          query: "test",
+        },
+        "conv-1",
+        1,
+      );
 
       expect(item.iconPath).toBeDefined();
       if (
@@ -376,9 +388,15 @@ describe("ConversationTreeDataProvider", () => {
     });
 
     it("shows go-to-file icon for read_file", () => {
-      const item = new ToolCallItem("call-id-123", "read_file", {
-        filePath: "/src/foo.ts",
-      }, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        {
+          filePath: "/src/foo.ts",
+        },
+        "conv-1",
+        1,
+      );
 
       expect(item.iconPath).toBeDefined();
       if (
@@ -393,9 +411,15 @@ describe("ConversationTreeDataProvider", () => {
     });
 
     it("falls back to wrench icon for unknown tools", () => {
-      const item = new ToolCallItem("call-id-123", "custom_tool", {
-        x: "y",
-      }, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "custom_tool",
+        {
+          x: "y",
+        },
+        "conv-1",
+        1,
+      );
 
       expect(item.iconPath).toBeDefined();
       if (
@@ -408,9 +432,15 @@ describe("ConversationTreeDataProvider", () => {
     });
 
     it("is always a leaf node (non-collapsible)", () => {
-      const item = new ToolCallItem("call-id-123", "read_file", {
-        filePath: "/src/foo.ts",
-      }, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        {
+          filePath: "/src/foo.ts",
+        },
+        "conv-1",
+        1,
+      );
 
       expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
     });
@@ -443,9 +473,15 @@ describe("ConversationTreeDataProvider", () => {
     });
 
     it("displays callId prefix in description when no result", () => {
-      const item = new ToolCallItem("call-id-abcdef123456", "read_file", {
-        filePath: "/src/foo.ts",
-      }, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-abcdef123456",
+        "read_file",
+        {
+          filePath: "/src/foo.ts",
+        },
+        "conv-1",
+        1,
+      );
 
       expect(item.description).toContain("#call-id");
     });
@@ -453,9 +489,15 @@ describe("ConversationTreeDataProvider", () => {
     it("truncates long argument values in label", () => {
       const longPath =
         "/very/long/path/that/exceeds/truncation/limit/at/30/chars";
-      const item = new ToolCallItem("call-id-123", "read_file", {
-        filePath: longPath,
-      }, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        {
+          filePath: longPath,
+        },
+        "conv-1",
+        1,
+      );
 
       expect(item.label).toBeDefined();
       // Should not show the entire long path, just a preview
@@ -463,15 +505,27 @@ describe("ConversationTreeDataProvider", () => {
     });
 
     it("handles empty args gracefully", () => {
-      const item = new ToolCallItem("call-id-123", "some_tool", {}, "conv-1", 1);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "some_tool",
+        {},
+        "conv-1",
+        1,
+      );
 
       expect(item.label).toBe("some_tool");
     });
 
     it("has inspector command for click-to-inspect", () => {
-      const item = new ToolCallItem("call-id-123", "read_file", {
-        filePath: "/src/foo.ts",
-      }, "conv-1", 5);
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        {
+          filePath: "/src/foo.ts",
+        },
+        "conv-1",
+        5,
+      );
 
       expect(item.command).toBeDefined();
       expect(item.command?.command).toBe("vercel.ai.inspectNode");

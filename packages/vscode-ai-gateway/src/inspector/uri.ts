@@ -22,9 +22,7 @@ export function inspectorUri(
       ? ""
       : `/${encodeURIComponent(identifier.toString())}`;
   const encodedSubIdentifier =
-    subIdentifier === undefined
-      ? ""
-      : `/${encodeURIComponent(subIdentifier)}`;
+    subIdentifier === undefined ? "" : `/${encodeURIComponent(subIdentifier)}`;
 
   return vscode.Uri.parse(
     `${INSPECTOR_SCHEME}://inspect/${encodedConversationId}/${encodedEntryType}${encodedIdentifier}${encodedSubIdentifier}`,

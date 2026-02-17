@@ -128,7 +128,12 @@ export type PersistedActivityLogEntry =
       /** Tool names called during this response (added v10). */
       toolsUsed?: string[];
       /** Full tool call details for tree rendering (added v10). */
-      toolCalls?: { callId: string; name: string; args: Record<string, unknown>; result?: string }[];
+      toolCalls?: {
+        callId: string;
+        name: string;
+        args: Record<string, unknown>;
+        result?: string;
+      }[];
     }
   | {
       type: "turn";
