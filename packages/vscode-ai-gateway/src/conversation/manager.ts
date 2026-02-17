@@ -132,7 +132,7 @@ export class ConversationManager implements vscode.Disposable {
           ? { firstMessagePreview: conv.firstMessagePreview }
           : {}),
         modelId: conv.modelId,
-        status: "archived", // Restored conversations start as archived
+        status: "idle", // Restored conversations start as idle (shown at root)
         startTime: conv.startTime,
         lastActiveTime: conv.lastActiveTime,
         tokens: conv.tokens,
@@ -364,7 +364,6 @@ export class ConversationManager implements vscode.Disposable {
     }
 
     // Merge in restored conversations that aren't currently active
-    // (they appear in the "History" section as archived)
     for (const [id, restored] of this.restoredConversations) {
       if (!nextConversations.has(id)) {
         nextConversations.set(id, restored);

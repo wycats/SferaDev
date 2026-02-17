@@ -948,26 +948,28 @@ describe("SectionHeaderItem", () => {
 });
 
 describe("SectionHeaderItem.partitionConversations", () => {
-  it("partitions active conversations to root", () => {
+  it("partitions active and idle conversations to root", () => {
     const convs = [
       makeConversation({ id: "c1", status: "active" }),
       makeConversation({ id: "c2", status: "idle" }),
       makeConversation({ id: "c3", status: "active" }),
     ];
     const result = SectionHeaderItem.partitionConversations(convs);
-    expect(result.active).toHaveLength(2);
-    expect(result.history).toHaveLength(1);
-    expect(result.active.map((c) => c.id)).toEqual(["c1", "c3"]);
+    expect(result.active).toHaveLength(3);
+    expect(result.history).toHaveLength(0);
+    expect(result.active.map((c) => c.id)).toEqual(["c1", "c2", "c3"]);
   });
 
-  it("puts idle and archived into history", () => {
+  it("puts only archived into history", () => {
     const convs = [
       makeConversation({ id: "c1", status: "idle" }),
       makeConversation({ id: "c2", status: "archived" }),
     ];
     const result = SectionHeaderItem.partitionConversations(convs);
-    expect(result.active).toHaveLength(0);
-    expect(result.history).toHaveLength(2);
+    expect(result.active).toHaveLength(1);
+    expect(result.history).toHaveLength(1);
+    expect(result.active.map((c) => c.id)).toEqual(["c1"]);
+    expect(result.history.map((c) => c.id)).toEqual(["c2"]);
   });
 
   it("returns empty arrays when no conversations", () => {

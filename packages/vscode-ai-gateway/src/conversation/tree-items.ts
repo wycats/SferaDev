@@ -939,8 +939,8 @@ export class SectionHeaderItem extends vscode.TreeItem {
    * Partition conversations into active (shown at root) and
    * history (shown under the History section header).
    *
-   * Active = status "active".
-   * History = status "idle" or "archived".
+   * Root = status "active" or "idle".
+   * History = status "archived".
    */
   static partitionConversations(conversations: Conversation[]): {
     active: Conversation[];
@@ -950,7 +950,7 @@ export class SectionHeaderItem extends vscode.TreeItem {
     const history: Conversation[] = [];
 
     for (const conv of conversations) {
-      if (conv.status === "active") {
+      if (conv.status === "active" || conv.status === "idle") {
         active.push(conv);
       } else {
         history.push(conv);

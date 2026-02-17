@@ -361,8 +361,8 @@ const migrateConversationTree = (
 
 export const CONVERSATION_TREE_STORE: StoreConfig<PersistedConversationMap> = {
   key: "vercel.ai.conversationTree",
-  version: 8, // Wipe corrupted data and start fresh
-  scope: "global",
+  version: 9, // v9: moved from globalState to workspaceState
+  scope: "workspace",
   defaultValue: { conversations: {} },
   maxEntries: 50,
   ttlMs: 24 * 60 * 60 * 1000, // 24 hours - conversations older than this are pruned
