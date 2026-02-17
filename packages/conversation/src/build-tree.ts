@@ -22,6 +22,12 @@ import type {
 export type TreeChild =
   | { kind: "ai-response"; entry: AIResponseEntry; tools: string[] }
   | {
+      kind: "tool-call";
+      callId: string;
+      name: string;
+      args: Record<string, unknown>;
+    }
+  | {
       kind: "tool-continuation";
       entry: UserMessageEntry;
       tools: string[];
@@ -193,11 +199,24 @@ export function groupByUserMessage(entries: ActivityLogEntry[]): TreeNode[] {
       lastAIResponseTools = entry.toolsUsed ?? [];
 
       if (currentGroup) {
+        // Add the AI response
         currentGroup.children.push({
           kind: "ai-response",
           entry,
           tools: [...lastAIResponseTools],
         });
+
+        // Add tool calls as nested children after the AI response
+        if (entry.toolCalls && entry.toolCalls.length > 0) {
+          for (const toolCall of entry.toolCalls) {
+            currentGroup.children.push({
+              kind: "tool-call",
+              callId: toolCall.callId,
+              name: toolCall.name,
+              args: toolCall.args,
+            });
+          }
+        }
       } else {
         orphanResponses.push({ entry, sourceIndex: i });
       }
@@ -353,6 +372,26 @@ export function renderTree(result: TreeResult): string {
                 : "";
             lines.push(
               `${childPrefix}${cp}$(chat-sparkle) ${charLabel}  #${child.entry.sequenceNumber}${toolStr}${tokenStr}`,
+            );
+          } else if (child.kind === "tool-call") {
+            // Format tool call: "wrench read_file /src/foo.ts #<callId prefix>"
+            const argKeys = Object.keys(child.args);
+            let argsStr = "";
+            if (argKeys.length > 0) {
+              const argPreview = argKeys
+                .slice(0, 2)
+                .map((key) => {
+                  const val = child.args[key];
+                  if (typeof val === "string") {
+                    return val.length > 20 ? `${val.slice(0, 17)}...` : val;
+                  }
+                  return String(val).slice(0, 15);
+                })
+                .join(" ");
+              argsStr = ` ${argPreview}`;
+            }
+            lines.push(
+              `${childPrefix}${cp}$(wrench) ${child.name}${argsStr}  #${child.callId.slice(0, 8)}`,
             );
           } else if (child.kind === "tool-continuation") {
             const toolLabel =

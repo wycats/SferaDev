@@ -89,12 +89,16 @@ id = "tool-call-nesting"
 [[plan.goals.tasks]]
 id = "implement-tool-call-nesting-in-build-tree-ts"
 title = "Implement tool call nesting in build-tree.ts"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-17T04:50:50.602099701+00:00"
+completion_log = "Added tool-call discriminator to TreeChild type. groupByUserMessage() extracts toolCalls from AIResponseEntry and injects as TreeChild siblings after the AI response. renderTree() renders tool calls with wrench icon and args preview. P19+P20 property tests verify extraction and ordering. 20 conversation tests pass."
 
 [[plan.goals.tasks]]
 id = "update-toolcontinuationitem-and-tree-items-for-nested-structure"
 title = "Update ToolContinuationItem and tree-items for nested structure"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-17T04:50:58.187827644+00:00"
+completion_log = "Created ToolCallItem class (wrench icon, non-collapsible leaf, name+args label, callId description). Updated UserMessageChild type with tool-call variant. Updated agent-tree.ts getUserMessageChildren() and mapTreeChild() to handle tool-call discriminator. 6 ToolCallItem unit tests + existing P9/P11/P16 tests updated for new discriminator. 721 total tests pass."
 
 [[plan.goals]]
 id = "tool-call-labels"

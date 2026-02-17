@@ -709,7 +709,9 @@ describe("Activity Tree Properties", () => {
         const result = buildTree(log);
 
         for (const node of getUserMessageNodes(result)) {
-          const indices = node.children.map((c) => windowed.indexOf(c.entry));
+          const indices = node.children
+            .filter((c) => c.kind !== "tool-call")
+            .map((c) => windowed.indexOf((c as any).entry));
           for (let i = 0; i < indices.length; i++) {
             const current = indices[i];
             expect(
@@ -817,17 +819,20 @@ describe("Activity Tree Properties", () => {
         const seen = new Set<ActivityLogEntry>();
         for (const node of getUserMessageNodes(result)) {
           for (const child of node.children) {
-            const entryId = formatEntryId(child.entry);
+            // Skip tool-calls (derived from AIResponseEntry.toolCalls)
+            if (child.kind === "tool-call") continue;
+            const entry = (child as any).entry;
+            const entryId = formatEntryId(entry);
             expect(
-              seen.has(child.entry),
+              seen.has(entry),
               counterexample(
                 "P11: Exclusive grouping",
                 log,
                 result,
-                `Duplicate child entry ${child.entry.type} ${entryId}`,
+                `Duplicate child entry ${entry.type} ${entryId}`,
               ),
             ).toBe(false);
-            seen.add(child.entry);
+            seen.add(entry);
           }
         }
 
@@ -1016,7 +1021,7 @@ describe("Activity Tree Properties", () => {
 
         for (const node of getUserMessageNodes(result)) {
           const hasCompactionChild = node.children.some((c) =>
-            compactionEntries.has(c.entry),
+            c.kind !== "tool-call" && compactionEntries.has((c as any).entry),
           );
           expect(
             hasCompactionChild,
@@ -1145,4 +1150,101 @@ describe("Activity Tree Properties", () => {
       { numRuns: NUM_RUNS },
     );
   });
+
+  it("P19: all toolCalls in AIResponseEntry map to tool-call children", () => {
+    fc.assert(
+      fc.property(arbActivityLog, (log) => {
+        const result = buildTree(log);
+
+        // Collect all AIResponseEntry instances with toolCalls
+        const aiEntriesWithTools = new Map<AIResponseEntry, number>();
+        for (const node of getUserMessageNodes(result)) {
+          for (const child of node.children) {
+            if (child.kind === "ai-response" && child.entry.toolCalls) {
+              aiEntriesWithTools.set(
+                child.entry,
+                child.entry.toolCalls.length,
+              );
+            }
+          }
+        }
+
+        // Verify each AI response's tool calls appear as tool-call children
+        for (const node of getUserMessageNodes(result)) {
+          for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            if (child?.kind !== "ai-response") continue;
+
+            const expectedToolCount = child.entry.toolCalls?.length ?? 0;
+            if (expectedToolCount === 0) continue;
+
+            // Count tool-call children immediately following this AI response
+            let toolCallCount = 0;
+            for (let j = i + 1; j < node.children.length; j++) {
+              const nextChild = node.children[j];
+              if (!nextChild) continue;
+              if (nextChild.kind === "tool-call") {
+                toolCallCount++;
+              } else {
+                // Stop counting at first non-tool-call
+                break;
+              }
+            }
+
+            expect(
+              toolCallCount,
+              counterexample(
+                "P19: Tool calls as children",
+                log,
+                result,
+                `AI response A(${child.entry.sequenceNumber}) has ${expectedToolCount} toolCalls but ${toolCallCount} tool-call children`,
+              ),
+            ).toBe(expectedToolCount);
+          }
+        }
+      }),
+      { numRuns: NUM_RUNS },
+    );
+  });
+
+  it("P20: tool calls appear before tool continuations in user message group", () => {
+    fc.assert(
+      fc.property(arbActivityLog, (log) => {
+        const result = buildTree(log);
+
+        for (const node of getUserMessageNodes(result)) {
+          let lastToolCallIndex = -1;
+          let firstToolContinuationIndex = -1;
+
+          for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            if (!child) continue;
+
+            if (child.kind === "tool-call") {
+              lastToolCallIndex = i;
+            } else if (
+              child.kind === "tool-continuation" &&
+              firstToolContinuationIndex === -1
+            ) {
+              firstToolContinuationIndex = i;
+            }
+          }
+
+          if (lastToolCallIndex >= 0 && firstToolContinuationIndex >= 0) {
+            expect(
+              lastToolCallIndex < firstToolContinuationIndex,
+              counterexample(
+                "P20: Tool call ordering",
+                log,
+                result,
+                `Tool calls come after tool continuations in U(${node.entry.sequenceNumber})`,
+              ),
+            ).toBe(true);
+          }
+        }
+      }),
+      { numRuns: NUM_RUNS },
+    );
+  });
 });
+

@@ -23,10 +23,11 @@ import { inspectorUri } from "../inspector/uri.js";
 
 /**
  * A child entry that can be nested under a UserMessageItem.
- * Includes AI responses and tool continuations.
+ * Includes AI responses, tool calls, and tool continuations.
  */
 export type UserMessageChild =
   | { type: "ai-response"; entry: AIResponseEntry }
+  | { type: "tool-call"; callId: string; name: string; args: Record<string, unknown> }
   | { type: "tool-continuation"; entry: UserMessageEntry; tools: string[] }
   | { type: "error"; entry: ErrorEntry };
 
@@ -190,6 +191,74 @@ export class ToolContinuationItem extends vscode.TreeItem {
     }
 
     return parts.join(" · ");
+  }
+}
+
+// ── ToolCallItem ────────────────────────────────────────────────────
+
+/**
+ * Tree item for a tool call made by an AI response.
+ *
+ * Tool calls are non-collapsible leaf nodes nested under AIResponseItem,
+ * showing what tools were invoked during the response.
+ *
+ * Label: "read_file /src/foo.ts" (tool name + args preview).
+ * Description: "#<callId prefix>".
+ * Icon: $(wrench).
+ */
+export class ToolCallItem extends vscode.TreeItem {
+  readonly callId: string;
+  readonly name: string;
+  readonly args: Record<string, unknown>;
+
+  constructor(
+    callId: string,
+    name: string,
+    args: Record<string, unknown>,
+  ) {
+    const label = ToolCallItem.formatLabel(name, args);
+
+    super(label, vscode.TreeItemCollapsibleState.None);
+
+    this.callId = callId;
+    this.name = name;
+    this.args = args;
+    this.contextValue = "tool-call";
+    this.description = ToolCallItem.formatDescription(callId);
+
+    this.iconPath = new vscode.ThemeIcon(
+      "wrench",
+      new vscode.ThemeColor("descriptionForeground"),
+    );
+
+    // Non-interactive: no command
+  }
+
+  private static formatLabel(name: string, args: Record<string, unknown>): string {
+    // Build a concise args preview (e.g., "path, query")
+    const argKeys = Object.keys(args);
+    if (argKeys.length === 0) {
+      return name;
+    }
+
+    // Get up to 2 arg values as preview
+    const argPreview = argKeys
+      .slice(0, 2)
+      .map((key) => {
+        const val = args[key];
+        if (typeof val === "string") {
+          return val.length > 30 ? `${val.slice(0, 27)}...` : val;
+        }
+        return String(val).slice(0, 20);
+      })
+      .join(", ");
+
+    return `${name} ${argPreview}`;
+  }
+
+  private static formatDescription(callId: string): string {
+    // Show first 8 chars of callId with # prefix
+    return `#${callId.slice(0, 8)}`;
   }
 }
 

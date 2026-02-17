@@ -19,12 +19,14 @@ import {
   HistoryItem,
   SectionHeaderItem,
   ToolContinuationItem,
+  ToolCallItem,
   UserMessageItem,
 } from "./conversation/index.js";
 import type { Conversation } from "@vercel/conversation";
 import {
   buildTree,
   groupByUserMessage,
+  type TreeChild,
   type TreeNode,
   type TreeResult,
 } from "@vercel/conversation";
@@ -36,6 +38,7 @@ export type TreeItem =
   | ConversationItem
   | UserMessageItem
   | ToolContinuationItem
+  | ToolCallItem
   | AIResponseItem
   | TurnItem
   | CompactionTreeItem
@@ -197,7 +200,7 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
   }
 
   /**
-   * Get children for a UserMessageItem (AI responses with same sequenceNumber).
+   * Get children for a UserMessageItem (AI responses, tool calls, and tool continuations).
    */
   private getUserMessageChildren(element: UserMessageItem): TreeItem[] {
     const conversation = this.manager
@@ -208,7 +211,7 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
       return [];
     }
 
-    // Return tree items for each child (AI responses and tool continuations)
+    // Return tree items for each child (AI responses, tool calls, and tool continuations)
     return element.children.map((child) => {
       if (child.type === "ai-response") {
         const subagents = SubagentItem.resolveSubagents(
@@ -220,6 +223,8 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
           element.conversationId,
           subagents,
         );
+      } else if (child.type === "tool-call") {
+        return new ToolCallItem(child.callId, child.name, child.args);
       } else if (child.type === "error") {
         return new ErrorTreeItem(child.entry, element.conversationId);
       } else {
@@ -309,23 +314,17 @@ function treeNodeToItem(
   switch (node.kind) {
     case "user-message": {
       // Map TreeChild[] to UserMessageChild[] for the UserMessageItem constructor
-      const children = node.children.map((child) => {
-        if (child.kind === "ai-response") {
-          return { type: "ai-response" as const, entry: child.entry };
-        } else if (child.kind === "error") {
-          return { type: "error" as const, entry: child.entry };
-        } else {
-          return {
-            type: "tool-continuation" as const,
-            entry: child.entry,
-            tools: child.tools,
-          };
+      const children: Array<ReturnType<typeof mapTreeChild>> = [];
+      for (const child of node.children) {
+        const mapped = mapTreeChild(child);
+        if (mapped !== undefined) {
+          children.push(mapped);
         }
-      });
+      }
       return new UserMessageItem(
         node.entry,
         conversationId,
-        children,
+        children as Array<any>,
         node.hasError,
       );
     }
@@ -337,6 +336,33 @@ function treeNodeToItem(
       // Placeholder — caller replaces with real HistoryItem that has entries
       return new HistoryItem([], conversationId);
   }
+}
+
+/**
+ * Map a TreeChild to a UserMessageChild, filtering out unknown kinds.
+ */
+function mapTreeChild(
+  child: TreeChild,
+): any {
+  if (child.kind === "ai-response") {
+    return { type: "ai-response" as const, entry: child.entry };
+  } else if (child.kind === "tool-call") {
+    return {
+      type: "tool-call" as const,
+      callId: child.callId,
+      name: child.name,
+      args: child.args,
+    };
+  } else if (child.kind === "error") {
+    return { type: "error" as const, entry: child.entry };
+  } else if (child.kind === "tool-continuation") {
+    return {
+      type: "tool-continuation" as const,
+      entry: child.entry,
+      tools: child.tools,
+    };
+  }
+  return undefined;
 }
 
 /**

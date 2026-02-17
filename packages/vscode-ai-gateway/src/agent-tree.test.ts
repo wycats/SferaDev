@@ -79,7 +79,7 @@ import {
   SubagentItem,
 } from "./agent-tree";
 import type { TreeItem } from "./agent-tree";
-import { CompactionTreeItem, ErrorTreeItem } from "./conversation/index";
+import { CompactionTreeItem, ErrorTreeItem, ToolCallItem } from "./conversation/index";
 import type { AgentEntry, AgentRegistry } from "./agent/index.js";
 
 class MockRegistry {
@@ -344,4 +344,74 @@ describe("ConversationTreeDataProvider", () => {
       expect(listener).toHaveBeenCalled();
     });
   });
+
+  describe("ToolCallItem", () => {
+    it("renders with tool name and args preview in label", () => {
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        { filePath: "/src/foo.ts", lines: [1, 10] },
+      );
+
+      expect(item.label).toContain("read_file");
+      expect(item.label).toContain("/src/foo.ts");
+    });
+
+    it("shows wrench icon", () => {
+      const item = new ToolCallItem(
+        "call-id-123",
+        "grep_search",
+        { query: "test" },
+      );
+
+      expect(item.iconPath).toBeDefined();
+      if (item.iconPath && typeof item.iconPath === "object" && "id" in item.iconPath) {
+        expect((item.iconPath as unknown as { id: string }).id).toBe("wrench");
+      }
+    });
+
+    it("is non-collapsible (leaf node)", () => {
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        { filePath: "/src/foo.ts" },
+      );
+
+      expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
+    });
+
+    it("displays callId prefix in description", () => {
+      const item = new ToolCallItem(
+        "call-id-abcdef123456",
+        "read_file",
+        { filePath: "/src/foo.ts" },
+      );
+
+      expect(item.description).toContain("#call-id");
+    });
+
+    it("truncates long argument values in label", () => {
+      const longPath = "/very/long/path/that/exceeds/truncation/limit/at/30/chars";
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        { filePath: longPath },
+      );
+
+      expect(item.label).toBeDefined();
+      // Should not show the entire long path, just a preview
+      expect((item.label as string).length).toBeLessThan(longPath.length);
+    });
+
+    it("handles empty args gracefully", () => {
+      const item = new ToolCallItem(
+        "call-id-123",
+        "some_tool",
+        {},
+      );
+
+      expect(item.label).toBe("some_tool");
+    });
+  });
 });
+

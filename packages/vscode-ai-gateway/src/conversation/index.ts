@@ -19,6 +19,7 @@ export {
   HistoryItem,
   SectionHeaderItem,
   SubagentItem,
+  ToolCallItem,
   ToolContinuationItem,
   TurnItem,
   UserMessageItem,
