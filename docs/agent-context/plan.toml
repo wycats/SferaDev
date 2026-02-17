@@ -2261,7 +2261,7 @@ id = "00073"
 [[epochs.phases]]
 id = "01khmjzqpzmfkdyrtt2zwaqvct"
 title = "Package Extraction: Clean Boundaries"
-status = "active"
+status = "completed"
 goals = []
 kind = "regular"
 ulid = "01KHMJZQPZMFKDYRTT2ZWAQVCT"
@@ -2269,7 +2269,7 @@ ulid = "01KHMJZQPZMFKDYRTT2ZWAQVCT"
 [[epochs.phases]]
 id = "01khmkbcg8sk5ffwxsk5681n8p"
 title = "Persistence & Idle Timer"
-status = "pending"
+status = "active"
 goals = []
 kind = "regular"
 ulid = "01KHMKBCG8SK5FFWXSK5681N8P"
