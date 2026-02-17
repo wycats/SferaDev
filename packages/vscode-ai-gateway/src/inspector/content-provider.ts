@@ -6,10 +6,10 @@ import type {
   Conversation,
   ErrorEntry,
   Subagent,
-  TurnEntry,
   UserMessageEntry,
-} from "../conversation/types.js";
-import { buildTree, groupByUserMessage } from "../conversation/build-tree.js";
+} from "@vercel/conversation";
+import type { TurnEntry } from "../conversation/types.js";
+import { buildTree, groupByUserMessage } from "@vercel/conversation";
 import {
   renderAIResponse,
   renderCompaction,

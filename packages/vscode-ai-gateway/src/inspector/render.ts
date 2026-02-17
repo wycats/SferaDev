@@ -6,9 +6,9 @@ import type {
   Conversation,
   ErrorEntry,
   Subagent,
-  TurnEntry,
   UserMessageEntry,
-} from "../conversation/types.js";
+} from "@vercel/conversation";
+import type { TurnEntry } from "../conversation/types.js";
 import { formatTokens } from "../tokens/display.js";
 
 function renderHeader(title: string, level: number): string {

@@ -11,6 +11,7 @@ It registers as a `vscode.lm` language model provider. The codebase is in
 `packages/vscode-ai-gateway/`.
 
 **Start here**:
+
 - `packages/vscode-ai-gateway/AGENTS.md` — full architecture, event stream, debugging workflow
 - `exo status` — current phase, goals, what's done and what's next
 - `exo task list` — tasks within the current goal
@@ -31,6 +32,7 @@ interfaces, rewrote tests with interface helpers, verified events.jsonl works
 end-to-end.
 
 **Goals 2-10**: Not yet started. Read RFC 00075 for the full design. In order:
+
 1. Define `TreeChangeOp` discriminated union types
 2. Emit `tree.snapshot` events at session boundaries
 3. `TreeChangeLogger` emits typed ops directly (no bridge)
@@ -80,16 +82,16 @@ These emerged through dialogue and are non-negotiable:
 
 ## Key Files for Active Work
 
-| File | Role |
-|------|------|
-| `src/logger/unified-log-subscriber.ts` | Writes events.jsonl. Has `EventWriter` + `LogConfig` interfaces. |
-| `src/logger/unified-log-subscriber.test-helpers.ts` | `TestEventWriter`, `testLogConfig()`, `testEvent()` |
-| `src/logger/investigation-events.ts` | Event type definitions (12 kinds). Will grow with `TreeChangeOp`. |
-| `src/diagnostics/tree-change-log.ts` | 590 lines. Diff detection + file I/O + bridge. To be consolidated. |
-| `src/logger/tree-change-bridge.ts` | Translates tree changes → events. To be DELETED (unnecessary indirection). |
-| `src/provider.ts` | Lines 260-310: `provideLanguageModelChatResponse`. Fork detection goes here. |
-| `src/conversation/types.ts` | `Conversation`, `ActivityLogEntry`, `Subagent` types. |
-| `scripts/query-events.ts` | CLI tool (619 lines, 8 commands). Will get `tree` and `conversation` commands. |
+| File                                                | Role                                                                                      |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `src/logger/unified-log-subscriber.ts`              | Writes events.jsonl. Has `EventWriter` + `LogConfig` interfaces.                          |
+| `src/logger/unified-log-subscriber.test-helpers.ts` | `TestEventWriter`, `testLogConfig()`, `testEvent()`                                       |
+| `src/logger/investigation-events.ts`                | Event type definitions (12 kinds). Will grow with `TreeChangeOp`.                         |
+| `src/diagnostics/tree-change-log.ts`                | 590 lines. Diff detection + file I/O + bridge. To be consolidated.                        |
+| `src/logger/tree-change-bridge.ts`                  | Translates tree changes → events. To be DELETED (unnecessary indirection).                |
+| `src/provider.ts`                                   | Lines 260-310: `provideLanguageModelChatResponse`. Fork detection goes here.              |
+| `src/conversation/types.ts`                         | `Conversation`, `ActivityLogEntry`, `Subagent` types.                                     |
+| `packages/agent-cli/src/query-events.ts`            | CLI tool (@vercel/agent-cli). Observation commands: session, tail, perception, tree, etc. |
 
 ## Key Decisions Already Made
 
@@ -115,7 +117,7 @@ These emerged through dialogue and are non-negotiable:
 
 - **Branch**: `feat/token-status-bar` (historical name, covers all recent work)
 - **Test count**: 713 tests, 48 files (as of 2026-02-16)
-- **Node.js 24+**: Required for running TypeScript natively (`node scripts/query-events.ts`)
+- **Node.js 24+**: Required for running TypeScript natively (`node packages/agent-cli/src/query-events.ts`)
 - **Build**: `pnpm run build` (esbuild), `pnpm run test` (vitest), `pnpm run tsc` (type-check)
 - **Install**: Use the "Build and Install Extension" VS Code task
 

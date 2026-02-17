@@ -9,7 +9,7 @@ import type {
   Conversation,
   ActivityLogEntry,
   Subagent,
-} from "../conversation/types.js";
+} from "@vercel/conversation";
 import type {
   EventConversationSnapshot,
   EventActivityLogSnapshot,

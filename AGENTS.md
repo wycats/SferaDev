@@ -166,7 +166,7 @@ cd packages/vscode-ai-gateway && pnpm build
 cd packages/vscode-ai-gateway && pnpm test
 
 # Query the unified event stream
-node scripts/query-events.ts session
+node packages/agent-cli/src/query-events.ts session
 
 # Type check
 cd packages/vscode-ai-gateway && pnpm tsc

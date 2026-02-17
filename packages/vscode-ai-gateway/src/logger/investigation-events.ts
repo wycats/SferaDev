@@ -5,7 +5,7 @@ import type {
   SSEEventEntry,
 } from "./investigation.js";
 import type { TokenUsage } from "../agent/types.js";
-import type { AIResponseState } from "../conversation/types.js";
+import type { AIResponseState } from "@vercel/conversation";
 
 // ── Tree Change Op Types ─────────────────────────────────────────────
 // Typed discriminated union for tree change events (RFC 00075).

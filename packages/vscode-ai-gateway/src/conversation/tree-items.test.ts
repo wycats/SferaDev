@@ -50,12 +50,14 @@ vi.mock("vscode", () => ({
 }));
 
 import type {
+  ActivityLogEntry,
   AIResponseEntry,
   CompactionEntry,
+  Conversation,
   ErrorEntry,
   Subagent,
   UserMessageEntry,
-} from "./types";
+} from "@vercel/conversation";
 import {
   AIResponseItem,
   CompactionTreeItem,
@@ -68,7 +70,6 @@ import {
   UserMessageItem,
   type UserMessageChild,
 } from "./tree-items";
-import type { ActivityLogEntry, Conversation } from "./types";
 
 describe("UserMessageItem", () => {
   const testConversationId = "test-conv-123";

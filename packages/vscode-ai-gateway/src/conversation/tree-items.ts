@@ -13,9 +13,9 @@ import type {
   Conversation,
   ErrorEntry,
   Subagent,
-  TurnEntry,
   UserMessageEntry,
-} from "./types.js";
+} from "@vercel/conversation";
+import type { TurnEntry } from "./types.js";
 import { formatTokens } from "../tokens/display.js";
 import { inspectorUri } from "../inspector/uri.js";
 

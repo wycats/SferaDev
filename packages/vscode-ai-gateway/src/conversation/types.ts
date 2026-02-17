@@ -1,19 +1,9 @@
 /**
- * Re-export all shared conversation types from @vercel/conversation,
- * plus extension-local legacy types.
+ * Extension-local legacy types.
+ *
+ * Shared conversation types live in @vercel/conversation.
+ * This file contains only extension-specific types that don't belong in the shared package.
  */
-
-export type {
-  ActivityLogEntry,
-  AIResponseEntry,
-  AIResponseState,
-  CompactionEntry,
-  CompactionEvent,
-  Conversation,
-  ErrorEntry,
-  Subagent,
-  UserMessageEntry,
-} from "@vercel/conversation";
 
 /**
  * Legacy user↔assistant exchange entry retained for migration/backward compatibility.

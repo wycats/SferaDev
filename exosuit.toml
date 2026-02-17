@@ -8,7 +8,7 @@ test = { cmd = "pnpm test", desc = "Run tests", cwd = "packages/vscode-ai-gatewa
 lint = { cmd = "pnpm lint", desc = "Run linter", cwd = "root" }
 typecheck = { cmd = "pnpm tsc", desc = "Run TypeScript type checker", cwd = "packages/vscode-ai-gateway" }
 check = { cmd = "pnpm tsc && pnpm lint && pnpm test", desc = "Run all checks (typecheck, lint, test)", cwd = "packages/vscode-ai-gateway" }
-query-events = { cmd = "node scripts/query-events.ts", desc = "Query the unified event stream (.logs/*/events.jsonl)" }
+query-events = { cmd = "node packages/agent-cli/src/query-events.ts", desc = "Query the unified event stream (.logs/*/events.jsonl)" }
 
 [tdd]
 [[tdd.runners]]

@@ -12,9 +12,9 @@ import type {
   Conversation,
   ErrorEntry,
   Subagent,
-  TurnEntry,
   UserMessageEntry,
-} from "./types.js";
+} from "@vercel/conversation";
+import type { TurnEntry } from "./types.js";
 import { getTreeChangeLogger } from "../diagnostics/tree-change-log.js";
 import { logger } from "../logger.js";
 import type { TreeSnapshotTrigger } from "../logger/investigation-events.js";
@@ -882,6 +882,9 @@ export class ConversationManager implements vscode.Disposable {
 
     if (userMessage && !userMessage.preview) {
       userMessage.preview = preview;
+      getTreeChangeLogger().logChanges(
+        Array.from(this.conversations.values()),
+      );
       this._onDidChangeConversations.fire(undefined);
     }
   }
@@ -907,6 +910,9 @@ export class ConversationManager implements vscode.Disposable {
 
     if (response) {
       response.toolsUsed = toolsUsed;
+      getTreeChangeLogger().logChanges(
+        Array.from(this.conversations.values()),
+      );
       this._onDidChangeConversations.fire(undefined);
     }
   }

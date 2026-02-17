@@ -4,7 +4,7 @@
  * Emits typed tree.change ops to the unified investigation event stream.
  */
 
-import type { Conversation } from "../conversation/types.js";
+import type { Conversation } from "@vercel/conversation";
 import type {
   InvestigationEvent,
   TreeChangeOp,
@@ -201,7 +201,10 @@ class TreeChangeLogger {
           currEntry?.type === "user-message"
         ) {
           type UserMsgFields = Partial<
-            Omit<EventUserMessageSnapshot, "type" | "sequenceNumber" | "timestamp">
+            Omit<
+              EventUserMessageSnapshot,
+              "type" | "sequenceNumber" | "timestamp"
+            >
           >;
           const fields: UserMsgFields = {};
           let hasChanges = false;

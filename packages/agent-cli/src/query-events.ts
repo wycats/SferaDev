@@ -7,7 +7,7 @@
  * traces causality chains, and summarizes sessions.
  *
  * Usage:
- *   node scripts/query-events.ts <command> [options]
+ *   node packages/agent-cli/src/query-events.ts <command> [options]
  *
  * Commands:
  *   perception                           What the user sees right now (start here)
@@ -259,9 +259,7 @@ function formatPercentage(
 
 function matchById(value: string | undefined, target: string): boolean {
   if (!value) return false;
-  return (
-    value === target || value.startsWith(target) || value.endsWith(target)
-  );
+  return value === target || value.startsWith(target) || value.endsWith(target);
 }
 
 function reconstructTree(events: EventBase[], atEventId?: string): any[] {
@@ -908,9 +906,7 @@ function buildChatIdMap(
 
   // Get request.index events for this conversation, sorted by timestamp
   const indices = events.filter(
-    (e) =>
-      e.kind === "request.index" &&
-      e.conversationId === conversationId,
+    (e) => e.kind === "request.index" && e.conversationId === conversationId,
   );
 
   // Get user-message-added tree.change events for this conversation
@@ -988,7 +984,9 @@ function renderNodeLine(
       const chatId = chatIdMap.get(seq);
       const chatPart = chatId ? `  chat=${shortChatId(chatId)}` : "";
       const errorMarker = node.hasError ? "  ⚠ error" : "";
-      lines.push(`${indent}${prefix}👤 ${label}  #${seq}${chatPart}${errorMarker}`);
+      lines.push(
+        `${indent}${prefix}👤 ${label}  #${seq}${chatPart}${errorMarker}`,
+      );
 
       for (let j = 0; j < node.children.length; j++) {
         const child = node.children[j]!;
@@ -1002,9 +1000,10 @@ function renderNodeLine(
     case "compaction": {
       const freed = fmtTokensCli(node.entry.freedTokens);
       const turn = node.entry.turnNumber;
-      const kind = node.entry.compactionType === "summarization"
-        ? "Compacted"
-        : "Context managed";
+      const kind =
+        node.entry.compactionType === "summarization"
+          ? "Compacted"
+          : "Context managed";
       lines.push(`${indent}${prefix}↓ ${kind} ${freed} (turn ${turn})`);
       break;
     }
@@ -1112,7 +1111,13 @@ function cmdPerception(events: EventBase[], json?: boolean): void {
       const prefix = isLast ? "└─ " : "├─ ";
       const childIndent = isLast ? "    " : "│   ";
 
-      const nodeLines = renderNodeLine(node, chatIdMap, "  ", prefix, childIndent);
+      const nodeLines = renderNodeLine(
+        node,
+        chatIdMap,
+        "  ",
+        prefix,
+        childIndent,
+      );
       for (const line of nodeLines) {
         console.log(line);
       }
@@ -1142,7 +1147,9 @@ function cmdPerception(events: EventBase[], json?: boolean): void {
 
   // Show archived conversations as a summary
   if (archived.length > 0) {
-    console.log(`📁 History: ${archived.length} archived conversation${archived.length === 1 ? "" : "s"}`);
+    console.log(
+      `📁 History: ${archived.length} archived conversation${archived.length === 1 ? "" : "s"}`,
+    );
     for (const conv of archived) {
       const title = conv.title ? truncate(conv.title, 50) : "(untitled)";
       const input = formatTokenValue(conv.tokens?.input);
@@ -1153,7 +1160,10 @@ function cmdPerception(events: EventBase[], json?: boolean): void {
       );
       const logCount = (conv.activityLog ?? []).length;
       const subCount = (conv.subagents ?? []).length;
-      const subPart = subCount > 0 ? `  ${subCount} subagent${subCount === 1 ? "" : "s"}` : "";
+      const subPart =
+        subCount > 0
+          ? `  ${subCount} subagent${subCount === 1 ? "" : "s"}`
+          : "";
       console.log(
         `  △ ${title}  ${input}/${maxInput} (${percent})  ${logCount} entries${subPart}`,
       );
@@ -1248,9 +1258,7 @@ function cmdEntry(
   if (entry.type === "ai-response") {
     console.log(`Sequence:       #${entry.sequenceNumber ?? "?"}`);
     console.log(`State:          ${entry.state ?? "?"}`);
-    console.log(
-      `Characterization: ${entry.characterization ?? "(none)"}`,
-    );
+    console.log(`Characterization: ${entry.characterization ?? "(none)"}`);
     console.log(
       `Tokens:         ${entry.tokenContribution !== undefined ? `+${entry.tokenContribution}` : "?"}`,
     );

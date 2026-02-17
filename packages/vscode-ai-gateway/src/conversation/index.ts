@@ -7,9 +7,9 @@ export type {
   Conversation,
   ErrorEntry,
   Subagent,
-  TurnEntry,
   UserMessageEntry,
-} from "./types.js";
+} from "@vercel/conversation";
+export type { TurnEntry } from "./types.js";
 export { ConversationManager } from "./manager.js";
 export {
   AIResponseItem,

@@ -2086,7 +2086,7 @@ id = "00073"
 [[epochs.phases]]
 id = "01khknbzwdpkke7y95dnq00pb8"
 title = "Collaborative UI Refinements"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHKNBZWDPKKE7Y95DNQ00PB8"
 
@@ -2141,34 +2141,50 @@ ulid = "01KHKT6KREM61STZZ09F5YPV9W"
 
 [[epochs.phases]]
 id = "01khknebhjr8rms0314vsqcatx"
-title = "Persistence & Idle Timer"
-status = "pending"
+title = "Package Extraction: Clean Boundaries"
+status = "active"
 kind = "regular"
 ulid = "01KHKNEBHJR8RMS0314VSQCATX"
 
 [[epochs.phases.goals]]
 id = "conversation-store"
 label = "Add CONVERSATION_STORE to persistence layer"
-status = "pending"
+status = "abandoned"
+completion_log = "Moved to future Persistence phase"
 ulid = "01KHKNEPRC2Q9T33AQWPT1EKGB"
 
 [[epochs.phases.goals]]
 id = "persist-on-change"
 label = "Persist conversation metadata on state changes"
-status = "pending"
+status = "abandoned"
+completion_log = "Moved to future Persistence phase"
 ulid = "01KHKNFF9XAW2CB5Y2S77NBXPQ"
 
 [[epochs.phases.goals]]
 id = "restore-on-startup"
 label = "Restore conversations on VS Code restart"
-status = "pending"
+status = "abandoned"
+completion_log = "Moved to future Persistence phase"
 ulid = "01KHKNFFASKEW6B1CNFE2GEG5K"
 
 [[epochs.phases.goals]]
 id = "idle-timer"
 label = "Implement 5-minute idle timer for Active→History"
-status = "pending"
+status = "abandoned"
+completion_log = "Moved to future Persistence phase"
 ulid = "01KHKNFFBCSBHN9YMPBEMQ7R9G"
+
+[[epochs.phases.goals]]
+id = "rewrite-extension"
+label = "Rewrite extension to import @vercel/conversation directly, delete all shims"
+status = "pending"
+ulid = "01KHMMF8R8KS4Y0JE2ZNJVP78W"
+
+[[epochs.phases.goals]]
+id = "remove-script-shim"
+label = "Remove scripts/query-events.ts shim, update all doc/config references"
+status = "pending"
+ulid = "01KHMMFBTK3ZR1WP05RVTH5F0M"
 
 [[epochs.phases]]
 id = "01khddgdb93f871apk819k8dxh"
@@ -2238,6 +2254,22 @@ rfc = "00073"
 
 [[epochs.phases.rfcs]]
 id = "00073"
+
+[[epochs.phases]]
+id = "01khmjzqpzmfkdyrtt2zwaqvct"
+title = "Package Extraction: Clean Boundaries"
+status = "pending"
+goals = []
+kind = "regular"
+ulid = "01KHMJZQPZMFKDYRTT2ZWAQVCT"
+
+[[epochs.phases]]
+id = "01khmkbcg8sk5ffwxsk5681n8p"
+title = "Persistence & Idle Timer"
+status = "pending"
+goals = []
+kind = "regular"
+ulid = "01KHMKBCG8SK5FFWXSK5681N8P"
 
 [[epochs]]
 id = "01khetjx8p8yawtehsa3c264ck"

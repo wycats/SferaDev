@@ -21,13 +21,13 @@ import {
   ToolContinuationItem,
   UserMessageItem,
 } from "./conversation/index.js";
-import type { Conversation } from "./conversation/index.js";
+import type { Conversation } from "@vercel/conversation";
 import {
   buildTree,
   groupByUserMessage,
   type TreeNode,
   type TreeResult,
-} from "./conversation/build-tree.js";
+} from "@vercel/conversation";
 
 /**
  * Union type for all tree items in the conversation tree

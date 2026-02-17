@@ -2,7 +2,7 @@
  * Concrete store configurations for the persistence layer.
  */
 
-import type { AIResponseState } from "../conversation/types.js";
+import type { AIResponseState } from "@vercel/conversation";
 import { logger } from "../logger.js";
 import type { StoreConfig } from "./types.js";
 

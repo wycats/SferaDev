@@ -246,14 +246,14 @@ Every event has: `kind`, `eventId` (ULID), `ts`, `sessionId`, `conversationId`, 
 ### Querying Events
 
 ```bash
-node scripts/query-events.ts session                    # Overview
-node scripts/query-events.ts tail                       # Last 20 events
-node scripts/query-events.ts request <chatId>           # Events for a request
-node scripts/query-events.ts trace <chatId>             # Causality chain
-node scripts/query-events.ts errors                     # All errors
-node scripts/query-events.ts conversations              # Conversation list
-node scripts/query-events.ts search <text>              # Full-text search
-node scripts/query-events.ts kinds                      # Event distribution
+node packages/agent-cli/src/query-events.ts session                    # Overview
+node packages/agent-cli/src/query-events.ts tail                       # Last 20 events
+node packages/agent-cli/src/query-events.ts request <chatId>           # Events for a request
+node packages/agent-cli/src/query-events.ts trace <chatId>             # Causality chain
+node packages/agent-cli/src/query-events.ts errors                     # All errors
+node packages/agent-cli/src/query-events.ts conversations              # Conversation list
+node packages/agent-cli/src/query-events.ts search <text>              # Full-text search
+node packages/agent-cli/src/query-events.ts kinds                      # Event distribution
 ```
 
 Filters: `--since 5m`, `--kind agent.errored`, `--conversation <id>`, `--json`, `--investigation <name>`
@@ -279,13 +279,13 @@ The user sees the UI (status bar, tree view, chat behavior). You see the event s
 
 ```bash
 # Step 1: Get the big picture
-node scripts/query-events.ts session
+node packages/agent-cli/src/query-events.ts session
 
 # Step 2: Look for obvious problems
-node scripts/query-events.ts errors
+node packages/agent-cli/src/query-events.ts errors
 
 # Step 3: Look at recent activity
-node scripts/query-events.ts tail --count 30
+node packages/agent-cli/src/query-events.ts tail --count 30
 ```
 
 From the session overview, you'll know: how many requests happened, how many errored, whether summarization was triggered, and the total token budget. This is usually enough to orient yourself.
@@ -296,13 +296,13 @@ When the user points to a specific moment ("the third request did something weir
 
 ```bash
 # Find the conversation
-node scripts/query-events.ts conversations
+node packages/agent-cli/src/query-events.ts conversations
 
 # Get all events for that conversation
-node scripts/query-events.ts tail --conversation <id>
+node packages/agent-cli/src/query-events.ts tail --conversation <id>
 
 # If you have a chatId, trace its full causality chain
-node scripts/query-events.ts trace <chatId>
+node packages/agent-cli/src/query-events.ts trace <chatId>
 ```
 
 The `trace` command is especially powerful — it shows you the **cause → effect chain**: which agent.started triggered which tree.changes, which request.index recorded the result. This lets you reconstruct the sequence of events that led to what the user observed.

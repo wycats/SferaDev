@@ -80,3 +80,43 @@ created_at = "2026-02-14T19:38:51.267Z"
 source = "user"
 tags = []
 related_tasks = []
+
+[[ideas]]
+id = "e0a031cf-a7d0-4ff9-b135-c37184272b96"
+title = "Inspector shows full details when clicking tree nodes"
+description = ""
+status = "new"
+created_at = "2026-02-17T02:22:18.934Z"
+source = "user"
+tags = []
+related_tasks = []
+
+[[ideas]]
+id = "f68a30dd-6406-4f7b-a32b-0fe4a6956734"
+title = "Summarize user request text (not just truncated preview)"
+description = ""
+status = "new"
+created_at = "2026-02-17T02:22:23.278Z"
+source = "user"
+tags = []
+related_tasks = []
+
+[[ideas]]
+id = "c9001125-8bf9-43ba-ae34-845d5bff94b8"
+title = "Tool call tree redesign: summarize args, nest response in request, re-summarize label after response"
+description = ""
+status = "new"
+created_at = "2026-02-17T02:22:28.326Z"
+source = "user"
+tags = []
+related_tasks = []
+
+[[ideas]]
+id = "ba68155b-43c9-4227-8c8b-9dc6a8e3ddd4"
+title = "Fix streaming response structure: appears as wrong top-level user message instead of under current user message group"
+description = ""
+status = "new"
+created_at = "2026-02-17T02:22:33.861Z"
+source = "user"
+tags = []
+related_tasks = []

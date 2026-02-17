@@ -20,11 +20,8 @@ vi.mock("vscode", () => ({
   },
 }));
 
-import type {
-  ActivityLogEntry,
-  Conversation,
-  TurnEntry,
-} from "../conversation/types.js";
+import type { ActivityLogEntry, Conversation } from "@vercel/conversation";
+import type { TurnEntry } from "../conversation/types.js";
 import {
   InspectorContentProvider,
   parseInspectorUri,
