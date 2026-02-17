@@ -445,8 +445,15 @@ export class VercelAIChatModelProvider
       let estimatedDeltaTokens: number | undefined;
       const prevContext = this.agentRegistry?.getAgentContext(conversationId);
       if (prevContext) {
-        // Fork detection: if message count decreased, user edited a message
-        if (chatMessages.length < prevContext.lastMessageCount) {
+        // Fork detection: if message count decreased, user edited a message.
+        // BUT: summarization also reduces message count (replaces many messages
+        // with a summary). That's NOT a fork — the conversation continues with
+        // the same identity. Skip fork detection for summarization requests to
+        // preserve the activity log.
+        if (
+          chatMessages.length < prevContext.lastMessageCount &&
+          !isSummarizationRequest
+        ) {
           const forkPoint = chatMessages.length;
           logger.info(
             `[ForkDetection] Fork detected in conversation ${conversationId.slice(0, 8)}: ` +
@@ -459,6 +466,14 @@ export class VercelAIChatModelProvider
             prevContext.lastMessageCount,
             chatMessages.length,
             chatId,
+          );
+        } else if (
+          chatMessages.length < prevContext.lastMessageCount &&
+          isSummarizationRequest
+        ) {
+          logger.info(
+            `[Summarization] Message count decreased (${prevContext.lastMessageCount} → ${chatMessages.length}) ` +
+              `but this is a summarization request — preserving activity log for ${conversationId.slice(0, 8)}`,
           );
         }
 
@@ -540,6 +555,7 @@ export class VercelAIChatModelProvider
               info.isToolContinuation,
               info.userMessagePreview,
               info.toolsUsed,
+              info.toolCalls,
             );
           },
         },
@@ -619,6 +635,7 @@ export class VercelAIChatModelProvider
     isToolContinuation: boolean,
     userMessagePreview: string | undefined,
     toolsUsed: string[],
+    toolCalls: { callId: string; name: string; args: Record<string, unknown> }[],
   ): Promise<void> {
     try {
       if (!this.conversationManager) {
@@ -643,7 +660,14 @@ export class VercelAIChatModelProvider
       }
 
       // Update tools used on the AI response
-      if (toolsUsed.length > 0) {
+      if (toolCalls.length > 0) {
+        this.conversationManager.setToolCalls(
+          conversationId,
+          turnNumber,
+          toolCalls,
+        );
+      } else if (toolsUsed.length > 0) {
+        // Fallback: if we have names but no full details (shouldn't happen)
         this.conversationManager.setToolsUsed(
           conversationId,
           turnNumber,

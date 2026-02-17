@@ -77,6 +77,9 @@ function toActivityLogSnapshot(
           : {}),
         tokenContribution: entry.tokenContribution,
         subagentIds: [...entry.subagentIds],
+        ...(entry.toolCalls !== undefined
+          ? { toolCalls: entry.toolCalls.map((tc) => ({ ...tc })) }
+          : {}),
         ...(entry.toolsUsed !== undefined
           ? { toolsUsed: [...entry.toolsUsed] }
           : {}),

@@ -549,12 +549,14 @@ export class ConversationManager implements vscode.Disposable {
     )[];
     const now = Date.now();
 
-    // Use the max sequence from the activity log as the baseline.
-    // This is the single source of truth - it ensures we never create
-    // duplicate entries and always continue from where the log actually is,
-    // regardless of what turnCount values are stored elsewhere.
+    // Use the max sequence from USER MESSAGES in the activity log as the
+    // baseline. AI responses can exist ahead of user messages during
+    // streaming (we create the AI response before the user message for the
+    // current turn). Using user-message-only ensures previousTurnCount
+    // reflects fully-processed turns, so the completion branch fires
+    // correctly when turnCount increments.
     const maxSeq = log.reduce((max, e) => {
-      if (e.type === "user-message" || e.type === "ai-response") {
+      if (e.type === "user-message") {
         return Math.max(max, e.sequenceNumber);
       }
       return max;
@@ -655,7 +657,23 @@ export class ConversationManager implements vscode.Disposable {
 
     // Detect new turns (turnCount increased)
     if (agent.turnCount > previousTurnCount) {
-      for (let turn = previousTurnCount + 1; turn <= agent.turnCount; turn++) {
+      // Determine the starting turn for entry creation.
+      // Normally turnCount advances by 1 (or a small number for tool calls).
+      // After a fork/reload/summarization, turnCount can jump by a large
+      // amount (e.g., 3 → 82). In that case, we only create entries for
+      // the latest turn — the intermediate turns are historical and we have
+      // no data for them. Creating empty skeleton entries would clutter the
+      // tree with bare "Message #N" nodes.
+      const gap = agent.turnCount - previousTurnCount;
+      const startTurn = gap > 1 ? agent.turnCount : previousTurnCount + 1;
+
+      if (gap > 1) {
+        logger.info(
+          `[ConversationManager] Skipping ${gap - 1} historical turns (${previousTurnCount + 1}–${agent.turnCount - 1}) — no data available`,
+        );
+      }
+
+      for (let turn = startTurn; turn <= agent.turnCount; turn++) {
         const isLatest = turn === agent.turnCount;
         const timestamp = isLatest
           ? now
@@ -686,7 +704,16 @@ export class ConversationManager implements vscode.Disposable {
         );
       }
     } else if (agent.status === "streaming") {
-      // Agent is streaming - check if we need to create a new turn entry
+      // Agent is streaming - create/update the AI response for the pending turn.
+      // We intentionally do NOT create a user message here — the streaming
+      // AI response nests under the most recent user message in the tree
+      // builder (groupByUserMessage). When the turn completes and turnCount
+      // increments, the completion branch creates the user message, and the
+      // tree builder regroups the AI response under its proper parent.
+      //
+      // Exception: for the very first turn (turnCount === 0), there's no
+      // previous user message to nest under, so we create one to avoid the
+      // AI response being orphaned (orphans are dropped from the tree).
       const pendingSequenceNumber = agent.turnCount + 1;
 
       const existingPendingResponse = log.find(
@@ -700,13 +727,14 @@ export class ConversationManager implements vscode.Disposable {
         // Update token contribution as we stream
         existingPendingResponse.tokenContribution = agent.outputTokens;
       } else {
-        // No existing response for this sequence - create new entries
-        // Pass estimatedDeltaTokens for the streaming turn's user message
-        ensureUserMessage(
-          pendingSequenceNumber,
-          now,
-          agent.estimatedDeltaTokens,
-        );
+        // First turn has no previous user message to nest under
+        if (agent.turnCount === 0) {
+          ensureUserMessage(
+            pendingSequenceNumber,
+            now,
+            agent.estimatedDeltaTokens,
+          );
+        }
         ensureAIResponse(
           pendingSequenceNumber,
           now,
@@ -882,16 +910,44 @@ export class ConversationManager implements vscode.Disposable {
 
     if (userMessage && !userMessage.preview) {
       userMessage.preview = preview;
-      getTreeChangeLogger().logChanges(
-        Array.from(this.conversations.values()),
-      );
+      getTreeChangeLogger().logChanges(Array.from(this.conversations.values()));
       this._onDidChangeConversations.fire(undefined);
     }
   }
 
   /**
-   * Set the tools used for an AI response entry.
-   * Called after turn completion with the list of tool names called.
+   * Set full tool call details for an AI response entry.
+   * Called after turn completion with the list of tool calls made.
+   * Also derives toolsUsed (names only) for backward compatibility.
+   */
+  setToolCalls(
+    conversationId: string,
+    turnNumber: number,
+    toolCalls: { callId: string; name: string; args: Record<string, unknown> }[],
+  ): void {
+    const log = this.activityLogs.get(conversationId);
+    if (!log) {
+      return;
+    }
+
+    const response = log.find(
+      (entry): entry is AIResponseEntry =>
+        entry.type === "ai-response" && entry.sequenceNumber === turnNumber,
+    );
+
+    if (response) {
+      response.toolCalls = toolCalls;
+      // Derive toolsUsed for backward compatibility
+      const names = [...new Set(toolCalls.map((tc) => tc.name))];
+      response.toolsUsed = names;
+      getTreeChangeLogger().logChanges(Array.from(this.conversations.values()));
+      this._onDidChangeConversations.fire(undefined);
+    }
+  }
+
+  /**
+   * Set the tools used for an AI response entry (names only).
+   * Fallback for when full tool call details are not available.
    */
   setToolsUsed(
     conversationId: string,
@@ -910,9 +966,7 @@ export class ConversationManager implements vscode.Disposable {
 
     if (response) {
       response.toolsUsed = toolsUsed;
-      getTreeChangeLogger().logChanges(
-        Array.from(this.conversations.values()),
-      );
+      getTreeChangeLogger().logChanges(Array.from(this.conversations.values()));
       this._onDidChangeConversations.fire(undefined);
     }
   }

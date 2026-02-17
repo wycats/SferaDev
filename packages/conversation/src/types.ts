@@ -94,6 +94,16 @@ export interface UserMessageEntry {
   isToolContinuation?: boolean;
 }
 
+/** Details of a single tool call made by the AI. */
+export interface ToolCallDetail {
+  /** Unique call ID (itemId from the OpenResponses stream). */
+  callId: string;
+  /** Tool name (e.g., "read_file", "grep_search"). */
+  name: string;
+  /** Parsed arguments object passed to the tool. */
+  args: Record<string, unknown>;
+}
+
 /** An AI response to the user. */
 export interface AIResponseEntry {
   type: "ai-response";
@@ -109,7 +119,12 @@ export interface AIResponseEntry {
   tokenContribution: number;
   /** Subagents spawned during this response. */
   subagentIds: string[];
-  /** Names of tools called during this response (e.g., ["read_file", "grep_search"]). */
+  /** Full details of tools called during this response. */
+  toolCalls?: ToolCallDetail[];
+  /**
+   * Names of tools called during this response.
+   * Derived from toolCalls for backward compatibility.
+   */
   toolsUsed?: string[];
 }
 

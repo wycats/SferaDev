@@ -2,9 +2,112 @@
 # Implementation Plan
 
 [phase]
-id = "01khmkbcg8sk5ffwxsk5681n8p"
+id = "01khmq13h67bycp3jx59rs7mf2"
 
 [plan]
+
+[[plan.goals]]
+id = "fix-streaming-structure"
+
+[[plan.goals.tasks]]
+id = "audit-streaming-entry-creation-in-manager-ts-ensureusermessage-ensureairesponse-during-streaming"
+title = "Audit streaming entry creation in manager.ts (ensureUserMessage/ensureAIResponse during streaming)"
+status = "completed"
+completed_at = "2026-02-17T03:15:24.653345584+00:00"
+completion_log = "Bug is in manager.ts lines 689-714. When agent.status=streaming but turnCount hasn't incremented, it creates pendingSequenceNumber=turnCount+1 and calls ensureUserMessage+ensureAIResponse with that number. This creates a phantom user message that appears as a new top-level group in the tree. Fix: don't create a new user message for the streaming response — just add the streaming AI response under the current turn's sequence number."
+
+[[plan.goals.tasks]]
+id = "fix-streaming-response-to-appear-under-current-user-message-group-not-as-new-top-level-entry"
+title = "Fix streaming response to appear under current user message group, not as new top-level entry"
+status = "completed"
+completed_at = "2026-02-17T03:24:18.218868652+00:00"
+completion_log = "Fixed: changed maxSeq to user-messages-only baseline, removed phantom UserMessage during streaming for subsequent turns. Streaming AIResponse nests under previous user message. Added 2 new tests."
+
+[[plan.goals.tasks]]
+id = "add-test-verifying-streaming-responses-nest-under-parent-user-message"
+title = "Add test verifying streaming responses nest under parent user message"
+status = "completed"
+completed_at = "2026-02-17T03:24:27.263803781+00:00"
+completion_log = "Added 2 tests: 'nests streaming response under previous user message (no phantom)' and 'streaming response moves to new user message on turn completion'. Both verify the full lifecycle."
+
+[[plan.goals]]
+id = "tool-call-redesign"
+
+[[plan.goals.tasks]]
+id = "design-tool-call-data-model-toolcallentry-with-call-id-name-args-response"
+title = "Design tool call data model: ToolCallEntry with call ID, name, args, response"
+status = "completed"
+completed_at = "2026-02-17T04:01:30.124507448+00:00"
+completion_log = "Added ToolCallDetail type to @vercel/conversation (types.ts + index.ts export). Fields: callId, name, args. Added toolCalls?: ToolCallDetail[] to AIResponseEntry alongside existing toolsUsed for backward compat."
+
+[[plan.goals.tasks]]
+id = "capture-tool-call-details-in-provider-ts-args-call-id-during-request-processing"
+title = "Capture tool call details in provider.ts (args, call ID) during request processing"
+status = "completed"
+completed_at = "2026-02-17T04:01:37.806578074+00:00"
+completion_log = "Captured full tool call details in openresponses-chat.ts (callId, name, args). Wired through onTurnComplete → provider.ts handleTurnComplete → manager.ts setToolCalls(). setToolCalls derives toolsUsed for backward compat. Updated snapshot-builder.ts, query-events CLI. Added test. 713 tests pass."
+
+[[plan.goals]]
+id = "inspector-detail"
+
+[[plan.goals.tasks]]
+id = "audit-what-content-is-available-in-activity-log-entries-vs-what-inspector-shows"
+title = "Audit what content is available in activity log entries vs what inspector shows"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "enhance-render-ts-to-show-full-message-text-tool-args-and-response-bodies"
+title = "Enhance render.ts to show full message text, tool args, and response bodies"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-collapsible-sections-for-large-content-in-inspector"
+title = "Add collapsible sections for large content in inspector"
+status = "pending"
+
+[[plan.goals]]
+id = "user-message-summary"
+
+[[plan.goals.tasks]]
+id = "design-summarization-strategy-when-to-summarize-model-caching"
+title = "Design summarization strategy: when to summarize, model, caching"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-characterization-field-to-usermessageentry-implement-summarization-service"
+title = "Add characterization field to UserMessageEntry, implement summarization service"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-usermessageitem-to-display-characterization-when-available"
+title = "Update UserMessageItem to display characterization when available"
+status = "pending"
+
+[[plan.goals]]
+id = "tool-call-nesting"
+
+[[plan.goals.tasks]]
+id = "implement-tool-call-nesting-in-build-tree-ts"
+title = "Implement tool call nesting in build-tree.ts"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-toolcontinuationitem-and-tree-items-for-nested-structure"
+title = "Update ToolContinuationItem and tree-items for nested structure"
+status = "pending"
+
+[[plan.goals]]
+id = "tool-call-labels"
+
+[[plan.goals.tasks]]
+id = "create-tool-arg-summarization-function"
+title = "Create tool arg summarization function"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "generate-outcome-based-labels-for-tool-calls"
+title = "Generate outcome-based labels for tool calls"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

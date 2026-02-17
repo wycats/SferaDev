@@ -1262,7 +1262,13 @@ function cmdEntry(
     console.log(
       `Tokens:         ${entry.tokenContribution !== undefined ? `+${entry.tokenContribution}` : "?"}`,
     );
-    if (entry.toolsUsed?.length) {
+    if (entry.toolCalls?.length) {
+      console.log(`Tool calls:     ${entry.toolCalls.length} call(s)`);
+      for (const tc of entry.toolCalls) {
+        const argSummary = Object.keys(tc.args).join(", ");
+        console.log(`  → ${tc.name}(${argSummary}) [${tc.callId}]`);
+      }
+    } else if (entry.toolsUsed?.length) {
       console.log(`Tools used:     ${entry.toolsUsed.join(", ")}`);
     }
     if (entry.subagentIds?.length) {

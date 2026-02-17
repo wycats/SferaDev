@@ -427,6 +427,175 @@ describe("ConversationManager", () => {
     });
   });
 
+  it("nests streaming response under previous user message (no phantom)", () => {
+    // Simulate: turn 1 completed, then agent starts streaming turn 2.
+    // turnCount stays at 1 until the new turn completes.
+    const agent = createAgent({
+      turnCount: 1,
+      status: "complete",
+      outputTokens: 50,
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    // Verify turn 1 is fully created
+    let conversation = firstConversation(manager);
+    expect(conversation.activityLog).toHaveLength(2);
+    expect(conversation.activityLog[0]).toMatchObject({
+      type: "user-message",
+      sequenceNumber: 1,
+    });
+    expect(conversation.activityLog[1]).toMatchObject({
+      type: "ai-response",
+      sequenceNumber: 1,
+      state: "pending-characterization",
+    });
+
+    // Agent starts streaming a new turn (turnCount unchanged)
+    agent.status = "streaming";
+    agent.outputTokens = 0;
+    registry.emitChange();
+
+    conversation = firstConversation(manager);
+    // Should have 3 entries: UserMessage(1), AIResponse(1), AIResponse(2, streaming)
+    // NO phantom UserMessage(2) — the streaming response nests under UserMessage(1)
+    expect(conversation.activityLog).toHaveLength(3);
+
+    const userMessages = conversation.activityLog.filter(
+      (e) => e.type === "user-message",
+    );
+    expect(userMessages).toHaveLength(1);
+    expect(userMessages[0]).toMatchObject({
+      type: "user-message",
+      sequenceNumber: 1,
+    });
+
+    const streamingResponse = conversation.activityLog.find(
+      (e) => e.type === "ai-response" && e.sequenceNumber === 2,
+    );
+    expect(streamingResponse).toMatchObject({
+      type: "ai-response",
+      sequenceNumber: 2,
+      state: "streaming",
+    });
+  });
+
+  it("streaming response moves to new user message on turn completion", () => {
+    // Full lifecycle: turn 1 complete → streaming turn 2 → turn 2 complete
+    const agent = createAgent({
+      turnCount: 1,
+      status: "complete",
+      outputTokens: 50,
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    // Start streaming turn 2
+    agent.status = "streaming";
+    agent.outputTokens = 0;
+    registry.emitChange();
+
+    let conversation = firstConversation(manager);
+    // During streaming: UserMessage(1), AIResponse(1), AIResponse(2, streaming)
+    expect(conversation.activityLog).toHaveLength(3);
+    expect(
+      conversation.activityLog.filter((e) => e.type === "user-message"),
+    ).toHaveLength(1);
+
+    // Turn 2 completes: turnCount increments
+    agent.turnCount = 2;
+    agent.status = "complete";
+    agent.outputTokens = 120;
+    registry.emitChange();
+
+    conversation = firstConversation(manager);
+    // After completion: UserMessage(1), AIResponse(1), UserMessage(2), AIResponse(2)
+    expect(conversation.activityLog).toHaveLength(4);
+
+    const userMessages = conversation.activityLog.filter(
+      (e) => e.type === "user-message",
+    );
+    expect(userMessages).toHaveLength(2);
+    expect(userMessages[0]).toMatchObject({ sequenceNumber: 1 });
+    expect(userMessages[1]).toMatchObject({ sequenceNumber: 2 });
+
+    const response2 = conversation.activityLog.find(
+      (e) => e.type === "ai-response" && e.sequenceNumber === 2,
+    );
+    expect(response2).toMatchObject({
+      state: "pending-characterization",
+      tokenContribution: 120,
+    });
+  });
+
+  it("skips skeleton entries when turnCount jumps (fork/reload)", () => {
+    // After a fork or reload, turnCount can jump from a low value to a high
+    // value. We should only create entries for the latest turn, not fill in
+    // empty skeleton entries for all intermediate turns.
+    const agent = createAgent({
+      turnCount: 50,
+      status: "complete",
+      outputTokens: 200,
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversation = firstConversation(manager);
+    // Should only have entries for turn 50, not turns 1-50
+    expect(conversation.activityLog).toHaveLength(2);
+
+    const userMessages = conversation.activityLog.filter(
+      (e) => e.type === "user-message",
+    );
+    expect(userMessages).toHaveLength(1);
+    expect(userMessages[0]).toMatchObject({ sequenceNumber: 50 });
+
+    const responses = conversation.activityLog.filter(
+      (e) => e.type === "ai-response",
+    );
+    expect(responses).toHaveLength(1);
+    expect(responses[0]).toMatchObject({
+      sequenceNumber: 50,
+      state: "pending-characterization",
+    });
+  });
+
+  it("creates entries for consecutive turns (tool continuations)", () => {
+    // When turnCount advances by 1 (normal progression), entries should
+    // be created for each turn.
+    const agent = createAgent({
+      turnCount: 1,
+      status: "complete",
+      outputTokens: 50,
+    });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    // Turn 2 completes (tool continuation)
+    agent.turnCount = 2;
+    agent.outputTokens = 80;
+    registry.emitChange();
+
+    const conversation = firstConversation(manager);
+    // Should have entries for both turns 1 and 2
+    expect(conversation.activityLog).toHaveLength(4);
+
+    const userMessages = conversation.activityLog.filter(
+      (e) => e.type === "user-message",
+    );
+    expect(userMessages).toHaveLength(2);
+    expect(userMessages[0]).toMatchObject({ sequenceNumber: 1 });
+    expect(userMessages[1]).toMatchObject({ sequenceNumber: 2 });
+  });
+
   it("adds error entry when agent errors", () => {
     const agent = createAgent({ turnCount: 1, status: "error" });
     registry.setAgents([agent]);
@@ -549,6 +718,34 @@ describe("ConversationManager", () => {
     expect(response).toMatchObject({
       type: "ai-response",
       toolsUsed: ["read_file", "grep_search", "replace_string_in_file"],
+    });
+  });
+
+  it("sets tool calls with full details on AI response", () => {
+    const agent = createAgent({ turnCount: 1 });
+    registry.setAgents([agent]);
+    const manager = new ConversationManager(
+      registry as unknown as AgentRegistry,
+    );
+
+    const conversationId = firstConversation(manager).id;
+    manager.setToolCalls(conversationId, 1, [
+      { callId: "call-1", name: "read_file", args: { filePath: "/src/foo.ts", startLine: 1, endLine: 50 } },
+      { callId: "call-2", name: "grep_search", args: { query: "handleFork", isRegexp: false } },
+    ]);
+
+    const conversation = firstConversation(manager);
+    const response = conversation.activityLog.find(
+      (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+    );
+    expect(response).toMatchObject({
+      type: "ai-response",
+      toolCalls: [
+        { callId: "call-1", name: "read_file", args: { filePath: "/src/foo.ts", startLine: 1, endLine: 50 } },
+        { callId: "call-2", name: "grep_search", args: { query: "handleFork", isRegexp: false } },
+      ],
+      // toolsUsed is derived from toolCalls
+      toolsUsed: ["read_file", "grep_search"],
     });
   });
 
