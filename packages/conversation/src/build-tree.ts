@@ -20,19 +20,20 @@ import type {
 
 /** A child of a user-message node in the tree. */
 export type TreeChild =
-  | { kind: "ai-response"; entry: AIResponseEntry; tools: string[] }
   | {
-      kind: "tool-call";
-      callId: string;
-      name: string;
-      args: Record<string, unknown>;
-    }
-  | {
-      kind: "tool-continuation";
-      entry: UserMessageEntry;
+      kind: "ai-response";
+      entry: AIResponseEntry;
       tools: string[];
+      toolCalls: ToolCallChild[];
     }
   | { kind: "error"; entry: ErrorEntry };
+
+/** A tool call nested under an AI response. */
+export interface ToolCallChild {
+  callId: string;
+  name: string;
+  args: Record<string, unknown>;
+}
 
 /** A top-level node in the activity tree. */
 export type TreeNode =
@@ -149,8 +150,8 @@ interface UserMessageGroup {
  *
  * Rules:
  * - Each actual user message (isToolContinuation !== true) starts a new group.
- * - AI responses and tool continuations accumulate into the current group.
- * - Tool continuations inherit tools from the immediately preceding AI response.
+ * - AI responses accumulate into the current group.
+ * - Tool continuations are ignored (their tokens are attributed to AI responses).
  * - Errors nest as children of the current user message group (with hasError flag).
  * - Errors before any user message are orphan errors (shown flat — degenerate case).
  * - Compaction entries are always top-level flat nodes (boundary markers between eras).
@@ -210,15 +211,9 @@ export function groupByUserMessage(entries: ActivityLogEntry[]): TreeNode[] {
 
     if (entry.type === "user-message") {
       if (entry.isToolContinuation) {
-        // Tool continuation: add as child of current group
-        if (currentGroup) {
-          currentGroup.children.push({
-            kind: "tool-continuation",
-            entry,
-            tools: [...lastAIResponseTools],
-          });
-        }
-        // Reset tools after using them
+        // Tool continuations are invisible in the tree.
+        // Their token contributions are absorbed into the AI response.
+        // Just reset tools tracking.
         lastAIResponseTools = [];
       } else {
         // Actual user message: start a new group
@@ -233,24 +228,20 @@ export function groupByUserMessage(entries: ActivityLogEntry[]): TreeNode[] {
       lastAIResponseTools = entry.toolsUsed ?? [];
 
       if (currentGroup) {
-        // Add the AI response
+        const toolCallChildren: ToolCallChild[] = (entry.toolCalls ?? []).map(
+          (toolCall) => ({
+            callId: toolCall.callId,
+            name: toolCall.name,
+            args: toolCall.args,
+          }),
+        );
+        // Add the AI response with nested tool calls
         currentGroup.children.push({
           kind: "ai-response",
           entry,
           tools: [...lastAIResponseTools],
+          toolCalls: toolCallChildren,
         });
-
-        // Add tool calls as nested children after the AI response
-        if (entry.toolCalls && entry.toolCalls.length > 0) {
-          for (const toolCall of entry.toolCalls) {
-            currentGroup.children.push({
-              kind: "tool-call",
-              callId: toolCall.callId,
-              name: toolCall.name,
-              args: toolCall.args,
-            });
-          }
-        }
       } else {
         orphanResponses.push({ entry, sourceIndex: i });
       }
@@ -359,7 +350,7 @@ export function buildTree(log: ActivityLogEntry[]): TreeResult {
  * ```
  * ▼ 👤 "Fix the bug"                    #5 · +0.3k
  *     ├─ $(chat-sparkle) Investigated   #5 · read_file · +0.5k
- *     ├─ 🔧 read_file                   #6 · +0.2k
+ *     │   └─ $(wrench) read_file /src/foo.ts  #abcd1234
  *     └─ $(chat-sparkle) Fixed it       #6 · +1.2k
  * ├─ $(fold-down) Compacted 30k
  * └─ ▸ History (8 earlier entries)
@@ -407,39 +398,33 @@ export function renderTree(result: TreeResult): string {
             lines.push(
               `${childPrefix}${cp}$(chat-sparkle) ${charLabel}  #${child.entry.sequenceNumber}${toolStr}${tokenStr}`,
             );
-          } else if (child.kind === "tool-call") {
-            // Format tool call: "wrench read_file /src/foo.ts #<callId prefix>"
-            const argKeys = Object.keys(child.args);
-            let argsStr = "";
-            if (argKeys.length > 0) {
-              const argPreview = argKeys
-                .slice(0, 2)
-                .map((key) => {
-                  const val = child.args[key];
-                  if (typeof val === "string") {
-                    return val.length > 20 ? `${val.slice(0, 17)}...` : val;
-                  }
-                  return String(val).slice(0, 15);
-                })
-                .join(" ");
-              argsStr = ` ${argPreview}`;
+            if (child.toolCalls.length > 0) {
+              const toolPrefix = childPrefix + (childIsLast ? "    " : "│   ");
+              for (let k = 0; k < child.toolCalls.length; k++) {
+                const toolCall = child.toolCalls.at(k);
+                if (!toolCall) continue;
+                const toolIsLast = k === child.toolCalls.length - 1;
+                const tcp = toolIsLast ? "└─ " : "├─ ";
+                const argKeys = Object.keys(toolCall.args);
+                let argsStr = "";
+                if (argKeys.length > 0) {
+                  const argPreview = argKeys
+                    .slice(0, 2)
+                    .map((key) => {
+                      const val = toolCall.args[key];
+                      if (typeof val === "string") {
+                        return val.length > 20 ? `${val.slice(0, 17)}...` : val;
+                      }
+                      return String(val).slice(0, 15);
+                    })
+                    .join(" ");
+                  argsStr = ` ${argPreview}`;
+                }
+                lines.push(
+                  `${toolPrefix}${tcp}$(wrench) ${toolCall.name}${argsStr}  #${toolCall.callId.slice(0, 8)}`,
+                );
+              }
             }
-            lines.push(
-              `${childPrefix}${cp}$(wrench) ${child.name}${argsStr}  #${child.callId.slice(0, 8)}`,
-            );
-          } else if (child.kind === "tool-continuation") {
-            const toolLabel =
-              child.tools.length > 0
-                ? child.tools.join(", ")
-                : `Tools #${child.entry.sequenceNumber}`;
-            const tokenStr =
-              child.entry.tokenContribution != null &&
-              child.entry.tokenContribution > 0
-                ? ` · +${fmtTokens(child.entry.tokenContribution)}`
-                : "";
-            lines.push(
-              `${childPrefix}${cp}🔧 ${toolLabel}  #${child.entry.sequenceNumber}${tokenStr}`,
-            );
           } else {
             // error child
             lines.push(`${childPrefix}${cp}$(error) ${child.entry.message}`);

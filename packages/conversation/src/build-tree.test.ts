@@ -388,16 +388,14 @@ describe("Activity Tree Properties", () => {
     );
   });
 
-  it("P2: user-message children are only ai-response, tool-continuation, or error", () => {
+  it("P2: user-message children are only ai-response or error", () => {
     fc.assert(
       fc.property(arbActivityLog, (log) => {
         const result = buildTree(log);
         for (const node of getUserMessageNodes(result)) {
           for (const child of node.children) {
             expect(
-              ["ai-response", "tool-continuation", "error"].includes(
-                child.kind,
-              ),
+              ["ai-response", "error"].includes(child.kind),
               counterexample(
                 "P2: Child node containment",
                 log,
@@ -537,98 +535,6 @@ describe("Activity Tree Properties", () => {
     );
   });
 
-  it("P6: tool continuation is never the first child of a group", () => {
-    fc.assert(
-      fc.property(arbActivityLog, (log) => {
-        const result = buildTree(log);
-        for (const node of getUserMessageNodes(result)) {
-          if (node.children.length === 0) continue;
-          const firstChild = node.children[0];
-          expect(
-            firstChild,
-            counterexample(
-              "P6: Tool continuation placement",
-              log,
-              result,
-              `Missing first child for U(${node.entry.sequenceNumber})`,
-            ),
-          ).toBeDefined();
-          if (!firstChild) continue;
-          expect(
-            firstChild.kind,
-            counterexample(
-              "P6: Tool continuation placement",
-              log,
-              result,
-              `First child is ${firstChild.kind} for U(${node.entry.sequenceNumber})`,
-            ),
-          ).not.toBe("tool-continuation");
-        }
-      }),
-      { numRuns: NUM_RUNS },
-    );
-  });
-
-  it("P7: tool continuation tools match the preceding ai-response tools", () => {
-    fc.assert(
-      fc.property(arbActivityLog, (log) => {
-        const result = buildTree(log);
-        for (const node of getUserMessageNodes(result)) {
-          for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
-            expect(
-              child,
-              counterexample(
-                "P7: Tool provenance",
-                log,
-                result,
-                `Missing child at index ${i} for U(${node.entry.sequenceNumber})`,
-              ),
-            ).toBeDefined();
-            if (child?.kind !== "tool-continuation") continue;
-
-            let precedingAI:
-              | Extract<TreeChild, { kind: "ai-response" }>
-              | undefined;
-            for (let j = i - 1; j >= 0; j--) {
-              const candidate = node.children[j];
-              if (!candidate) continue;
-              if (candidate.kind === "ai-response") {
-                precedingAI = candidate;
-                break;
-              }
-            }
-
-            expect(
-              precedingAI,
-              counterexample(
-                "P7: Tool provenance",
-                log,
-                result,
-                `No preceding AI for tool continuation at index ${i}`,
-              ),
-            ).toBeDefined();
-
-            if (!precedingAI) continue;
-
-            expect(
-              child.tools,
-              counterexample(
-                "P7: Tool provenance",
-                log,
-                result,
-                `TC tools=${JSON.stringify(child.tools)} vs AI tools=${JSON.stringify(
-                  precedingAI.tools,
-                )}`,
-              ),
-            ).toEqual(precedingAI.tools);
-          }
-        }
-      }),
-      { numRuns: NUM_RUNS },
-    );
-  });
-
   it("P8: top-level nodes are in reverse chronological order", () => {
     fc.assert(
       fc.property(arbActivityLog, (log) => {
@@ -709,9 +615,7 @@ describe("Activity Tree Properties", () => {
         const result = buildTree(log);
 
         for (const node of getUserMessageNodes(result)) {
-          const indices = node.children
-            .filter((c) => c.kind !== "tool-call")
-            .map((c) => windowed.indexOf((c as any).entry));
+          const indices = node.children.map((c) => windowed.indexOf(c.entry));
           for (let i = 0; i < indices.length; i++) {
             const current = indices[i];
             expect(
@@ -810,7 +714,7 @@ describe("Activity Tree Properties", () => {
     );
   });
 
-  it("P11: ai-response, tool-continuation, and grouped errors appear in exactly one group", () => {
+  it("P11: ai-response and grouped errors appear in exactly one group", () => {
     fc.assert(
       fc.property(arbActivityLog, (log) => {
         const { windowed } = windowActivityLog(log);
@@ -819,9 +723,7 @@ describe("Activity Tree Properties", () => {
         const seen = new Set<ActivityLogEntry>();
         for (const node of getUserMessageNodes(result)) {
           for (const child of node.children) {
-            // Skip tool-calls (derived from AIResponseEntry.toolCalls)
-            if (child.kind === "tool-call") continue;
-            const entry = (child as any).entry;
+            const entry = child.entry;
             const entryId = formatEntryId(entry);
             expect(
               seen.has(entry),
@@ -840,11 +742,6 @@ describe("Activity Tree Properties", () => {
           const entry = windowedAt(windowed, i);
           let shouldBeGrouped = false;
           if (entry.type === "ai-response") {
-            shouldBeGrouped = true;
-          } else if (
-            entry.type === "user-message" &&
-            entry.isToolContinuation
-          ) {
             shouldBeGrouped = true;
           } else if (entry.type === "error") {
             for (let j = i - 1; j >= 0; j--) {
@@ -1020,9 +917,8 @@ describe("Activity Tree Properties", () => {
         );
 
         for (const node of getUserMessageNodes(result)) {
-          const hasCompactionChild = node.children.some(
-            (c) =>
-              c.kind !== "tool-call" && compactionEntries.has((c as any).entry),
+          const hasCompactionChild = node.children.some((c) =>
+            compactionEntries.has(c.entry),
           );
           expect(
             hasCompactionChild,
@@ -1152,92 +1048,28 @@ describe("Activity Tree Properties", () => {
     );
   });
 
-  it("P19: all toolCalls in AIResponseEntry map to tool-call children", () => {
+  it("P19: ai-response toolCalls are nested under their response", () => {
     fc.assert(
       fc.property(arbActivityLog, (log) => {
         const result = buildTree(log);
-
-        // Collect all AIResponseEntry instances with toolCalls
-        const aiEntriesWithTools = new Map<AIResponseEntry, number>();
         for (const node of getUserMessageNodes(result)) {
           for (const child of node.children) {
-            if (child.kind === "ai-response" && child.entry.toolCalls) {
-              aiEntriesWithTools.set(child.entry, child.entry.toolCalls.length);
-            }
-          }
-        }
-
-        // Verify each AI response's tool calls appear as tool-call children
-        for (const node of getUserMessageNodes(result)) {
-          for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
-            if (child?.kind !== "ai-response") continue;
-
-            const expectedToolCount = child.entry.toolCalls?.length ?? 0;
-            if (expectedToolCount === 0) continue;
-
-            // Count tool-call children immediately following this AI response
-            let toolCallCount = 0;
-            for (let j = i + 1; j < node.children.length; j++) {
-              const nextChild = node.children[j];
-              if (!nextChild) continue;
-              if (nextChild.kind === "tool-call") {
-                toolCallCount++;
-              } else {
-                // Stop counting at first non-tool-call
-                break;
-              }
-            }
+            if (child.kind !== "ai-response") continue;
+            const expected = (child.entry.toolCalls ?? []).map((toolCall) => ({
+              callId: toolCall.callId,
+              name: toolCall.name,
+              args: toolCall.args,
+            }));
 
             expect(
-              toolCallCount,
+              child.toolCalls,
               counterexample(
-                "P19: Tool calls as children",
+                "P19: Tool calls nested under AI response",
                 log,
                 result,
-                `AI response A(${child.entry.sequenceNumber}) has ${expectedToolCount} toolCalls but ${toolCallCount} tool-call children`,
+                `AI response A(${child.entry.sequenceNumber}) toolCalls mismatch`,
               ),
-            ).toBe(expectedToolCount);
-          }
-        }
-      }),
-      { numRuns: NUM_RUNS },
-    );
-  });
-
-  it("P20: tool calls appear before tool continuations in user message group", () => {
-    fc.assert(
-      fc.property(arbActivityLog, (log) => {
-        const result = buildTree(log);
-
-        for (const node of getUserMessageNodes(result)) {
-          let lastToolCallIndex = -1;
-          let firstToolContinuationIndex = -1;
-
-          for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
-            if (!child) continue;
-
-            if (child.kind === "tool-call") {
-              lastToolCallIndex = i;
-            } else if (
-              child.kind === "tool-continuation" &&
-              firstToolContinuationIndex === -1
-            ) {
-              firstToolContinuationIndex = i;
-            }
-          }
-
-          if (lastToolCallIndex >= 0 && firstToolContinuationIndex >= 0) {
-            expect(
-              lastToolCallIndex < firstToolContinuationIndex,
-              counterexample(
-                "P20: Tool call ordering",
-                log,
-                result,
-                `Tool calls come after tool continuations in U(${node.entry.sequenceNumber})`,
-              ),
-            ).toBe(true);
+            ).toEqual(expected);
           }
         }
       }),
@@ -1423,16 +1255,26 @@ describe("Regression: streaming AI response before user message", () => {
     expect(group7).toBeDefined();
     expect(group10).toBeDefined();
 
-    // Group 7 should have: AI#8, tool-cont#8, AI#9, tool-cont#9
+    // Group 7 should have: AI#8, AI#9
     // Group 10 should have: AI#10
     const group7AISeqs = group7.children
       .filter((c) => c.kind === "ai-response")
-      .map((c) => (c as Extract<TreeChild, { kind: "ai-response" }>).entry.sequenceNumber);
+      .map(
+        (c) =>
+          (c as Extract<TreeChild, { kind: "ai-response" }>).entry
+            .sequenceNumber,
+      );
     const group10AISeqs = group10.children
       .filter((c) => c.kind === "ai-response")
-      .map((c) => (c as Extract<TreeChild, { kind: "ai-response" }>).entry.sequenceNumber);
+      .map(
+        (c) =>
+          (c as Extract<TreeChild, { kind: "ai-response" }>).entry
+            .sequenceNumber,
+      );
 
     expect(group7AISeqs).toEqual([8, 9]);
     expect(group10AISeqs).toEqual([10]);
+    expect(group7.children).toHaveLength(2);
+    expect(group10.children).toHaveLength(1);
   });
 });

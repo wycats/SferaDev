@@ -27,4 +27,9 @@ export {
   WINDOW_SIZE,
 } from "./build-tree.ts";
 
-export type { TreeChild, TreeNode, TreeResult } from "./build-tree.ts";
+export type {
+  ToolCallChild,
+  TreeChild,
+  TreeNode,
+  TreeResult,
+} from "./build-tree.ts";

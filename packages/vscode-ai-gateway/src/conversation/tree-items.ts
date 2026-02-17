@@ -13,6 +13,7 @@ import type {
   Conversation,
   ErrorEntry,
   Subagent,
+  ToolCallChild,
   UserMessageEntry,
 } from "@vercel/conversation";
 import type { TurnEntry } from "./types.js";
@@ -24,17 +25,10 @@ import { summarizeToolArgs, toolIcon } from "./tool-labels.js";
 
 /**
  * A child entry that can be nested under a UserMessageItem.
- * Includes AI responses, tool calls, and tool continuations.
+ * Includes AI responses and errors.
  */
 export type UserMessageChild =
-  | { type: "ai-response"; entry: AIResponseEntry }
-  | {
-      type: "tool-call";
-      callId: string;
-      name: string;
-      args: Record<string, unknown>;
-    }
-  | { type: "tool-continuation"; entry: UserMessageEntry; tools: string[] }
+  | { type: "ai-response"; entry: AIResponseEntry; toolCalls: ToolCallChild[] }
   | { type: "error"; entry: ErrorEntry };
 
 /**
@@ -42,11 +36,10 @@ export type UserMessageChild =
  *
  * In the user-message-centric structure, actual user messages are collapsible
  * parents containing ALL subsequent activity until the next actual user message:
- * AI responses, tool continuations, more AI responses, etc.
+ * AI responses and errors.
  *
  * ▼ "How do I fix the bug..."              #42 · +0.3k
  *     ├─ $(chat-sparkle) Read the logs     #42 · read_file · +0.5k
- *     ├─ 🔧 read_file                      #43 · +0.2k
  *     ├─ $(chat-sparkle) Found the issue   #43 · grep_search · +0.8k
  *     └─ $(chat-sparkle) Fixed the bug     #44 · replace_string_in_file · +1.2k
  *
@@ -54,8 +47,7 @@ export type UserMessageChild =
  * Description: "#N · +Xk".
  * Icon: $(feedback).
  *
- * NOTE: Tool continuations are NOT UserMessageItems - they become ToolContinuationItem
- * children nested under the actual user message that started the exchange.
+ * NOTE: Tool continuations are not displayed in the tree.
  */
 export class UserMessageItem extends vscode.TreeItem {
   readonly entry: UserMessageEntry;
@@ -254,14 +246,17 @@ const AI_RESPONSE_CHARACTERIZATION_TIMEOUT_MS = 10_000;
 export class AIResponseItem extends vscode.TreeItem {
   readonly entry: AIResponseEntry;
   readonly conversationId: string;
+  readonly toolCalls: ToolCallChild[];
+  readonly subagents: Subagent[];
 
   constructor(
     entry: AIResponseEntry,
     conversationId: string,
     subagents: Subagent[],
+    toolCalls: ToolCallChild[] = [],
   ) {
-    const hasSubagents = subagents.length > 0;
-    const collapsibleState = hasSubagents
+    const hasChildren = subagents.length > 0 || toolCalls.length > 0;
+    const collapsibleState = hasChildren
       ? vscode.TreeItemCollapsibleState.Collapsed
       : vscode.TreeItemCollapsibleState.None;
     const label = AIResponseItem.getLabel(entry);
@@ -270,6 +265,8 @@ export class AIResponseItem extends vscode.TreeItem {
 
     this.entry = entry;
     this.conversationId = conversationId;
+    this.toolCalls = toolCalls;
+    this.subagents = subagents;
     this.contextValue = "ai-response";
     this.description = AIResponseItem.formatDescription(entry);
     this.iconPath = AIResponseItem.getIcon(entry);

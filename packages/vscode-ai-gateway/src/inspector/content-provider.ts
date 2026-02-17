@@ -9,7 +9,7 @@ import type {
   UserMessageEntry,
 } from "@vercel/conversation";
 import type { TurnEntry } from "../conversation/types.js";
-import { buildTree, groupByUserMessage } from "@vercel/conversation";
+import { buildTree } from "@vercel/conversation";
 import {
   renderAIResponse,
   renderCompaction,
@@ -192,20 +192,26 @@ function findToolContinuation(
   const sequenceNumber = parseNumberIdentifier(identifier);
   if (sequenceNumber == null) return undefined;
 
-  const nodes = groupByUserMessage(log);
-  for (const node of nodes) {
-    if (node.kind !== "user-message") continue;
-    for (const child of node.children) {
-      if (
-        child.kind === "tool-continuation" &&
-        child.entry.sequenceNumber === sequenceNumber
-      ) {
-        return { entry: child.entry, tools: child.tools };
-      }
+  const toolIndex = log.findIndex(
+    (entry): entry is UserMessageEntry =>
+      entry.type === "user-message" &&
+      entry.isToolContinuation === true &&
+      entry.sequenceNumber === sequenceNumber,
+  );
+  if (toolIndex < 0) return undefined;
+
+  let tools: string[] = [];
+  for (let i = toolIndex - 1; i >= 0; i--) {
+    const entry = log[i];
+    if (entry?.type === "ai-response") {
+      tools = entry.toolsUsed ?? [];
+      break;
     }
   }
 
-  return undefined;
+  const toolEntry = log[toolIndex];
+  if (!toolEntry || toolEntry.type !== "user-message") return undefined;
+  return { entry: toolEntry, tools };
 }
 
 function findCompaction(

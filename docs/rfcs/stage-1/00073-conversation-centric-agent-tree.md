@@ -49,9 +49,20 @@ This reflects how users think about conversations: "I asked X, and here's everyt
 
 **Entry types within a user message group:**
 
-- **AIResponse** — The AI's response. Shows characterization, tools used, and token contribution.
-- **ToolContinuation** — Tool results sent back to the AI. Shows which tools returned results.
+- **AIResponse** — The AI's response. Collapsible parent when it has tool calls or subagents.
+  Shows characterization as label. Children include tool call details and a response summary.
 - **Error** — A failed request or stream error that occurred during this exchange.
+
+**Children of an AI response:**
+
+- **ToolCall** — A tool invocation with summarized args (e.g., `read_file src/foo.ts L10-L50`).
+  Uses tool-specific icons. Leaf node.
+- **Subagent** — A spawned subagent conversation. Collapsible.
+
+Tool continuations (tool results sent back to the AI) are **not visible** in the tree.
+They are implementation plumbing — the user sees the AI response and its tool calls,
+not the round-trip mechanics. Token contributions from tool continuations are absorbed
+into the parent AI response's display.
 
 **Standalone entry types (not nested under user messages):**
 
@@ -80,13 +91,15 @@ top-level nodes. This is a degenerate edge case.
 ```
 ▼ Login Bug Fix                                   45k/128k · 35%
     ▼ 👤 "Can you refactor the auth..."           #5 · +0.3k
-        ├─ $(chat-sparkle) Investigated issue     #5 · read_file, grep_search · +0.8k
-        ├─ 🔧 read_file, grep_search              #5 · +0.4k
-        ├─ $(chat-sparkle) Refactored auth        #5 · replace_string_in_file · +1.2k
-        ├─ 🔧 replace_string_in_file              #5 · +0.2k
-        └─ $(chat-sparkle) Verified the fix       #5 · run_in_terminal · +0.3k
+        ▼ $(chat-sparkle) Investigated issue      #5 · +1.2k
+            ├─ $(file) read_file src/auth.ts L10-L50
+            └─ $(search) grep_search "handleAuth"
+        ▼ $(chat-sparkle) Refactored auth         #5 · +1.4k
+            └─ $(replace) replace_string_in_file src/auth.ts
+        └─ $(chat-sparkle) Verified the fix       #5 · +0.3k
+            └─ $(terminal) run_in_terminal pnpm test
     ▼ 👤 "The session handling seems off"         #4 · +0.2k
-        └─ $(chat-sparkle) Analyzed session flow  #4 · read_file · +0.6k
+        └─ $(chat-sparkle) Analyzed session flow  #4 · +0.6k
     ├─ $(fold-down) Compacted 30k                          ← era boundary
     └─ ▸ History (12 earlier entries)
 ▼ API Refactor                                    82k/128k · streaming...
@@ -112,16 +125,16 @@ top-level nodes. This is a degenerate edge case.
 
 ### Icons
 
-| Entry Type            | Icon                      | Notes                       |
-| --------------------- | ------------------------- | --------------------------- |
-| User message          | `$(feedback)`             | Speech bubble (collapsible) |
-| Tool continuation     | `$(tools)`                | Tool results returned to AI |
-| AI response           | `$(chat-sparkle)`         | Chat bubble with AI sparkle |
-| AI response (error)   | `$(chat-sparkle-error)`   | Error variant               |
-| AI response (warning) | `$(chat-sparkle-warning)` | Warning variant             |
-| AI streaming          | `$(loading~spin)`         | Animated spinner            |
-| Compaction            | `$(fold-down)`            | Collapse/fold indicator     |
-| History               | `$(history)`              | Clock/history icon          |
+| Entry Type            | Icon                      | Notes                           |
+| --------------------- | ------------------------- | ------------------------------- |
+| User message          | `$(feedback)`             | Speech bubble (collapsible)     |
+| AI response           | `$(chat-sparkle)`         | Collapsible when has tool calls |
+| AI response (error)   | `$(chat-sparkle-error)`   | Error variant                   |
+| AI response (warning) | `$(chat-sparkle-warning)` | Warning variant                 |
+| AI streaming          | `$(loading~spin)`         | Animated spinner                |
+| Tool call             | tool-specific icon        | `$(file)`, `$(search)`, etc.    |
+| Compaction            | `$(fold-down)`            | Collapse/fold indicator         |
+| History               | `$(history)`              | Clock/history icon              |
 
 ### Windowing: The 20-Exchange Rule
 
@@ -512,22 +525,27 @@ subsequent activity until the next user message:
 
 1. **Make `UserMessageItem` collapsible** — Only for actual user messages (not tool continuations)
 2. **Group by user message** — All entries after a user message nest under it until the next user message
-3. **Tool continuations as children** — Show tool names, nest under parent user message
-4. **AI responses as children** — Multiple responses nest under same user message
+3. **AI responses as collapsible children** — Each AI response is a collapsible parent containing:
+   - **Tool call details** — Summarized args with tool-specific icons (leaf nodes)
+   - **Subagents** — Spawned subagent conversations (collapsible)
+4. **Tool continuations are invisible** — Their token contributions are absorbed into the AI response.
+   The user sees the AI's characterization and its tool calls, not the round-trip plumbing.
 5. **Errors as children** — Errors nest under the user message group they occurred during, with parent inflection (red-tinted icon + `· ⚠ error` in description)
 6. **Compaction as era boundary** — Compaction stays standalone between groups, marking context transitions
-7. **Preserve subagent nesting** — Subagents nest under AIResponseItem, which nests under UserMessageItem
-8. **Update windowing** — Count user message groups (exchanges), not individual entries
+7. **Update windowing** — Count user message groups (exchanges), not individual entries
 
 Example tree structure after Phase 4:
 
 ```
 ▼ 👤 "How do I fix the bug..."              #5 · +0.3k
-    ├─ $(chat-sparkle) Investigated issue   #5 · read_file, grep_search · +0.8k
-    ├─ 🔧 read_file, grep_search            #5 · +0.4k
-    └─ $(chat-sparkle) Fixed the bug        #5 · replace_string_in_file · +1.2k
+    ▼ $(chat-sparkle) Investigated issue    #5 · +1.2k
+        ├─ $(file) read_file src/bug.ts L10-L50
+        └─ $(search) grep_search "handleError"
+    └─ $(chat-sparkle) Fixed the bug        #5 · +1.4k
+        └─ $(replace) replace_string_in_file src/bug.ts
 ▼ 👤 "Deploy to production"                 #4 · +0.2k · ⚠ error
-    ├─ $(chat-sparkle) Starting deploy      #4 · run_in_terminal · +0.3k
+    ├─ $(chat-sparkle) Starting deploy      #4 · +0.3k
+    │   └─ $(terminal) run_in_terminal deploy.sh
     └─ $(error) Connection timeout
 ├─ $(fold-down) Compacted 30k
 ▼ 👤 "Now test it"                          #3 · +0.2k

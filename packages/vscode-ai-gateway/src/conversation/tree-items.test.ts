@@ -101,8 +101,7 @@ describe("UserMessageItem", () => {
     expect(item.description).toBe("");
   });
 
-  // NOTE: Tool continuations are now rendered as ToolContinuationItem, not UserMessageItem.
-  // See ToolContinuationItem tests below.
+  // NOTE: Tool continuations are no longer displayed in the tree.
 
   it("is collapsible when children are provided", () => {
     const entry: UserMessageEntry = {
@@ -123,6 +122,7 @@ describe("UserMessageItem", () => {
           tokenContribution: 500,
           subagentIds: [],
         },
+        toolCalls: [],
       },
     ];
 
@@ -228,7 +228,7 @@ describe("AIResponseItem", () => {
       state: "characterized",
     };
 
-    const item = new AIResponseItem(response, "conv-1", []);
+    const item = new AIResponseItem(response, "conv-1", [], []);
     expect(item.label).toBe("Refactored auth middleware");
     expect(item.description).toBe("#3 · +2.1k");
     expect((item.iconPath as { id: string }).id).toBe("chat-sparkle");
@@ -245,7 +245,7 @@ describe("AIResponseItem", () => {
       state: "uncharacterized",
     };
 
-    const item = new AIResponseItem(response, "conv-1", []);
+    const item = new AIResponseItem(response, "conv-1", [], []);
     expect(item.label).toBe("Response #5");
     // No #N in description when there's no characterization (would be redundant)
     expect(item.description).toBe("+800");
@@ -261,7 +261,7 @@ describe("AIResponseItem", () => {
       state: "streaming",
     };
 
-    const item = new AIResponseItem(response, "conv-1", []);
+    const item = new AIResponseItem(response, "conv-1", [], []);
     expect((item.iconPath as { id: string }).id).toBe("loading~spin");
   });
 
@@ -275,7 +275,7 @@ describe("AIResponseItem", () => {
       state: "pending-characterization",
     };
 
-    const item = new AIResponseItem(response, "conv-1", []);
+    const item = new AIResponseItem(response, "conv-1", [], []);
     // Pending shows muted sparkle (no spinner), label shows ellipsis
     expect((item.iconPath as { id: string }).id).toBe("chat-sparkle");
     expect(item.label).toBe("#2 ⋯");
@@ -302,7 +302,7 @@ describe("AIResponseItem", () => {
       },
     ];
 
-    const item = new AIResponseItem(response, "conv-1", subagents);
+    const item = new AIResponseItem(response, "conv-1", subagents, []);
     expect(item.collapsibleState).toBe(1); // Collapsed
   });
 });

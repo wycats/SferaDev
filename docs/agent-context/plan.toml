@@ -2321,6 +2321,13 @@ status = "completed"
 completion_log = "PER 3: Created tool-labels.ts with summarizeToolArgs() and toolIcon() pure functions. Wired into ToolCallItem. 741+20 tests pass."
 ulid = "01KHMVKT1E1FV31Z0JC44H9N3B"
 
+[[epochs.phases.goals]]
+id = "nest-tools-under-ai"
+label = "Nest tool calls under AI responses: collapsible parent with tool-call children, hidden tool-continuations"
+status = "pending"
+ulid = "01KHN406MY2F78A8HMF2BY0JY1"
+rfc = "00073"
+
 [[epochs]]
 id = "01khetjx8p8yawtehsa3c264ck"
 title = "Proposed API Alignment"

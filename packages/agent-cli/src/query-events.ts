@@ -1099,18 +1099,6 @@ function renderChildLine(child: TreeChild): string {
         child.entry.state === "streaming" ? " (streaming...)" : "";
       return `${label}  #${child.entry.sequenceNumber}${toolStr}${tokenStr}${streaming}`;
     }
-    case "tool-continuation": {
-      const toolLabel =
-        child.tools.length > 0
-          ? child.tools.join(", ")
-          : `Tools #${child.entry.sequenceNumber}`;
-      const tokenStr =
-        child.entry.tokenContribution != null &&
-        child.entry.tokenContribution > 0
-          ? `  +${fmtTokensCli(child.entry.tokenContribution)}`
-          : "";
-      return `🔧 ${toolLabel}  #${child.entry.sequenceNumber}${tokenStr}`;
-    }
     case "error":
       return `✗ ${truncate(child.entry.message, 60)}`;
   }

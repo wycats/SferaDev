@@ -116,6 +116,37 @@ title = "Generate outcome-based labels for tool calls"
 status = "completed"
 completed_at = "2026-02-17T05:11:07.732953848+00:00"
 completion_log = "Created toolIcon() with 20+ tool-specific icon mappings. Wired both functions into ToolCallItem — replaces inline formatLabel and hardcoded wrench icon. Updated tests. 741 tests pass."
+
+[[plan.goals]]
+id = "nest-tools-under-ai"
+
+[[plan.goals.tasks]]
+id = "restructure-tree-child"
+title = "Restructure TreeChild: tool-call/tool-continuation become children of ai-response in build-tree.ts"
+status = "completed"
+completed_at = "2026-02-17T06:43:05.062288239+00:00"
+completion_log = "TreeChild reduced to 2 variants (ai-response with toolCalls[], error). ToolCallChild interface added. Tool continuations invisible. groupByUserMessage() nests tool calls inside ai-response."
+
+[[plan.goals.tasks]]
+id = "update-tree-items"
+title = "Update tree-items.ts: AIResponseItem collapsible with ToolCallItem children, hide ToolContinuationItem"
+status = "completed"
+completed_at = "2026-02-17T06:43:11.799900400+00:00"
+completion_log = "UserMessageChild simplified to ai-response (with toolCalls) | error. AIResponseItem stores toolCalls + subagents, collapsible when has children."
+
+[[plan.goals.tasks]]
+id = "update-agent-tree"
+title = "Update agent-tree.ts: getChildren for AIResponseItem returns tool-call children"
+status = "completed"
+completed_at = "2026-02-17T06:43:18.007284808+00:00"
+completion_log = "getAIResponseChildren returns ToolCallItem[] + SubagentItem[]. getUserMessageChildren passes toolCalls. mapTreeChild simplified."
+
+[[plan.goals.tasks]]
+id = "update-property-tests"
+title = "Update property tests P2/P6/P7/P9/P11/P19/P20 for new nesting structure"
+status = "completed"
+completed_at = "2026-02-17T06:43:26.224520485+00:00"
+completion_log = "P2 updated. P6/P7/P20 removed. P9/P11 simplified. P19 rewritten for nested toolCalls. 20/20 conversation tests + 741 extension tests pass."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
