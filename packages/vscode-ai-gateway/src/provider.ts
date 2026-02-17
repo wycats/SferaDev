@@ -635,7 +635,11 @@ export class VercelAIChatModelProvider
     isToolContinuation: boolean,
     userMessagePreview: string | undefined,
     toolsUsed: string[],
-    toolCalls: { callId: string; name: string; args: Record<string, unknown> }[],
+    toolCalls: {
+      callId: string;
+      name: string;
+      args: Record<string, unknown>;
+    }[],
   ): Promise<void> {
     try {
       if (!this.conversationManager) {

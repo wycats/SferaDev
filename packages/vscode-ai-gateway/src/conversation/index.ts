@@ -25,3 +25,4 @@ export {
   UserMessageItem,
 } from "./tree-items.js";
 export type { UserMessageChild } from "./tree-items.js";
+export { summarizeToolArgs, toolIcon } from "./tool-labels.js";

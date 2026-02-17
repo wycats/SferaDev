@@ -105,7 +105,11 @@ export interface OpenResponsesChatOptions {
     /** Names of tools called during this response */
     toolsUsed: string[];
     /** Full details of tools called during this response */
-    toolCalls: { callId: string; name: string; args: Record<string, unknown> }[];
+    toolCalls: {
+      callId: string;
+      name: string;
+      args: Record<string, unknown>;
+    }[];
   }) => void;
 }
 
@@ -433,7 +437,11 @@ export async function executeOpenResponsesChat(
   /** Names of tools actually called during this response (for activity log) */
   const toolsUsed: string[] = [];
   /** Full details of each tool call (callId, name, args) */
-  const toolCalls: { callId: string; name: string; args: Record<string, unknown> }[] = [];
+  const toolCalls: {
+    callId: string;
+    name: string;
+    args: Record<string, unknown>;
+  }[] = [];
   let requestBody: (CreateResponseBody & { caching?: "auto" }) | undefined;
 
   // Extract last user message preview for activity log display

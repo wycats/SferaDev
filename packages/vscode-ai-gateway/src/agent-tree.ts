@@ -341,9 +341,7 @@ function treeNodeToItem(
 /**
  * Map a TreeChild to a UserMessageChild, filtering out unknown kinds.
  */
-function mapTreeChild(
-  child: TreeChild,
-): any {
+function mapTreeChild(child: TreeChild): any {
   if (child.kind === "ai-response") {
     return { type: "ai-response" as const, entry: child.entry };
   } else if (child.kind === "tool-call") {

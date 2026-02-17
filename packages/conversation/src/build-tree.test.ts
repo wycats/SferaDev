@@ -1020,8 +1020,9 @@ describe("Activity Tree Properties", () => {
         );
 
         for (const node of getUserMessageNodes(result)) {
-          const hasCompactionChild = node.children.some((c) =>
-            c.kind !== "tool-call" && compactionEntries.has((c as any).entry),
+          const hasCompactionChild = node.children.some(
+            (c) =>
+              c.kind !== "tool-call" && compactionEntries.has((c as any).entry),
           );
           expect(
             hasCompactionChild,
@@ -1161,10 +1162,7 @@ describe("Activity Tree Properties", () => {
         for (const node of getUserMessageNodes(result)) {
           for (const child of node.children) {
             if (child.kind === "ai-response" && child.entry.toolCalls) {
-              aiEntriesWithTools.set(
-                child.entry,
-                child.entry.toolCalls.length,
-              );
+              aiEntriesWithTools.set(child.entry, child.entry.toolCalls.length);
             }
           }
         }
@@ -1247,4 +1245,3 @@ describe("Activity Tree Properties", () => {
     );
   });
 });
-

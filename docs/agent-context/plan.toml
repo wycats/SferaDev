@@ -2291,7 +2291,8 @@ ulid = "01KHMQ50QG21GX43MB16MJV23Y"
 [[epochs.phases.goals]]
 id = "tool-call-redesign"
 label = "Tool call tree redesign: summarize args, nest response in request, outcome-based labels"
-status = "pending"
+status = "completed"
+completion_log = "PER 1: Added ToolCallDetail type, capture pipeline in provider.ts, setToolCalls in ConversationManager. Committed as c546ec5."
 ulid = "01KHMQ59B7MA58HSFV1JS1DWH4"
 
 [[epochs.phases.goals]]
@@ -2309,13 +2310,15 @@ ulid = "01KHMQ5M4A7TEXF99M0M0D3VJ2"
 [[epochs.phases.goals]]
 id = "tool-call-nesting"
 label = "Tool call tree nesting and rendering"
-status = "pending"
+status = "completed"
+completion_log = "PER 2: Added tool-call discriminator to TreeChild, groupByUserMessage extracts toolCalls, ToolCallItem class, mapTreeChild helper, P19/P20 property tests. Committed as 3183491."
 ulid = "01KHMVKKXA1F5VEZS86C93WBG6"
 
 [[epochs.phases.goals]]
 id = "tool-call-labels"
 label = "Tool call outcome-based labels and arg summarization"
-status = "pending"
+status = "completed"
+completion_log = "PER 3: Created tool-labels.ts with summarizeToolArgs() and toolIcon() pure functions. Wired into ToolCallItem. 741+20 tests pass."
 ulid = "01KHMVKT1E1FV31Z0JC44H9N3B"
 
 [[epochs]]

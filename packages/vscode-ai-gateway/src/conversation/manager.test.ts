@@ -730,8 +730,16 @@ describe("ConversationManager", () => {
 
     const conversationId = firstConversation(manager).id;
     manager.setToolCalls(conversationId, 1, [
-      { callId: "call-1", name: "read_file", args: { filePath: "/src/foo.ts", startLine: 1, endLine: 50 } },
-      { callId: "call-2", name: "grep_search", args: { query: "handleFork", isRegexp: false } },
+      {
+        callId: "call-1",
+        name: "read_file",
+        args: { filePath: "/src/foo.ts", startLine: 1, endLine: 50 },
+      },
+      {
+        callId: "call-2",
+        name: "grep_search",
+        args: { query: "handleFork", isRegexp: false },
+      },
     ]);
 
     const conversation = firstConversation(manager);
@@ -741,8 +749,16 @@ describe("ConversationManager", () => {
     expect(response).toMatchObject({
       type: "ai-response",
       toolCalls: [
-        { callId: "call-1", name: "read_file", args: { filePath: "/src/foo.ts", startLine: 1, endLine: 50 } },
-        { callId: "call-2", name: "grep_search", args: { query: "handleFork", isRegexp: false } },
+        {
+          callId: "call-1",
+          name: "read_file",
+          args: { filePath: "/src/foo.ts", startLine: 1, endLine: 50 },
+        },
+        {
+          callId: "call-2",
+          name: "grep_search",
+          args: { query: "handleFork", isRegexp: false },
+        },
       ],
       // toolsUsed is derived from toolCalls
       toolsUsed: ["read_file", "grep_search"],

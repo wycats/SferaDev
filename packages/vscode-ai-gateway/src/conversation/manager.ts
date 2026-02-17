@@ -923,7 +923,11 @@ export class ConversationManager implements vscode.Disposable {
   setToolCalls(
     conversationId: string,
     turnNumber: number,
-    toolCalls: { callId: string; name: string; args: Record<string, unknown> }[],
+    toolCalls: {
+      callId: string;
+      name: string;
+      args: Record<string, unknown>;
+    }[],
   ): void {
     const log = this.activityLogs.get(conversationId);
     if (!log) {

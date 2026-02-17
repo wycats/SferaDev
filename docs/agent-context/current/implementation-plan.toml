@@ -106,12 +106,16 @@ id = "tool-call-labels"
 [[plan.goals.tasks]]
 id = "create-tool-arg-summarization-function"
 title = "Create tool arg summarization function"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-17T05:11:01.320629192+00:00"
+completion_log = "Created tool-labels.ts with summarizeToolArgs() — 15+ tool-specific summarizers with path shortening, truncation, and generic fallback. 30 unit tests."
 
 [[plan.goals.tasks]]
 id = "generate-outcome-based-labels-for-tool-calls"
 title = "Generate outcome-based labels for tool calls"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-17T05:11:07.732953848+00:00"
+completion_log = "Created toolIcon() with 20+ tool-specific icon mappings. Wired both functions into ToolCallItem — replaces inline formatLabel and hardcoded wrench icon. Updated tests. 741 tests pass."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
