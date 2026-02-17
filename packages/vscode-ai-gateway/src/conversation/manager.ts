@@ -17,6 +17,7 @@ import type {
 } from "./types.js";
 import { getTreeChangeLogger } from "../diagnostics/tree-change-log.js";
 import { logger } from "../logger.js";
+import type { TreeSnapshotTrigger } from "../logger/investigation-events.js";
 import type {
   PersistentStore,
   PersistenceManager,
@@ -54,6 +55,12 @@ export class ConversationManager implements vscode.Disposable {
     null;
   /** Conversations restored from persistence (shown as archived until active) */
   private restoredConversations = new Map<string, Conversation>();
+  /** Track previous conversation statuses to detect idle/removed transitions */
+  private previousStatuses = new Map<string, Conversation["status"]>();
+  /** Callback for emitting tree.snapshot events on lifecycle transitions */
+  private snapshotEmitter:
+    | ((trigger: TreeSnapshotTrigger, conversations: Conversation[]) => void)
+    | null = null;
 
   private readonly _onDidChangeConversations = new vscode.EventEmitter<
     string | undefined
@@ -70,6 +77,19 @@ export class ConversationManager implements vscode.Disposable {
     );
 
     this.rebuild();
+  }
+
+  /**
+   * Set a callback for emitting tree.snapshot events on lifecycle transitions
+   * (conversation goes idle, conversation removed).
+   */
+  setSnapshotEmitter(
+    emitter: (
+      trigger: TreeSnapshotTrigger,
+      conversations: Conversation[],
+    ) => void,
+  ): void {
+    this.snapshotEmitter = emitter;
   }
 
   /**
@@ -215,6 +235,58 @@ export class ConversationManager implements vscode.Disposable {
   }
 
   /**
+   * Handle a conversation fork by truncating the activity log and emitting a fork event.
+   */
+  handleFork(
+    conversationId: string,
+    forkPoint: number,
+    previousMessageCount: number,
+    newMessageCount: number,
+    causedByChatId?: string,
+  ): void {
+    const log = this.activityLogs.get(conversationId) ?? [];
+    const forkSequence = Math.floor(forkPoint / 2);
+    const originalLength = log.length;
+
+    const truncated = log.filter((entry) => {
+      if (entry.type === "user-message" || entry.type === "ai-response") {
+        return entry.sequenceNumber <= forkSequence;
+      }
+      if (entry.type === "compaction") {
+        return entry.turnNumber <= forkSequence;
+      }
+      if (entry.type === "error") {
+        return (
+          entry.turnNumber === undefined || entry.turnNumber <= forkSequence
+        );
+      }
+      return true;
+    });
+
+    this.activityLogs.set(conversationId, truncated);
+
+    logger.info(
+      `[ForkDetection] Reset activity log for ${conversationId.slice(0, 8)}: ` +
+        `${originalLength} → ${truncated.length} entries (fork at sequence ${forkSequence})`,
+    );
+
+    getTreeChangeLogger().emitSingleOp(
+      {
+        type: "conversation-forked",
+        conversationId,
+        forkedFrom: conversationId,
+        atSequence: forkSequence,
+        previousMessageCount,
+        newMessageCount,
+      },
+      conversationId,
+      causedByChatId,
+    );
+
+    this._onDidChangeConversations.fire(causedByChatId);
+  }
+
+  /**
    * Compute the max sequence number from an activity log.
    */
   private computeMaxSequence(log: ActivityLogEntry[]): number {
@@ -304,6 +376,34 @@ export class ConversationManager implements vscode.Disposable {
 
     this.conversations = nextConversations;
     this.pruneCompactionState();
+
+    // Detect lifecycle transitions and emit tree.snapshot events
+    if (this.snapshotEmitter) {
+      const allConversations = Array.from(nextConversations.values());
+
+      // Check for conversations that transitioned to idle
+      for (const [id, conv] of nextConversations) {
+        const prevStatus = this.previousStatuses.get(id);
+        if (prevStatus === "active" && conv.status === "idle") {
+          this.snapshotEmitter("idle", allConversations);
+          break; // One snapshot per rebuild is sufficient
+        }
+      }
+
+      // Check for conversations that were removed (existed before, gone now)
+      for (const id of this.previousStatuses.keys()) {
+        if (!nextConversations.has(id)) {
+          this.snapshotEmitter("removed", allConversations);
+          break; // One snapshot per rebuild is sufficient
+        }
+      }
+    }
+
+    // Update previous statuses for next rebuild
+    this.previousStatuses.clear();
+    for (const [id, conv] of nextConversations) {
+      this.previousStatuses.set(id, conv.status);
+    }
 
     // Persist conversation state for cross-reload restoration
     this.persistConversations();

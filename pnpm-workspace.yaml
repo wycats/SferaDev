@@ -1,6 +1,8 @@
 packages:
+  - packages/conversation
   - packages/vscode-ai-gateway
   - packages/openresponses-client
+  - packages/agent-cli
   - configs/tsconfig
 
 catalog:

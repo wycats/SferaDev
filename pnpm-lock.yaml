@@ -108,6 +108,37 @@ importers:
 
   configs/tsconfig: {}
 
+  packages/agent-cli:
+    dependencies:
+      '@vercel/conversation':
+        specifier: workspace:*
+        version: link:../conversation
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.0.10
+      '@vercel/tsconfig':
+        specifier: workspace:*
+        version: link:../../configs/tsconfig
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/conversation:
+    devDependencies:
+      '@vercel/tsconfig':
+        specifier: workspace:*
+        version: link:../../configs/tsconfig
+      fast-check:
+        specifier: 'catalog:'
+        version: 3.23.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)
+
   packages/openresponses-client:
     devDependencies:
       '@kubb/cli':
@@ -143,6 +174,9 @@ importers:
 
   packages/vscode-ai-gateway:
     dependencies:
+      '@vercel/conversation':
+        specifier: workspace:*
+        version: link:../conversation
       ai-tokenizer:
         specifier: ^1.0.6
         version: 1.0.6(ai@6.0.50(zod@4.3.6))

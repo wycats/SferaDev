@@ -445,6 +445,23 @@ export class VercelAIChatModelProvider
       let estimatedDeltaTokens: number | undefined;
       const prevContext = this.agentRegistry?.getAgentContext(conversationId);
       if (prevContext) {
+        // Fork detection: if message count decreased, user edited a message
+        if (chatMessages.length < prevContext.lastMessageCount) {
+          const forkPoint = chatMessages.length;
+          logger.info(
+            `[ForkDetection] Fork detected in conversation ${conversationId.slice(0, 8)}: ` +
+              `${prevContext.lastMessageCount} → ${chatMessages.length} messages (fork at ${forkPoint})`,
+          );
+
+          this.conversationManager?.handleFork(
+            conversationId,
+            forkPoint,
+            prevContext.lastMessageCount,
+            chatMessages.length,
+            chatId,
+          );
+        }
+
         const newMessages = chatMessages.slice(prevContext.lastMessageCount);
         let deltaTokens = 0;
         for (const msg of newMessages) {

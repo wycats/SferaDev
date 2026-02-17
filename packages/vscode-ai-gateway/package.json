@@ -223,6 +223,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@vercel/conversation": "workspace:*",
     "ai-tokenizer": "^1.0.6",
     "openresponses-client": "workspace:*",
     "safe-stable-stringify": "^2.5.0"

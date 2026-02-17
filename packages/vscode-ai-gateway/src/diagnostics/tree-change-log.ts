@@ -1,589 +1,318 @@
 /**
- * Tree Change Log - JSONL logging for conversation tree changes
+ * Tree Change Log
  *
- * Logs every change to the conversation tree with a full snapshot,
- * enabling debugging by reviewing the sequence of changes.
- *
- * File: .logs/tree-changes.jsonl
- *
- * Each line contains:
- * - timestamp: ISO timestamp
- * - event: what changed (e.g., "CONVERSATION_ADDED", "TURN_ADDED")
- * - change: details about the specific change
- * - snapshot: full tree state after the change
+ * Emits typed tree.change ops to the unified investigation event stream.
  */
 
-import * as fs from "node:fs";
-import * as path from "node:path";
-import { safeJsonStringify } from "../utils/serialize.js";
+import type { Conversation } from "../conversation/types.js";
 import type {
-  Conversation,
-  ActivityLogEntry,
-  Subagent,
-} from "../conversation/types.js";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type TreeChangeEvent =
-  | "TREE_INITIALIZED"
-  | "CONVERSATION_ADDED"
-  | "CONVERSATION_UPDATED"
-  | "CONVERSATION_REMOVED"
-  | "USER_MESSAGE_ADDED"
-  | "AI_RESPONSE_ADDED"
-  | "AI_RESPONSE_UPDATED"
-  | "AI_RESPONSE_CHARACTERIZED"
-  | "TURN_ADDED"
-  | "TURN_UPDATED"
-  | "TURN_CHARACTERIZED"
-  | "COMPACTION_ADDED"
-  | "ERROR_ADDED"
-  | "SUBAGENT_ADDED"
-  | "STATUS_CHANGED"
-  | "TOKENS_UPDATED"
-  | "TITLE_GENERATED";
-
-export interface TreeChangeEntry {
-  timestamp: string;
-  event: TreeChangeEvent;
-  change: ChangeDetails;
-  snapshot: TreeSnapshot;
-  /** The VS Code chat ID of the request that caused this tree change. */
-  causedByChatId?: string;
-}
-
-export interface ChangeDetails {
-  conversationId?: string | undefined;
-  turnNumber?: number | undefined;
-  sequenceNumber?: number | undefined;
-  characterization?: string | undefined;
-  title?: string | undefined;
-  status?: string | undefined;
-  tokens?: { input: number; output: number; maxInput: number } | undefined;
-  freedTokens?: number | undefined;
-  errorMessage?: string | undefined;
-  subagentName?: string | undefined;
-  count?: number | undefined;
-  streaming?: boolean | undefined;
-  tokenContribution?: number | undefined;
-  previousTitle?: string | undefined;
-  previousStatus?: string | undefined;
-  previousTokens?:
-    | { input: number; output: number; maxInput: number }
-    | undefined;
-  subagentId?: string | undefined;
-  [key: string]: unknown;
-}
-
-export interface TreeSnapshot {
-  conversationCount: number;
-  conversations: ConversationSnapshot[];
-}
-
-export interface ConversationSnapshot {
-  id: string;
-  title: string;
-  status: string;
-  tokens: { input: number; output: number; maxInput: number };
-  turnCount: number;
-  activityLog: ActivityLogSnapshot[];
-  subagents: SubagentSnapshot[];
-}
-
-export interface ActivityLogSnapshot {
-  type: "user-message" | "ai-response" | "turn" | "compaction" | "error";
-  turnNumber?: number | undefined;
-  sequenceNumber?: number | undefined;
-  preview?: string | undefined;
-  state?: string | undefined;
-  characterization?: string | undefined;
-  tokenContribution?: number | undefined;
-  streaming?: boolean | undefined;
-  freedTokens?: number | undefined;
-  message?: string | undefined;
-  subagentIds?: string[] | undefined;
-}
-
-interface LegacyTurnEntry {
-  type: "turn";
-  turnNumber: number;
-  timestamp: number;
-  characterization?: string | undefined;
-  outputTokens: number;
-  subagentIds: string[];
-  streaming: boolean;
-}
-
-export interface SubagentSnapshot {
-  id: string;
-  name: string;
-  status: string;
-  tokens: { input: number; output: number };
-  children: SubagentSnapshot[];
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Logger
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Callback for bridging tree changes into the unified event stream. */
-export type TreeChangeEventEmitter = (
-  event: TreeChangeEvent,
-  change: ChangeDetails,
-  snapshot: TreeSnapshot,
-  causedByChatId?: string,
-) => void;
+  InvestigationEvent,
+  TreeChangeOp,
+  EventConversationSnapshot,
+  EventAIResponseSnapshot,
+  EventUserMessageSnapshot,
+  EventSubagentSnapshot,
+} from "../logger/investigation-events.js";
+import {
+  toConversationSnapshot,
+  toConversationSnapshots,
+} from "../logger/snapshot-builder.js";
+import { ulid } from "../utils/ulid.js";
 
 class TreeChangeLogger {
-  private logPath: string | null = null;
-  private enabled = false;
-  private previousSnapshot: TreeSnapshot | null = null;
-  private eventEmitter: TreeChangeEventEmitter | null = null;
+  private previousSnapshots: EventConversationSnapshot[] | null = null;
+  private sessionId: string | null = null;
+  private emit: ((event: InvestigationEvent) => void) | null = null;
 
-  /**
-   * Set a callback that will be invoked for every tree change,
-   * bridging tree changes into the unified InvestigationEvent stream.
-   */
-  setEventEmitter(emitter: TreeChangeEventEmitter): void {
-    this.eventEmitter = emitter;
-  }
-
-  /**
-   * Initialize the logger for a workspace.
-   */
-  initialize(workspaceRoot: string): void {
-    const logsDir = path.join(workspaceRoot, ".logs");
-
-    // Ensure .logs directory exists
-    try {
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-      }
-      this.logPath = path.join(logsDir, "tree-changes.jsonl");
-      this.enabled = true;
-
-      // Log initialization
-      this.log(
-        "TREE_INITIALIZED",
-        {},
-        { conversationCount: 0, conversations: [] },
-      );
-    } catch {
-      // Silently fail if we can't create the log directory
-      this.enabled = false;
-    }
-  }
-
-  /**
-   * Log a tree change with full snapshot.
-   */
-  log(
-    event: TreeChangeEvent,
-    change: ChangeDetails,
-    snapshot: TreeSnapshot,
-    causedByChatId?: string,
+  setEventEmitter(
+    sessionId: string,
+    emit: (event: InvestigationEvent) => void,
   ): void {
-    if (!this.enabled || !this.logPath) return;
-
-    const entry: TreeChangeEntry = {
-      timestamp: new Date().toISOString(),
-      event,
-      change,
-      snapshot,
-      ...(causedByChatId ? { causedByChatId } : {}),
-    };
-
-    try {
-      // eslint-disable-next-line no-restricted-syntax -- Intentional sync write for diagnostic JSONL log
-      fs.appendFileSync(this.logPath, safeJsonStringify(entry) + "\n", "utf8");
-    } catch {
-      // Silently fail on write errors
-    }
-
-    // Bridge to unified event stream
-    if (this.eventEmitter) {
-      this.eventEmitter(event, change, snapshot, causedByChatId);
-    }
-
-    this.previousSnapshot = snapshot;
+    this.sessionId = sessionId;
+    this.emit = emit;
+    this.previousSnapshots = null;
   }
 
-  /**
-   * Log changes by diffing current state against previous snapshot.
-   * This is the main entry point called when conversations change.
-   */
   logChanges(conversations: Conversation[], causedByChatId?: string): void {
-    if (!this.enabled) return;
+    if (!this.emit || !this.sessionId) return;
 
-    const snapshot = this.buildSnapshot(conversations);
-    const previous = this.previousSnapshot;
+    const currentSnapshots = toConversationSnapshots(conversations);
+    const previous = this.previousSnapshots;
 
     if (!previous) {
-      // First snapshot after initialization
-      if (conversations.length > 0) {
-        this.log(
-          "CONVERSATION_ADDED",
-          {
-            conversationId: conversations[0]?.id,
-            count: conversations.length,
-          },
-          snapshot,
+      for (const conversation of conversations) {
+        const snapshot = toConversationSnapshot(conversation);
+        this.emitOp(
+          { type: "conversation-added", conversation: snapshot },
+          snapshot.id,
           causedByChatId,
         );
       }
-      this.previousSnapshot = snapshot;
+      this.previousSnapshots = currentSnapshots;
       return;
     }
 
-    // Detect changes by comparing snapshots
-    const changes = this.detectChanges(previous, snapshot, conversations);
-
-    for (const { event, change } of changes) {
-      this.log(event, change, snapshot, causedByChatId);
+    const ops = this.detectChanges(previous, currentSnapshots);
+    for (const op of ops) {
+      const conversationId = this.getConversationIdFromOp(op);
+      this.emitOp(op, conversationId, causedByChatId);
     }
 
-    this.previousSnapshot = snapshot;
+    this.previousSnapshots = currentSnapshots;
   }
 
-  /**
-   * Build a snapshot from the current conversation state.
-   */
-  private buildSnapshot(conversations: Conversation[]): TreeSnapshot {
-    return {
-      conversationCount: conversations.length,
-      conversations: conversations.map((conv) =>
-        this.snapshotConversation(conv),
-      ),
-    };
+  emitSingleOp(
+    op: TreeChangeOp,
+    conversationId: string,
+    causedByChatId?: string,
+  ): void {
+    if (!this.emit || !this.sessionId) return;
+    this.emitOp(op, conversationId, causedByChatId);
   }
 
-  private snapshotConversation(conv: Conversation): ConversationSnapshot {
-    return {
-      id: conv.id,
-      title: conv.title,
-      status: conv.status,
-      tokens: {
-        input: conv.tokens.input,
-        output: conv.tokens.output,
-        maxInput: conv.tokens.maxInput,
-      },
-      turnCount: conv.turnCount,
-      activityLog: conv.activityLog.map((entry) =>
-        this.snapshotActivityEntry(entry),
-      ),
-      subagents: conv.subagents.map((sub) => this.snapshotSubagent(sub)),
-    };
+  private emitOp(
+    op: TreeChangeOp,
+    conversationId: string,
+    causedByChatId?: string,
+  ): void {
+    this.emit!({
+      kind: "tree.change",
+      eventId: ulid(),
+      ts: new Date().toISOString(),
+      sessionId: this.sessionId!,
+      conversationId,
+      chatId: causedByChatId ?? "unknown",
+      causedByChatId: causedByChatId ?? null,
+      op,
+    });
   }
 
-  private snapshotActivityEntry(
-    entry: ActivityLogEntry | LegacyTurnEntry,
-  ): ActivityLogSnapshot {
-    switch (entry.type) {
-      case "user-message":
-        return {
-          type: "user-message",
-          sequenceNumber: entry.sequenceNumber,
-          preview: entry.preview,
-        };
-      case "ai-response":
-        return {
-          type: "ai-response",
-          sequenceNumber: entry.sequenceNumber,
-          state: entry.state,
-          characterization: entry.characterization,
-          tokenContribution: entry.tokenContribution,
-          subagentIds: entry.subagentIds,
-        };
-      case "turn":
-        return {
-          type: "turn",
-          turnNumber: entry.turnNumber,
-          characterization: entry.characterization,
-          streaming: entry.streaming,
-        };
-      case "compaction":
-        return {
-          type: "compaction",
-          turnNumber: entry.turnNumber,
-          freedTokens: entry.freedTokens,
-        };
-      case "error":
-        return {
-          type: "error",
-          turnNumber: entry.turnNumber,
-          message: entry.message,
-        };
-    }
+  private getConversationIdFromOp(op: TreeChangeOp): string {
+    if (op.type === "conversation-added") return op.conversation.id;
+    return op.conversationId;
   }
 
-  private snapshotSubagent(sub: Subagent): SubagentSnapshot {
-    return {
-      id: sub.conversationId,
-      name: sub.name,
-      status: sub.status,
-      tokens: { input: sub.tokens.input, output: sub.tokens.output },
-      children: sub.children.map((child) => this.snapshotSubagent(child)),
-    };
-  }
-
-  /**
-   * Detect what changed between two snapshots.
-   */
   private detectChanges(
-    previous: TreeSnapshot,
-    current: TreeSnapshot,
-    _conversations: Conversation[],
-  ): { event: TreeChangeEvent; change: ChangeDetails }[] {
-    const changes: { event: TreeChangeEvent; change: ChangeDetails }[] = [];
+    previous: EventConversationSnapshot[],
+    current: EventConversationSnapshot[],
+  ): TreeChangeOp[] {
+    const ops: TreeChangeOp[] = [];
 
-    const prevConvMap = new Map(previous.conversations.map((c) => [c.id, c]));
-    const currConvMap = new Map(current.conversations.map((c) => [c.id, c]));
+    const prevMap = new Map(previous.map((conv) => [conv.id, conv]));
+    const currMap = new Map(current.map((conv) => [conv.id, conv]));
 
-    // Check for new conversations
-    for (const conv of current.conversations) {
-      if (!prevConvMap.has(conv.id)) {
-        changes.push({
-          event: "CONVERSATION_ADDED",
-          change: {
-            conversationId: conv.id,
-            title: conv.title,
-            status: conv.status,
-          },
-        });
+    for (const conv of current) {
+      if (!prevMap.has(conv.id)) {
+        ops.push({ type: "conversation-added", conversation: conv });
       }
     }
 
-    // Check for removed conversations
-    for (const conv of previous.conversations) {
-      if (!currConvMap.has(conv.id)) {
-        changes.push({
-          event: "CONVERSATION_REMOVED",
-          change: { conversationId: conv.id },
-        });
+    for (const conv of previous) {
+      if (!currMap.has(conv.id)) {
+        ops.push({ type: "conversation-removed", conversationId: conv.id });
       }
     }
 
-    // Check for changes within existing conversations
-    for (const curr of current.conversations) {
-      const prev = prevConvMap.get(curr.id);
+    for (const curr of current) {
+      const prev = prevMap.get(curr.id);
       if (!prev) continue;
 
-      // Title changed
       if (curr.title !== prev.title) {
-        changes.push({
-          event: "TITLE_GENERATED",
-          change: {
-            conversationId: curr.id,
-            title: curr.title,
-            previousTitle: prev.title,
-          },
+        ops.push({
+          type: "title-changed",
+          conversationId: curr.id,
+          title: curr.title,
         });
       }
 
-      // Status changed
       if (curr.status !== prev.status) {
-        changes.push({
-          event: "STATUS_CHANGED",
-          change: {
-            conversationId: curr.id,
-            status: curr.status,
-            previousStatus: prev.status,
-          },
+        ops.push({
+          type: "status-changed",
+          conversationId: curr.id,
+          status: curr.status,
         });
       }
 
-      // Tokens changed significantly
       if (
         curr.tokens.input !== prev.tokens.input ||
-        curr.tokens.output !== prev.tokens.output
+        curr.tokens.output !== prev.tokens.output ||
+        curr.tokens.maxInput !== prev.tokens.maxInput
       ) {
-        changes.push({
-          event: "TOKENS_UPDATED",
-          change: {
-            conversationId: curr.id,
-            tokens: curr.tokens,
-            previousTokens: prev.tokens,
-          },
+        ops.push({
+          type: "tokens-updated",
+          conversationId: curr.id,
+          tokens: curr.tokens,
         });
       }
 
-      // Activity log changes
-      const prevLogLength = prev.activityLog.length;
-      const currLogLength = curr.activityLog.length;
-
-      if (currLogLength > prevLogLength) {
-        // New entries added
-        for (let i = prevLogLength; i < currLogLength; i++) {
+      if (curr.activityLog.length > prev.activityLog.length) {
+        for (
+          let i = prev.activityLog.length;
+          i < curr.activityLog.length;
+          i++
+        ) {
           const entry = curr.activityLog[i];
           if (!entry) continue;
 
           switch (entry.type) {
             case "user-message":
-              changes.push({
-                event: "USER_MESSAGE_ADDED",
-                change: {
-                  conversationId: curr.id,
-                  sequenceNumber: entry.sequenceNumber,
-                },
+              ops.push({
+                type: "user-message-added",
+                conversationId: curr.id,
+                entry,
               });
               break;
             case "ai-response":
-              changes.push({
-                event: "AI_RESPONSE_ADDED",
-                change: {
-                  conversationId: curr.id,
-                  sequenceNumber: entry.sequenceNumber,
-                  streaming: entry.state === "streaming",
-                },
-              });
-              break;
-            case "turn":
-              changes.push({
-                event: "TURN_ADDED",
-                change: {
-                  conversationId: curr.id,
-                  turnNumber: entry.turnNumber,
-                  streaming: entry.streaming,
-                },
+              ops.push({
+                type: "ai-response-added",
+                conversationId: curr.id,
+                entry,
               });
               break;
             case "compaction":
-              changes.push({
-                event: "COMPACTION_ADDED",
-                change: {
-                  conversationId: curr.id,
-                  turnNumber: entry.turnNumber,
-                  freedTokens: entry.freedTokens,
-                },
+              ops.push({
+                type: "compaction-added",
+                conversationId: curr.id,
+                entry,
               });
               break;
             case "error":
-              changes.push({
-                event: "ERROR_ADDED",
-                change: {
-                  conversationId: curr.id,
-                  errorMessage: entry.message,
-                },
+              ops.push({
+                type: "error-added",
+                conversationId: curr.id,
+                entry,
               });
               break;
           }
         }
       }
 
-      // Check for turn characterization updates
-      for (let i = 0; i < Math.min(prevLogLength, currLogLength); i++) {
+      const maxEntries = Math.min(
+        prev.activityLog.length,
+        curr.activityLog.length,
+      );
+      for (let i = 0; i < maxEntries; i++) {
         const prevEntry = prev.activityLog[i];
         const currEntry = curr.activityLog[i];
+
+        // Detect user message updates (preview added, tool continuation marked)
         if (
-          prevEntry?.type === "ai-response" &&
-          currEntry?.type === "ai-response" &&
-          currEntry.characterization &&
-          currEntry.characterization !== prevEntry.characterization
+          prevEntry?.type === "user-message" &&
+          currEntry?.type === "user-message"
         ) {
-          changes.push({
-            event: "AI_RESPONSE_CHARACTERIZED",
-            change: {
+          type UserMsgFields = Partial<
+            Omit<EventUserMessageSnapshot, "type" | "sequenceNumber" | "timestamp">
+          >;
+          const fields: UserMsgFields = {};
+          let hasChanges = false;
+          if (!prevEntry.preview && currEntry.preview) {
+            fields.preview = currEntry.preview;
+            hasChanges = true;
+          }
+          if (!prevEntry.isToolContinuation && currEntry.isToolContinuation) {
+            fields.isToolContinuation = currEntry.isToolContinuation;
+            hasChanges = true;
+          }
+          if (
+            prevEntry.tokenContribution !== currEntry.tokenContribution &&
+            currEntry.tokenContribution !== undefined
+          ) {
+            fields.tokenContribution = currEntry.tokenContribution;
+            hasChanges = true;
+          }
+          if (hasChanges) {
+            ops.push({
+              type: "user-message-updated",
               conversationId: curr.id,
               sequenceNumber: currEntry.sequenceNumber,
-              characterization: currEntry.characterization,
-            },
-          });
+              fields,
+            });
+          }
         }
 
         if (
-          prevEntry?.type === "turn" &&
-          currEntry?.type === "turn" &&
+          isAIResponseEntry(prevEntry) &&
+          isAIResponseEntry(currEntry) &&
           currEntry.characterization &&
           currEntry.characterization !== prevEntry.characterization
         ) {
-          changes.push({
-            event: "TURN_CHARACTERIZED",
-            change: {
-              conversationId: curr.id,
-              turnNumber: currEntry.turnNumber,
-              characterization: currEntry.characterization,
-            },
+          ops.push({
+            type: "ai-response-characterized",
+            conversationId: curr.id,
+            sequenceNumber: currEntry.sequenceNumber,
+            characterization: currEntry.characterization,
           });
         }
 
-        // Check for turn streaming → complete transition
         if (
-          prevEntry?.type === "ai-response" &&
-          currEntry?.type === "ai-response" &&
+          isAIResponseEntry(prevEntry) &&
+          isAIResponseEntry(currEntry) &&
           prevEntry.state === "streaming" &&
           currEntry.state !== "streaming"
         ) {
-          changes.push({
-            event: "AI_RESPONSE_UPDATED",
-            change: {
-              conversationId: curr.id,
-              sequenceNumber: currEntry.sequenceNumber,
+          ops.push({
+            type: "ai-response-updated",
+            conversationId: curr.id,
+            sequenceNumber: currEntry.sequenceNumber,
+            fields: {
+              state: currEntry.state,
               tokenContribution: currEntry.tokenContribution,
-              streaming: false,
             },
           });
         }
 
+        // Detect AI response toolsUsed being added (set after turn completion)
         if (
-          prevEntry?.type === "turn" &&
-          currEntry?.type === "turn" &&
-          prevEntry.streaming &&
-          !currEntry.streaming
+          isAIResponseEntry(prevEntry) &&
+          isAIResponseEntry(currEntry) &&
+          (!prevEntry.toolsUsed || prevEntry.toolsUsed.length === 0) &&
+          currEntry.toolsUsed &&
+          currEntry.toolsUsed.length > 0
         ) {
-          changes.push({
-            event: "TURN_UPDATED",
-            change: {
-              conversationId: curr.id,
-              turnNumber: currEntry.turnNumber,
-              streaming: false,
+          ops.push({
+            type: "ai-response-updated",
+            conversationId: curr.id,
+            sequenceNumber: currEntry.sequenceNumber,
+            fields: {
+              toolsUsed: currEntry.toolsUsed,
             },
           });
         }
       }
 
-      // Subagent changes
       if (curr.subagents.length > prev.subagents.length) {
-        const prevSubIds = new Set(prev.subagents.map((s) => s.id));
-        for (const sub of curr.subagents) {
-          if (!prevSubIds.has(sub.id)) {
-            changes.push({
-              event: "SUBAGENT_ADDED",
-              change: {
-                conversationId: curr.id,
-                subagentName: sub.name,
-                subagentId: sub.id,
-              },
+        const prevSubIds = new Set(
+          prev.subagents.map((sub: EventSubagentSnapshot) => sub.id),
+        );
+        for (const subagent of curr.subagents) {
+          if (!prevSubIds.has(subagent.id)) {
+            ops.push({
+              type: "subagent-added",
+              conversationId: curr.id,
+              subagent,
             });
           }
         }
       }
     }
 
-    return changes;
+    return ops;
   }
 
-  /**
-   * Check if logging is enabled.
-   */
   isEnabled(): boolean {
-    return this.enabled;
+    return this.emit !== null;
   }
 }
 
-// Singleton instance
+function isAIResponseEntry(
+  entry: EventConversationSnapshot["activityLog"][number] | undefined,
+): entry is EventAIResponseSnapshot {
+  return entry?.type === "ai-response";
+}
+
 let instance: TreeChangeLogger | null = null;
 
 export function getTreeChangeLogger(): TreeChangeLogger {
   instance ??= new TreeChangeLogger();
   return instance;
-}
-
-/**
- * Initialize tree change logging for a workspace.
- * Call this from extension activation.
- */
-export function initializeTreeChangeLog(workspaceRoot: string): void {
-  getTreeChangeLogger().initialize(workspaceRoot);
 }

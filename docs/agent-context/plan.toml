@@ -2100,56 +2100,44 @@ ulid = "01KHKT56HNR2HS3Z55HPD0FTHE"
 [[epochs.phases.goals]]
 id = "tree-change-op-types"
 label = "Define typed TreeChangeOp discriminated union"
-status = "pending"
+status = "completed"
+completion_log = "All types defined, review suggestion applied (tightened ai-response-updated Partial)"
 ulid = "01KHKT5FEV91F1A7Z25TPZKGB6"
 
 [[epochs.phases.goals]]
 id = "tree-snapshot-lifecycle"
 label = "Emit tree.snapshot events at session boundaries"
-status = "pending"
+status = "completed"
+completion_log = "All 4 triggers wired: session-start, session-end, idle, removed. snapshot-builder.ts created."
 ulid = "01KHKT5M2SYN21YGRJK2KEHGSQ"
 
 [[epochs.phases.goals]]
-id = "tree-change-typed-ops"
-label = "TreeChangeLogger emits typed TreeChangeOp events"
-status = "pending"
-ulid = "01KHKT5RGBN4RH7FQAD78GG3YX"
-
-[[epochs.phases.goals]]
-id = "remove-tree-changes-file"
-label = "Remove standalone tree-changes.jsonl file writing"
-status = "pending"
-ulid = "01KHKT5ZJP7HMG32W6ZXFEYDDD"
-
-[[epochs.phases.goals]]
-id = "remove-tree-change-bridge"
-label = "Remove tree-change-bridge.ts indirection"
-status = "pending"
-ulid = "01KHKT64EVED4EHK5SQVXB4AF4"
+id = "consolidate-tree-change-logger"
+label = "Consolidate TreeChangeLogger: typed ops, remove file I/O, remove bridge"
+status = "completed"
+completion_log = "TreeChangeLogger refactored: typed ops, no file I/O, no bridge. 0 type errors, 708 tests pass."
+ulid = "01KHM47Y4MHS7BGKH1QP29GS0J"
 
 [[epochs.phases.goals]]
 id = "cli-tree-command"
 label = "Add CLI tree command that reconstructs from events"
-status = "pending"
+status = "completed"
+completion_log = "tree command with reconstruction, --at time-travel, visual hierarchy, self-describing hints"
 ulid = "01KHKT68VXDE336JMFY092W8ZR"
 
 [[epochs.phases.goals]]
 id = "cli-conversation-command"
 label = "Add CLI conversation command for activity log"
-status = "pending"
+status = "completed"
+completion_log = "conversation <id> command with activity log, subagents, fork info, hints"
 ulid = "01KHKT6EE3CS1QGXFD3RJ03344"
 
 [[epochs.phases.goals]]
 id = "fork-detection"
 label = "Detect message edits (forks) in provider"
-status = "pending"
+status = "completed"
+completion_log = "Fork detection: provider detects, manager truncates log + emits event. 0 type errors, 708 tests pass."
 ulid = "01KHKT6KREM61STZZ09F5YPV9W"
-
-[[epochs.phases.goals]]
-id = "cli-self-describing"
-label = "Make all CLI outputs self-describing with hints"
-status = "pending"
-ulid = "01KHKT6S4GEXDDR8VFXHE1YXJ2"
 
 [[epochs.phases]]
 id = "01khknebhjr8rms0314vsqcatx"

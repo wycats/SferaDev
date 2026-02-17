@@ -88,10 +88,6 @@ export async function activate(context: vscode.ExtensionContext) {
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (workspaceRoot) {
     treeDiagnostics.initialize(workspaceRoot);
-    // Initialize tree change logging (writes to .logs/tree-changes.jsonl)
-    const { initializeTreeChangeLog } =
-      await import("./diagnostics/tree-change-log.js");
-    initializeTreeChangeLog(workspaceRoot);
   }
 
   const agentRegistry = new AgentRegistryImpl();
@@ -108,13 +104,11 @@ export async function activate(context: vscode.ExtensionContext) {
   const [
     { InvestigationLogger },
     { createRegistryEventBridge },
-    { createTreeChangeBridge },
     { createUnifiedLogSubscriber },
     { getTreeChangeLogger },
   ] = await Promise.all([
     import("./logger/investigation.js"),
     import("./logger/registry-event-bridge.js"),
-    import("./logger/tree-change-bridge.js"),
     import("./logger/unified-log-subscriber.js"),
     import("./diagnostics/tree-change-log.js"),
   ]);
@@ -146,10 +140,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Bridge tree changes → unified stream
   getTreeChangeLogger().setEventEmitter(
-    createTreeChangeBridge(
-      sessionId,
-      investigationLogger.emitEvent.bind(investigationLogger),
-    ),
+    sessionId,
+    investigationLogger.emitEvent.bind(investigationLogger),
   );
 
   // Emit session.start
@@ -163,7 +155,8 @@ export async function activate(context: vscode.ExtensionContext) {
     extensionVersion: version,
   });
 
-  // Emit session.end on deactivation (via disposable)
+  // Emit session.end on deactivation (via disposable).
+  // tree.snapshot for session-end is registered later, after treeProvider is created.
   context.subscriptions.push({
     dispose() {
       investigationLogger.emitEvent({
@@ -230,6 +223,55 @@ export async function activate(context: vscode.ExtensionContext) {
   const { createPersistenceManager } = await import("./persistence/index.js");
   const persistenceManager = createPersistenceManager(context);
   treeProvider.getManager().initializePersistence(persistenceManager);
+
+  // Emit tree.snapshot at session start (after persistence restores conversations)
+  const { toConversationSnapshots } =
+    await import("./logger/snapshot-builder.js");
+  investigationLogger.emitEvent({
+    kind: "tree.snapshot",
+    eventId: "",
+    ts: new Date().toISOString(),
+    sessionId,
+    conversationId: sessionId,
+    chatId: sessionId,
+    trigger: "session-start",
+    conversations: toConversationSnapshots(
+      treeProvider.getManager().getConversations(),
+    ),
+  });
+
+  // Emit tree.snapshot at session end (before session.end event, which is registered earlier)
+  // Disposables are disposed in reverse order, so this snapshot fires before session.end.
+  context.subscriptions.push({
+    dispose() {
+      investigationLogger.emitEvent({
+        kind: "tree.snapshot",
+        eventId: "",
+        ts: new Date().toISOString(),
+        sessionId,
+        conversationId: sessionId,
+        chatId: sessionId,
+        trigger: "session-end",
+        conversations: toConversationSnapshots(
+          treeProvider.getManager().getConversations(),
+        ),
+      });
+    },
+  });
+
+  // Wire up tree.snapshot emission for idle/removed transitions
+  treeProvider.getManager().setSnapshotEmitter((trigger, conversations) => {
+    investigationLogger.emitEvent({
+      kind: "tree.snapshot",
+      eventId: "",
+      ts: new Date().toISOString(),
+      sessionId,
+      conversationId: sessionId,
+      chatId: sessionId,
+      trigger,
+      conversations: toConversationSnapshots(conversations),
+    });
+  });
 
   // Register refresh command for agent tree
   context.subscriptions.push(

@@ -1,0 +1,23 @@
+{
+  "name": "@vercel/agent-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI tool for observing agent state via the unified event stream",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "query-events": "./src/query-events.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "query-events": "node src/query-events.ts"
+  },
+  "dependencies": {
+    "@vercel/conversation": "workspace:*"
+  },
+  "devDependencies": {
+    "@vercel/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

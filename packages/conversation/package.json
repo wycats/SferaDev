@@ -1,0 +1,25 @@
+{
+  "name": "@vercel/conversation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure conversation model: types, tree building, and rendering",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@vercel/tsconfig": "workspace:*",
+    "fast-check": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

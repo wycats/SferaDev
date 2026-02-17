@@ -59,29 +59,216 @@ completion_log = "Built, installed, verified. events.jsonl at .reference/SferaDe
 [[plan.goals]]
 id = "tree-change-op-types"
 
+[[plan.goals.tasks]]
+id = "define-tree-change-op-union"
+title = "Define TreeChangeOp union type in investigation-events.ts"
+status = "completed"
+completed_at = "2026-02-16T21:10:44.282727628+00:00"
+completion_log = "Defined 13-variant TreeChangeOp union in investigation-events.ts"
+
+[[plan.goals.tasks]]
+id = "define-snapshot-types"
+title = "Define snapshot types (ConversationSnapshot, ActivityLogSnapshot, etc.)"
+status = "completed"
+completed_at = "2026-02-16T21:10:50.798704424+00:00"
+completion_log = "Defined Event*Snapshot types with proper union types from conversation/types.ts"
+
+[[plan.goals.tasks]]
+id = "update-tree-change-event-to-op"
+title = "Update InvestigationTreeChangeEvent to use op: TreeChangeOp"
+status = "completed"
+completed_at = "2026-02-16T21:10:50.820404102+00:00"
+completion_log = "Updated InvestigationTreeChangeEvent to use op: TreeChangeOp, removed old imports"
+
 [[plan.goals]]
 id = "tree-snapshot-lifecycle"
 
-[[plan.goals]]
-id = "tree-change-typed-ops"
+[[plan.goals.tasks]]
+id = "define-tree-snapshot-event-type"
+title = "Define TreeSnapshotEvent type with trigger field"
+status = "completed"
+completed_at = "2026-02-16T21:16:07.822202355+00:00"
+completion_log = "Added TreeSnapshotTrigger type, InvestigationTreeSnapshotEvent interface, tree.snapshot to event kind union"
 
-[[plan.goals]]
-id = "remove-tree-changes-file"
+[[plan.goals.tasks]]
+id = "emit-snapshot-session-start"
+title = "Emit tree.snapshot on session-start in extension activation"
+status = "completed"
+completed_at = "2026-02-16T21:20:18.728531933+00:00"
+completion_log = "Created snapshot-builder.ts, emit tree.snapshot after persistence init"
 
-[[plan.goals]]
-id = "remove-tree-change-bridge"
+[[plan.goals.tasks]]
+id = "emit-snapshot-session-end"
+title = "Emit tree.snapshot on session-end in extension deactivation"
+status = "completed"
+completed_at = "2026-02-16T21:20:18.746131437+00:00"
+completion_log = "Emit tree.snapshot in dispose block, fires before session.end"
+
+[[plan.goals.tasks]]
+id = "emit-snapshot-conversation-idle"
+title = "Emit tree.snapshot when conversation goes idle"
+status = "completed"
+completed_at = "2026-02-16T21:20:18.757428803+00:00"
+completion_log = "Status transition detection + snapshotEmitter in ConversationManager"
+
+[[plan.goals.tasks]]
+id = "emit-snapshot-conversation-removed"
+title = "Emit tree.snapshot when conversation is removed/archived"
+status = "completed"
+completed_at = "2026-02-16T21:20:18.772548246+00:00"
+completion_log = "Detect removed conversations in rebuild() and emit snapshot"
 
 [[plan.goals]]
 id = "cli-tree-command"
 
+[[plan.goals.tasks]]
+id = "implement-tree-reconstruction"
+title = "Implement tree reconstruction algorithm (snapshot + deltas)"
+status = "completed"
+completed_at = "2026-02-16T22:37:00.790039864+00:00"
+completion_log = "reconstructTree() replays tree.snapshot + tree.change ops into conversation map"
+
+[[plan.goals.tasks]]
+id = "add-tree-command"
+title = "Add tree command to query-events.ts"
+status = "completed"
+completed_at = "2026-02-16T22:37:00.804888376+00:00"
+completion_log = "cmdTree() added to query-events.ts CLI routing"
+
+[[plan.goals.tasks]]
+id = "add-tree-at-option"
+title = "Add tree --at eventId time-travel option"
+status = "completed"
+completed_at = "2026-02-16T22:37:00.820344291+00:00"
+completion_log = "tree --at <eventId> time-travel implemented"
+
+[[plan.goals.tasks]]
+id = "format-tree-output"
+title = "Format tree output with visual hierarchy"
+status = "completed"
+completed_at = "2026-02-16T22:37:00.836987032+00:00"
+completion_log = "Visual hierarchy with status glyphs, token display, activity log, subagents"
+
+[[plan.goals.tasks]]
+id = "self-describing-tree-output"
+title = "Make tree output self-describing with hints and valid IDs"
+status = "completed"
+completed_at = "2026-02-16T22:37:00.854462241+00:00"
+completion_log = "Hints with valid conversation IDs appended to output"
+
 [[plan.goals]]
 id = "cli-conversation-command"
+
+[[plan.goals.tasks]]
+id = "add-conversation-command"
+title = "Add conversation <id> command to query-events.ts"
+status = "completed"
+completed_at = "2026-02-16T22:37:08.719287881+00:00"
+completion_log = "cmdConversation() added to CLI routing"
+
+[[plan.goals.tasks]]
+id = "display-activity-log"
+title = "Display activity log with sequence numbers and previews"
+status = "completed"
+completed_at = "2026-02-16T22:37:08.743579155+00:00"
+completion_log = "Activity log with sequence numbers, previews, token contributions"
+
+[[plan.goals.tasks]]
+id = "show-fork-info"
+title = "Show fork information if conversation was forked"
+status = "completed"
+completed_at = "2026-02-16T22:37:08.773779727+00:00"
+completion_log = "Fork info displayed when forkedFrom metadata present"
+
+[[plan.goals.tasks]]
+id = "self-describing-conversation-output"
+title = "Make conversation output self-describing with hints and valid IDs"
+status = "completed"
+completed_at = "2026-02-16T22:37:08.799457943+00:00"
+completion_log = "Hints with request/tree commands appended"
 
 [[plan.goals]]
 id = "fork-detection"
 
+[[plan.goals.tasks]]
+id = "track-last-message-count"
+title = "Add lastMessageCount tracking to conversation context"
+status = "completed"
+completed_at = "2026-02-16T22:44:49.795949450+00:00"
+completion_log = "Already tracked via AgentContext.lastMessageCount in registry"
+
+[[plan.goals.tasks]]
+id = "detect-fork-condition"
+title = "Detect fork when chatMessages.length < lastMessageCount"
+status = "completed"
+completed_at = "2026-02-16T22:44:49.819892188+00:00"
+completion_log = "chatMessages.length < prevContext.lastMessageCount check in provider.ts"
+
+[[plan.goals.tasks]]
+id = "compute-fork-point"
+title = "Compute fork point (last matching message index)"
+status = "completed"
+completed_at = "2026-02-16T22:44:49.835575842+00:00"
+completion_log = "forkPoint = chatMessages.length, forkSequence = floor(forkPoint/2)"
+
+[[plan.goals.tasks]]
+id = "emit-fork-event"
+title = "Emit conversation-forked tree change event"
+status = "completed"
+completed_at = "2026-02-16T22:44:49.855023215+00:00"
+completion_log = "emitSingleOp() on TreeChangeLogger, called from ConversationManager.handleFork()"
+
+[[plan.goals.tasks]]
+id = "reset-activity-log"
+title = "Reset activity log to fork point"
+status = "completed"
+completed_at = "2026-02-16T22:44:49.879264635+00:00"
+completion_log = "Activity log truncated to entries with sequenceNumber <= forkSequence"
+
 [[plan.goals]]
-id = "cli-self-describing"
+id = "consolidate-tree-change-logger"
+
+[[plan.goals.tasks]]
+id = "update-emitter-to-typed-op"
+title = "Update TreeChangeEventEmitter to accept TreeChangeOp instead of event/change/snapshot"
+status = "completed"
+completed_at = "2026-02-16T22:02:32.363906976+00:00"
+completion_log = "Refactored setEventEmitter to accept sessionId + emit callback directly"
+
+[[plan.goals.tasks]]
+id = "refactor-detect-changes-typed"
+title = "Refactor detectChanges() to produce TreeChangeOp objects"
+status = "completed"
+completed_at = "2026-02-16T22:02:37.433337756+00:00"
+completion_log = "detectChanges() now returns TreeChangeOp[] using EventConversationSnapshot diffs"
+
+[[plan.goals.tasks]]
+id = "remove-file-io"
+title = "Remove fs.appendFileSync, logPath, and initialize() file creation"
+status = "completed"
+completed_at = "2026-02-16T22:02:42.101754379+00:00"
+completion_log = "Removed all fs/path imports, logPath, initialize(), log() — no more tree-changes.jsonl"
+
+[[plan.goals.tasks]]
+id = "emit-directly-to-stream"
+title = "Have TreeChangeLogger emit InvestigationEvents directly (no bridge)"
+status = "completed"
+completed_at = "2026-02-16T22:02:47.791415645+00:00"
+completion_log = "TreeChangeLogger emits InvestigationEvent directly via emitOp()"
+
+[[plan.goals.tasks]]
+id = "delete-bridge"
+title = "Delete tree-change-bridge.ts and update extension.ts wiring"
+status = "completed"
+completed_at = "2026-02-16T22:02:53.200009161+00:00"
+completion_log = "Deleted tree-change-bridge.ts and tree-change-bridge.test.ts, updated extension.ts wiring"
+
+[[plan.goals.tasks]]
+id = "update-tree-change-tests"
+title = "Update/rewrite tree-change-log tests for new interface"
+status = "completed"
+completed_at = "2026-02-16T22:02:58.456406548+00:00"
+completion_log = "Bridge tests deleted (3 tests). No new tests needed — tree-change-log has no dedicated test file and the refactoring is type-safe."
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
