@@ -391,18 +391,14 @@ export function renderTree(result: TreeResult): string {
           const cp = childIsLast ? "└─ " : "├─ ";
 
           if (child.kind === "ai-response") {
-            const charLabel =
-              child.entry.characterization ??
-              `Response #${child.entry.sequenceNumber}`;
-            const toolStr =
-              child.tools.length > 0 ? ` · ${child.tools.join(", ")}` : "";
-            const tokenStr =
-              child.entry.tokenContribution > 0
-                ? ` · +${fmtTokens(child.entry.tokenContribution)}`
-                : "";
-            lines.push(
-              `${childPrefix}${cp}$(chat-sparkle) ${charLabel}  #${child.entry.sequenceNumber}${toolStr}${tokenStr}`,
+            const label = aiResponseLabel(child.entry);
+            const descParts = aiResponseDescriptionParts(
+              child.entry,
+              child.tools,
             );
+            const descStr =
+              descParts.length > 0 ? `  ${descParts.join(" · ")}` : "";
+            lines.push(`${childPrefix}${cp}$(chat-sparkle) ${label}${descStr}`);
             if (child.toolCalls.length > 0) {
               const toolPrefix = childPrefix + (childIsLast ? "    " : "│   ");
               for (let k = 0; k < child.toolCalls.length; k++) {
@@ -468,4 +464,123 @@ function fmtTokens(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
   return count.toString();
+}
+
+// ── Shared Label Helpers ─────────────────────────────────────────────
+
+/**
+ * Maximum number of meaningful characters to show in a preview label.
+ * The preview is prefixed with "⋯ " and suffixed with "…" when truncated.
+ */
+export const PREVIEW_MAX_CHARS = 15;
+
+/**
+ * Generate a preview label from response text.
+ *
+ * Extracts the first meaningful characters, skipping leading whitespace
+ * and common markdown artifacts. Returns `undefined` if no meaningful
+ * content can be extracted.
+ *
+ * @example
+ * ```
+ * generatePreview("I've refactored the auth middleware to use JWT tokens")
+ * // → "I've refactored…"
+ *
+ * generatePreview("  \n\n")
+ * // → undefined
+ * ```
+ */
+export function generatePreview(
+  responseText: string | undefined,
+  maxChars = PREVIEW_MAX_CHARS,
+): string | undefined {
+  if (!responseText) {
+    return undefined;
+  }
+
+  // Strip leading whitespace and common markdown noise
+  const cleaned = responseText
+    .replace(/^[\s\n\r]+/, "")
+    .replace(/^#+\s*/, "") // leading headings
+    .replace(/^\*{1,3}/, "") // leading bold/italic markers
+    .trim();
+
+  if (cleaned.length === 0) {
+    return undefined;
+  }
+
+  if (cleaned.length <= maxChars) {
+    return cleaned;
+  }
+
+  // Truncate at a word boundary if possible
+  const truncated = cleaned.slice(0, maxChars);
+  const lastSpace = truncated.lastIndexOf(" ");
+  const breakPoint = lastSpace > maxChars * 0.4 ? lastSpace : maxChars;
+
+  return cleaned.slice(0, breakPoint) + "…";
+}
+
+/**
+ * Build the label for an AI response entry.
+ *
+ * Priority: interrupted → characterized → preview-based → bare "⋯"
+ * "Response #N" is never used.
+ */
+export function aiResponseLabel(entry: AIResponseEntry): string {
+  if (entry.state === "interrupted") {
+    return `#${entry.sequenceNumber.toString()} (interrupted)`;
+  }
+
+  if (entry.characterization) {
+    return entry.characterization;
+  }
+
+  // For pending or uncharacterized: use preview from stored response text
+  const preview = generatePreview(entry.responseText);
+  if (preview) {
+    return `⋯ ${preview}`;
+  }
+
+  // Absolute fallback — no text available at all
+  return "⋯";
+}
+
+/**
+ * Build the description parts for an AI response entry.
+ *
+ * When characterized: ["#N", ...tools, "+Xk"]
+ * When pending:       ["labeling", ...tools, "+Xk"]
+ * When failed:        ["labeling failed", ...tools, "+Xk"]
+ */
+export function aiResponseDescriptionParts(
+  entry: AIResponseEntry,
+  tools: string[],
+): string[] {
+  const parts: string[] = [];
+
+  // Status prefix based on state
+  if (entry.characterization) {
+    parts.push(`#${entry.sequenceNumber.toString()}`);
+  } else if (entry.state === "pending-characterization") {
+    parts.push("labeling");
+  } else if (entry.state === "uncharacterized") {
+    parts.push("labeling failed");
+  }
+
+  // Show tools used (abbreviated if many)
+  if (tools.length > 0) {
+    const maxTools = 3;
+    const toolsDisplay =
+      tools.length <= maxTools
+        ? tools.join(", ")
+        : `${tools.slice(0, maxTools).join(", ")}+${(tools.length - maxTools).toString()}`;
+    parts.push(toolsDisplay);
+  }
+
+  if (entry.tokenContribution > 0) {
+    parts.push(`+${fmtTokens(entry.tokenContribution)}`);
+  }
+
+  return parts;
 }

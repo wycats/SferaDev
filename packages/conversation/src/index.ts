@@ -19,9 +19,13 @@ export type {
 } from "./types.ts";
 
 export {
+  aiResponseDescriptionParts,
+  aiResponseLabel,
   buildTree,
+  generatePreview,
   groupByUserMessage,
   isActualUserMessage,
+  PREVIEW_MAX_CHARS,
   renderTree,
   windowActivityLog,
   WINDOW_SIZE,

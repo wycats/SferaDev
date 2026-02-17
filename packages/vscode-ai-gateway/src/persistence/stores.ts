@@ -123,6 +123,12 @@ export type PersistedActivityLogEntry =
       characterization?: string;
       tokenContribution: number;
       subagentIds: string[];
+      /** Full response text for preview generation (added v10). */
+      responseText?: string;
+      /** Tool names called during this response (added v10). */
+      toolsUsed?: string[];
+      /** Full tool call details for tree rendering (added v10). */
+      toolCalls?: { callId: string; name: string; args: Record<string, unknown>; result?: string }[];
     }
   | {
       type: "turn";
@@ -290,6 +296,17 @@ const migrateConversationTree = (
             record["state"] = "interrupted";
           }
 
+          // Fix stale pending-characterization on restore.
+          // If the extension reloaded before characterization completed,
+          // the entry is stuck in pending forever. Mark as uncharacterized
+          // so the tree shows "labeling failed" instead of spinning forever.
+          if (
+            typedEntry.type === "ai-response" &&
+            record["state"] === "pending-characterization"
+          ) {
+            record["state"] = "uncharacterized";
+          }
+
           // Ensure ai-response has required fields
           if (typedEntry.type === "ai-response") {
             if (!("tokenContribution" in record)) {
@@ -361,7 +378,7 @@ const migrateConversationTree = (
 
 export const CONVERSATION_TREE_STORE: StoreConfig<PersistedConversationMap> = {
   key: "vercel.ai.conversationTree",
-  version: 9, // v9: moved from globalState to workspaceState
+  version: 10, // v10: persist responseText/toolsUsed/toolCalls, fix pending-characterization on restore
   scope: "workspace",
   defaultValue: { conversations: {} },
   maxEntries: 50,

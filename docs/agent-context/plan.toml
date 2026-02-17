@@ -2336,6 +2336,40 @@ status = "completed"
 completion_log = "All 8 tasks complete. Fixed broken timeout (CancellationTokenSource), added retry with backoff (3 attempts), structured CharacterizationResult type, preview-based interim labels (⋯ prefix), eliminated Response #N, stored all response data (text, usage, finishReason, responseId), labeling/failed description states, documented type-aware preview follow-up. 773 tests pass, tsc clean."
 ulid = "01KHPAFE7076YF065X1HP9SETZ"
 
+[[epochs.phases.goals]]
+id = "shared-perception"
+label = "Shared perception rendering: CLI and extension speak the same label language"
+status = "completed"
+completion_log = "CLI and extension now use identical label/description rendering via shared helpers in @vercel/conversation"
+ulid = "01KHPNBM6V5WAR03KA0RKB9P2K"
+
+[[epochs.phases.goals]]
+id = "characterizer-context"
+label = "Context-aware characterization: every response gets a useful label"
+status = "completed"
+completion_log = "Characterizer never refuses. Short text = direct quote, long text = LLM summary with conversation context (user message + tool calls with args), empty = honest label."
+ulid = "01KHPNBSQH0RZYP2PP5W8C3B47"
+
+[[epochs.phases.goals]]
+id = "persistence-race"
+label = "Fix persistence race: characterization and response data lost on reload"
+status = "completed"
+completion_log = "Three-part fix: (1) Schema widened with responseText/toolsUsed/toolCalls, version bumped to 10. (2) persistConversations() called after characterization success/failure. (3) Migration converts stale pending-characterization → uncharacterized. 776 tests pass, tsc clean."
+ulid = "01KHPR8NNDAFEZVF8KT1VB63YT"
+
+[[epochs.phases.goals]]
+id = "tool-node-redesign"
+label = "Redesign tool node rendering: flatten nesting, tool-specific icons on AI response"
+status = "completed"
+completion_log = "Flattened tool nesting (ToolCallItem is leaf), tool-specific icons on AIResponseItem, result summary in description, click-to-inspect wired."
+ulid = "01KHPR8TXPYD8F3853458MH510"
+
+[[epochs.phases.goals]]
+id = "tree-truncation"
+label = "Investigate tree truncation on subagent transitions"
+status = "pending"
+ulid = "01KHPR901QE4ZKMF8CJP9S3T1N"
+
 [[epochs]]
 id = "01khetjx8p8yawtehsa3c264ck"
 title = "Proposed API Alignment"

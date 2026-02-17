@@ -853,6 +853,10 @@ export class ConversationManager implements vscode.Disposable {
       response.characterization = characterization;
       response.state = "characterized";
       this._onDidChangeConversations.fire(undefined);
+      // Persist after characterization completes — the initial persist
+      // during rebuild() may have captured pending-characterization state
+      // before setResponseData/characterization ran.
+      this.persistConversations();
       return;
     }
 
@@ -864,6 +868,7 @@ export class ConversationManager implements vscode.Disposable {
     if (legacyTurn) {
       legacyTurn.characterization = characterization;
       this._onDidChangeConversations.fire(undefined);
+      this.persistConversations();
     }
   }
 
@@ -927,6 +932,9 @@ export class ConversationManager implements vscode.Disposable {
       response.state = "uncharacterized";
       response.characterizationError = error;
       this._onDidChangeConversations.fire(undefined);
+      // Persist the failure state so reload doesn't show stale
+      // pending-characterization entries.
+      this.persistConversations();
     }
   }
 

@@ -83,8 +83,6 @@ import {
   CompactionTreeItem,
   ErrorTreeItem,
   ToolCallItem,
-  ToolCallRequestItem,
-  ToolCallResponseItem,
 } from "./conversation/index";
 import type { AgentEntry, AgentRegistry } from "./agent/index.js";
 
@@ -356,7 +354,7 @@ describe("ConversationTreeDataProvider", () => {
       const item = new ToolCallItem("call-id-123", "read_file", {
         filePath: "/src/foo.ts",
         lines: [1, 10],
-      });
+      }, "conv-1", 1);
 
       expect(item.label).toContain("read_file");
       expect(item.label).toContain("/src/foo.ts");
@@ -365,7 +363,7 @@ describe("ConversationTreeDataProvider", () => {
     it("shows tool-specific icon (search for grep_search)", () => {
       const item = new ToolCallItem("call-id-123", "grep_search", {
         query: "test",
-      });
+      }, "conv-1", 1);
 
       expect(item.iconPath).toBeDefined();
       if (
@@ -380,7 +378,7 @@ describe("ConversationTreeDataProvider", () => {
     it("shows go-to-file icon for read_file", () => {
       const item = new ToolCallItem("call-id-123", "read_file", {
         filePath: "/src/foo.ts",
-      });
+      }, "conv-1", 1);
 
       expect(item.iconPath).toBeDefined();
       if (
@@ -397,7 +395,7 @@ describe("ConversationTreeDataProvider", () => {
     it("falls back to wrench icon for unknown tools", () => {
       const item = new ToolCallItem("call-id-123", "custom_tool", {
         x: "y",
-      });
+      }, "conv-1", 1);
 
       expect(item.iconPath).toBeDefined();
       if (
@@ -409,32 +407,45 @@ describe("ConversationTreeDataProvider", () => {
       }
     });
 
-    it("is non-collapsible (leaf node) when no result", () => {
+    it("is always a leaf node (non-collapsible)", () => {
       const item = new ToolCallItem("call-id-123", "read_file", {
         filePath: "/src/foo.ts",
-      });
+      }, "conv-1", 1);
 
       expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
     });
 
-    it("is collapsible when result is available", () => {
+    it("is still a leaf node even when result is available", () => {
       const item = new ToolCallItem(
         "call-id-123",
         "read_file",
         { filePath: "/src/foo.ts" },
+        "conv-1",
+        1,
         "line 1\nline 2\nline 3\n",
       );
 
-      expect(item.collapsibleState).toBe(
-        vscode.TreeItemCollapsibleState.Collapsed,
-      );
+      expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
       expect(item.result).toBe("line 1\nline 2\nline 3\n");
     });
 
-    it("displays callId prefix in description", () => {
+    it("shows result summary in description when result is available", () => {
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        { filePath: "/src/foo.ts" },
+        "conv-1",
+        1,
+        "line 1\nline 2\nline 3\n",
+      );
+
+      expect(item.description).toBe("3 lines");
+    });
+
+    it("displays callId prefix in description when no result", () => {
       const item = new ToolCallItem("call-id-abcdef123456", "read_file", {
         filePath: "/src/foo.ts",
-      });
+      }, "conv-1", 1);
 
       expect(item.description).toContain("#call-id");
     });
@@ -444,7 +455,7 @@ describe("ConversationTreeDataProvider", () => {
         "/very/long/path/that/exceeds/truncation/limit/at/30/chars";
       const item = new ToolCallItem("call-id-123", "read_file", {
         filePath: longPath,
-      });
+      }, "conv-1", 1);
 
       expect(item.label).toBeDefined();
       // Should not show the entire long path, just a preview
@@ -452,89 +463,18 @@ describe("ConversationTreeDataProvider", () => {
     });
 
     it("handles empty args gracefully", () => {
-      const item = new ToolCallItem("call-id-123", "some_tool", {});
+      const item = new ToolCallItem("call-id-123", "some_tool", {}, "conv-1", 1);
 
       expect(item.label).toBe("some_tool");
     });
-  });
 
-  describe("ToolCallRequestItem", () => {
-    it("shows args summary as label", () => {
-      const item = new ToolCallRequestItem("read_file", {
+    it("has inspector command for click-to-inspect", () => {
+      const item = new ToolCallItem("call-id-123", "read_file", {
         filePath: "/src/foo.ts",
-        startLine: 1,
-        endLine: 10,
-      });
+      }, "conv-1", 5);
 
-      expect(item.label).toContain("/src/foo.ts");
-    });
-
-    it("shows (no arguments) for empty args", () => {
-      const item = new ToolCallRequestItem("some_tool", {});
-
-      expect(item.label).toBe("(no arguments)");
-    });
-
-    it("uses arrow-right icon", () => {
-      const item = new ToolCallRequestItem("read_file", {
-        filePath: "/src/foo.ts",
-      });
-
-      if (
-        item.iconPath &&
-        typeof item.iconPath === "object" &&
-        "id" in item.iconPath
-      ) {
-        expect((item.iconPath as unknown as { id: string }).id).toBe(
-          "arrow-right",
-        );
-      }
-    });
-
-    it("is non-collapsible", () => {
-      const item = new ToolCallRequestItem("read_file", {
-        filePath: "/src/foo.ts",
-      });
-
-      expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
-    });
-  });
-
-  describe("ToolCallResponseItem", () => {
-    it("shows result summary as label", () => {
-      const item = new ToolCallResponseItem(
-        "read_file",
-        "line 1\nline 2\nline 3\n",
-      );
-
-      expect(item.label).toBe("3 lines");
-    });
-
-    it("uses arrow-left icon", () => {
-      const item = new ToolCallResponseItem("read_file", "content");
-
-      if (
-        item.iconPath &&
-        typeof item.iconPath === "object" &&
-        "id" in item.iconPath
-      ) {
-        expect((item.iconPath as unknown as { id: string }).id).toBe(
-          "arrow-left",
-        );
-      }
-    });
-
-    it("is non-collapsible", () => {
-      const item = new ToolCallResponseItem("read_file", "content");
-
-      expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
-    });
-
-    it("stores full result content", () => {
-      const result = "full content here";
-      const item = new ToolCallResponseItem("read_file", result);
-
-      expect(item.result).toBe(result);
+      expect(item.command).toBeDefined();
+      expect(item.command?.command).toBe("vercel.ai.inspectNode");
     });
   });
 });

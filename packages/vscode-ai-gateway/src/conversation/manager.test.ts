@@ -28,6 +28,12 @@ vi.mock("vscode", () => ({
 import * as vscode from "vscode";
 import { ConversationManager } from "./manager";
 import type { AgentEntry, AgentRegistry } from "../agent/index.js";
+import type {
+  PersistenceManager,
+  PersistentStore,
+  StoreConfig,
+} from "../persistence/types.js";
+import type { PersistedConversationMap } from "../persistence/stores.js";
 
 class MockRegistry {
   private emitter = new vscode.EventEmitter<{
@@ -787,6 +793,139 @@ describe("ConversationManager", () => {
     expect(userMessage).toMatchObject({
       type: "user-message",
       preview: "First preview",
+    });
+  });
+
+  describe("persistence after characterization", () => {
+    class MockStore implements PersistentStore<PersistedConversationMap> {
+      data: PersistedConversationMap = { conversations: {} };
+      setCalls: PersistedConversationMap[] = [];
+
+      get(): PersistedConversationMap {
+        return this.data;
+      }
+      async set(value: PersistedConversationMap): Promise<void> {
+        this.setCalls.push(structuredClone(value));
+        this.data = value;
+      }
+      async update(
+        fn: (current: PersistedConversationMap) => PersistedConversationMap,
+      ): Promise<void> {
+        this.data = fn(this.data);
+      }
+      async clear(): Promise<void> {
+        this.data = { conversations: {} };
+      }
+      hasData(): boolean {
+        return Object.keys(this.data.conversations).length > 0;
+      }
+    }
+
+    function createMockPersistenceManager(
+      store: MockStore,
+    ): PersistenceManager {
+      return {
+        getStore: <T>(_config: StoreConfig<T>) =>
+          store as unknown as PersistentStore<T>,
+        clearAll: async () => {
+          await store.clear();
+        },
+      };
+    }
+
+    it("persists after updateTurnCharacterization", () => {
+      const agent = createAgent({ turnCount: 1 });
+      registry.setAgents([agent]);
+      const manager = new ConversationManager(
+        registry as unknown as AgentRegistry,
+      );
+
+      const store = new MockStore();
+      manager.initializePersistence(createMockPersistenceManager(store));
+
+      // Clear the set calls from initializePersistence → rebuild
+      store.setCalls = [];
+
+      const conversationId = firstConversation(manager).id;
+      manager.updateTurnCharacterization(
+        conversationId,
+        1,
+        "Fixed login bug",
+      );
+
+      // Should have persisted once after characterization
+      expect(store.setCalls).toHaveLength(1);
+      const persisted = store.setCalls[0]!;
+      const conv = Object.values(persisted.conversations)[0]!;
+      const response = conv.activityLog.find(
+        (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+      );
+      expect(response).toMatchObject({
+        state: "characterized",
+        characterization: "Fixed login bug",
+      });
+    });
+
+    it("persists after markCharacterizationFailed", () => {
+      const agent = createAgent({ turnCount: 1 });
+      registry.setAgents([agent]);
+      const manager = new ConversationManager(
+        registry as unknown as AgentRegistry,
+      );
+
+      const store = new MockStore();
+      manager.initializePersistence(createMockPersistenceManager(store));
+      store.setCalls = [];
+
+      const conversationId = firstConversation(manager).id;
+      manager.markCharacterizationFailed(
+        conversationId,
+        1,
+        "Model unavailable",
+      );
+
+      expect(store.setCalls).toHaveLength(1);
+      const persisted = store.setCalls[0]!;
+      const conv = Object.values(persisted.conversations)[0]!;
+      const response = conv.activityLog.find(
+        (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+      );
+      expect(response).toMatchObject({
+        state: "uncharacterized",
+      });
+    });
+
+    it("persists responseText set before characterization", () => {
+      const agent = createAgent({ turnCount: 1 });
+      registry.setAgents([agent]);
+      const manager = new ConversationManager(
+        registry as unknown as AgentRegistry,
+      );
+
+      const store = new MockStore();
+      manager.initializePersistence(createMockPersistenceManager(store));
+      store.setCalls = [];
+
+      const conversationId = firstConversation(manager).id;
+      // Simulate the real flow: setResponseData then characterize
+      manager.setResponseData(conversationId, 1, "I fixed the bug by...");
+      manager.updateTurnCharacterization(
+        conversationId,
+        1,
+        "Fixed login bug",
+      );
+
+      expect(store.setCalls).toHaveLength(1);
+      const persisted = store.setCalls[0]!;
+      const conv = Object.values(persisted.conversations)[0]!;
+      const response = conv.activityLog.find(
+        (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+      );
+      expect(response).toMatchObject({
+        state: "characterized",
+        characterization: "Fixed login bug",
+        responseText: "I fixed the bug by...",
+      });
     });
   });
 });

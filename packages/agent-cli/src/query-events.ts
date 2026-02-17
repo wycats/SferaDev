@@ -949,6 +949,8 @@ function cmdConversation(
 // ─────────────────────────────────────────────────────────────────────────────
 
 import {
+  aiResponseDescriptionParts,
+  aiResponseLabel,
   buildTree,
   type TreeNode,
   type TreeChild,
@@ -1086,18 +1088,12 @@ function renderNodeLine(
 function renderChildLine(child: TreeChild): string {
   switch (child.kind) {
     case "ai-response": {
-      const label =
-        child.entry.characterization ??
-        `Response #${child.entry.sequenceNumber}`;
-      const toolStr =
-        child.tools.length > 0 ? `  ${child.tools.join(", ")}` : "";
-      const tokenStr =
-        child.entry.tokenContribution > 0
-          ? `  +${fmtTokensCli(child.entry.tokenContribution)}`
-          : "";
+      const label = aiResponseLabel(child.entry);
+      const descParts = aiResponseDescriptionParts(child.entry, child.tools);
       const streaming =
         child.entry.state === "streaming" ? " (streaming...)" : "";
-      return `${label}  #${child.entry.sequenceNumber}${toolStr}${tokenStr}${streaming}`;
+      const descStr = descParts.length > 0 ? `  ${descParts.join(" · ")}` : "";
+      return `${label}${descStr}${streaming}`;
     }
     case "error":
       return `✗ ${truncate(child.entry.message, 60)}`;

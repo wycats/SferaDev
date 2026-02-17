@@ -6,15 +6,17 @@
  */
 
 import * as vscode from "vscode";
-import type {
-  ActivityLogEntry,
-  AIResponseEntry,
-  CompactionEntry,
-  Conversation,
-  ErrorEntry,
-  Subagent,
-  ToolCallChild,
-  UserMessageEntry,
+import {
+  generatePreview,
+  PREVIEW_MAX_CHARS,
+  type ActivityLogEntry,
+  type AIResponseEntry,
+  type CompactionEntry,
+  type Conversation,
+  type ErrorEntry,
+  type Subagent,
+  type ToolCallChild,
+  type UserMessageEntry,
 } from "@vercel/conversation";
 import type { TurnEntry } from "./types.js";
 import { formatTokens } from "../tokens/display.js";
@@ -218,137 +220,61 @@ export class ToolCallItem extends vscode.TreeItem {
   readonly name: string;
   readonly args: Record<string, unknown>;
   readonly result: string | undefined;
+  readonly conversationId: string;
+  readonly sequenceNumber: number;
 
   constructor(
     callId: string,
     name: string,
     args: Record<string, unknown>,
+    conversationId: string,
+    sequenceNumber: number,
     result?: string,
   ) {
     const argSummary = summarizeToolArgs(name, args);
     const label = argSummary ? `${name} ${argSummary}` : name;
 
-    // Collapsible when we have a result (request + response children)
-    // Leaf node while streaming or when no result captured
-    const collapsibleState =
-      result !== undefined
-        ? vscode.TreeItemCollapsibleState.Collapsed
-        : vscode.TreeItemCollapsibleState.None;
-
-    super(label, collapsibleState);
+    // Always a leaf node — click to see full details in inspector
+    super(label, vscode.TreeItemCollapsibleState.None);
 
     this.callId = callId;
     this.name = name;
     this.args = args;
     this.result = result;
+    this.conversationId = conversationId;
+    this.sequenceNumber = sequenceNumber;
     this.contextValue = "tool-call";
-    this.description = `#${callId.slice(0, 8)}`;
+
+    // Description: result summary if available, otherwise call ID
+    this.description = result !== undefined
+      ? summarizeToolResult(name, result)
+      : `#${callId.slice(0, 8)}`;
 
     this.iconPath = new vscode.ThemeIcon(
       toolIcon(name),
       new vscode.ThemeColor("descriptionForeground"),
     );
+
+    // Click to inspect full tool call details
+    this.command = {
+      command: "vercel.ai.inspectNode",
+      title: "Inspect Tool Call",
+      arguments: [
+        inspectorUri(conversationId, "tool-call", sequenceNumber, callId),
+      ],
+    };
   }
 }
 
-/**
- * Tree item for the request side of a tool call (what was asked).
- *
- * Shows the tool arguments in a concise format.
- * Icon: $(arrow-right) — outgoing request.
- */
-export class ToolCallRequestItem extends vscode.TreeItem {
-  constructor(name: string, args: Record<string, unknown>) {
-    const argSummary = summarizeToolArgs(name, args);
-    const label = argSummary || "(no arguments)";
-
-    super(label, vscode.TreeItemCollapsibleState.None);
-
-    this.contextValue = "tool-call-request";
-    this.iconPath = new vscode.ThemeIcon(
-      "arrow-right",
-      new vscode.ThemeColor("descriptionForeground"),
-    );
-  }
-}
-
-/**
- * Tree item for the response side of a tool call (what came back).
- *
- * Shows a summary of the tool result content.
- * Icon: $(arrow-left) — incoming response.
- */
-export class ToolCallResponseItem extends vscode.TreeItem {
-  readonly result: string;
-
-  constructor(name: string, result: string) {
-    const label = summarizeToolResult(name, result);
-
-    super(label, vscode.TreeItemCollapsibleState.None);
-
-    this.result = result;
-    this.contextValue = "tool-call-response";
-    this.iconPath = new vscode.ThemeIcon(
-      "arrow-left",
-      new vscode.ThemeColor("descriptionForeground"),
-    );
-  }
-}
+// ToolCallRequestItem and ToolCallResponseItem removed in tool node redesign.
+// Tool calls are now leaf nodes with result summary in description.
+// Click to inspect full details in the inspector panel.
 
 // ── AIResponseItem ───────────────────────────────────────────────────
 
-/**
- * Maximum number of meaningful characters to show in a preview label.
- * The preview is prefixed with "⋯ " and suffixed with "…" when truncated.
- */
-const PREVIEW_MAX_CHARS = 15;
-
-/**
- * Generate a preview label from response text.
- *
- * Extracts the first meaningful characters, skipping leading whitespace
- * and common markdown artifacts. Returns `undefined` if no meaningful
- * content can be extracted.
- *
- * @example
- * ```
- * generatePreview("I've refactored the auth middleware to use JWT tokens")
- * // → "I've refactored…"
- *
- * generatePreview("  \n\n")
- * // → undefined
- * ```
- */
-export function generatePreview(
-  responseText: string | undefined,
-  maxChars = PREVIEW_MAX_CHARS,
-): string | undefined {
-  if (!responseText) {
-    return undefined;
-  }
-
-  // Strip leading whitespace and common markdown noise
-  const cleaned = responseText
-    .replace(/^[\s\n\r]+/, "")
-    .replace(/^#+\s*/, "") // leading headings
-    .replace(/^\*{1,3}/, "") // leading bold/italic markers
-    .trim();
-
-  if (cleaned.length === 0) {
-    return undefined;
-  }
-
-  if (cleaned.length <= maxChars) {
-    return cleaned;
-  }
-
-  // Truncate at a word boundary if possible
-  const truncated = cleaned.slice(0, maxChars);
-  const lastSpace = truncated.lastIndexOf(" ");
-  const breakPoint = lastSpace > maxChars * 0.4 ? lastSpace : maxChars;
-
-  return cleaned.slice(0, breakPoint) + "…";
-}
+// generatePreview and PREVIEW_MAX_CHARS are imported from @vercel/conversation
+// and re-exported for backward compatibility with existing test imports.
+export { generatePreview, PREVIEW_MAX_CHARS };
 
 /**
  * Tree item for an AI response in the activity log.
@@ -447,10 +373,7 @@ export class AIResponseItem extends vscode.TreeItem {
       parts.push(`#${entry.sequenceNumber.toString()}`);
     } else if (entry.state === "pending-characterization") {
       parts.push("labeling");
-    } else if (
-      entry.state === "uncharacterized" &&
-      entry.characterizationError
-    ) {
+    } else if (entry.state === "uncharacterized") {
       parts.push("labeling failed");
     }
 
@@ -492,6 +415,11 @@ export class AIResponseItem extends vscode.TreeItem {
         "warning",
         new vscode.ThemeColor("problemsWarningIcon.foreground"),
       );
+    }
+
+    // Use primary tool icon when tools were called — reflects what happened
+    if (entry.toolsUsed && entry.toolsUsed.length > 0 && entry.toolsUsed[0]) {
+      return new vscode.ThemeIcon(toolIcon(entry.toolsUsed[0]));
     }
 
     return new vscode.ThemeIcon("chat-sparkle");

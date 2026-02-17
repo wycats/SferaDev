@@ -206,6 +206,143 @@ title = "Document type-aware preview interface as follow-up RFC/idea"
 status = "completed"
 completed_at = "2026-02-17T17:44:10.759267177+00:00"
 completion_log = "Created docs/ideas/type-aware-preview-interface.md with PreviewStrategy interface design, strategy selection table, ToolPreview details, and integration notes."
+
+[[plan.goals]]
+id = "shared-perception"
+
+[[plan.goals.tasks]]
+id = "move-generatepreview-airesponselabel-airesponsedescriptionparts-to-vercel-conversation"
+title = "Move generatePreview, aiResponseLabel, aiResponseDescriptionParts to @vercel/conversation"
+status = "completed"
+completed_at = "2026-02-17T20:41:58.297384338+00:00"
+completion_log = "Moved generatePreview, PREVIEW_MAX_CHARS, aiResponseLabel, aiResponseDescriptionParts to build-tree.ts in @vercel/conversation"
+
+[[plan.goals.tasks]]
+id = "update-cli-renderchildline-and-rendertree-to-use-shared-helpers"
+title = "Update CLI renderChildLine and renderTree to use shared helpers"
+status = "completed"
+completed_at = "2026-02-17T20:42:06.686361565+00:00"
+completion_log = "CLI renderChildLine and shared renderTree now use aiResponseLabel + aiResponseDescriptionParts"
+
+[[plan.goals.tasks]]
+id = "treat-all-uncharacterized-entries-as-labeling-failed-drop-characterizationerror-guard"
+title = "Treat all uncharacterized entries as labeling failed (drop characterizationError guard)"
+status = "completed"
+completed_at = "2026-02-17T20:42:14.530558288+00:00"
+completion_log = "Dropped characterizationError guard in both shared aiResponseDescriptionParts and extension formatDescription"
+
+[[plan.goals.tasks]]
+id = "re-export-generatepreview-from-extension-tree-items-ts-for-backward-compat"
+title = "Re-export generatePreview from extension tree-items.ts for backward compat"
+status = "completed"
+completed_at = "2026-02-17T20:42:23.757409610+00:00"
+completion_log = "tree-items.ts imports from @vercel/conversation and re-exports for test compat"
+
+[[plan.goals]]
+id = "characterizer-context"
+
+[[plan.goals.tasks]]
+id = "direct-quotes-for-short-responses-30-chars-no-llm-needed"
+title = "Direct quotes for short responses (≤30 chars) — no LLM needed"
+status = "completed"
+completed_at = "2026-02-17T20:43:37.576130735+00:00"
+completion_log = "Short text ≤30 chars returned directly as characterization, no LLM call"
+
+[[plan.goals.tasks]]
+id = "pass-conversation-context-user-message-tool-calls-with-args-to-characterizer"
+title = "Pass conversation context (user message, tool calls with args) to characterizer"
+status = "completed"
+completed_at = "2026-02-17T20:43:47.411918877+00:00"
+completion_log = "CharacterizationContext interface with responseText, toolNames, toolCalls, userMessage. Provider passes all fields."
+
+[[plan.goals.tasks]]
+id = "characterizer-never-refuses-empty-response-gets-honest-empty-response-label"
+title = "Characterizer never refuses — empty response gets honest (empty response) label"
+status = "completed"
+completed_at = "2026-02-17T20:43:54.203456351+00:00"
+completion_log = "Empty responses get (empty response) characterization. No more 'too short to characterize' refusal."
+
+[[plan.goals.tasks]]
+id = "intent-aware-prompt-user-message-provides-why-tool-args-provide-how"
+title = "Intent-aware prompt: user message provides why, tool args provide how"
+status = "completed"
+completed_at = "2026-02-17T20:44:01.125008752+00:00"
+completion_log = "Prompt includes user message (intent), response text (outcome), and tool calls with args (specifics)"
+
+[[plan.goals.tasks]]
+id = "compile-test-and-verify-end-to-end"
+title = "Compile, test, and verify end-to-end"
+status = "completed"
+completed_at = "2026-02-17T20:52:51.729324335+00:00"
+completion_log = "tsc clean, 773 extension tests + 21 conversation tests all pass"
+
+[[plan.goals]]
+id = "persistence-race"
+
+[[plan.goals.tasks]]
+id = "persist-schema-add-fields"
+title = "Add responseText, toolsUsed, toolCalls to persisted ai-response schema"
+status = "completed"
+completed_at = "2026-02-17T22:38:23.255963735+00:00"
+completion_log = "Added responseText?, toolsUsed?, toolCalls? to PersistedActivityLogEntry ai-response variant. Bumped store version to 10. Added 4 migration tests in stores.test.ts."
+
+[[plan.goals.tasks]]
+id = "persist-after-characterization"
+title = "Call persistConversations after characterization completes or fails"
+status = "completed"
+completed_at = "2026-02-17T22:38:28.807694007+00:00"
+completion_log = "Added persistConversations() calls after updateTurnCharacterization() and markCharacterizationFailed() in manager.ts. Added 3 tests verifying persistence is triggered."
+
+[[plan.goals.tasks]]
+id = "persist-pending-to-interrupted"
+title = "Migrate pending-characterization entries to interrupted on restore (stale state)"
+status = "completed"
+completed_at = "2026-02-17T22:38:34.352367965+00:00"
+completion_log = "Migration converts pending-characterization → uncharacterized on restore. Stale entries from pre-reload characterization will show 'labeling failed' instead of spinning forever."
+
+[[plan.goals]]
+id = "tool-node-redesign"
+
+[[plan.goals.tasks]]
+id = "flatten-tool-nesting"
+title = "Remove ToolCallRequestItem/ResponseItem layer — inline request+response on ToolCallItem"
+status = "completed"
+completed_at = "2026-02-17T22:29:50.565073091+00:00"
+completion_log = "Removed ToolCallRequestItem and ToolCallResponseItem. ToolCallItem is now always a leaf node with result summary in description. Click-to-inspect wired via inspectorUri with callId. Updated tests. 788 tests pass, tsc clean."
+
+[[plan.goals.tasks]]
+id = "tool-icon-on-ai-response"
+title = "Use primary tool icon on AIResponseItem instead of generic chat-sparkle"
+status = "completed"
+completed_at = "2026-02-17T22:31:55.642026631+00:00"
+completion_log = "AIResponseItem.getIcon() now uses primary tool icon (via toolIcon()) when toolsUsed is present. Falls back to chat-sparkle for text-only responses. 2 new tests. 769 pass."
+
+[[plan.goals.tasks]]
+id = "tool-call-result-summary"
+title = "Show tool result summary as description on ToolCallItem (no child expansion needed)"
+status = "completed"
+completed_at = "2026-02-17T22:29:57.350885881+00:00"
+completion_log = "Result summary shown in ToolCallItem description via summarizeToolResult(). Falls back to callId prefix when no result."
+
+[[plan.goals.tasks]]
+id = "tool-click-inspector"
+title = "Wire ToolCallItem click to inspector with full request/response detail"
+status = "completed"
+completed_at = "2026-02-17T22:30:06.098631541+00:00"
+completion_log = "ToolCallItem.command wired to vercel.ai.inspectNode with inspectorUri(conversationId, tool-call, sequenceNumber, callId). inspectorUri extended with optional subIdentifier param."
+
+[[plan.goals]]
+id = "tree-truncation"
+
+[[plan.goals.tasks]]
+id = "truncation-log-audit"
+title = "Audit event logs for conversation-removed or fork events during subagent transitions"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "truncation-root-agent-filter"
+title = "Check if subagent completion causes parent to be misclassified as child in rebuild"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

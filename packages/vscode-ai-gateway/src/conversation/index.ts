@@ -20,8 +20,6 @@ export {
   SectionHeaderItem,
   SubagentItem,
   ToolCallItem,
-  ToolCallRequestItem,
-  ToolCallResponseItem,
   ToolContinuationItem,
   TurnItem,
   UserMessageItem,

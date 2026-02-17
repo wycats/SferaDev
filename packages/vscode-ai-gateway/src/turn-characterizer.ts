@@ -1,11 +1,19 @@
 import * as vscode from "vscode";
 import { logger } from "./logger";
+import { summarizeToolArgs } from "./conversation/tool-labels.js";
 
 /**
  * Maximum length of the assistant response text to send for characterization.
  * Longer texts are truncated to save tokens.
  */
 const MAX_TEXT_LENGTH = 500;
+
+/**
+ * Responses at or below this character count are short enough to serve as
+ * their own label — no LLM summarization needed. Presented as a direct quote.
+ * Must fit comfortably in the sidebar alongside metadata.
+ */
+const DIRECT_QUOTE_THRESHOLD = 30;
 
 /**
  * Timeout for a single characterization request (ms).
@@ -22,7 +30,7 @@ const RETRY_DELAYS_MS = [1_000, 3_000, 8_000];
  * System prompt for turn characterization.
  * Kept minimal to reduce token usage.
  */
-const CHARACTERIZATION_SYSTEM_PROMPT = `Summarize what happened in this assistant turn in 3-6 words. Output ONLY the summary, no quotes or punctuation. Examples: "Refactored auth middleware", "Fixed login form bug", "Added unit tests".`;
+const CHARACTERIZATION_SYSTEM_PROMPT = `Summarize what the assistant accomplished in this turn in 3-6 words. Focus on intent and outcome, not mechanics. Output ONLY the summary, no quotes or punctuation. Examples: "Refactored auth middleware", "Fixed login form bug", "Investigated test failures", "Read configuration files".`;
 
 /**
  * Result of a characterization attempt.
@@ -33,6 +41,22 @@ export interface CharacterizationResult {
   characterization?: string;
   /** Error message if characterization failed after all retries. */
   error?: string;
+}
+
+/**
+ * Context for characterizing a turn.
+ * The more context provided, the better the characterization — especially
+ * for tool-heavy responses where the response text alone is insufficient.
+ */
+export interface CharacterizationContext {
+  /** The assistant's response text. */
+  responseText: string;
+  /** Names of tools called during this turn. */
+  toolNames?: string[];
+  /** Tool calls with arguments (file paths, queries, etc. help infer intent). */
+  toolCalls?: { name: string; args: Record<string, unknown> }[];
+  /** The user's message that prompted this response (provides intent). */
+  userMessage?: string | undefined;
 }
 
 /**
@@ -63,33 +87,89 @@ export class TurnCharacterizer {
     null;
 
   /**
-   * Generate a characterization for a turn based on the assistant response text.
-   * Retries up to 3 times with backoff on failure.
+   * Generate a characterization for a turn.
    *
-   * @param responseText The assistant's response text for the turn
-   * @returns A structured result with either characterization or error
+   * Three paths:
+   * - Short text (≤ 30 chars): direct quote — the text *is* the label
+   * - Long text or tool-heavy: LLM summarization with full conversation context
+   * - Truly empty: honest "(empty response)" label
+   *
+   * Never refuses. Always returns a characterization or an error.
    */
-  async characterize(responseText: string): Promise<CharacterizationResult> {
-    // Skip empty or very short responses
-    if (!responseText || responseText.trim().length < 10) {
-      return { error: "Response too short to characterize" };
+  async characterize(
+    ctx: CharacterizationContext,
+  ): Promise<CharacterizationResult> {
+    const cleaned = cleanResponseText(ctx.responseText);
+    const hasTools = ctx.toolNames && ctx.toolNames.length > 0;
+
+    // Short text is its own characterization — no LLM needed.
+    // "Done.", "I'll fix that." fit in the sidebar and read naturally.
+    if (cleaned && cleaned.length <= DIRECT_QUOTE_THRESHOLD) {
+      return { characterization: cleaned };
     }
 
+    // Anything else: use the LLM with as much context as we have.
+    // Long text, tool-heavy responses, or tools-only — the LLM can
+    // characterize intent when given conversation context.
+    if (cleaned || hasTools) {
+      return this.summarizeWithModel(ctx);
+    }
+
+    // Truly empty response — present it honestly
+    return { characterization: "(empty response)" };
+  }
+
+  /**
+   * Use an LLM to generate a summary label with full conversation context.
+   * The more context we provide, the better the characterization —
+   * especially for tool-heavy responses where intent matters most.
+   */
+  private async summarizeWithModel(
+    ctx: CharacterizationContext,
+  ): Promise<CharacterizationResult> {
     const model = await this.getModel();
     if (!model) {
       return { error: "No Copilot model available" };
     }
 
-    // Truncate long texts to save tokens
-    const truncated =
-      responseText.length > MAX_TEXT_LENGTH
-        ? responseText.slice(0, MAX_TEXT_LENGTH) + "..."
-        : responseText;
+    const promptParts: string[] = [CHARACTERIZATION_SYSTEM_PROMPT, ""];
+
+    // User message provides intent — "why" the assistant acted
+    if (ctx.userMessage) {
+      const userTruncated =
+        ctx.userMessage.length > 200
+          ? ctx.userMessage.slice(0, 200) + "..."
+          : ctx.userMessage;
+      promptParts.push(`User asked: ${userTruncated}`);
+    }
+
+    // Response text provides outcome — "what" the assistant said
+    const cleaned = cleanResponseText(ctx.responseText);
+    if (cleaned) {
+      const truncated =
+        cleaned.length > MAX_TEXT_LENGTH
+          ? cleaned.slice(0, MAX_TEXT_LENGTH) + "..."
+          : cleaned;
+      promptParts.push(`Assistant response:\n${truncated}`);
+    }
+
+    // Tool calls with args provide specifics — "how" it acted
+    if (ctx.toolCalls && ctx.toolCalls.length > 0) {
+      const toolSummaries = ctx.toolCalls.slice(0, 5).map((tc) => {
+        const argPreview = summarizeToolArgs(tc.name, tc.args);
+        return argPreview ? `${tc.name}(${argPreview})` : tc.name;
+      });
+      const extra =
+        ctx.toolCalls.length > 5
+          ? ` +${(ctx.toolCalls.length - 5).toString()} more`
+          : "";
+      promptParts.push(`Tools called: ${toolSummaries.join(", ")}${extra}`);
+    } else if (ctx.toolNames && ctx.toolNames.length > 0) {
+      promptParts.push(`Tools called: ${ctx.toolNames.join(", ")}`);
+    }
 
     const messages: vscode.LanguageModelChatMessage[] = [
-      vscode.LanguageModelChatMessage.User(
-        `${CHARACTERIZATION_SYSTEM_PROMPT}\n\nAssistant response:\n${truncated}`,
-      ),
+      vscode.LanguageModelChatMessage.User(promptParts.join("\n")),
     ];
 
     // Attempt with retries
@@ -121,8 +201,7 @@ export class TurnCharacterizer {
           lastError = "No response from model";
         }
       } catch (error) {
-        lastError =
-          error instanceof Error ? error.message : String(error);
+        lastError = error instanceof Error ? error.message : String(error);
         logger.debug(
           `[TurnCharacterizer] Attempt ${(attempt + 1).toString()} failed: ${lastError}`,
         );
@@ -262,6 +341,22 @@ export class TurnCharacterizer {
 /** Simple sleep helper for retry backoff. */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Strip markdown noise and whitespace from response text.
+ * Returns the cleaned string, or undefined if nothing meaningful remains.
+ */
+function cleanResponseText(text: string | undefined): string | undefined {
+  if (!text) return undefined;
+
+  const cleaned = text
+    .replace(/^[\s\n\r]+/, "")
+    .replace(/^#+\s*/, "")
+    .replace(/^\*{1,3}/, "")
+    .trim();
+
+  return cleaned.length > 0 ? cleaned : undefined;
 }
 
 /**

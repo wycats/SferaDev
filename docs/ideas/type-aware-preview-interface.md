@@ -26,16 +26,17 @@ interface PreviewStrategy {
 
 ### Strategy Selection
 
-| Response Shape                        | Strategy          | Example Preview              |
-| ------------------------------------- | ----------------- | ---------------------------- |
-| Text-heavy (>100 chars, 0 tools)      | `TextPreview`     | `⋯ I've refactored…`        |
-| Tool-heavy (≤100 chars, 1+ tools)     | `ToolPreview`     | `⋯ read_file → grep_search` |
-| Mixed (>100 chars, 1+ tools)          | `TextPreview`     | `⋯ Investigated the…`       |
-| Minimal text, no tools                | `FallbackPreview` | `⋯`                         |
+| Response Shape                    | Strategy          | Example Preview             |
+| --------------------------------- | ----------------- | --------------------------- |
+| Text-heavy (>100 chars, 0 tools)  | `TextPreview`     | `⋯ I've refactored…`        |
+| Tool-heavy (≤100 chars, 1+ tools) | `ToolPreview`     | `⋯ read_file → grep_search` |
+| Mixed (>100 chars, 1+ tools)      | `TextPreview`     | `⋯ Investigated the…`       |
+| Minimal text, no tools            | `FallbackPreview` | `⋯`                         |
 
 ### ToolPreview Details
 
 For tool-heavy responses, the preview could show the tool call sequence:
+
 - Single tool: `⋯ read_file(src/main.ts)`
 - Multiple tools: `⋯ read_file → grep_search → replace_string`
 - Many tools: `⋯ read_file → grep_search +3`

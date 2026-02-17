@@ -710,7 +710,12 @@ export class VercelAIChatModelProvider
 
       // Generate characterization label (with retry)
       const characterizer = getTurnCharacterizer();
-      const result = await characterizer.characterize(text);
+      const result = await characterizer.characterize({
+        responseText: text,
+        toolNames: toolsUsed,
+        toolCalls: toolCalls.map((tc) => ({ name: tc.name, args: tc.args })),
+        userMessage: userMessagePreview,
+      });
       if (result.characterization) {
         this.conversationManager.updateTurnCharacterization(
           conversationId,
@@ -726,11 +731,8 @@ export class VercelAIChatModelProvider
         );
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : String(error);
-      logger.debug(
-        `[Provider] Turn characterization failed: ${message}`,
-      );
+      const message = error instanceof Error ? error.message : String(error);
+      logger.debug(`[Provider] Turn characterization failed: ${message}`);
       // Ensure we don't leave the entry stuck in pending-characterization
       this.conversationManager?.markCharacterizationFailed(
         conversationId,

@@ -247,7 +247,7 @@ describe("AIResponseItem", () => {
 
     const item = new AIResponseItem(response, "conv-1", [], []);
     expect(item.label).toBe("⋯");
-    expect(item.description).toBe("+800");
+    expect(item.description).toBe("labeling failed · +800");
   });
 
   it("shows preview-based label when uncharacterized with response text", () => {
@@ -258,7 +258,8 @@ describe("AIResponseItem", () => {
       tokenContribution: 800,
       subagentIds: [],
       state: "uncharacterized",
-      responseText: "I've refactored the authentication middleware to use JWT tokens",
+      responseText:
+        "I've refactored the authentication middleware to use JWT tokens",
       characterizationError: "All attempts failed",
     };
 
@@ -314,9 +315,9 @@ describe("AIResponseItem", () => {
     expect(item.label).toBe("⋯ I investigated…");
     expect(item.description).toBe("labeling · read_file, grep_search · +500");
     // Dimmed icon
-    expect((item.iconPath as { id: string; color?: { id: string } }).color?.id).toBe(
-      "descriptionForeground",
-    );
+    expect(
+      (item.iconPath as { id: string; color?: { id: string } }).color?.id,
+    ).toBe("descriptionForeground");
   });
 
   it("is collapsible when it has subagents", () => {
@@ -342,6 +343,42 @@ describe("AIResponseItem", () => {
 
     const item = new AIResponseItem(response, "conv-1", subagents, []);
     expect(item.collapsibleState).toBe(1); // Collapsed
+  });
+
+  it("uses primary tool icon when tools were called", () => {
+    const response: AIResponseEntry = {
+      type: "ai-response",
+      sequenceNumber: 3,
+      timestamp: Date.now(),
+      tokenContribution: 500,
+      subagentIds: [],
+      state: "characterized",
+      characterization: "Read auth handler",
+      toolsUsed: ["read_file", "grep_search"],
+    };
+
+    const item = new AIResponseItem(response, "conv-1", [], []);
+    // Should use the primary tool's icon (read_file → go-to-file)
+    expect(
+      (item.iconPath as { id: string }).id,
+    ).toBe("go-to-file");
+  });
+
+  it("uses chat-sparkle icon when no tools were called", () => {
+    const response: AIResponseEntry = {
+      type: "ai-response",
+      sequenceNumber: 3,
+      timestamp: Date.now(),
+      tokenContribution: 500,
+      subagentIds: [],
+      state: "characterized",
+      characterization: "Explained the concept",
+    };
+
+    const item = new AIResponseItem(response, "conv-1", [], []);
+    expect(
+      (item.iconPath as { id: string }).id,
+    ).toBe("chat-sparkle");
   });
 });
 
