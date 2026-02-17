@@ -212,10 +212,12 @@ function extractToolResults(
   for (const part of lastUserMessage.content) {
     if (part instanceof LanguageModelToolResultPart) {
       const rawContent = part.content;
+      // content is Array<LanguageModelTextPart | LanguageModelDataPart | ...>
+      // Extract text from LanguageModelTextPart elements (.value property)
       const output =
         typeof rawContent === "string"
           ? rawContent
-          : JSON.stringify(rawContent);
+          : extractTextFromContentParts(rawContent);
       if (output.trim() !== "") {
         results.set(part.callId, output);
       }
@@ -223,6 +225,41 @@ function extractToolResults(
   }
 
   return results;
+}
+
+/**
+ * Extract text content from a LanguageModelToolResultPart content array.
+ *
+ * VS Code's LanguageModelToolResultPart.content is an array of parts:
+ * - LanguageModelTextPart: has `.value` (string) — the actual text content
+ * - LanguageModelDataPart: has `.data` (Uint8Array) and `.mimeType` — binary data
+ * - Other unknown types
+ *
+ * We extract `.value` from text parts and join them. For non-text parts,
+ * we note their presence but don't serialize the raw internal structure.
+ */
+function extractTextFromContentParts(parts: unknown): string {
+  if (!Array.isArray(parts)) {
+    return typeof parts === "string" ? parts : JSON.stringify(parts);
+  }
+
+  const textParts: string[] = [];
+  for (const part of parts) {
+    if (part instanceof LanguageModelTextPart) {
+      textParts.push(part.value);
+    } else if (
+      typeof part === "object" &&
+      part !== null &&
+      "value" in part &&
+      typeof (part as { value: unknown }).value === "string"
+    ) {
+      // Serialized LanguageModelTextPart (may not be instanceof at runtime)
+      textParts.push((part as { value: string }).value);
+    }
+    // Skip binary/data parts — they don't render as text
+  }
+
+  return textParts.join("\n");
 }
 
 /**

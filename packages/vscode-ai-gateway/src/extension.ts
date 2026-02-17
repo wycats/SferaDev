@@ -208,13 +208,13 @@ export async function activate(context: vscode.ExtensionContext) {
       "vercel.ai.inspectNode",
       async (uri: vscode.Uri) => {
         const doc = await vscode.workspace.openTextDocument(uri);
-        await vscode.window.showTextDocument(doc, {
-          viewColumn: vscode.ViewColumn.Beside,
-          preserveFocus: true,
-          preview: true,
-        });
-        // Set language to markdown for syntax highlighting
         await vscode.languages.setTextDocumentLanguage(doc, "markdown");
+        // Open as rendered markdown preview for readability
+        await vscode.commands.executeCommand(
+          "markdown.showPreview",
+          uri,
+          { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
+        );
       },
     ),
   );
