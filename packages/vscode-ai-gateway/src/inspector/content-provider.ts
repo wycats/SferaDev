@@ -17,6 +17,7 @@ import {
   renderError,
   renderHistory,
   renderSubagent,
+  renderToolCall,
   renderToolContinuation,
   renderTurn,
   renderUserMessage,
@@ -28,6 +29,8 @@ export interface InspectorTarget {
   conversationId: string;
   entryType: string;
   identifier?: string;
+  /** Sub-identifier for nested items (e.g., callId for tool calls). */
+  subIdentifier?: string;
 }
 
 export function parseInspectorUri(uri: vscode.Uri): InspectorTarget | null {
@@ -39,14 +42,18 @@ export function parseInspectorUri(uri: vscode.Uri): InspectorTarget | null {
   const conversationId = decodeURIComponent(segments[0] ?? "");
   const entryType = decodeURIComponent(segments[1] ?? "");
   const identifier = segments[2] ? decodeURIComponent(segments[2]) : undefined;
+  const subIdentifier = segments[3]
+    ? decodeURIComponent(segments[3])
+    : undefined;
 
   if (!conversationId || !entryType) return null;
 
-  if (identifier === undefined) {
-    return { conversationId, entryType };
-  }
-
-  return { conversationId, entryType, identifier };
+  return {
+    conversationId,
+    entryType,
+    ...(identifier !== undefined ? { identifier } : {}),
+    ...(subIdentifier !== undefined ? { subIdentifier } : {}),
+  };
 }
 
 export class InspectorContentProvider
@@ -132,6 +139,22 @@ export class InspectorContentProvider
             ? undefined
             : findTurn(conversation.activityLog, parsed.identifier);
         return entry ? renderTurn(entry, conversation) : "Not found";
+      }
+      case "tool-call": {
+        // Tool calls are nested under AI responses.
+        // URI: /conversationId/tool-call/sequenceNumber/callId
+        const aiResponse =
+          parsed.identifier === undefined
+            ? undefined
+            : findAIResponse(conversation.activityLog, parsed.identifier);
+        if (!aiResponse) return "Not found";
+
+        const toolCall = aiResponse.toolCalls?.find(
+          (tc) => tc.callId === parsed.subIdentifier,
+        );
+        return toolCall
+          ? renderToolCall(toolCall, aiResponse, conversation)
+          : "Not found";
       }
       default:
         return "Not found";

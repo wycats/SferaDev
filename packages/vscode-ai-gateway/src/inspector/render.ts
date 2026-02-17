@@ -6,6 +6,7 @@ import type {
   Conversation,
   ErrorEntry,
   Subagent,
+  ToolCallDetail,
   UserMessageEntry,
 } from "@vercel/conversation";
 import type { TurnEntry } from "../conversation/types.js";
@@ -414,5 +415,43 @@ export function renderHistory(
   output += renderActivitySummaryTable(entries);
   output += renderHeader("Entries", 2);
   output += renderEntryList(entries, conversation, 3);
+  return output;
+}
+
+export function renderToolCall(
+  toolCall: ToolCallDetail,
+  aiResponse: AIResponseEntry,
+  _conversation: Conversation,
+): string {
+  let output = renderHeader(`Tool Call: ${toolCall.name}`, 1);
+
+  output += renderHeader("Request", 2);
+  output += renderTable([
+    ["Call ID", toolCall.callId],
+    ["Tool Name", toolCall.name],
+    ["Turn", `#${aiResponse.sequenceNumber.toString()}`],
+  ]);
+
+  output += renderHeader("Arguments", 3);
+  output += renderJsonBlock(toolCall.args);
+
+  if (toolCall.result !== undefined) {
+    output += renderHeader("Response", 2);
+    const lines = toolCall.result.split("\n");
+    const lineCount = lines.length;
+    const charCount = toolCall.result.length;
+    output += renderTable([
+      ["Lines", lineCount.toString()],
+      ["Characters", charCount.toString()],
+    ]);
+
+    output += renderHeader("Content", 3);
+    // Render as code block for readability
+    output += "```\n" + toolCall.result + "\n```\n\n";
+  } else {
+    output += renderHeader("Response", 2);
+    output += "*No result captured (tool may still be executing)*\n\n";
+  }
+
   return output;
 }
