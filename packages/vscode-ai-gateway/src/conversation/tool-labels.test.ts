@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { summarizeToolArgs, toolIcon } from "./tool-labels.js";
+import {
+  summarizeToolArgs,
+  summarizeToolResult,
+  toolIcon,
+} from "./tool-labels.js";
 
 describe("summarizeToolArgs", () => {
   // ── File tools ───────────────────────────────────────────────────
@@ -273,5 +277,69 @@ describe("toolIcon", () => {
 
   it("returns globe for fetch_webpage", () => {
     expect(toolIcon("fetch_webpage")).toBe("globe");
+  });
+});
+
+describe("summarizeToolResult", () => {
+  it("read_file: shows line count", () => {
+    const result = "line 1\nline 2\nline 3\n";
+    expect(summarizeToolResult("read_file", result)).toBe("3 lines");
+  });
+
+  it("read_file: singular for 1 line", () => {
+    expect(summarizeToolResult("read_file", "single line")).toBe("1 line");
+  });
+
+  it("grep_search: extracts match count from output", () => {
+    const result = "3 matches\n/src/foo.ts:10: match1\n/src/bar.ts:20: match2";
+    expect(summarizeToolResult("grep_search", result)).toBe("3 matches");
+  });
+
+  it("grep_search: falls back to line count", () => {
+    const result = "foo.ts:10: something\nbar.ts:20: else\n";
+    expect(summarizeToolResult("grep_search", result)).toBe("2 lines");
+  });
+
+  it("file_search: shows file count", () => {
+    const result = "src/foo.ts\nsrc/bar.ts\nsrc/baz.ts\n";
+    expect(summarizeToolResult("file_search", result)).toBe("3 files");
+  });
+
+  it("list_dir: shows entry count", () => {
+    const result = "src/\npackage.json\ntsconfig.json\n";
+    expect(summarizeToolResult("list_dir", result)).toBe("3 entries");
+  });
+
+  it("run_in_terminal: shows short output directly", () => {
+    expect(summarizeToolResult("run_in_terminal", "OK")).toBe("OK");
+  });
+
+  it("run_in_terminal: shows line count for multi-line output", () => {
+    const result = "line 1\nline 2\nline 3\n";
+    expect(summarizeToolResult("run_in_terminal", result)).toBe(
+      "3 lines of output",
+    );
+  });
+
+  it("get_errors: detects no errors", () => {
+    expect(summarizeToolResult("get_errors", "no errors found")).toBe(
+      "no errors",
+    );
+  });
+
+  it("list_code_usages: shows usage count", () => {
+    const result = "usage 1\nusage 2\n";
+    expect(summarizeToolResult("list_code_usages", result)).toBe("2 usages");
+  });
+
+  it("unknown tool: shows line count for multi-line", () => {
+    const result = "a\nb\nc\nd\n";
+    expect(summarizeToolResult("unknown_tool", result)).toBe("4 lines");
+  });
+
+  it("unknown tool: shows short result directly", () => {
+    expect(summarizeToolResult("unknown_tool", "short result")).toBe(
+      "short result",
+    );
   });
 });

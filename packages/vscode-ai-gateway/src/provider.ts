@@ -556,6 +556,7 @@ export class VercelAIChatModelProvider
               info.userMessagePreview,
               info.toolsUsed,
               info.toolCalls,
+              info.toolResults,
             );
           },
         },
@@ -640,6 +641,7 @@ export class VercelAIChatModelProvider
       name: string;
       args: Record<string, unknown>;
     }[],
+    toolResults?: Map<string, string>,
   ): Promise<void> {
     try {
       if (!this.conversationManager) {
@@ -651,6 +653,15 @@ export class VercelAIChatModelProvider
         this.conversationManager.markToolContinuation(
           conversationId,
           turnNumber,
+        );
+      }
+
+      // Attach tool results to the PREVIOUS turn's tool calls
+      if (toolResults && toolResults.size > 0) {
+        this.conversationManager.setToolResults(
+          conversationId,
+          turnNumber,
+          toolResults,
         );
       }
 

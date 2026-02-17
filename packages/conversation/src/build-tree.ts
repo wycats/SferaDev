@@ -33,6 +33,8 @@ export interface ToolCallChild {
   callId: string;
   name: string;
   args: Record<string, unknown>;
+  /** Full result returned by the tool, if captured. */
+  result?: string;
 }
 
 /** A top-level node in the activity tree. */
@@ -233,6 +235,9 @@ export function groupByUserMessage(entries: ActivityLogEntry[]): TreeNode[] {
             callId: toolCall.callId,
             name: toolCall.name,
             args: toolCall.args,
+            ...(toolCall.result !== undefined
+              ? { result: toolCall.result }
+              : {}),
           }),
         );
         // Add the AI response with nested tool calls

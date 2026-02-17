@@ -19,7 +19,11 @@ import type {
 import type { TurnEntry } from "./types.js";
 import { formatTokens } from "../tokens/display.js";
 import { inspectorUri } from "../inspector/uri.js";
-import { summarizeToolArgs, toolIcon } from "./tool-labels.js";
+import {
+  summarizeToolArgs,
+  summarizeToolResult,
+  toolIcon,
+} from "./tool-labels.js";
 
 // ── UserMessageItem ──────────────────────────────────────────────────
 
@@ -197,27 +201,46 @@ export class ToolContinuationItem extends vscode.TreeItem {
 /**
  * Tree item for a tool call made by an AI response.
  *
- * Tool calls are non-collapsible leaf nodes nested under AIResponseItem,
- * showing what tools were invoked during the response.
+ * When a result is available, the tool call becomes a collapsible parent
+ * with request and response children:
  *
- * Label: "read_file /src/foo.ts" (tool name + args preview).
- * Description: "#<callId prefix>".
- * Icon: $(wrench).
+ *   ▼ $(go-to-file) Read auth handler
+ *       ├─ $(arrow-right) src/auth.ts L10-L50
+ *       └─ $(arrow-left) 41 lines
+ *
+ * While streaming (no result yet), it remains a leaf node.
+ *
+ * Label: tool name + args summary ("what happened").
+ * Icon: tool-specific icon from toolIcon().
  */
 export class ToolCallItem extends vscode.TreeItem {
   readonly callId: string;
   readonly name: string;
   readonly args: Record<string, unknown>;
+  readonly result: string | undefined;
 
-  constructor(callId: string, name: string, args: Record<string, unknown>) {
+  constructor(
+    callId: string,
+    name: string,
+    args: Record<string, unknown>,
+    result?: string,
+  ) {
     const argSummary = summarizeToolArgs(name, args);
     const label = argSummary ? `${name} ${argSummary}` : name;
 
-    super(label, vscode.TreeItemCollapsibleState.None);
+    // Collapsible when we have a result (request + response children)
+    // Leaf node while streaming or when no result captured
+    const collapsibleState =
+      result !== undefined
+        ? vscode.TreeItemCollapsibleState.Collapsed
+        : vscode.TreeItemCollapsibleState.None;
+
+    super(label, collapsibleState);
 
     this.callId = callId;
     this.name = name;
     this.args = args;
+    this.result = result;
     this.contextValue = "tool-call";
     this.description = `#${callId.slice(0, 8)}`;
 
@@ -225,8 +248,50 @@ export class ToolCallItem extends vscode.TreeItem {
       toolIcon(name),
       new vscode.ThemeColor("descriptionForeground"),
     );
+  }
+}
 
-    // Non-interactive: no command
+/**
+ * Tree item for the request side of a tool call (what was asked).
+ *
+ * Shows the tool arguments in a concise format.
+ * Icon: $(arrow-right) — outgoing request.
+ */
+export class ToolCallRequestItem extends vscode.TreeItem {
+  constructor(name: string, args: Record<string, unknown>) {
+    const argSummary = summarizeToolArgs(name, args);
+    const label = argSummary || "(no arguments)";
+
+    super(label, vscode.TreeItemCollapsibleState.None);
+
+    this.contextValue = "tool-call-request";
+    this.iconPath = new vscode.ThemeIcon(
+      "arrow-right",
+      new vscode.ThemeColor("descriptionForeground"),
+    );
+  }
+}
+
+/**
+ * Tree item for the response side of a tool call (what came back).
+ *
+ * Shows a summary of the tool result content.
+ * Icon: $(arrow-left) — incoming response.
+ */
+export class ToolCallResponseItem extends vscode.TreeItem {
+  readonly result: string;
+
+  constructor(name: string, result: string) {
+    const label = summarizeToolResult(name, result);
+
+    super(label, vscode.TreeItemCollapsibleState.None);
+
+    this.result = result;
+    this.contextValue = "tool-call-response";
+    this.iconPath = new vscode.ThemeIcon(
+      "arrow-left",
+      new vscode.ThemeColor("descriptionForeground"),
+    );
   }
 }
 

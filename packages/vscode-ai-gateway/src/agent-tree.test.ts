@@ -83,6 +83,8 @@ import {
   CompactionTreeItem,
   ErrorTreeItem,
   ToolCallItem,
+  ToolCallRequestItem,
+  ToolCallResponseItem,
 } from "./conversation/index";
 import type { AgentEntry, AgentRegistry } from "./agent/index.js";
 
@@ -407,12 +409,26 @@ describe("ConversationTreeDataProvider", () => {
       }
     });
 
-    it("is non-collapsible (leaf node)", () => {
+    it("is non-collapsible (leaf node) when no result", () => {
       const item = new ToolCallItem("call-id-123", "read_file", {
         filePath: "/src/foo.ts",
       });
 
       expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
+    });
+
+    it("is collapsible when result is available", () => {
+      const item = new ToolCallItem(
+        "call-id-123",
+        "read_file",
+        { filePath: "/src/foo.ts" },
+        "line 1\nline 2\nline 3\n",
+      );
+
+      expect(item.collapsibleState).toBe(
+        vscode.TreeItemCollapsibleState.Collapsed,
+      );
+      expect(item.result).toBe("line 1\nline 2\nline 3\n");
     });
 
     it("displays callId prefix in description", () => {
@@ -439,6 +455,86 @@ describe("ConversationTreeDataProvider", () => {
       const item = new ToolCallItem("call-id-123", "some_tool", {});
 
       expect(item.label).toBe("some_tool");
+    });
+  });
+
+  describe("ToolCallRequestItem", () => {
+    it("shows args summary as label", () => {
+      const item = new ToolCallRequestItem("read_file", {
+        filePath: "/src/foo.ts",
+        startLine: 1,
+        endLine: 10,
+      });
+
+      expect(item.label).toContain("/src/foo.ts");
+    });
+
+    it("shows (no arguments) for empty args", () => {
+      const item = new ToolCallRequestItem("some_tool", {});
+
+      expect(item.label).toBe("(no arguments)");
+    });
+
+    it("uses arrow-right icon", () => {
+      const item = new ToolCallRequestItem("read_file", {
+        filePath: "/src/foo.ts",
+      });
+
+      if (
+        item.iconPath &&
+        typeof item.iconPath === "object" &&
+        "id" in item.iconPath
+      ) {
+        expect((item.iconPath as unknown as { id: string }).id).toBe(
+          "arrow-right",
+        );
+      }
+    });
+
+    it("is non-collapsible", () => {
+      const item = new ToolCallRequestItem("read_file", {
+        filePath: "/src/foo.ts",
+      });
+
+      expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
+    });
+  });
+
+  describe("ToolCallResponseItem", () => {
+    it("shows result summary as label", () => {
+      const item = new ToolCallResponseItem(
+        "read_file",
+        "line 1\nline 2\nline 3\n",
+      );
+
+      expect(item.label).toBe("3 lines");
+    });
+
+    it("uses arrow-left icon", () => {
+      const item = new ToolCallResponseItem("read_file", "content");
+
+      if (
+        item.iconPath &&
+        typeof item.iconPath === "object" &&
+        "id" in item.iconPath
+      ) {
+        expect((item.iconPath as unknown as { id: string }).id).toBe(
+          "arrow-left",
+        );
+      }
+    });
+
+    it("is non-collapsible", () => {
+      const item = new ToolCallResponseItem("read_file", "content");
+
+      expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
+    });
+
+    it("stores full result content", () => {
+      const result = "full content here";
+      const item = new ToolCallResponseItem("read_file", result);
+
+      expect(item.result).toBe(result);
     });
   });
 });

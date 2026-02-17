@@ -19,6 +19,8 @@ import {
   HistoryItem,
   SectionHeaderItem,
   ToolCallItem,
+  ToolCallRequestItem,
+  ToolCallResponseItem,
   UserMessageItem,
   type UserMessageChild,
 } from "./conversation/index.js";
@@ -38,6 +40,8 @@ export type TreeItem =
   | ConversationItem
   | UserMessageItem
   | ToolCallItem
+  | ToolCallRequestItem
+  | ToolCallResponseItem
   | AIResponseItem
   | TurnItem
   | CompactionTreeItem
@@ -106,6 +110,10 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
 
     if (element instanceof AIResponseItem) {
       return this.getAIResponseChildren(element);
+    }
+
+    if (element instanceof ToolCallItem) {
+      return this.getToolCallChildren(element);
     }
 
     if (element instanceof SubagentItem) {
@@ -184,12 +192,34 @@ export class ConversationTreeDataProvider implements vscode.TreeDataProvider<Tre
 
     for (const toolCall of element.toolCalls) {
       items.push(
-        new ToolCallItem(toolCall.callId, toolCall.name, toolCall.args),
+        new ToolCallItem(
+          toolCall.callId,
+          toolCall.name,
+          toolCall.args,
+          toolCall.result,
+        ),
       );
     }
 
     for (const subagent of element.subagents) {
       items.push(new SubagentItem(subagent, element.conversationId));
+    }
+
+    return items;
+  }
+
+  /**
+   * Get children for a ToolCallItem (request + response when result is available).
+   */
+  private getToolCallChildren(element: ToolCallItem): TreeItem[] {
+    const items: TreeItem[] = [];
+
+    // Request child: what was asked
+    items.push(new ToolCallRequestItem(element.name, element.args));
+
+    // Response child: what came back (only if result captured)
+    if (element.result !== undefined) {
+      items.push(new ToolCallResponseItem(element.name, element.result));
     }
 
     return items;

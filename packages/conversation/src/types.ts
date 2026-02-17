@@ -102,6 +102,12 @@ export interface ToolCallDetail {
   name: string;
   /** Parsed arguments object passed to the tool. */
   args: Record<string, unknown>;
+  /**
+   * The full result returned by the tool, if captured.
+   * Populated when the tool continuation (next turn) delivers results
+   * back to the model. Stored as the raw string output.
+   */
+  result?: string;
 }
 
 /** An AI response to the user. */

@@ -949,6 +949,53 @@ export class ConversationManager implements vscode.Disposable {
   }
 
   /**
+   * Attach tool results to the previous turn's tool calls.
+   *
+   * When a tool continuation fires (turn N+1), the tool results belong to
+   * the tool calls from the previous AI response (turn N or earlier).
+   * This method finds the most recent AI response with matching callIds
+   * and attaches the result content.
+   */
+  setToolResults(
+    conversationId: string,
+    _currentTurnNumber: number,
+    toolResults: Map<string, string>,
+  ): void {
+    const log = this.activityLogs.get(conversationId);
+    if (!log) {
+      return;
+    }
+
+    // Find AI responses that have tool calls matching the result callIds
+    // Walk backwards to find the most recent one
+    let matched = false;
+    for (let i = log.length - 1; i >= 0; i--) {
+      const entry = log[i];
+      if (entry?.type !== "ai-response" || !entry.toolCalls) {
+        continue;
+      }
+
+      for (const toolCall of entry.toolCalls) {
+        const result = toolResults.get(toolCall.callId);
+        if (result !== undefined) {
+          toolCall.result = result;
+          matched = true;
+        }
+      }
+
+      // Once we find the AI response with matching calls, stop
+      if (matched) {
+        break;
+      }
+    }
+
+    if (matched) {
+      getTreeChangeLogger().logChanges(Array.from(this.conversations.values()));
+      this._onDidChangeConversations.fire(undefined);
+    }
+  }
+
+  /**
    * Set the tools used for an AI response entry (names only).
    * Fallback for when full tool call details are not available.
    */

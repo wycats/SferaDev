@@ -252,3 +252,98 @@ const TOOL_ICONS: Record<string, string> = {
   run_notebook_cell: "play",
   read_notebook_cell_output: "output",
 };
+
+// ── Result Summarization ─────────────────────────────────────────────
+
+/** Maximum length for result summary display. */
+const MAX_RESULT_SUMMARY_LEN = 60;
+
+/**
+ * Produce a concise, human-readable summary of a tool call's result.
+ *
+ * Extracts meaningful metrics from the raw result string:
+ * - Line count for file reads
+ * - Match count for searches
+ * - File list for directory listings
+ * - Byte/character count as fallback
+ *
+ * @returns Summary string for display in the tree.
+ */
+export function summarizeToolResult(name: string, result: string): string {
+  const summarizer = RESULT_SUMMARIZERS[name];
+  if (summarizer) {
+    const summary = summarizer(result);
+    if (summary) return summary;
+  }
+  return genericResultSummary(result);
+}
+
+/** Count non-empty lines in a string. */
+function countLines(text: string): number {
+  return text.split("\n").filter((line) => line.length > 0).length;
+}
+
+/** Generic result summary: line count + size. */
+function genericResultSummary(result: string): string {
+  const lines = countLines(result);
+  if (lines > 1) {
+    return `${lines} lines`;
+  }
+  if (result.length <= MAX_RESULT_SUMMARY_LEN) {
+    return result.trim();
+  }
+  return `${(result.length / 1024).toFixed(1)}KB`;
+}
+
+/** Per-tool result summarizer dispatch table. */
+const RESULT_SUMMARIZERS: Record<
+  string,
+  (result: string) => string | undefined
+> = {
+  read_file: (result) => {
+    const lines = countLines(result);
+    return `${lines} line${lines === 1 ? "" : "s"}`;
+  },
+
+  grep_search: (result) => {
+    // Count matches (lines starting with match indicators like "3 matches")
+    const matchCount = (result.match(/^\d+ match\w*/m) ?? [])[0];
+    if (matchCount) return matchCount;
+    const lines = countLines(result);
+    return `${lines} line${lines === 1 ? "" : "s"}`;
+  },
+
+  semantic_search: (result) => {
+    const lines = countLines(result);
+    return `${lines} line${lines === 1 ? "" : "s"}`;
+  },
+
+  file_search: (result) => {
+    const lines = countLines(result);
+    return `${lines} file${lines === 1 ? "" : "s"}`;
+  },
+
+  list_dir: (result) => {
+    const entries = result.split("\n").filter((line) => line.trim().length > 0);
+    return `${entries.length} entr${entries.length === 1 ? "y" : "ies"}`;
+  },
+
+  run_in_terminal: (result) => {
+    const lines = countLines(result);
+    if (lines <= 1) return result.trim().slice(0, MAX_RESULT_SUMMARY_LEN);
+    return `${lines} lines of output`;
+  },
+
+  get_errors: (result) => {
+    if (result.includes("no errors") || result.includes("No errors")) {
+      return "no errors";
+    }
+    const lines = countLines(result);
+    return `${lines} line${lines === 1 ? "" : "s"}`;
+  },
+
+  list_code_usages: (result) => {
+    const lines = countLines(result);
+    return `${lines} usage${lines === 1 ? "" : "s"}`;
+  },
+};

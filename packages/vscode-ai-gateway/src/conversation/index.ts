@@ -20,9 +20,15 @@ export {
   SectionHeaderItem,
   SubagentItem,
   ToolCallItem,
+  ToolCallRequestItem,
+  ToolCallResponseItem,
   ToolContinuationItem,
   TurnItem,
   UserMessageItem,
 } from "./tree-items.js";
 export type { UserMessageChild } from "./tree-items.js";
-export { summarizeToolArgs, toolIcon } from "./tool-labels.js";
+export {
+  summarizeToolArgs,
+  summarizeToolResult,
+  toolIcon,
+} from "./tool-labels.js";

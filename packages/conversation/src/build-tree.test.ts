@@ -1059,6 +1059,9 @@ describe("Activity Tree Properties", () => {
               callId: toolCall.callId,
               name: toolCall.name,
               args: toolCall.args,
+              ...(toolCall.result !== undefined
+                ? { result: toolCall.result }
+                : {}),
             }));
 
             expect(
@@ -1276,5 +1279,63 @@ describe("Regression: streaming AI response before user message", () => {
     expect(group10AISeqs).toEqual([10]);
     expect(group7.children).toHaveLength(2);
     expect(group10.children).toHaveLength(1);
+  });
+});
+
+describe("Tool result passthrough", () => {
+  it("ToolCallChild includes result when present on ToolCallDetail", () => {
+    const log: ActivityLogEntry[] = [
+      {
+        type: "user-message",
+        sequenceNumber: 1,
+        timestamp: 1000,
+        preview: "Read the file",
+      },
+      {
+        type: "ai-response",
+        sequenceNumber: 1,
+        timestamp: 1100,
+        state: "characterized",
+        characterization: "Read the file",
+        tokenContribution: 500,
+        subagentIds: [],
+        toolCalls: [
+          {
+            callId: "call-1",
+            name: "read_file",
+            args: { filePath: "/src/foo.ts" },
+            result: "export function foo() { return 42; }",
+          },
+          {
+            callId: "call-2",
+            name: "grep_search",
+            args: { query: "foo" },
+            // No result — tool hasn't returned yet
+          },
+        ],
+      },
+    ];
+
+    const result = buildTree(log);
+    const userNode = result.topLevel[0];
+    expect(userNode?.kind).toBe("user-message");
+    if (userNode?.kind !== "user-message") return;
+
+    const aiChild = userNode.children[0];
+    expect(aiChild?.kind).toBe("ai-response");
+    if (aiChild?.kind !== "ai-response") return;
+
+    expect(aiChild.toolCalls).toHaveLength(2);
+    expect(aiChild.toolCalls[0]).toEqual({
+      callId: "call-1",
+      name: "read_file",
+      args: { filePath: "/src/foo.ts" },
+      result: "export function foo() { return 42; }",
+    });
+    expect(aiChild.toolCalls[1]).toEqual({
+      callId: "call-2",
+      name: "grep_search",
+      args: { query: "foo" },
+    });
   });
 });

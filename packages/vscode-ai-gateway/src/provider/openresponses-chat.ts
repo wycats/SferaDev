@@ -110,6 +110,11 @@ export interface OpenResponsesChatOptions {
       name: string;
       args: Record<string, unknown>;
     }[];
+    /**
+     * Tool results from the previous turn, keyed by callId.
+     * Present only when isToolContinuation is true.
+     */
+    toolResults?: Map<string, string>;
   }) => void;
 }
 
@@ -173,6 +178,45 @@ function isToolContinuationRequest(
   }
 
   return false;
+}
+
+/**
+ * Extract tool result content from a tool continuation request.
+ *
+ * When VS Code sends tool results back to the model, the last user message
+ * contains LanguageModelToolResultPart entries. This function extracts them
+ * as a map from callId to the stringified result content.
+ *
+ * Returns an empty map if the request is not a tool continuation.
+ */
+function extractToolResults(
+  messages: readonly LanguageModelChatMessage[],
+): Map<string, string> {
+  const results = new Map<string, string>();
+
+  // Find the last user message
+  const lastUserMessage = [...messages]
+    .reverse()
+    .find((m) => m.role === vscode.LanguageModelChatMessageRole.User);
+
+  if (!lastUserMessage) {
+    return results;
+  }
+
+  for (const part of lastUserMessage.content) {
+    if (part instanceof LanguageModelToolResultPart) {
+      const rawContent = part.content;
+      const output =
+        typeof rawContent === "string"
+          ? rawContent
+          : JSON.stringify(rawContent);
+      if (output.trim() !== "") {
+        results.set(part.callId, output);
+      }
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -887,6 +931,11 @@ export async function executeOpenResponsesChat(
           // Detect if this was a tool continuation (tool results, not user message)
           const isToolContinuation = isToolContinuationRequest(chatMessages);
 
+          // Extract tool results from the continuation request (if any)
+          const toolResults = isToolContinuation
+            ? extractToolResults(chatMessages)
+            : undefined;
+
           markAgentComplete(adapted.usage);
 
           // Fire turn-complete callback for turn characterization
@@ -900,6 +949,9 @@ export async function executeOpenResponsesChat(
               : {}),
             toolsUsed,
             toolCalls,
+            ...(toolResults !== undefined && toolResults.size > 0
+              ? { toolResults }
+              : {}),
           });
         }
 
