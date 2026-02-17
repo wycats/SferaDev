@@ -2227,7 +2227,7 @@ id = "00073"
 [[epochs.phases]]
 id = "01khddgmrc2f6qqt3bty3pqth8"
 title = "Workspace Scoping & Trim"
-status = "active"
+status = "completed"
 kind = "regular"
 ulid = "01KHDDGMRC2F6QQT3BTY3PQTH8"
 
@@ -2261,7 +2261,7 @@ id = "00073"
 [[epochs.phases]]
 id = "01khmjzqpzmfkdyrtt2zwaqvct"
 title = "Package Extraction: Clean Boundaries"
-status = "pending"
+status = "active"
 goals = []
 kind = "regular"
 ulid = "01KHMJZQPZMFKDYRTT2ZWAQVCT"

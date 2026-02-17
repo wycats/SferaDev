@@ -2,10 +2,18 @@
 # Implementation Plan
 
 [phase]
-id = "01khmjzqpzmfkdyrtt2zwaqvct"
+id = "01khddgmrc2f6qqt3bty3pqth8"
 
 [plan]
-# Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
+[[plan.goals]]
+id = "track-workspace"
+
+[[plan.goals]]
+id = "trim-command"
+
+[[plan.goals]]
+id = "workspace-filter"
+
 
 
 [verification]
