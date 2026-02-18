@@ -2381,7 +2381,8 @@ rfc = "00074"
 [[epochs.phases.goals]]
 id = "svelte-infrastructure"
 label = "Svelte infrastructure: esbuild-svelte, webview directory, dual build"
-status = "pending"
+status = "completed"
+completion_log = "Dual esbuild build working: extension + webview bundles"
 ulid = "01KHQ2XFAV0A6BHBMJAYVEJ2T5"
 rfc = "00074"
 

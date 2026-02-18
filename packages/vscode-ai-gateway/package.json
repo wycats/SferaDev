@@ -207,8 +207,8 @@
     }
   },
   "scripts": {
-    "build": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --format=esm --platform=node --minify --splitting",
-    "dev": "esbuild ./src/extension.ts --bundle --outdir=out --external:vscode --format=esm --platform=node --watch --splitting",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --watch",
     "compile": "tsc -p ./",
     "tsc": "tsc --noEmit",
     "test": "vitest run",
@@ -231,16 +231,19 @@
     "@vscode/vsce": "catalog:",
     "dotenv": "^17.2.3",
     "esbuild": "^0.24.0",
+    "esbuild-svelte": "^0.9.4",
     "eslint-interactive": "^12.0.0",
     "fast-check": "catalog:",
     "glob": "^10.4.5",
     "mocha": "^10.8.2",
+    "svelte": "^5.51.3",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   },
   "dependencies": {
     "@vercel/conversation": "workspace:*",
+    "@vscode-elements/elements": "^2.5.0",
     "ai-tokenizer": "^1.0.6",
     "openresponses-client": "workspace:*",
     "safe-stable-stringify": "^2.5.0"
