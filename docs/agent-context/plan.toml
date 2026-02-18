@@ -2389,7 +2389,8 @@ rfc = "00074"
 [[epochs.phases.goals]]
 id = "svelte-migrate"
 label = "Migrate inspector to Svelte: replace marked with Svelte components"
-status = "pending"
+status = "completed"
+completion_log = "Inspector now uses Svelte webview with ready handshake"
 ulid = "01KHQ2XFC270D0PC790RS5PKYY"
 rfc = "00074"
 

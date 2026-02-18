@@ -405,22 +405,30 @@ id = "svelte-migrate"
 [[plan.goals.tasks]]
 id = "create-app-svelte-with-markdown-rendering-component"
 title = "Create App.svelte with markdown rendering component"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-18T01:20:29.564051529+00:00"
+completion_log = "Created App.svelte with VS Code theming, updated main.ts to mount Svelte"
 
 [[plan.goals.tasks]]
 id = "add-vscode-elements-elements-dependency-bundled"
 title = "Add @vscode-elements/elements dependency (bundled)"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-18T01:20:34.355201072+00:00"
+completion_log = "Already added in svelte-infrastructure phase"
 
 [[plan.goals.tasks]]
 id = "wire-up-extension-webview-message-passing"
 title = "Wire up extension-webview message passing"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-18T01:22:19.915210303+00:00"
+completion_log = "Panel sends content via postMessage, webview receives and renders"
 
 [[plan.goals.tasks]]
 id = "update-panel-ts-to-load-svelte-bundle-instead-of-marked"
 title = "Update panel.ts to load Svelte bundle instead of marked"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-18T01:22:26.320031371+00:00"
+completion_log = "Panel now loads Svelte bundle with CSP nonce, enableScripts, localResourceRoots"
 
 [[plan.goals]]
 id = "svelte-enhance"

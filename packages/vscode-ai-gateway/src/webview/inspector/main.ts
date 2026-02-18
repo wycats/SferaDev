@@ -2,9 +2,11 @@
  * Inspector webview entry point.
  *
  * This is the main entry point for the inspector webview bundle.
- * It will be compiled by esbuild with the svelte plugin.
+ * Compiled by esbuild with the svelte plugin.
  */
 
+import { mount, unmount } from "svelte";
+import App from "./App.svelte";
 import { postMessage, getState, setState } from "../shared/vscode-api.js";
 import type { ExtensionMessage } from "../shared/message-types.js";
 
@@ -23,28 +25,33 @@ let state: InspectorState = getState<InspectorState>() ?? {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Rendering
+// Svelte App
 // ─────────────────────────────────────────────────────────────────────────────
 
+const target = document.getElementById("app");
+if (!target) {
+  throw new Error("Could not find #app element");
+}
+
+// Current mounted app instance
+let app: ReturnType<typeof mount> | null = null;
+
+/**
+ * Mount or remount the Svelte app with current state.
+ * Svelte 5's mount() doesn't support prop updates, so we unmount/remount.
+ */
 function render(): void {
-  const app = document.getElementById("app");
-  if (!app) return;
-
-  // Simple preformatted text rendering for now
-  // Will be replaced with Svelte components in Phase 2
-  app.innerHTML = `
-    <h1>${escapeHtml(state.title)}</h1>
-    <pre style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(state.content)}</pre>
-  `;
+  if (app) {
+    unmount(app);
+  }
+  app = mount(App, {
+    target: target!,
+    props: state,
+  });
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+// Initial render with restored state
+render();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Message handling
@@ -69,9 +76,6 @@ window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Initialization
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Initial render with restored state
-render();
 
 // Notify extension that webview is ready
 postMessage({ type: "ready" });
