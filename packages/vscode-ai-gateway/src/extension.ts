@@ -202,14 +202,47 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-  // Register the inspect node command
+  // Import the inspector panel for shared window behavior
+  const { InspectorPanel } = await import("./inspector/panel.js");
+  const inspectorPanel = InspectorPanel.getInstance(context.extensionUri);
+  context.subscriptions.push({ dispose: () => inspectorPanel.dispose() });
+
+  // Helper to get content and title for an inspector URI
+  const getInspectorContent = async (
+    uri: vscode.Uri,
+  ): Promise<{ content: string; title: string }> => {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    const content = doc.getText();
+    // Extract title from first heading or use URI path
+    const titleMatch = content.match(/^#\s+(.+)$/m);
+    const title = titleMatch?.[1] ?? uri.path.split("/").pop() ?? "Inspector";
+    return { content, title };
+  };
+
+  // Register the inspect node command (opens in shared panel)
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "vercel.ai.inspectNode",
       async (uri: vscode.Uri) => {
+        const { content, title } = await getInspectorContent(uri);
+        await inspectorPanel.show(uri, async () => content, title);
+      },
+    ),
+  );
+
+  // Register the inspect in new window command (opens separate markdown preview)
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "vercel.ai.inspectNodeNewWindow",
+      async (item: { command?: { arguments?: vscode.Uri[] } }) => {
+        // Get URI from tree item's command arguments
+        const uri = item.command?.arguments?.[0];
+        if (!uri) {
+          vscode.window.showErrorMessage("No inspector URI available");
+          return;
+        }
         const doc = await vscode.workspace.openTextDocument(uri);
         await vscode.languages.setTextDocumentLanguage(doc, "markdown");
-        // Open as rendered markdown preview for readability
         await vscode.commands.executeCommand("markdown.showPreview", uri, {
           viewColumn: vscode.ViewColumn.Beside,
           preserveFocus: true,

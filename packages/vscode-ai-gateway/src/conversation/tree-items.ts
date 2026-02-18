@@ -85,7 +85,7 @@ export class UserMessageItem extends vscode.TreeItem {
     this.entry = entry;
     this.conversationId = conversationId;
     this.children = children;
-    this.contextValue = "user-message";
+    this.contextValue = "user-message inspectable";
     this.description = UserMessageItem.formatDescription(entry, hasError);
 
     this.iconPath = new vscode.ThemeIcon(
@@ -155,7 +155,7 @@ export class ToolContinuationItem extends vscode.TreeItem {
 
     this.entry = entry;
     this.conversationId = conversationId;
-    this.contextValue = "tool-continuation";
+    this.contextValue = "tool-continuation inspectable";
     this.description = ToolContinuationItem.formatDescription(entry);
 
     this.iconPath = new vscode.ThemeIcon(
@@ -243,7 +243,7 @@ export class ToolCallItem extends vscode.TreeItem {
     this.result = result;
     this.conversationId = conversationId;
     this.sequenceNumber = sequenceNumber;
-    this.contextValue = "tool-call";
+    this.contextValue = "tool-call inspectable";
 
     // Description: result summary if available, otherwise call ID
     this.description =
@@ -321,7 +321,7 @@ export class AIResponseItem extends vscode.TreeItem {
     this.conversationId = conversationId;
     this.toolCalls = toolCalls;
     this.subagents = subagents;
-    this.contextValue = "ai-response";
+    this.contextValue = "ai-response inspectable";
     this.description = AIResponseItem.formatDescription(entry);
     this.iconPath = AIResponseItem.getIcon(entry);
 
@@ -466,7 +466,7 @@ export class TurnItem extends vscode.TreeItem {
 
     this.turn = turn;
     this.conversationId = conversationId;
-    this.contextValue = "turn";
+    this.contextValue = "turn inspectable";
     this.description = TurnItem.formatDescription(
       turn,
       subagents,
@@ -561,7 +561,7 @@ export class CompactionTreeItem extends vscode.TreeItem {
 
     this.entry = entry;
     this.conversationId = conversationId;
-    this.contextValue = "compaction";
+    this.contextValue = "compaction inspectable";
     this.iconPath = new vscode.ThemeIcon(
       "fold-down",
       new vscode.ThemeColor("descriptionForeground"),
@@ -602,7 +602,7 @@ export class ErrorTreeItem extends vscode.TreeItem {
 
     this.entry = entry;
     this.conversationId = conversationId;
-    this.contextValue = "error";
+    this.contextValue = "error inspectable";
     this.iconPath = new vscode.ThemeIcon(
       "error",
       new vscode.ThemeColor("errorForeground"),
@@ -644,7 +644,7 @@ export class ConversationItem extends vscode.TreeItem {
     super(conversation.title, vscode.TreeItemCollapsibleState.Expanded);
 
     this.conversation = conversation;
-    this.contextValue = "conversation";
+    this.contextValue = "conversation inspectable";
     this.description = ConversationItem.formatDescription(conversation);
     this.iconPath = ConversationItem.getIcon(conversation);
     this.tooltip = ConversationItem.formatTooltip(conversation);
@@ -861,7 +861,7 @@ export class HistoryItem extends vscode.TreeItem {
 
     this.entries = entries;
     this.conversationId = conversationId;
-    this.contextValue = "history";
+    this.contextValue = "history inspectable";
     // Stable ID preserves expansion state across tree refreshes
     this.id = `history:${conversationId}`;
     this.iconPath = new vscode.ThemeIcon(
@@ -901,7 +901,7 @@ export class SubagentItem extends vscode.TreeItem {
 
     this.subagent = subagent;
     this.conversationId = conversationId;
-    this.contextValue = "subagent";
+    this.contextValue = "subagent inspectable";
     this.description = SubagentItem.formatDescription(subagent);
     this.iconPath = SubagentItem.getIcon(subagent);
 

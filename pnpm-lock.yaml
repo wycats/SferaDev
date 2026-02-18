@@ -6,24 +6,6 @@ settings:
 
 catalogs:
   default:
-    '@ai-sdk/openai':
-      specifier: 3.0.18
-      version: 3.0.18
-    '@kubb/cli':
-      specifier: 4.18.5
-      version: 4.18.5
-    '@kubb/core':
-      specifier: 4.18.5
-      version: 4.18.5
-    '@kubb/plugin-oas':
-      specifier: 4.18.5
-      version: 4.18.5
-    '@kubb/plugin-ts':
-      specifier: 4.18.5
-      version: 4.18.5
-    '@kubb/plugin-zod':
-      specifier: 4.18.5
-      version: 4.18.5
     '@types/json-schema':
       specifier: 7.0.15
       version: 7.0.15
@@ -33,15 +15,9 @@ catalogs:
     '@vscode/vsce':
       specifier: 3.7.1
       version: 3.7.1
-    ai:
-      specifier: 6.0.50
-      version: 6.0.50
     fast-check:
       specifier: ^3.23.2
       version: 3.23.2
-    knip:
-      specifier: 5.82.1
-      version: 5.82.1
     typescript:
       specifier: 5.9.3
       version: 5.9.3
@@ -179,7 +155,7 @@ importers:
         version: link:../conversation
       ai-tokenizer:
         specifier: ^1.0.6
-        version: 1.0.6(ai@6.0.50(zod@4.3.6))
+        version: 1.0.6
       openresponses-client:
         specifier: workspace:*
         version: link:../openresponses-client
@@ -4409,9 +4385,7 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  ai-tokenizer@1.0.6(ai@6.0.50(zod@4.3.6)):
-    optionalDependencies:
-      ai: 6.0.50(zod@4.3.6)
+  ai-tokenizer@1.0.6: {}
 
   ai@6.0.50(zod@4.3.6):
     dependencies:

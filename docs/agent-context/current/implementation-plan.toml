@@ -343,6 +343,99 @@ status = "pending"
 id = "truncation-root-agent-filter"
 title = "Check if subagent completion causes parent to be misclassified as child in rebuild"
 status = "pending"
+
+[[plan.goals]]
+id = "svelte-stabilize"
+
+[[plan.goals.tasks]]
+id = "remove-marked-import-from-panel-ts-marked-was-removed-from-package-json"
+title = "Remove marked import from panel.ts (marked was removed from package.json)"
+status = "completed"
+completed_at = "2026-02-18T00:51:46.549917037+00:00"
+completion_log = "Removed marked import, replaced with escaped preformatted text"
+
+[[plan.goals.tasks]]
+id = "fix-failing-tests-contextvalue-changes-in-tree-items-ts"
+title = "Fix failing tests: contextValue changes in tree-items.ts"
+status = "completed"
+completed_at = "2026-02-18T00:51:46.589696728+00:00"
+completion_log = "Updated 6 contextValue assertions to include inspectable suffix"
+
+[[plan.goals.tasks]]
+id = "update-rfc-motivation-change-textdocumentcontentprovider-to-webviewpanel"
+title = "Update RFC motivation: change TextDocumentContentProvider to WebviewPanel"
+status = "completed"
+completed_at = "2026-02-18T00:51:46.621927549+00:00"
+completion_log = "Updated RFC to reflect current WebviewPanel with preformatted text rendering"
+
+[[plan.goals]]
+id = "svelte-infrastructure"
+
+[[plan.goals.tasks]]
+id = "add-svelte-esbuild-svelte-dependencies-to-package-json"
+title = "Add svelte, esbuild-svelte dependencies to package.json"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "create-src-webview-directory-structure-per-rfc"
+title = "Create src/webview/ directory structure per RFC"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-second-esbuild-entry-point-for-webview-bundle"
+title = "Add second esbuild entry point for webview bundle"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "verify-build-produces-out-webview-inspector-js"
+title = "Verify build produces out/webview/inspector.js"
+status = "pending"
+
+[[plan.goals]]
+id = "svelte-migrate"
+
+[[plan.goals.tasks]]
+id = "create-app-svelte-with-markdown-rendering-component"
+title = "Create App.svelte with markdown rendering component"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-vscode-elements-elements-dependency-bundled"
+title = "Add @vscode-elements/elements dependency (bundled)"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "wire-up-extension-webview-message-passing"
+title = "Wire up extension-webview message passing"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "update-panel-ts-to-load-svelte-bundle-instead-of-marked"
+title = "Update panel.ts to load Svelte bundle instead of marked"
+status = "pending"
+
+[[plan.goals]]
+id = "svelte-enhance"
+
+[[plan.goals.tasks]]
+id = "add-collapsible-json-viewer-component"
+title = "Add collapsible JSON viewer component"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-syntax-highlighting-for-code-blocks"
+title = "Add syntax highlighting for code blocks"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-copy-to-clipboard-for-json-code"
+title = "Add copy-to-clipboard for JSON/code"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "add-state-persistence-for-expanded-collapsed-sections"
+title = "Add state persistence for expanded/collapsed sections"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

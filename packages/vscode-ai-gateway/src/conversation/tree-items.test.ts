@@ -163,7 +163,7 @@ describe("ToolContinuationItem", () => {
     expect(item.label).toBe("Tools #4");
     expect(item.description).toBe("#4");
     expect((item.iconPath as { id: string }).id).toBe("tools");
-    expect(item.contextValue).toBe("tool-continuation");
+    expect(item.contextValue).toBe("tool-continuation inspectable");
   });
 
   it("shows tool names as label when provided", () => {
@@ -391,7 +391,7 @@ describe("CompactionTreeItem", () => {
     const item = new CompactionTreeItem(entry, "conv-1");
     expect(item.label).toBe("↓ Compacted 30.0k (turn 8)");
     expect((item.iconPath as { id: string }).id).toBe("fold-down");
-    expect(item.contextValue).toBe("compaction");
+    expect(item.contextValue).toBe("compaction inspectable");
   });
 
   it("formats context management compaction label", () => {
@@ -422,7 +422,7 @@ describe("ErrorTreeItem", () => {
     const item = new ErrorTreeItem(entry, "conv-1");
     expect(item.label).toBe("✗ Rate limit exceeded");
     expect((item.iconPath as { id: string }).id).toBe("error");
-    expect(item.contextValue).toBe("error");
+    expect(item.contextValue).toBe("error inspectable");
   });
 
   it("truncates long error messages", () => {
@@ -609,7 +609,7 @@ describe("ConversationItem", () => {
   it("has contextValue 'conversation'", () => {
     const conv = makeConversation();
     const item = new ConversationItem(conv);
-    expect(item.contextValue).toBe("conversation");
+    expect(item.contextValue).toBe("conversation inspectable");
   });
 
   it("generates tooltip with model, status, and token info", () => {
@@ -832,7 +832,7 @@ describe("SubagentItem", () => {
   it("has contextValue 'subagent'", () => {
     const sub = makeSubagent();
     const item = new SubagentItem(sub, "conv-1");
-    expect(item.contextValue).toBe("subagent");
+    expect(item.contextValue).toBe("subagent inspectable");
   });
 });
 
@@ -928,7 +928,7 @@ describe("HistoryItem", () => {
 
   it("has contextValue 'history'", () => {
     const item = new HistoryItem([makeAIResponse(1)], "conv-1");
-    expect(item.contextValue).toBe("history");
+    expect(item.contextValue).toBe("history inspectable");
   });
 
   it("stores entries for provider to resolve children", () => {

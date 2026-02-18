@@ -87,7 +87,12 @@
       },
       {
         "command": "vercel.ai.inspectNode",
-        "title": "Inspect Tree Node",
+        "title": "Inspect",
+        "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercel.ai.inspectNodeNewWindow",
+        "title": "Inspect in New Window",
         "category": "Vercel AI Gateway"
       },
       {
@@ -122,6 +127,18 @@
           "command": "vercel.ai.refreshAgentTree",
           "when": "view == vercel.ai.agentTree",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vercel.ai.inspectNode",
+          "when": "view == vercel.ai.agentTree && viewItem =~ /inspectable/",
+          "group": "inline"
+        },
+        {
+          "command": "vercel.ai.inspectNodeNewWindow",
+          "when": "view == vercel.ai.agentTree && viewItem =~ /inspectable/",
+          "group": "inspect"
         }
       ]
     },
