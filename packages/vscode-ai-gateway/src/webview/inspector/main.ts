@@ -3,26 +3,17 @@
  *
  * This is the main entry point for the inspector webview bundle.
  * Compiled by esbuild with the svelte plugin.
+ *
+ * Uses a Svelte store for reactive state management. The extension
+ * sends content via postMessage, which updates the store, and the
+ * App component re-renders automatically via store subscription.
  */
 
-import { mount, unmount } from "svelte";
+import { mount } from "svelte";
 import App from "./App.svelte";
-import { postMessage, getState, setState } from "../shared/vscode-api.js";
+import { postMessage } from "../shared/vscode-api.js";
+import { inspectorState } from "./state.js";
 import type { ExtensionMessage } from "../shared/message-types.js";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// State
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface InspectorState {
-  content: string;
-  title: string;
-}
-
-let state: InspectorState = getState<InspectorState>() ?? {
-  content: "",
-  title: "Inspector",
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Svelte App
@@ -33,25 +24,8 @@ if (!target) {
   throw new Error("Could not find #app element");
 }
 
-// Current mounted app instance
-let app: ReturnType<typeof mount> | null = null;
-
-/**
- * Mount or remount the Svelte app with current state.
- * Svelte 5's mount() doesn't support prop updates, so we unmount/remount.
- */
-function render(): void {
-  if (app) {
-    unmount(app);
-  }
-  app = mount(App, {
-    target: target!,
-    props: state,
-  });
-}
-
-// Initial render with restored state
-render();
+// Mount once — store reactivity handles updates
+mount(App, { target });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Message handling
@@ -62,9 +36,8 @@ window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
 
   switch (message.type) {
     case "update":
-      state = { content: message.content, title: message.title };
-      setState(state);
-      render();
+      // Update store — App component re-renders automatically
+      inspectorState.setContent(message.content, message.title);
       break;
 
     case "theme-changed":

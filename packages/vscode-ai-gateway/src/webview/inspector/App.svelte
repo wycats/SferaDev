@@ -3,21 +3,18 @@
    * Inspector webview root component.
    *
    * Renders inspector content with VS Code theming.
+   * Subscribes to the inspector state store for reactive updates.
+   *
    * Will be enhanced with markdown rendering and interactive
    * components in the svelte-enhance phase.
    */
 
-  interface Props {
-    content: string;
-    title: string;
-  }
-
-  let { content, title }: Props = $props();
+  import { inspectorState } from "./state.js";
 </script>
 
 <main>
-  <h1>{title}</h1>
-  <pre>{content}</pre>
+  <h1>{$inspectorState.title}</h1>
+  <pre>{$inspectorState.content}</pre>
 </main>
 
 <style>
