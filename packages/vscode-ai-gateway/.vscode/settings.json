@@ -5,6 +5,6 @@
   "files.trimTrailingWhitespace": true,
   "vercel.ai.logging.fileDirectory": ".logs",
   "vercel.ai.logging.level": "trace",
-  "vercel.ai.investigation.detail": "messages",
-  "vercel.ai.investigation.name": "summ-debug"
+  "vercel.ai.logging.granularity": "messages",
+  "vercel.ai.logging.name": "summ-debug"
 }

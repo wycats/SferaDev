@@ -920,4 +920,104 @@ describe("ConversationManager", () => {
       });
     });
   });
+
+  describe("setToolResults", () => {
+    it("attaches results to all matching tool calls by callId", () => {
+      const agent = createAgent({ turnCount: 1 });
+      registry.setAgents([agent]);
+      const manager = new ConversationManager(
+        registry as unknown as AgentRegistry,
+      );
+
+      const conversationId = firstConversation(manager).id;
+
+      // Set tool calls on turn 1 (the AI response)
+      manager.setToolCalls(conversationId, 1, [
+        {
+          callId: "call-1",
+          name: "file_search",
+          args: { query: "*.svelte" },
+        },
+        {
+          callId: "call-2",
+          name: "grep_search",
+          args: { query: "extractToolResults" },
+        },
+        {
+          callId: "call-3",
+          name: "list_dir",
+          args: { path: "/src/inspector" },
+        },
+      ]);
+
+      // Simulate turn 2 (tool continuation) delivering results
+      // This is what happens when VS Code sends tool results back
+      const toolResults = new Map<string, string>();
+      toolResults.set("call-1", "Found 22 files matching *.svelte");
+      toolResults.set("call-2", "7 matches in openresponses-chat.ts");
+      toolResults.set("call-3", "content-provider.ts\npanel.ts\nrender.ts");
+
+      manager.setToolResults(conversationId, 2, toolResults);
+
+      const conversation = firstConversation(manager);
+      const response = conversation.activityLog.find(
+        (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+      );
+      expect(response).toMatchObject({
+        type: "ai-response",
+        toolCalls: [
+          {
+            callId: "call-1",
+            name: "file_search",
+            result: "Found 22 files matching *.svelte",
+          },
+          {
+            callId: "call-2",
+            name: "grep_search",
+            result: "7 matches in openresponses-chat.ts",
+          },
+          {
+            callId: "call-3",
+            name: "list_dir",
+            result: "content-provider.ts\npanel.ts\nrender.ts",
+          },
+        ],
+      });
+    });
+
+    it("handles partial matches (some callIds missing)", () => {
+      const agent = createAgent({ turnCount: 1 });
+      registry.setAgents([agent]);
+      const manager = new ConversationManager(
+        registry as unknown as AgentRegistry,
+      );
+
+      const conversationId = firstConversation(manager).id;
+      manager.setToolCalls(conversationId, 1, [
+        { callId: "call-1", name: "read_file", args: {} },
+        { callId: "call-2", name: "grep_search", args: {} },
+      ]);
+
+      // Only one result arrives
+      const toolResults = new Map<string, string>();
+      toolResults.set("call-1", "file contents here");
+
+      manager.setToolResults(conversationId, 2, toolResults);
+
+      const conversation = firstConversation(manager);
+      const response = conversation.activityLog.find(
+        (e) => e.type === "ai-response" && e.sequenceNumber === 1,
+      );
+      expect(response).toMatchObject({
+        type: "ai-response",
+        toolCalls: [
+          { callId: "call-1", result: "file contents here" },
+          { callId: "call-2" },
+        ],
+      });
+      // Second tool call should have no result
+      const aiResponse = response as { toolCalls: { result?: string }[] };
+      expect(aiResponse.toolCalls[1]!.result).toBeUndefined();
+    });
+  });
 });

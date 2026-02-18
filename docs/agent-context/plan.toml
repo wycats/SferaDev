@@ -2408,6 +2408,12 @@ status = "pending"
 ulid = "01KHQ6EFRYZQMRD457PYESSF08"
 rfc = "00074"
 
+[[epochs.phases.goals]]
+id = "internal-release"
+label = "Internal release preparation"
+status = "pending"
+ulid = "01KHRWPCDS5TKD4RW6TE2BF8Z2"
+
 [[epochs]]
 id = "01khetjx8p8yawtehsa3c264ck"
 title = "Proposed API Alignment"

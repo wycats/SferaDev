@@ -2,9 +2,9 @@
 /**
  * Build script for the VS Code extension.
  *
- * Runs two esbuild builds:
- * 1. Extension build (Node, ESM) → out/extension.js
- * 2. Webview build (browser, IIFE, Svelte) → out/webview/main.js
+ * Runs two builds:
+ * 1. Extension build (esbuild, Node ESM) → out/extension.js
+ * 2. Webview build (Vite, browser ESM, Svelte) → out/webview/
  *
  * Usage:
  *   node scripts/build.mjs          # Production build (minified)
@@ -12,7 +12,7 @@
  */
 
 import * as esbuild from "esbuild";
-import sveltePlugin from "esbuild-svelte";
+import { build as viteBuild, createServer } from "vite";
 
 const isWatch = process.argv.includes("--watch");
 const isMinify = !isWatch;
@@ -36,31 +36,23 @@ const extensionConfig = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Webview build configuration
+// Webview build (Vite)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** @type {esbuild.BuildOptions} */
-const webviewConfig = {
-  entryPoints: ["./src/webview/inspector/main.ts"],
-  bundle: true,
-  outdir: "out/webview",
-  format: "iife",
-  platform: "browser",
-  minify: isMinify,
-  sourcemap: !isMinify,
-  logLevel: "info",
-  // Svelte-specific settings
-  mainFields: ["svelte", "browser", "module", "main"],
-  conditions: ["svelte", "browser"],
-  plugins: [
-    sveltePlugin({
-      compilerOptions: {
-        // Inject CSS into JS (simpler CSP, single file)
-        css: "injected",
-      },
-    }),
-  ],
-};
+/**
+ * Build webview with Vite (supports code splitting for lazy language loading)
+ */
+async function buildWebview() {
+  await viteBuild({
+    configFile: "./vite.config.ts",
+    mode: isMinify ? "production" : "development",
+    build: {
+      minify: isMinify,
+      sourcemap: !isMinify,
+    },
+    logLevel: "info",
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Build execution
@@ -68,21 +60,25 @@ const webviewConfig = {
 
 async function build() {
   if (isWatch) {
-    // Watch mode: create contexts and watch both
-    const [extensionCtx, webviewCtx] = await Promise.all([
-      esbuild.context(extensionConfig),
-      esbuild.context(webviewConfig),
-    ]);
+    // Watch mode: esbuild watch + Vite watch
+    const extensionCtx = await esbuild.context(extensionConfig);
+    await extensionCtx.watch();
 
-    await Promise.all([extensionCtx.watch(), webviewCtx.watch()]);
+    // Vite watch mode via build with watch option
+    await viteBuild({
+      configFile: "./vite.config.ts",
+      mode: "development",
+      build: {
+        watch: {},
+        sourcemap: true,
+      },
+      logLevel: "info",
+    });
 
     console.log("[build] Watching for changes...");
   } else {
-    // Production build: run both builds
-    await Promise.all([
-      esbuild.build(extensionConfig),
-      esbuild.build(webviewConfig),
-    ]);
+    // Production build: run both builds in parallel
+    await Promise.all([esbuild.build(extensionConfig), buildWebview()]);
 
     console.log("[build] Build complete");
   }

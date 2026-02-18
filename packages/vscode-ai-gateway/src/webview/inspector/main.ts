@@ -37,7 +37,7 @@ window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
   switch (message.type) {
     case "update":
       // Update store — App component re-renders automatically
-      inspectorState.setContent(message.content, message.title);
+      inspectorState.setData(message.data);
       break;
 
     case "theme-changed":
@@ -52,5 +52,3 @@ window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
 
 // Notify extension that webview is ready
 postMessage({ type: "ready" });
-
-console.log("[Inspector] Webview initialized");

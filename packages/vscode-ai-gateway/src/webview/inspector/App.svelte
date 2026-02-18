@@ -2,30 +2,27 @@
   /**
    * Inspector webview root component.
    *
-   * Renders inspector content with VS Code theming and syntax highlighting.
+   * Dispatches structured InspectorData to the appropriate view component.
    * Subscribes to the inspector state store for reactive updates.
-   * Uses Shiki with CSS variables for VS Code theme integration.
    */
 
   import { inspectorState } from "./state.js";
-  import CodeBlock from "./CodeBlock.svelte";
   import { shikiVscodeCss } from "./shiki-theme.js";
 
-  // Detect if content looks like JSON
-  function isJson(content: string): boolean {
-    const trimmed = content.trim();
-    return (trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"));
-  }
+  // View components
+  import AIResponseView from "./views/AIResponseView.svelte";
+  import UserMessageView from "./views/UserMessageView.svelte";
+  import ToolCallDetailView from "./views/ToolCallDetailView.svelte";
+  import CompactionView from "./views/CompactionView.svelte";
+  import ErrorView from "./views/ErrorView.svelte";
+  import ToolContinuationView from "./views/ToolContinuationView.svelte";
+  import TurnView from "./views/TurnView.svelte";
+  import SubagentView from "./views/SubagentView.svelte";
+  import ConversationView from "./views/ConversationView.svelte";
+  import HistoryView from "./views/HistoryView.svelte";
+  import NotFoundView from "./views/NotFoundView.svelte";
 
-  // Detect language from content or title
-  function detectLang(content: string, title: string): string {
-    if (isJson(content)) return "json";
-    if (title.toLowerCase().includes("typescript") || title.endsWith(".ts")) return "typescript";
-    if (title.toLowerCase().includes("javascript") || title.endsWith(".js")) return "javascript";
-    return "json"; // Default to JSON for inspector content
-  }
-
-  let lang = $derived(detectLang($inspectorState.content, $inspectorState.title));
+  let data = $derived($inspectorState.data);
 </script>
 
 <svelte:head>
@@ -33,8 +30,33 @@
 </svelte:head>
 
 <main>
-  <h1>{$inspectorState.title}</h1>
-  <CodeBlock code={$inspectorState.content} {lang} />
+  {#if data === null}
+    <div class="empty">
+      <p>No content selected.</p>
+    </div>
+  {:else if data.kind === "ai-response"}
+    <AIResponseView {data} />
+  {:else if data.kind === "user-message"}
+    <UserMessageView {data} />
+  {:else if data.kind === "tool-call"}
+    <ToolCallDetailView {data} />
+  {:else if data.kind === "compaction"}
+    <CompactionView {data} />
+  {:else if data.kind === "error"}
+    <ErrorView {data} />
+  {:else if data.kind === "tool-continuation"}
+    <ToolContinuationView {data} />
+  {:else if data.kind === "turn"}
+    <TurnView {data} />
+  {:else if data.kind === "subagent"}
+    <SubagentView {data} />
+  {:else if data.kind === "conversation"}
+    <ConversationView {data} />
+  {:else if data.kind === "history"}
+    <HistoryView {data} />
+  {:else if data.kind === "not-found"}
+    <NotFoundView {data} />
+  {/if}
 </main>
 
 <style>
@@ -47,10 +69,11 @@
     line-height: 1.6;
   }
 
-  h1 {
-    font-size: 1.4em;
-    margin: 0 0 16px 0;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--vscode-panel-border);
+  .empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: var(--vscode-descriptionForeground);
   }
 </style>

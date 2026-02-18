@@ -64,7 +64,8 @@
           "id": "vercel.ai.agentTree",
           "name": "Agent Tokens",
           "contextualTitle": "Agent Token Usage",
-          "visibility": "visible"
+          "visibility": "visible",
+          "when": "config.vercel.ai.experimental.agentTree"
         }
       ]
     },
@@ -106,13 +107,28 @@
         "category": "Vercel AI Gateway"
       },
       {
+        "command": "vercel.ai.enableDebugLogging",
+        "title": "Enable Debug Logging (for Bug Reports)",
+        "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercel.ai.disableDebugLogging",
+        "title": "Disable Debug Logging",
+        "category": "Vercel AI Gateway"
+      },
+      {
+        "command": "vercel.ai.exportLogs",
+        "title": "Export Logs for Bug Report",
+        "category": "Vercel AI Gateway"
+      },
+      {
         "command": "vercel.ai.investigation.prune",
         "title": "Prune Investigation Logs",
         "category": "Vercel AI Gateway"
       },
       {
         "command": "vercel.ai.exportErrorLogs",
-        "title": "Export Error Logs",
+        "title": "Export Error Logs Only",
         "category": "Vercel AI Gateway"
       },
       {
@@ -166,7 +182,7 @@
             "trace"
           ],
           "default": "warn",
-          "description": "Logging verbosity level.",
+          "description": "Output channel logging verbosity.",
           "enumDescriptions": [
             "Disable all logging",
             "Log only errors",
@@ -176,17 +192,59 @@
             "Log everything including trace-level diagnostic messages"
           ]
         },
-        "vercel.ai.models.userSelectable": {
+        "vercel.ai.logging.fileLevel": {
+          "type": "string",
+          "enum": [
+            "off",
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "default": "off",
+          "description": "Default file logging level for all event categories. Events are written to .logs/{investigation}/events.jsonl. Individual categories can override this via 'logging.categories'.",
+          "enumDescriptions": [
+            "Disable file logging (default)",
+            "Log only errors to file",
+            "Log errors and warnings to file",
+            "Log errors, warnings, and info to file",
+            "Log everything including debug to file",
+            "Log everything including trace-level to file"
+          ]
+        },
+        "vercel.ai.logging.categories": {
+          "type": "object",
+          "default": {},
+          "description": "Per-category file logging level overrides. Categories: 'requests' (API calls), 'tree' (conversation tree changes), 'agents' (agent lifecycle), 'session' (extension lifecycle). Set a category to a level to override the default fileLevel.",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "off",
+              "error",
+              "warn",
+              "info",
+              "debug",
+              "trace"
+            ]
+          }
+        },
+        "vercel.ai.models.showAll": {
           "type": "boolean",
           "default": false,
-          "description": "Make all models user-selectable by default. Normally models are hidden until enabled via 'Manage Models'. Enable this for testing or if you want all models immediately available in the picker."
+          "description": "Show all available models in the chat model picker. When disabled (default), models are hidden until you enable them via the 'Manage Models' dropdown."
         },
-        "vercel.ai.investigation.name": {
+        "vercel.ai.logging.fileDirectory": {
+          "type": "string",
+          "default": ".logs",
+          "description": "Directory for file-based logs. Relative paths resolve against the first workspace folder. Absolute paths are used as-is."
+        },
+        "vercel.ai.logging.name": {
           "type": "string",
           "default": "default",
-          "description": "Investigation name for scoped logging. Detailed request/response data is captured to .logs/{name}/. Change the name to start a clean investigation scope."
+          "description": "Log scope name. File logs are written to {fileDirectory}/{name}/. Change the name to start a clean log scope."
         },
-        "vercel.ai.investigation.detail": {
+        "vercel.ai.logging.granularity": {
           "type": "string",
           "enum": [
             "off",
@@ -194,14 +252,19 @@
             "messages",
             "full"
           ],
-          "default": "off",
-          "description": "Investigation logging detail level. At 'messages' and 'full' levels, complete request and response bodies are captured.",
+          "default": "index",
+          "description": "Request event granularity when file logging is enabled. Controls how much detail is captured for each API request.",
           "enumDescriptions": [
-            "Disable investigation logging",
+            "Disable request detail logging (only category-level events are written)",
             "Log index entries only (one line per request with timing, token counts, status)",
             "Log index + per-conversation message summaries + full request/response bodies",
             "Log everything including raw SSE event streams"
           ]
+        },
+        "vercel.ai.experimental.agentTree": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable the Agent Tokens sidebar view (experimental). Shows token usage per conversation in a tree view."
         }
       }
     }
@@ -231,8 +294,9 @@
     "@vscode/vsce": "catalog:",
     "dotenv": "^17.2.3",
     "esbuild": "^0.24.0",
-    "esbuild-svelte": "^0.9.4",
     "eslint-interactive": "^12.0.0",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "vite": "catalog:",
     "fast-check": "catalog:",
     "glob": "^10.4.5",
     "mocha": "^10.8.2",
@@ -247,6 +311,7 @@
     "@vercel/conversation": "workspace:*",
     "@vscode-elements/elements": "^2.5.0",
     "ai-tokenizer": "^1.0.6",
+    "marked": "^17.0.3",
     "openresponses-client": "workspace:*",
     "safe-stable-stringify": "^2.5.0",
     "shiki": "^3.22.0"

@@ -100,7 +100,7 @@ async function main(): Promise<void> {
     fs.mkdirSync(userSettingsDir, { recursive: true });
     const testSettings = {
       // Make all models user-selectable so they appear in the chat model picker
-      "vercel.ai.models.userSelectable": true,
+      "vercel.ai.models.showAll": true,
       // Set logging to debug level for test visibility
       "vercel.ai.logging.level": "debug",
     };

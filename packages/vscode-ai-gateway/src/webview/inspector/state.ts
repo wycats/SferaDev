@@ -8,14 +8,14 @@
 
 import { writable } from "svelte/store";
 import { getState, setState } from "../shared/vscode-api.js";
+import type { InspectorData } from "../shared/inspector-data.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface InspectorState {
-  content: string;
-  title: string;
+  data: InspectorData | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -24,12 +24,11 @@ export interface InspectorState {
 
 // Restore state from VS Code's webview state API (survives hide/show)
 const initialState: InspectorState = getState<InspectorState>() ?? {
-  content: "",
-  title: "Inspector",
+  data: null,
 };
 
 // Create the writable store
-const { subscribe, set, update } = writable<InspectorState>(initialState);
+const { subscribe, set } = writable<InspectorState>(initialState);
 
 // Persist state changes to VS Code's webview state API
 subscribe((state) => {
@@ -40,23 +39,16 @@ subscribe((state) => {
  * The inspector state store.
  *
  * Subscribe in components: `$inspectorState`
- * Update from message handler: `inspectorState.setContent(content, title)`
+ * Update from message handler: `inspectorState.setData(data)`
  */
 export const inspectorState = {
   subscribe,
 
   /**
-   * Update the inspector content and title.
+   * Update the inspector data.
    * Called when the extension sends an 'update' message.
    */
-  setContent(content: string, title: string): void {
-    set({ content, title });
-  },
-
-  /**
-   * Update just the title (e.g., for loading states).
-   */
-  setTitle(title: string): void {
-    update((state) => ({ ...state, title }));
+  setData(data: InspectorData): void {
+    set({ data });
   },
 };

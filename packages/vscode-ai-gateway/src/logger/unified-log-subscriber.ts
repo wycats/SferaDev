@@ -1,8 +1,12 @@
 /**
  * Unified Log Subscriber
  *
- * Writes ALL InvestigationEvents to a single JSONL file:
+ * Writes InvestigationEvents to a single JSONL file:
  *   .logs/{investigation}/events.jsonl
+ *
+ * Events are filtered by per-category log levels. Each event kind maps to a
+ * category (requests, tree, agents, session), and events are only written if
+ * the category's effective log level is not "off".
  *
  * This is "the one place" — given a causedByChatId from a tree change,
  * you can grep this file to see:
@@ -19,10 +23,12 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import type {
   InvestigationEvent,
+  InvestigationEventKind,
   InvestigationSubscriber,
 } from "./investigation-events.js";
 import { safeJsonStringify } from "../utils/serialize.js";
 import { logger } from "../logger.js";
+import type { LogCategory, LogLevel } from "../config.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces — testable boundaries
@@ -41,7 +47,8 @@ export interface EventWriter {
 }
 
 /**
- * Abstracts the configuration values needed to resolve the log file path.
+ * Abstracts the configuration values needed to resolve the log file path
+ * and filter events by category.
  *
  * Production reads from VS Code settings + workspace folders;
  * tests supply fixed values.
@@ -53,6 +60,43 @@ export interface LogConfig {
   investigationName: string;
   /** First workspace folder path, used to resolve relative logDirectory. */
   workspaceRoot: string | null;
+  /** Default log level for all categories. */
+  defaultLevel: LogLevel;
+  /** Per-category log level overrides. */
+  categoryLevels: Partial<Record<LogCategory, LogLevel>>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Category mapping
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Map event kinds to their log category.
+ */
+function getEventCategory(kind: InvestigationEventKind): LogCategory {
+  if (kind.startsWith("request.")) return "requests";
+  if (kind.startsWith("tree.")) return "tree";
+  if (kind.startsWith("agent.")) return "agents";
+  if (kind.startsWith("session.")) return "session";
+  // Fallback — shouldn't happen with current event kinds
+  return "session";
+}
+
+/**
+ * Get the effective log level for a category.
+ */
+function getEffectiveLevel(config: LogConfig, category: LogCategory): LogLevel {
+  return config.categoryLevels[category] ?? config.defaultLevel;
+}
+
+/**
+ * Check if an event should be logged based on category levels.
+ * Events are logged if the category's effective level is not "off".
+ */
+function shouldLogEvent(config: LogConfig, event: InvestigationEvent): boolean {
+  const category = getEventCategory(event.kind);
+  const level = getEffectiveLevel(config, category);
+  return level !== "off";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,8 +120,13 @@ export function createVscodeLogConfig(): LogConfig {
   const config = vscode.workspace.getConfiguration("vercel.ai");
   return {
     logDirectory: config.get<string>("logging.fileDirectory") ?? ".logs",
-    investigationName: config.get<string>("investigation.name") ?? "default",
+    investigationName: config.get<string>("logging.name") ?? "default",
     workspaceRoot: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
+    defaultLevel: config.get<LogLevel>("logging.fileLevel") ?? "off",
+    categoryLevels:
+      config.get<Partial<Record<LogCategory, LogLevel>>>(
+        "logging.categories",
+      ) ?? {},
   };
 }
 
@@ -91,19 +140,36 @@ export interface UnifiedLogSubscriberOptions {
 }
 
 /**
- * Create a subscriber that appends every event to events.jsonl.
+ * Check if any category has logging enabled.
+ */
+function hasAnyLoggingEnabled(config: LogConfig): boolean {
+  const categories: LogCategory[] = ["requests", "tree", "agents", "session"];
+  return categories.some((cat) => getEffectiveLevel(config, cat) !== "off");
+}
+
+/**
+ * Create a subscriber that appends events to events.jsonl.
+ *
+ * Events are filtered by per-category log levels. Only events whose category
+ * has a non-"off" log level are written.
  *
  * Accepts optional `writer` and `config` for testability.
  * Production callers use the zero-arg form which supplies VS Code defaults.
  *
- * Returns null if the log directory can't be resolved (no workspace folder
- * and relative log path). Throws if the directory exists but can't be created.
+ * Returns null if:
+ * - All categories have logging disabled (level = "off")
+ * - The log directory can't be resolved (no workspace folder and relative path)
  */
 export function createUnifiedLogSubscriber(
   options?: UnifiedLogSubscriberOptions,
 ): InvestigationSubscriber | null {
   const writer = options?.writer ?? createFsEventWriter();
   const config = options?.config ?? createVscodeLogConfig();
+
+  // Don't create subscriber if all categories are disabled
+  if (!hasAnyLoggingEnabled(config)) {
+    return null;
+  }
 
   const logDir = resolveLogDirectory(config);
   if (!logDir) {
@@ -126,10 +192,22 @@ export function createUnifiedLogSubscriber(
   }
 
   const filePath = path.join(investigationDir, "events.jsonl");
-  logger.info(`[UnifiedLog] Writing events to ${filePath}`);
+
+  // Log which categories are enabled
+  const enabledCategories = (
+    ["requests", "tree", "agents", "session"] as LogCategory[]
+  ).filter((cat) => getEffectiveLevel(config, cat) !== "off");
+  logger.info(
+    `[UnifiedLog] Writing events to ${filePath} (categories: ${enabledCategories.join(", ")})`,
+  );
 
   return {
     onEvent(event: InvestigationEvent): void {
+      // Filter by category level
+      if (!shouldLogEvent(config, event)) {
+        return;
+      }
+
       try {
         writer.append(filePath, safeJsonStringify(event) + "\n");
       } catch {

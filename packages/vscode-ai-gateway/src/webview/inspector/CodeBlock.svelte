@@ -3,16 +3,10 @@
    * Syntax-highlighted code block component using Shiki.
    *
    * Uses CSS variables theme to automatically follow VS Code's theme.
-   * Uses JavaScript regex engine (no WASM) for smaller bundle size.
    * Includes copy-to-clipboard functionality.
    */
 
-  import { createHighlighterCore, type HighlighterCore } from "shiki/core";
-  import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
-  import langJson from "@shikijs/langs/json";
-  import langTypescript from "@shikijs/langs/typescript";
-  import langJavascript from "@shikijs/langs/javascript";
-  import { vscodeTheme } from "./shiki-theme.js";
+  import { getHighlighter, ensureLanguage } from "./highlighter.js";
 
   interface Props {
     code: string;
@@ -25,35 +19,19 @@
   let highlightedHtml = $state("");
   let copied = $state(false);
 
-  // Lazy-load highlighter (created once, reused)
-  let highlighterPromise: Promise<HighlighterCore> | null = null;
-
-  async function getHighlighter(): Promise<HighlighterCore> {
-    if (!highlighterPromise) {
-      highlighterPromise = createHighlighterCore({
-        themes: [vscodeTheme],
-        langs: [langJson, langTypescript, langJavascript],
-        engine: createJavaScriptRegexEngine(),
-      });
-    }
-    return highlighterPromise;
-  }
-
-  // Highlight code when it changes
+  // Highlight code when it changes (with lazy language loading)
   $effect(() => {
     const currentCode = code;
     const currentLang = lang;
 
-    getHighlighter().then((highlighter) => {
-      // Check if lang is supported, fallback to json
-      const loadedLangs = highlighter.getLoadedLanguages();
-      const effectiveLang = loadedLangs.includes(currentLang) ? currentLang : "json";
-
+    (async () => {
+      const effectiveLang = await ensureLanguage(currentLang);
+      const highlighter = await getHighlighter();
       highlightedHtml = highlighter.codeToHtml(currentCode, {
         lang: effectiveLang,
         theme: "vscode-variables",
       });
-    });
+    })();
   });
 
   async function copyToClipboard() {
@@ -73,7 +51,11 @@
 <div class="code-block">
   <div class="code-header">
     <span class="lang-label">{lang}</span>
-    <button class="copy-button" onclick={copyToClipboard} title="Copy to clipboard">
+    <button
+      class="copy-button"
+      onclick={copyToClipboard}
+      title="Copy to clipboard"
+    >
       {#if copied}
         <span class="codicon codicon-check"></span>
       {:else}
@@ -92,7 +74,8 @@
 
 <style>
   .code-block {
-    border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, #454545));
+    border: 1px solid
+      var(--vscode-panel-border, var(--vscode-widget-border, #454545));
     border-radius: 4px;
     overflow: hidden;
     margin: 8px 0;
@@ -103,8 +86,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 4px 8px;
-    background: var(--vscode-editor-lineHighlightBackground, rgba(255, 255, 255, 0.04));
-    border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, #454545));
+    background: var(
+      --vscode-editor-lineHighlightBackground,
+      rgba(255, 255, 255, 0.04)
+    );
+    border-bottom: 1px solid
+      var(--vscode-panel-border, var(--vscode-widget-border, #454545));
   }
 
   .lang-label {
@@ -136,20 +123,27 @@
 
   .code-content :global(.shiki) {
     margin: 0;
-    padding: 12px;
+    padding: 8px;
     background: var(--vscode-editor-background) !important;
   }
 
   .code-content :global(pre) {
     margin: 0;
-    padding: 12px;
+    padding: 8px;
     font-family: var(--vscode-editor-font-family, monospace);
     font-size: var(--vscode-editor-font-size, 13px);
     line-height: 1.5;
+    background: transparent !important;
   }
 
   .code-content :global(code) {
     font-family: inherit;
+    background: transparent !important;
+  }
+
+  /* Remove jagged per-token backgrounds — only the block should have background */
+  .code-content :global(span) {
+    background: transparent !important;
   }
 
   /* Codicon font (loaded from VS Code) */

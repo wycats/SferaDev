@@ -10,6 +10,11 @@ const loadSerialize = (() => {
   return () => (cached ??= import("./utils/serialize.js"));
 })();
 
+// Keys for storing original settings before debug logging was enabled
+const DEBUG_LOGGING_ORIGINAL_FILE_LEVEL = "debugLogging.originalFileLevel";
+const DEBUG_LOGGING_ORIGINAL_DETAIL = "debugLogging.originalDetail";
+const DEBUG_LOGGING_ORIGINAL_CATEGORIES = "debugLogging.originalCategories";
+
 export async function activate(context: vscode.ExtensionContext) {
   // Initialize the shared output channel FIRST - before any logging
   // This ensures there's exactly one output channel per VS Code window
@@ -195,37 +200,33 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(inspectorProvider);
 
-  // Refresh inspector when conversations change
-  context.subscriptions.push(
-    treeProvider.getManager().onDidChangeConversations(() => {
-      inspectorProvider.refresh();
-    }),
-  );
-
   // Import the inspector panel for shared window behavior
   const { InspectorPanel } = await import("./inspector/panel.js");
   const inspectorPanel = InspectorPanel.getInstance(context.extensionUri);
   context.subscriptions.push({ dispose: () => inspectorPanel.dispose() });
 
-  // Helper to get content and title for an inspector URI
-  const getInspectorContent = async (
-    uri: vscode.Uri,
-  ): Promise<{ content: string; title: string }> => {
-    const doc = await vscode.workspace.openTextDocument(uri);
-    const content = doc.getText();
-    // Extract title from first heading or use URI path
-    const titleMatch = content.match(/^#\s+(.+)$/m);
-    const title = titleMatch?.[1] ?? uri.path.split("/").pop() ?? "Inspector";
-    return { content, title };
+  // Helper to resolve structured inspector data from a URI
+  const getInspectorData = (uri: vscode.Uri) => {
+    const data = inspectorProvider.resolveInspectorData(uri);
+    const title = data.title;
+    return { data, title };
   };
+
+  // Refresh inspector when conversations change (both markdown preview and webview panel)
+  context.subscriptions.push(
+    treeProvider.getManager().onDidChangeConversations(() => {
+      inspectorProvider.refresh();
+      void inspectorPanel.refreshCurrent((uri) => getInspectorData(uri).data);
+    }),
+  );
 
   // Register the inspect node command (opens in shared panel)
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "vercel.ai.inspectNode",
       async (uri: vscode.Uri) => {
-        const { content, title } = await getInspectorContent(uri);
-        await inspectorPanel.show(uri, async () => content, title);
+        const { data, title } = getInspectorData(uri);
+        await inspectorPanel.show(uri, async () => data, title);
       },
     ),
   );
@@ -605,6 +606,249 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(testSummarizationCommand);
 
+  // Check if debug logging was previously enabled (e.g., before window reload)
+  // and remind the user to export or disable it
+  const hasActiveDebugLogging =
+    context.globalState.get<string>(DEBUG_LOGGING_ORIGINAL_FILE_LEVEL) !==
+    undefined;
+  if (hasActiveDebugLogging) {
+    const choice = await vscode.window.showWarningMessage(
+      "Debug logging is still active — full request/response content is being captured. Export or disable when you're done.",
+      "Export Logs",
+      "Disable Without Exporting",
+    );
+    if (choice === "Export Logs") {
+      void vscode.commands.executeCommand("vercel.ai.exportLogs");
+    } else if (choice === "Disable Without Exporting") {
+      void vscode.commands.executeCommand("vercel.ai.disableDebugLogging");
+    }
+    // If dismissed, debug logging stays enabled - user can manually export/disable later
+  }
+
+  // Register command to enable debug logging for bug reports
+  const enableDebugLoggingCommand = vscode.commands.registerCommand(
+    "vercel.ai.enableDebugLogging",
+    async () => {
+      // Privacy confirmation — debug logs capture full request/response content
+      const confirm = await vscode.window.showWarningMessage(
+        "Debug logging will capture full request and response content, which may include code snippets, file contents, and conversation text. Logs are stored locally and only shared when you explicitly export them.",
+        { modal: true },
+        "Enable Debug Logging",
+      );
+      if (confirm !== "Enable Debug Logging") return;
+
+      const config = vscode.workspace.getConfiguration("vercel.ai");
+
+      // Save original settings before overwriting
+      const originalFileLevel =
+        config.get<string>("logging.fileLevel") ?? "off";
+      const originalDetail =
+        config.get<string>("logging.granularity") ?? "index";
+      const originalCategories =
+        config.get<Record<string, string>>("logging.categories") ?? {};
+      await context.globalState.update(
+        DEBUG_LOGGING_ORIGINAL_FILE_LEVEL,
+        originalFileLevel,
+      );
+      await context.globalState.update(
+        DEBUG_LOGGING_ORIGINAL_DETAIL,
+        originalDetail,
+      );
+      await context.globalState.update(
+        DEBUG_LOGGING_ORIGINAL_CATEGORIES,
+        originalCategories,
+      );
+
+      // Enable full debug logging - clear category overrides so everything is captured
+      await config.update(
+        "logging.fileLevel",
+        "debug",
+        vscode.ConfigurationTarget.Global,
+      );
+      await config.update(
+        "logging.granularity",
+        "full",
+        vscode.ConfigurationTarget.Global,
+      );
+      await config.update(
+        "logging.categories",
+        {}, // Clear category overrides - use fileLevel for all
+        vscode.ConfigurationTarget.Global,
+      );
+      void vscode.window.showInformationMessage(
+        "Debug logging enabled. Reproduce the issue, then use 'Export Logs for Bug Report'.",
+      );
+    },
+  );
+  context.subscriptions.push(enableDebugLoggingCommand);
+
+  // Register command to disable debug logging (kept for manual use)
+  const disableDebugLoggingCommand = vscode.commands.registerCommand(
+    "vercel.ai.disableDebugLogging",
+    async () => {
+      const config = vscode.workspace.getConfiguration("vercel.ai");
+
+      // Restore original settings if we have them, otherwise use defaults
+      const originalFileLevel =
+        context.globalState.get<string>(DEBUG_LOGGING_ORIGINAL_FILE_LEVEL) ??
+        "off";
+      const originalDetail =
+        context.globalState.get<string>(DEBUG_LOGGING_ORIGINAL_DETAIL) ??
+        "index";
+      const originalCategories =
+        context.globalState.get<Record<string, string>>(
+          DEBUG_LOGGING_ORIGINAL_CATEGORIES,
+        ) ?? {};
+
+      await config.update(
+        "logging.fileLevel",
+        originalFileLevel,
+        vscode.ConfigurationTarget.Global,
+      );
+      await config.update(
+        "logging.granularity",
+        originalDetail,
+        vscode.ConfigurationTarget.Global,
+      );
+      await config.update(
+        "logging.categories",
+        originalCategories,
+        vscode.ConfigurationTarget.Global,
+      );
+
+      // Clear saved state
+      await context.globalState.update(
+        DEBUG_LOGGING_ORIGINAL_FILE_LEVEL,
+        undefined,
+      );
+      await context.globalState.update(
+        DEBUG_LOGGING_ORIGINAL_DETAIL,
+        undefined,
+      );
+      await context.globalState.update(
+        DEBUG_LOGGING_ORIGINAL_CATEGORIES,
+        undefined,
+      );
+
+      void vscode.window.showInformationMessage(
+        "Debug logging disabled (settings restored).",
+      );
+    },
+  );
+  context.subscriptions.push(disableDebugLoggingCommand);
+
+  // Register command to export all logs for bug reports
+  const exportLogsCommand = vscode.commands.registerCommand(
+    "vercel.ai.exportLogs",
+    async () => {
+      const { createLogArchive, LogExportEmpty } =
+        await import("./logger/log-export.js");
+      const config = vscode.workspace.getConfiguration("vercel.ai");
+      const investigationName = config.get<string>("logging.name") ?? "default";
+      const workspaceRoot =
+        vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+
+      let result: Awaited<ReturnType<typeof createLogArchive>>;
+      try {
+        result = await createLogArchive(
+          context.globalStorageUri,
+          workspaceRoot,
+          investigationName,
+        );
+      } catch (err) {
+        if (err instanceof LogExportEmpty) {
+          void vscode.window.showInformationMessage(
+            "No logs to export. Use 'Enable Debug Logging' first, reproduce the issue, then export.",
+          );
+          return;
+        }
+        logger.error("[LogExport] Failed to export logs:", err);
+        void vscode.window.showErrorMessage(
+          `Failed to export logs: ${String(err)}`,
+        );
+        return;
+      }
+
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/[T:]/g, "-");
+      const defaultUri = vscode.Uri.file(
+        path.join(
+          (await import("node:os")).homedir(),
+          `vercel-ai-logs-${timestamp}.tar.gz`,
+        ),
+      );
+
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri,
+        filters: { "Gzip Archive": ["tar.gz", "gz"] },
+        title: "Export Logs for Bug Report",
+      });
+
+      if (saveUri) {
+        await vscode.workspace.fs.writeFile(saveUri, result.archive);
+
+        // Restore original settings after successful export (if debug logging was enabled via our command)
+        const hadSavedSettings =
+          context.globalState.get<string>(DEBUG_LOGGING_ORIGINAL_FILE_LEVEL) !==
+          undefined;
+        if (hadSavedSettings) {
+          const originalFileLevel =
+            context.globalState.get<string>(
+              DEBUG_LOGGING_ORIGINAL_FILE_LEVEL,
+            ) ?? "off";
+          const originalDetail =
+            context.globalState.get<string>(DEBUG_LOGGING_ORIGINAL_DETAIL) ??
+            "index";
+          const originalCategories =
+            context.globalState.get<Record<string, string>>(
+              DEBUG_LOGGING_ORIGINAL_CATEGORIES,
+            ) ?? {};
+
+          await config.update(
+            "logging.fileLevel",
+            originalFileLevel,
+            vscode.ConfigurationTarget.Global,
+          );
+          await config.update(
+            "logging.granularity",
+            originalDetail,
+            vscode.ConfigurationTarget.Global,
+          );
+          await config.update(
+            "logging.categories",
+            originalCategories,
+            vscode.ConfigurationTarget.Global,
+          );
+
+          // Clear saved state
+          await context.globalState.update(
+            DEBUG_LOGGING_ORIGINAL_FILE_LEVEL,
+            undefined,
+          );
+          await context.globalState.update(
+            DEBUG_LOGGING_ORIGINAL_DETAIL,
+            undefined,
+          );
+          await context.globalState.update(
+            DEBUG_LOGGING_ORIGINAL_CATEGORIES,
+            undefined,
+          );
+        }
+
+        const { errorLogFiles, investigationLogFiles } = result.stats;
+        const restoredMsg = hadSavedSettings
+          ? " Debug logging disabled, settings restored."
+          : "";
+        void vscode.window.showInformationMessage(
+          `Logs exported (${errorLogFiles} error, ${investigationLogFiles} investigation files).${restoredMsg}`,
+        );
+      }
+    },
+  );
+  context.subscriptions.push(exportLogsCommand);
+
   // Register command to prune investigation logs
   const pruneCommand = vscode.commands.registerCommand(
     "vercel.ai.investigation.prune",
@@ -616,7 +860,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(pruneCommand);
 
-  // Register command to export error logs
+  // Register command to export error logs only
   const exportErrorLogsCommand = vscode.commands.registerCommand(
     "vercel.ai.exportErrorLogs",
     async () => {

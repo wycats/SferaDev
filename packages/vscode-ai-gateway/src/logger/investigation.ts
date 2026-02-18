@@ -701,18 +701,31 @@ export class InvestigationLogger {
   }
   /**
    * Begin tracking a request. Returns a per-request handle with an SSE
-   * recorder, or null if investigation logging is disabled.
+   * recorder, or null if request logging is disabled.
+   *
+   * Request logging is disabled when:
+   * - logging.categories.requests is "off", OR
+   * - logging.fileLevel is "off" and no category override exists for requests
    *
    * The detail level and investigation name are snapshotted at this point.
    */
   startRequest(data: StartRequestData): InvestigationRequestHandle | null {
     const config = vscode.workspace.getConfiguration("vercel.ai");
-    const detail =
-      config.get<InvestigationDetail>("investigation.detail") ?? "off";
-    if (detail === "off") return null;
 
-    const investigationName =
-      config.get<string>("investigation.name") ?? "default";
+    // Check if requests category is enabled via per-category file logging
+    const defaultLevel = config.get<string>("logging.fileLevel") ?? "off";
+    const categoryLevels =
+      config.get<Record<string, string>>("logging.categories") ?? {};
+    const requestsLevel = categoryLevels["requests"] ?? defaultLevel;
+
+    // Skip request tracking if requests category is disabled
+    if (requestsLevel === "off") return null;
+
+    // Get detail level for request granularity (index/messages/full)
+    const detail =
+      config.get<InvestigationDetail>("logging.granularity") ?? "index";
+
+    const investigationName = config.get<string>("logging.name") ?? "default";
     const requestStartMs = performance.now();
     // Always create SSE recorder (at all non-off levels) so error capture
     // can flush buffered events on failure, even at index/messages detail.

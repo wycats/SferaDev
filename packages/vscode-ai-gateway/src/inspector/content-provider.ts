@@ -22,6 +22,20 @@ import {
   renderTurn,
   renderUserMessage,
 } from "./render.js";
+import type { InspectorData } from "../webview/shared/inspector-data.js";
+import {
+  serializeAIResponseData,
+  serializeCompactionData,
+  serializeConversationData,
+  serializeErrorData,
+  serializeHistoryData,
+  serializeNotFound,
+  serializeSubagentData,
+  serializeToolCallData,
+  serializeToolContinuationData,
+  serializeTurnData,
+  serializeUserMessageData,
+} from "./serialize.js";
 
 export const INSPECTOR_SCHEME = "vercel-ai-inspector";
 
@@ -158,6 +172,107 @@ export class InspectorContentProvider
       }
       default:
         return "Not found";
+    }
+  }
+
+  /**
+   * Resolve a URI to structured InspectorData for the Svelte webview.
+   * Returns the same data the markdown renderer would, but as typed objects.
+   */
+  resolveInspectorData(uri: vscode.Uri): InspectorData {
+    const parsed = parseInspectorUri(uri);
+    if (!parsed) {
+      return serializeNotFound();
+    }
+
+    const conversation = this.getConversations().find(
+      (entry) => entry.id === parsed.conversationId,
+    );
+    if (!conversation) {
+      return serializeNotFound();
+    }
+
+    switch (parsed.entryType) {
+      case "conversation":
+        return serializeConversationData(conversation);
+      case "history":
+        return serializeHistoryData(
+          conversation.activityLog,
+          conversation.workspaceFolder,
+        );
+      case "user-message": {
+        const entry =
+          parsed.identifier === undefined
+            ? undefined
+            : findUserMessage(conversation.activityLog, parsed.identifier);
+        return entry ? serializeUserMessageData(entry) : serializeNotFound();
+      }
+      case "tool-continuation": {
+        const match =
+          parsed.identifier === undefined
+            ? undefined
+            : findToolContinuation(conversation.activityLog, parsed.identifier);
+        return match
+          ? serializeToolContinuationData(match.entry, match.tools)
+          : serializeNotFound();
+      }
+      case "ai-response": {
+        const entry =
+          parsed.identifier === undefined
+            ? undefined
+            : findAIResponse(conversation.activityLog, parsed.identifier);
+        return entry
+          ? serializeAIResponseData(entry, conversation.workspaceFolder)
+          : serializeNotFound();
+      }
+      case "compaction": {
+        const entry =
+          parsed.identifier === undefined
+            ? undefined
+            : findCompaction(conversation.activityLog, parsed.identifier);
+        return entry ? serializeCompactionData(entry) : serializeNotFound();
+      }
+      case "error": {
+        const entry =
+          parsed.identifier === undefined
+            ? undefined
+            : findError(conversation.activityLog, parsed.identifier);
+        return entry ? serializeErrorData(entry) : serializeNotFound();
+      }
+      case "subagent": {
+        const entry =
+          parsed.identifier === undefined
+            ? undefined
+            : findSubagent(conversation.subagents, parsed.identifier);
+        return entry ? serializeSubagentData(entry) : serializeNotFound();
+      }
+      case "turn": {
+        const entry =
+          parsed.identifier === undefined
+            ? undefined
+            : findTurn(conversation.activityLog, parsed.identifier);
+        return entry ? serializeTurnData(entry) : serializeNotFound();
+      }
+      case "tool-call": {
+        const aiResponse =
+          parsed.identifier === undefined
+            ? undefined
+            : findAIResponse(conversation.activityLog, parsed.identifier);
+        if (!aiResponse) return serializeNotFound();
+
+        const toolCall = aiResponse.toolCalls?.find(
+          (tc) => tc.callId === parsed.subIdentifier,
+        );
+        return toolCall
+          ? serializeToolCallData(
+              toolCall,
+              aiResponse,
+              conversation.workspaceFolder,
+            )
+          : serializeNotFound();
+      }
+      default:
+        return serializeNotFound();
     }
   }
 

@@ -1034,8 +1034,16 @@ export class ConversationManager implements vscode.Disposable {
   ): void {
     const log = this.activityLogs.get(conversationId);
     if (!log) {
+      logger.warn(
+        `[setToolResults] No activity log for conversation ${conversationId}`,
+      );
       return;
     }
+
+    logger.info(
+      `[setToolResults] Matching ${toolResults.size.toString()} results for turn ${_currentTurnNumber.toString()}, ` +
+        `callIds: [${Array.from(toolResults.keys()).join(", ")}]`,
+    );
 
     // Find AI responses that have tool calls matching the result callIds
     // Walk backwards to find the most recent one
@@ -1046,18 +1054,42 @@ export class ConversationManager implements vscode.Disposable {
         continue;
       }
 
+      logger.debug(
+        `[setToolResults] Checking AI response seq=${entry.sequenceNumber.toString()} with ${entry.toolCalls.length.toString()} tool calls: ` +
+          `[${entry.toolCalls.map((tc) => tc.callId).join(", ")}]`,
+      );
+
       for (const toolCall of entry.toolCalls) {
         const result = toolResults.get(toolCall.callId);
         if (result !== undefined) {
           toolCall.result = result;
           matched = true;
+          logger.debug(
+            `[setToolResults] Matched callId=${toolCall.callId} (${toolCall.name})`,
+          );
         }
       }
 
       // Once we find the AI response with matching calls, stop
       if (matched) {
+        const unmatchedCallIds = Array.from(toolResults.keys()).filter(
+          (id) => !entry.toolCalls!.some((tc) => tc.callId === id),
+        );
+        if (unmatchedCallIds.length > 0) {
+          logger.warn(
+            `[setToolResults] ${unmatchedCallIds.length.toString()} result callIds had no matching tool call: [${unmatchedCallIds.join(", ")}]`,
+          );
+        }
         break;
       }
+    }
+
+    if (!matched) {
+      logger.warn(
+        `[setToolResults] No AI response found with matching callIds. ` +
+          `Result callIds: [${Array.from(toolResults.keys()).join(", ")}]. ` +
+          `Activity log has ${log.length.toString()} entries.`,
+      );
     }
 
     if (matched) {

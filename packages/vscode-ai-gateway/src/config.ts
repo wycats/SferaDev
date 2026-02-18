@@ -5,6 +5,12 @@ export type LogLevel = "off" | "error" | "warn" | "info" | "debug" | "trace";
 export type InvestigationDetail = "off" | "index" | "messages" | "full";
 
 /**
+ * Log categories for per-category level configuration.
+ * Maps to event kind prefixes in the unified event stream.
+ */
+export type LogCategory = "requests" | "tree" | "agents" | "session";
+
+/**
  * Inference settings based on GCMP (GitHub Copilot) research.
  * These are not configurable - they represent battle-tested defaults.
  *
@@ -66,33 +72,60 @@ export class ConfigService implements vscode.Disposable {
     return this.config.get("models.default", "");
   }
 
-  /** Logging verbosity */
+  /** Output channel logging verbosity */
   get logLevel(): LogLevel {
     return this.config.get("logging.level", "warn");
   }
 
+  /** Default file logging level for all event categories */
+  get fileLevel(): LogLevel {
+    return this.config.get("logging.fileLevel", "off");
+  }
+
+  /** Per-category file logging level overrides */
+  get loggingCategories(): Partial<Record<LogCategory, LogLevel>> {
+    return this.config.get("logging.categories", {});
+  }
+
   /**
-   * Make all models user-selectable by default.
-   * When false (default), models are hidden from the picker until users enable them
-   * via VS Code's "Manage Models" UI. When true, all models appear in the picker.
-   * Useful for testing or when you want immediate access to all models.
+   * Get the effective file log level for a specific category.
+   * Returns the category-specific override if set, otherwise the default file level.
    */
-  get modelsUserSelectable(): boolean {
-    return this.config.get("models.userSelectable", false);
+  getFileLevelForCategory(category: LogCategory): LogLevel {
+    const overrides = this.loggingCategories;
+    return overrides[category] ?? this.fileLevel;
+  }
+
+  /**
+   * Show all models in the chat model picker.
+   * When false (default), models are hidden from the picker until users enable them
+   * via VS Code's "Manage Models" dropdown. When true, all models appear immediately.
+   */
+  get modelsShowAll(): boolean {
+    return this.config.get("models.showAll", false);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Investigation logging (user-configurable)
+  // File logging (user-configurable)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  /** Investigation name — scopes logs to .logs/{name}/ */
-  get investigationName(): string {
-    return this.config.get("investigation.name", "default");
+  /** Log scope name — scopes file logs to {fileDirectory}/{name}/ */
+  get loggingName(): string {
+    return this.config.get("logging.name", "default");
   }
 
-  /** Investigation detail level — controls what gets logged */
-  get investigationDetail(): InvestigationDetail {
-    return this.config.get("investigation.detail", "off");
+  /** Request granularity — controls detail level of request events */
+  get loggingGranularity(): InvestigationDetail {
+    return this.config.get("logging.granularity", "index");
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Experimental features
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Enable the Agent Tokens sidebar view (experimental) */
+  get experimentalAgentTree(): boolean {
+    return this.config.get("experimental.agentTree", false);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

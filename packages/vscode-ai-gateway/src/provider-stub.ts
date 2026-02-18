@@ -78,7 +78,7 @@ export class StubProvider
     const config = vscode.workspace.getConfiguration("vercel.ai");
     return {
       defaultModelId: config.get<string>("models.default", "") || undefined,
-      userSelectable: config.get<boolean>("models.userSelectable", false),
+      userSelectable: config.get<boolean>("models.showAll", false),
     };
   }
 

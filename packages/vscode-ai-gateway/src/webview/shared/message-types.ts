@@ -2,14 +2,15 @@
  * Type-safe message definitions for extension ↔ webview communication.
  */
 
+import type { InspectorData } from "./inspector-data.js";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Extension → Webview messages
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface UpdateContentMessage {
   type: "update";
-  content: string;
-  title: string;
+  data: InspectorData;
 }
 
 export interface ThemeChangedMessage {
@@ -33,4 +34,11 @@ export interface ActionMessage {
   payload?: unknown;
 }
 
-export type WebviewMessage = ReadyMessage | ActionMessage;
+export interface OpenFileMessage {
+  type: "open-file";
+  absolutePath: string;
+  startLine?: number;
+  endLine?: number;
+}
+
+export type WebviewMessage = ReadyMessage | ActionMessage | OpenFileMessage;

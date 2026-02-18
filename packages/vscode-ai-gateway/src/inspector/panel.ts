@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import type { ExtensionMessage } from "../webview/shared/message-types.js";
+import type { InspectorData } from "../webview/shared/inspector-data.js";
 
 /**
  * Singleton inspector panel that reuses the same webview.
@@ -36,22 +37,23 @@ export class InspectorPanel {
    */
   async show(
     uri: vscode.Uri,
-    getContent: () => Promise<string>,
+    getData: () => Promise<InspectorData>,
     title: string,
   ): Promise<void> {
     this.currentUri = uri;
-    const content = await getContent();
+    const data = await getData();
 
     // Store pending content for ready handshake
-    this.pendingContent = { content, title };
+    this.pendingContent = { data, title };
 
     if (this.panel) {
       // Panel exists — update content and reveal
       this.panel.title = title;
-      this.sendContent(content, title);
+      this.sendContent(data);
       this.panel.reveal(vscode.ViewColumn.Beside, true);
     } else {
       // Create new panel
+      // localResourceRoots includes webview dir (main.js + chunks/)
       this.panel = vscode.window.createWebviewPanel(
         "vercel.ai.inspector",
         title,
@@ -66,13 +68,19 @@ export class InspectorPanel {
 
       this.panel.webview.html = this.getHtml(this.panel.webview);
 
-      // Listen for ready message from webview
+      // Listen for messages from webview
       this.panel.webview.onDidReceiveMessage(
-        (message: { type: string }) => {
+        (message: { type: string; [key: string]: unknown }) => {
           if (message.type === "ready" && this.pendingContent) {
-            this.sendContent(
-              this.pendingContent.content,
-              this.pendingContent.title,
+            this.sendContent(this.pendingContent.data);
+          } else if (message.type === "open-file") {
+            void this.openFile(
+              message as {
+                type: "open-file";
+                absolutePath: string;
+                startLine?: number;
+                endLine?: number;
+              },
             );
           }
         },
@@ -94,18 +102,17 @@ export class InspectorPanel {
   }
 
   // Pending content for ready handshake
-  private pendingContent: { content: string; title: string } | undefined;
+  private pendingContent: { data: InspectorData; title: string } | undefined;
 
   /**
-   * Send content to the webview via postMessage.
+   * Send structured data to the webview via postMessage.
    */
-  private sendContent(content: string, title: string): void {
+  private sendContent(data: InspectorData): void {
     if (!this.panel) return;
 
     const message: ExtensionMessage = {
       type: "update",
-      content,
-      title,
+      data,
     };
     void this.panel.webview.postMessage(message);
   }
@@ -115,17 +122,36 @@ export class InspectorPanel {
    */
   async refresh(
     uri: vscode.Uri,
-    getContent: () => Promise<string>,
-    title: string,
+    getData: () => Promise<InspectorData>,
   ): Promise<void> {
     if (
       this.panel &&
       this.currentUri &&
       this.currentUri.toString() === uri.toString()
     ) {
-      const content = await getContent();
-      this.sendContent(content, title);
+      const data = await getData();
+      this.sendContent(data);
     }
+  }
+
+  /**
+   * Refresh the current content using a data resolver function.
+   * Call this when the underlying data may have changed (e.g., tool results added).
+   */
+  async refreshCurrent(
+    getDataForUri: (uri: vscode.Uri) => InspectorData,
+  ): Promise<void> {
+    if (this.panel && this.currentUri) {
+      const data = getDataForUri(this.currentUri);
+      this.sendContent(data);
+    }
+  }
+
+  /**
+   * Get the current URI being displayed, if any.
+   */
+  getCurrentUri(): vscode.Uri | undefined {
+    return this.currentUri;
   }
 
   /**
@@ -133,6 +159,37 @@ export class InspectorPanel {
    */
   isVisible(): boolean {
     return this.panel?.visible ?? false;
+  }
+
+  /**
+   * Open a file in the editor at the specified location.
+   */
+  private async openFile(message: {
+    absolutePath: string;
+    startLine?: number;
+    endLine?: number;
+  }): Promise<void> {
+    const uri = vscode.Uri.file(message.absolutePath);
+    const doc = await vscode.workspace.openTextDocument(uri);
+
+    if (message.startLine !== undefined) {
+      const startLine = Math.max(0, message.startLine - 1); // Convert to 0-based
+      const endLine =
+        message.endLine !== undefined
+          ? Math.max(0, message.endLine - 1)
+          : startLine;
+      const selection = new vscode.Selection(startLine, 0, endLine, 0);
+      await vscode.window.showTextDocument(doc, {
+        viewColumn: vscode.ViewColumn.One,
+        selection,
+        preserveFocus: false,
+      });
+    } else {
+      await vscode.window.showTextDocument(doc, {
+        viewColumn: vscode.ViewColumn.One,
+        preserveFocus: false,
+      });
+    }
   }
 
   /**
@@ -153,41 +210,26 @@ export class InspectorPanel {
    * Generate HTML shell for the Svelte webview.
    *
    * The actual content is sent via postMessage after the webview loads.
+   * Uses ES modules to support Vite code splitting for lazy language loading.
    */
   private getHtml(webview: vscode.Webview): string {
-    // Generate nonce for CSP
-    const nonce = this.getNonce();
-
     // Get URI for the webview script
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "out", "webview", "main.js"),
     );
 
+    // No CSP — VS Code webviews have their own security model
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
   <title>Inspector</title>
 </head>
 <body>
   <div id="app"></div>
-  <script nonce="${nonce}" src="${scriptUri}"></script>
+  <script type="module" src="${scriptUri}"></script>
 </body>
 </html>`;
-  }
-
-  /**
-   * Generate a random nonce for CSP.
-   */
-  private getNonce(): string {
-    let text = "";
-    const possible =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (let i = 0; i < 32; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
   }
 }

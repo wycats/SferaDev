@@ -158,14 +158,22 @@ function makeCompleteData(
 }
 
 /** Configure mock to return investigation settings. */
-function mockConfig(name: string, detail: string, logDir = ".logs") {
+function mockConfig(
+  name: string,
+  detail: string,
+  logDir = ".logs",
+  fileLevel = "info", // Default to "info" so tests work (requests category enabled)
+  categoryLevels: Record<string, string> = {},
+) {
   hoisted.mockGetConfiguration.mockImplementation((section: string) => {
     if (section === "vercel.ai") {
       return {
         get: (key: string, defaultValue?: unknown) => {
-          if (key === "investigation.name") return name;
-          if (key === "investigation.detail") return detail;
+          if (key === "logging.name") return name;
+          if (key === "logging.granularity") return detail;
           if (key === "logging.fileDirectory") return logDir;
+          if (key === "logging.fileLevel") return fileLevel;
+          if (key === "logging.categories") return categoryLevels;
           return defaultValue;
         },
       };
@@ -186,11 +194,24 @@ describe("InvestigationLogger", () => {
     investigationLogger = new InvestigationLogger();
   });
 
-  describe("detail=off", () => {
-    it("startRequest returns null when detail is off", () => {
-      mockConfig("default", "off");
+  describe("fileLevel=off (logging disabled)", () => {
+    it("startRequest returns null when fileLevel is off", () => {
+      mockConfig("default", "index", ".logs", "off");
       const handle = investigationLogger.startRequest(makeStartData());
       expect(handle).toBeNull();
+    });
+
+    it("startRequest returns null when requests category is off", () => {
+      mockConfig("default", "index", ".logs", "info", { requests: "off" });
+      const handle = investigationLogger.startRequest(makeStartData());
+      expect(handle).toBeNull();
+    });
+
+    it("startRequest returns handle when requests category overrides off default", () => {
+      mockConfig("default", "index", ".logs", "off", { requests: "info" });
+      const handle = investigationLogger.startRequest(makeStartData());
+      assertHandle(handle);
+      expect(handle.recorder).not.toBeNull();
     });
   });
 

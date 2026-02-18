@@ -409,12 +409,6 @@ export class VercelAIChatModelProvider
       const firstUserMessageHash = firstUserMessageText
         ? hashUserMessage(firstUserMessageText)
         : undefined;
-      // DEBUG: Dump full user message to see what VS Code sends
-      if (firstUserMessageText) {
-        logger.info(
-          `[DEBUG] Full firstUserMessageText (${firstUserMessageText.length} chars):\n${firstUserMessageText.slice(0, 2000)}${firstUserMessageText.length > 2000 ? "\n... (truncated)" : ""}`,
-        );
-      }
       // Extract a preview of the first user message for display
       // Strip leading XML tags to get to the actual user content for the preview
       let previewText = firstUserMessageText;
@@ -666,6 +660,9 @@ export class VercelAIChatModelProvider
 
       // Attach tool results to the PREVIOUS turn's tool calls
       if (toolResults && toolResults.size > 0) {
+        logger.info(
+          `[handleTurnComplete] Turn ${turnNumber.toString()}: attaching ${toolResults.size.toString()} tool results`,
+        );
         this.conversationManager.setToolResults(
           conversationId,
           turnNumber,
@@ -684,6 +681,9 @@ export class VercelAIChatModelProvider
 
       // Update tools used on the AI response
       if (toolCalls.length > 0) {
+        logger.info(
+          `[handleTurnComplete] Turn ${turnNumber.toString()}: storing ${toolCalls.length.toString()} tool calls: [${toolCalls.map((tc) => `${tc.name}(${tc.callId})`).join(", ")}]`,
+        );
         this.conversationManager.setToolCalls(
           conversationId,
           turnNumber,

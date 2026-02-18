@@ -120,3 +120,33 @@ created_at = "2026-02-17T02:22:33.861Z"
 source = "user"
 tags = []
 related_tasks = []
+
+[[ideas]]
+id = "d0e2abb0-0c3c-4caa-9f6e-39a162ea7b26"
+title = "Webview logging: route webview console output through the extension's logging system instead of browser console"
+description = ""
+status = "new"
+created_at = "2026-02-18T19:54:06.060Z"
+source = "user"
+tags = []
+related_tasks = []
+
+[[ideas]]
+id = "863d9f01-5063-4fe1-adea-60fd6e6adc8f"
+title = "LanguageModelDataPart emission: implement data part support in synthetic-parts.ts when a concrete use case emerges"
+description = ""
+status = "new"
+created_at = "2026-02-18T19:54:10.979Z"
+source = "user"
+tags = []
+related_tasks = []
+
+[[ideas]]
+id = "8547aefb-c804-4585-ad68-4dea9367be1b"
+title = "Debug log redaction: automatically redact or hash sensitive content (code snippets, file paths, conversation text) in exported debug logs before sharing"
+description = ""
+status = "new"
+created_at = "2026-02-18T19:56:31.163Z"
+source = "user"
+tags = []
+related_tasks = []

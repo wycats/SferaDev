@@ -494,7 +494,7 @@ export function renderHistory(
  * 3. Prefer strings that look like content (long, contains markdown)
  * 4. If extracted content looks like markdown, render as markdown
  */
-function extractToolResultContent(result: string): {
+export function extractToolResultContent(result: string): {
   content: string;
   format: "text" | "json" | "markdown";
 } {

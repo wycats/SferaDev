@@ -177,13 +177,30 @@ function isToolContinuationRequest(
   }
 
   // Check if it contains any tool result parts
+  // Use instanceof first, then fallback to duck-typing
   for (const part of lastUserMessage.content) {
-    if (part instanceof LanguageModelToolResultPart) {
+    if (part instanceof LanguageModelToolResultPart || isToolResultPart(part)) {
       return true;
     }
   }
 
   return false;
+}
+
+/**
+ * Check if an object looks like a LanguageModelToolResultPart.
+ * Fallback for when instanceof check fails due to symbol mismatch.
+ */
+function isToolResultPart(
+  part: unknown,
+): part is { callId: string; content: unknown } {
+  return (
+    typeof part === "object" &&
+    part !== null &&
+    "callId" in part &&
+    typeof (part as { callId: unknown }).callId === "string" &&
+    "content" in part
+  );
 }
 
 /**
@@ -206,12 +223,22 @@ function extractToolResults(
     .find((m) => m.role === vscode.LanguageModelChatMessageRole.User);
 
   if (!lastUserMessage) {
+    logger.debug(
+      `[extractToolResults] No user message found in ${messages.length.toString()} messages`,
+    );
     return results;
   }
 
+  const partCount = lastUserMessage.content.length;
+  let toolResultPartCount = 0;
+
   for (const part of lastUserMessage.content) {
-    if (part instanceof LanguageModelToolResultPart) {
-      const rawContent = part.content;
+    // Use instanceof first, then fallback to duck-typing
+    // (instanceof can fail due to symbol mismatch across VS Code extension hosts)
+    if (part instanceof LanguageModelToolResultPart || isToolResultPart(part)) {
+      toolResultPartCount++;
+      const toolPart = part as { callId: string; content: unknown };
+      const rawContent = toolPart.content;
       // content is Array<LanguageModelTextPart | LanguageModelDataPart | ...>
       // Extract text from LanguageModelTextPart elements (.value property)
       const output =
@@ -219,10 +246,21 @@ function extractToolResults(
           ? rawContent
           : extractTextFromContentParts(rawContent);
       if (output.trim() !== "") {
-        results.set(part.callId, output);
+        results.set(toolPart.callId, output);
+        logger.debug(
+          `[extractToolResults] Extracted result for callId=${toolPart.callId}, length=${output.length.toString()}`,
+        );
+      } else {
+        logger.warn(
+          `[extractToolResults] Empty result for callId=${toolPart.callId}`,
+        );
       }
     }
   }
+
+  logger.info(
+    `[extractToolResults] Found ${toolResultPartCount.toString()} tool result parts out of ${partCount.toString()} total parts, extracted ${results.size.toString()} non-empty results`,
+  );
 
   return results;
 }

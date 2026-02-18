@@ -159,8 +159,7 @@ export class ModelsClient {
    */
   isModelEnabled(modelId: string): boolean {
     return (
-      this.configService.modelsUserSelectable ||
-      this.userEnabledModels.has(modelId)
+      this.configService.modelsShowAll || this.userEnabledModels.has(modelId)
     );
   }
 
@@ -434,7 +433,7 @@ export class ModelsClient {
 
     const options: TransformOptions = {
       defaultModelId,
-      userSelectable: this.configService.modelsUserSelectable,
+      userSelectable: this.configService.modelsShowAll,
     };
     return transformRawModelsToChatInfo(data, options);
   }

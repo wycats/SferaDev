@@ -171,6 +171,82 @@ describe("createUnifiedLogSubscriber", () => {
     expect(subscriber).toBeNull();
   });
 
+  it("returns null when default level is 'off' and no category overrides", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({ defaultLevel: "off" }),
+    });
+
+    expect(subscriber).toBeNull();
+    // Should not even attempt to create directories
+    expect(writer.dirs).toHaveLength(0);
+  });
+
+  it("creates subscriber when default level is not 'off'", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({ defaultLevel: "info" }),
+    });
+
+    expect(subscriber).not.toBeNull();
+  });
+
+  it("creates subscriber when default is 'off' but a category is enabled", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({
+        defaultLevel: "off",
+        categoryLevels: { requests: "info" },
+      }),
+    });
+
+    expect(subscriber).not.toBeNull();
+  });
+
+  it("filters events by category level", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({
+        defaultLevel: "info",
+        categoryLevels: { tree: "off" }, // Disable tree events
+      }),
+    })!;
+
+    // Session events should be logged (default level)
+    subscriber.onEvent(
+      testEvent({ kind: "session.start", extensionVersion: "1.0.0" }),
+    );
+    // Tree events should be filtered out
+    subscriber.onEvent(testEvent({ kind: "tree.change" } as any));
+    // Session events should be logged
+    subscriber.onEvent(testEvent({ kind: "session.end" }));
+
+    expect(writer.events).toHaveLength(2);
+    expect(writer.events[0]!.kind).toBe("session.start");
+    expect(writer.events[1]!.kind).toBe("session.end");
+  });
+
+  it("logs all categories when default level is enabled", () => {
+    const writer = new TestEventWriter();
+    const subscriber = createUnifiedLogSubscriber({
+      writer,
+      config: testLogConfig({ defaultLevel: "debug" }),
+    })!;
+
+    subscriber.onEvent(
+      testEvent({ kind: "session.start", extensionVersion: "1.0.0" }),
+    );
+    subscriber.onEvent(testEvent({ kind: "tree.change" } as any));
+    subscriber.onEvent(testEvent({ kind: "agent.started" } as any));
+    subscriber.onEvent(testEvent({ kind: "request.index" } as any));
+
+    expect(writer.events).toHaveLength(4);
+  });
+
   it("resolves relative log directory against workspace root", () => {
     const writer = new TestEventWriter();
     createUnifiedLogSubscriber({

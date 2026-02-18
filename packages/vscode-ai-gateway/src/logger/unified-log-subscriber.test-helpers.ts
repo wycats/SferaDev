@@ -92,12 +92,16 @@ export class TestEventWriter implements EventWriter {
  * Override any field:
  *   testLogConfig({ logDirectory: null })  // simulate no config
  *   testLogConfig({ workspaceRoot: null }) // simulate no workspace
+ *   testLogConfig({ defaultLevel: "off" }) // disable all logging
+ *   testLogConfig({ categoryLevels: { tree: "off" } }) // disable tree events
  */
 export function testLogConfig(overrides?: Partial<LogConfig>): LogConfig {
   return {
     logDirectory: "/test-workspace/.logs",
     investigationName: "test-investigation",
     workspaceRoot: "/test-workspace",
+    defaultLevel: "info", // Enable logging by default in tests
+    categoryLevels: {}, // No category overrides by default
     ...overrides,
   };
 }

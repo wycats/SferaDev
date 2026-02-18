@@ -482,6 +482,42 @@ status = "pending"
 id = "build-test-and-verify-highlighting-works"
 title = "Build, test, and verify highlighting works"
 status = "pending"
+
+[[plan.goals]]
+id = "internal-release"
+
+[[plan.goals.tasks]]
+id = "verify-cache-hits"
+title = "Verify cache hits"
+status = "completed"
+completed_at = "2026-02-18T17:28:16.207952854+00:00"
+completion_log = "66% cache hit rate confirmed (165M/249M tokens)"
+
+[[plan.goals.tasks]]
+id = "add-experimental-flag-for-agent-tree-sidebar"
+title = "Add experimental flag for agent tree sidebar"
+status = "completed"
+completed_at = "2026-02-18T17:28:22.922360003+00:00"
+completion_log = "Added vercel.ai.experimental.agentTree setting and when clause"
+
+[[plan.goals.tasks]]
+id = "implement-per-category-file-logging"
+title = "Implement per-category file logging"
+status = "completed"
+completed_at = "2026-02-18T17:28:26.710684864+00:00"
+completion_log = "Added logging.fileLevel and logging.categories settings"
+
+[[plan.goals.tasks]]
+id = "audit-optional-logging-for-bug-reports"
+title = "Audit optional logging for bug reports"
+status = "completed"
+completed_at = "2026-02-18T17:38:18.395055975+00:00"
+completion_log = "Added enable/disable debug logging commands and export workflow that auto-disables after export"
+
+[[plan.goals.tasks]]
+id = "gut-check-settings"
+title = "Gut-check settings"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 
