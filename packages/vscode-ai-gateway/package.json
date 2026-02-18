@@ -242,10 +242,13 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@shikijs/langs": "^3.22.0",
+    "@shikijs/themes": "^3.22.0",
     "@vercel/conversation": "workspace:*",
     "@vscode-elements/elements": "^2.5.0",
     "ai-tokenizer": "^1.0.6",
     "openresponses-client": "workspace:*",
-    "safe-stable-stringify": "^2.5.0"
+    "safe-stable-stringify": "^2.5.0",
+    "shiki": "^3.22.0"
   }
 }

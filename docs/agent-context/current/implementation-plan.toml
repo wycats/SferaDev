@@ -452,6 +452,34 @@ status = "pending"
 id = "add-state-persistence-for-expanded-collapsed-sections"
 title = "Add state persistence for expanded/collapsed sections"
 status = "pending"
+
+[[plan.goals]]
+id = "shiki-highlighting"
+
+[[plan.goals.tasks]]
+id = "add-shiki-dependency-to-package-json"
+title = "Add shiki dependency to package.json"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "create-css-variables-theme-mapping-vs-code-theme-vars-to-shiki"
+title = "Create CSS variables theme mapping VS Code theme vars to Shiki"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "create-codeblock-svelte-component-with-shiki-highlighting"
+title = "Create CodeBlock.svelte component with Shiki highlighting"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "integrate-codeblock-into-inspector-app-svelte-for-json-content"
+title = "Integrate CodeBlock into inspector App.svelte for JSON content"
+status = "pending"
+
+[[plan.goals.tasks]]
+id = "build-test-and-verify-highlighting-works"
+title = "Build, test, and verify highlighting works"
+status = "pending"
 # Goals contain tasks. Use 'exo-add-task' to add tasks to goals.
 
 

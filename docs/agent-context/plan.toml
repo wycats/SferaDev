@@ -2401,6 +2401,13 @@ status = "pending"
 ulid = "01KHQ2XFDH54S6PCMNXAEMS5D1"
 rfc = "00074"
 
+[[epochs.phases.goals]]
+id = "shiki-highlighting"
+label = "Add Shiki syntax highlighting with VS Code theme integration"
+status = "pending"
+ulid = "01KHQ6EFRYZQMRD457PYESSF08"
+rfc = "00074"
+
 [[epochs]]
 id = "01khetjx8p8yawtehsa3c264ck"
 title = "Proposed API Alignment"

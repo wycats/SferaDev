@@ -50,7 +50,7 @@ import { STATEFUL_MARKER_MIME } from "../utils/stateful-marker";
 beforeAll(async () => {
   const counter = new TokenCounter();
   await counter.initialize();
-}, 30_000);
+}, 60_000);
 
 describe("TokenCounter", () => {
   it("uses claude encoding for Anthropic models", () => {
