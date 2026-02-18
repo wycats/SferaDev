@@ -459,7 +459,9 @@ id = "shiki-highlighting"
 [[plan.goals.tasks]]
 id = "add-shiki-dependency-to-package-json"
 title = "Add shiki dependency to package.json"
-status = "pending"
+status = "completed"
+completed_at = "2026-02-18T01:55:45.515725566+00:00"
+completion_log = "Added shiki, @shikijs/langs, @shikijs/themes"
 
 [[plan.goals.tasks]]
 id = "create-css-variables-theme-mapping-vs-code-theme-vars-to-shiki"

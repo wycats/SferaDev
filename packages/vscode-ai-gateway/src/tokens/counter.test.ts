@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const vscodeHoisted = vi.hoisted(() => {
   const LanguageModelChatMessageRole = {
@@ -43,14 +43,39 @@ const vscodeHoisted = vi.hoisted(() => {
 
 vi.mock("vscode", () => vscodeHoisted);
 
+/**
+ * Lightweight mock tokenizer for tests.
+ *
+ * Returns ~1 token per 4 characters (similar to real tokenizers).
+ * This avoids loading 10MB of vocabulary data during tests while
+ * still exercising the TokenCounter logic (routing, filtering, overhead).
+ */
+class MockTokenizer {
+  count(text: string): number {
+    // Approximate: ~4 chars per token (realistic average)
+    return Math.ceil(text.length / 4);
+  }
+}
+
+vi.mock("ai-tokenizer", () => ({
+  Tokenizer: class {
+    constructor(_encoding: unknown) {
+      return new MockTokenizer();
+    }
+  },
+}));
+
+vi.mock("ai-tokenizer/encoding/o200k_base", () => ({
+  default: { name: "o200k_base" },
+}));
+
+vi.mock("ai-tokenizer/encoding/claude", () => ({
+  default: { name: "claude" },
+}));
+
 import * as vscode from "vscode";
 import { TokenCounter } from "./counter";
 import { STATEFUL_MARKER_MIME } from "../utils/stateful-marker";
-
-beforeAll(async () => {
-  const counter = new TokenCounter();
-  await counter.initialize();
-}, 60_000);
 
 describe("TokenCounter", () => {
   it("uses claude encoding for Anthropic models", () => {
